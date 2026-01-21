@@ -5,7 +5,7 @@
 {% block content %}
 <!-- Background Section -->
 <div class="relative w-full h-screen flex items-center justify-center bg-cover bg-center"
-     style="background-image: url('{{ url_for('payroll_auth.static', filename='img/muni.jpg') }}');">
+     style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');">
   <!-- Blur Overlay -->
   <div class="absolute inset-0 bg-green-900/70 backdrop-blur-sm"></div>
 
@@ -14,7 +14,7 @@
     
     <!-- Logo & Header -->
     <div class="text-center mb-6">
-      <img src="{{ url_for('payroll_auth.static', filename='img/logo2.avif') }}" 
+      <img src="{{ url_for('static', filename='img/logo2.avif') }}" 
            alt="Logo" 
            class="w-24 h-24 mx-auto rounded-full mb-3 shadow-md border border-green-300">
       <h2 class="text-2xl font-bold text-green-700 dark:text-green-400">Welcome Back</h2>

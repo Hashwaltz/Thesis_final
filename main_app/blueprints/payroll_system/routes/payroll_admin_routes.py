@@ -29,23 +29,21 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from main_app.utils import admin_required
+from main_app.utils import payroll_admin_required
 from reportlab.lib.styles import getSampleStyleSheet
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
-STATIC_DIR = os.path.join(BASE_DIR, "payroll_static")
 
 payroll_admin_bp = Blueprint(
     "payroll_admin",
     __name__,
     template_folder=TEMPLATE_DIR,
-    static_folder=STATIC_DIR,
     static_url_path="/payroll/static"
 )
 
 @payroll_admin_bp.route('/dashboard')
-@admin_required
+@payroll_admin_required
 @login_required
 def payroll_dashboard():
     today = date.today()
@@ -583,7 +581,7 @@ def get_worked_days():
 
 @payroll_admin_bp.route('/employees')
 @login_required
-@admin_required
+@payroll_admin_required
 def view_employees():
     search = request.args.get('search', '', type=str)
     department_id = request.args.get('department_id', '', type=str)
@@ -623,7 +621,7 @@ def view_employees():
 
 @payroll_admin_bp.route('/payrolls/edit/<int:payroll_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def edit_payroll(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
 
@@ -695,7 +693,7 @@ def view_payrolls():
 
 @payroll_admin_bp.route('/payroll/export_excel', methods=['GET'])
 @login_required
-@admin_required
+@payroll_admin_required
 def export_payroll_excel():
     # Get filters from query parameters
     search = request.args.get('search', '')
@@ -788,7 +786,7 @@ def export_payroll_excel():
 
 @payroll_admin_bp.route('/payroll-history-dashboard')
 @login_required
-@admin_required
+@payroll_admin_required
 def payroll_history_dashboard():
     # Fetch all employees and all payroll periods
     employees = HREmployee.query.order_by(HREmployee.last_name).all()
@@ -804,7 +802,7 @@ def payroll_history_dashboard():
 # Employee Payroll History
 @payroll_admin_bp.route('/employees/<int:employee_id>/payroll-history')
 @login_required
-@admin_required
+@payroll_admin_required
 def view_employee_payroll_history(employee_id):
     # Get employee or return 404
     employee = HREmployee.query.get_or_404(employee_id)
@@ -825,7 +823,7 @@ def view_employee_payroll_history(employee_id):
 
 @payroll_admin_bp.route('/payroll-periods/<int:period_id>/history')
 @login_required
-@admin_required
+@payroll_admin_required
 def payroll_period_history(period_id):
     # Get payroll period or 404
     period = PayrollPeriod.query.get_or_404(period_id)
@@ -852,7 +850,7 @@ def payroll_period_history(period_id):
 # ==========================
 @payroll_admin_bp.route('/employees/sync', methods=['POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def sync_employees():
     try:
         hr_employees = sync_all_employees_from_hr()
@@ -911,7 +909,7 @@ from flask import request
 
 @payroll_admin_bp.route('/payroll-periods')
 @login_required
-@admin_required
+@payroll_admin_required
 def view_payroll_periods():
     # Get filters from query parameters
     status_filter = request.args.get('status', '')
@@ -944,7 +942,7 @@ def view_payroll_periods():
 
 @payroll_admin_bp.route('/payroll-periods/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def add_payroll_period():
 
     if request.method == 'POST':
@@ -981,7 +979,7 @@ def add_payroll_period():
 
 @payroll_admin_bp.route('/payroll-periods/edit/<int:period_id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def edit_payroll_period(period_id):
     period = PayrollPeriod.query.get_or_404(period_id)
 
@@ -1003,7 +1001,7 @@ def edit_payroll_period(period_id):
 
 @payroll_admin_bp.route('/payroll-periods/delete/<int:period_id>', methods=['POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def delete_payroll_period(period_id):
     period = PayrollPeriod.query.get_or_404(period_id)
     db.session.delete(period)
@@ -1018,7 +1016,7 @@ def delete_payroll_period(period_id):
 
 @payroll_admin_bp.route('/payroll/details/<int:period_id>')
 @login_required
-@admin_required
+@payroll_admin_required
 def payroll_details(period_id):
     period = PayrollPeriod.query.get_or_404(period_id)
     
@@ -1118,7 +1116,7 @@ def get_employee_deductions(employee):
 
 @payroll_admin_bp.route('/payslips')
 @login_required
-@admin_required
+@payroll_admin_required
 def view_payslips():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
@@ -1182,7 +1180,7 @@ def view_payslips():
 # =========================================================
 @payroll_admin_bp.route('/payslips/distribute/<int:payslip_id>', methods=['POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def distribute_payslip(payslip_id):
     payslip = Payslip.query.get_or_404(payslip_id)
 
@@ -1203,7 +1201,7 @@ def distribute_payslip(payslip_id):
 # =========================================================
 @payroll_admin_bp.route('/payslips/generate', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def generate_payslips_by_period():
     # Get all payroll periods
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
@@ -1245,7 +1243,7 @@ def generate_payslips_by_period():
 # =========================================================
 @payroll_admin_bp.route('/payslips/generate/<int:payroll_id>', methods=['POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def generate_single_payslip(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
 
@@ -1293,7 +1291,7 @@ def generate_payslip(payroll, generated_by_id=None):
 # =========================================================
 @payroll_admin_bp.route('/payslips/review', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def review_payslips():
     if request.method == 'POST':
         action = request.form.get('action')
@@ -1344,7 +1342,7 @@ def review_payslips():
 # =========================================================
 @payroll_admin_bp.route('/payslips/approve/<int:payslip_id>', methods=['POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def approve_payslip(payslip_id):
     payslip = Payslip.query.get_or_404(payslip_id)
 
@@ -1366,7 +1364,7 @@ def approve_payslip(payslip_id):
 # =========================================================
 @payroll_admin_bp.route('/payslips/reject/<int:payslip_id>', methods=['POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def reject_payslip(payslip_id):
     payslip = Payslip.query.get_or_404(payslip_id)
     reason = request.form.get('reason', '').strip()
@@ -1390,7 +1388,7 @@ def reject_payslip(payslip_id):
 # ==========================
 @payroll_admin_bp.route('/deductions')
 @login_required
-@admin_required
+@payroll_admin_required
 def deductions():
     search = request.args.get('search', '', type=str).strip()
     page = request.args.get('page', 1, type=int)
@@ -1421,7 +1419,7 @@ def deductions():
 
 @payroll_admin_bp.route('/deductions/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def add_deduction():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -1462,7 +1460,7 @@ def add_deduction():
 
 @payroll_admin_bp.route('/deductions/<int:deduction_id>/edit', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def edit_deduction(deduction_id):
     deduction = Deduction.query.get_or_404(deduction_id)
 
@@ -1499,7 +1497,7 @@ def edit_deduction(deduction_id):
 # ==========================
 @payroll_admin_bp.route('/allowances')
 @login_required
-@admin_required
+@payroll_admin_required
 def allowances():
     search = request.args.get('search', '', type=str).strip()
     page = request.args.get('page', 1, type=int)
@@ -1523,7 +1521,7 @@ def allowances():
 
 @payroll_admin_bp.route('/allowances/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def add_allowance():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -1561,7 +1559,7 @@ def add_allowance():
 # ==========================
 @payroll_admin_bp.route('/tax-brackets')
 @login_required
-@admin_required
+@payroll_admin_required
 def tax_brackets():
     tax_brackets = Tax.query.order_by(Tax.min_income).all()
     return render_template('payroll/tax_brackets.html', tax_brackets=tax_brackets)
@@ -1569,7 +1567,7 @@ def tax_brackets():
 
 @payroll_admin_bp.route('/tax-brackets/add', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def add_tax_bracket():
     form = TaxForm()
     if form.validate_on_submit():
@@ -1597,7 +1595,7 @@ def add_tax_bracket():
 # ==========================
 @payroll_admin_bp.route('/reports', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def reports():
     form = PayrollSummaryForm()
     form.period_id.choices = [(p.id, f"{p.period_name} ({p.start_date} to {p.end_date})") for p in PayrollPeriod.query.all()]
@@ -1611,7 +1609,7 @@ def reports():
 
 @payroll_admin_bp.route('/payroll/admin/summary', methods=['GET'])
 @login_required
-@admin_required
+@payroll_admin_required
 def payroll_summary():
     department_id = request.args.get('department_id', type=int)
     start_date = request.args.get('start_date')
@@ -1650,7 +1648,7 @@ def payroll_summary():
 
 
 @payroll_admin_bp.route('/payroll/admin/export_excel')
-@admin_required
+@payroll_admin_required
 @login_required
 def export_excel():
     department_id = request.args.get('department_id', type=int)
@@ -1689,7 +1687,7 @@ def export_excel():
     )
 
 @payroll_admin_bp.route('/payroll/admin/export_pdf')
-@admin_required
+@payroll_admin_required
 @login_required
 def export_pdf():
     department_id = request.args.get('department_id', type=int)
@@ -1779,7 +1777,7 @@ def export_pdf():
     return send_file(buffer, download_name="payroll_summary.pdf", as_attachment=True)
 
 @payroll_admin_bp.route('/payroll/admin/generate_payroll', methods=['POST'])
-@admin_required
+@payroll_admin_required
 @login_required
 def generate_payrolls():
     from datetime import date, datetime, timedelta
@@ -2002,7 +2000,7 @@ def export_earnings_pdf():
 
 @payroll_admin_bp.route('/employees/benefits')
 @login_required
-@admin_required
+@payroll_admin_required
 def list_employee_benefits():
     employees = Employee.query.all()
     return render_template('payroll/admin/manage_benefits_list.html', employees=employees)
@@ -2010,7 +2008,7 @@ def list_employee_benefits():
     
 @payroll_admin_bp.route('/employee/<int:employee_id>/benefits/<string:benefit_type>', methods=['GET', 'POST'])
 @login_required
-@admin_required
+@payroll_admin_required
 def manage_employee_benefits(employee_id, benefit_type):
     employee = Employee.query.get_or_404(employee_id)
 

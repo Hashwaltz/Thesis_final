@@ -54,7 +54,7 @@ def login():
         else:
             flash('Invalid email or password.', 'error')
 
-    return render_template("payroll_login.html", form=form)
+    return render_template("payroll_auth/payroll_login.html", form=form)
 
 
 # =========================================================

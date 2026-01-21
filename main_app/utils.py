@@ -72,6 +72,17 @@ def employee_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+
+def payroll_admin_required(f):
+    """Decorator to require admin role"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'payroll_admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
 def staff_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -79,6 +90,7 @@ def staff_required(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
 
 
 # ------------------------
