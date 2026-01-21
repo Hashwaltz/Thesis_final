@@ -1,0 +1,91 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Add Position{% endblock %}
+
+{% block content %}
+<main class="p-6 text-gray-100">
+  <header class="mb-8">
+    <h1 class="text-3xl font-bold text-blue-400 flex items-center gap-2">
+      <i class="fa-solid fa-briefcase"></i>
+      Add Position
+    </h1>
+    <p class="text-gray-400">Fill in the position details below to create a new role.</p>
+  </header>
+
+  <div class="bg-[#1e293b] border border-blue-900/40 rounded-2xl shadow-xl p-8 w-full max-w-3xl mx-auto">
+    <h2 class="text-xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
+      <i class="fa-solid fa-briefcase"></i>
+      Position Details
+    </h2>
+
+    <form id="positionForm" method="POST" action="{{ url_for('hr_admin.add_position') }}" class="space-y-6">
+      <!-- Position Name -->
+      <div>
+        <label class="block text-gray-300 font-medium mb-2">Position Name</label>
+        <input
+          type="text"
+          name="name"
+          placeholder="Enter position name"
+          required
+          class="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        />
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-gray-300 font-medium mb-2">Description</label>
+        <textarea
+          name="description"
+          placeholder="Enter position description"
+          rows="4"
+          class="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-xl text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition resize-none"
+        ></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-4">
+        <button
+          type="submit"
+          id="submitBtn"
+          class="flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl shadow-md hover:shadow-blue-500/30 transition duration-200"
+        >
+          <i class="fa-solid fa-plus-circle"></i>
+          Add Position
+        </button>
+      </div>
+    </form>
+  </div>
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("positionForm");
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    Swal.fire({
+      background: '#ffffff',
+      color: '#1e293b',
+      title: "Confirm Add Position",
+      text: "Are you sure you want to add this position?",
+      icon: "question",
+      iconColor: "#2563eb",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#dc2626",
+      confirmButtonText: "Yes, Add it",
+      cancelButtonText: "Cancel",
+      customClass: {
+        popup: 'rounded-2xl shadow-lg',
+        title: 'text-lg font-semibold',
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

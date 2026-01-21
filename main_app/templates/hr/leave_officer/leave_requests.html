@@ -1,0 +1,126 @@
+{% extends 'hr/leave_officer/leave_base.html' %}
+{% block title %}Leave Requests | Leave Officer{% endblock %}
+
+{% block content %}
+<main class="p-6 max-w-7xl mx-auto space-y-6">
+
+  <!-- HEADER -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-3xl font-bold text-blue-500 flex items-center gap-3">
+      <i class="fa-solid fa-file-lines text-blue-400"></i>
+      Leave Requests
+    </h1>
+    <span class="text-gray-400 text-sm">Total: {{ leaves.total }}</span>
+  </header>
+
+  <!-- FILTER FORM -->
+  <form method="get" id="filterForm" class="bg-gray-800 p-4 rounded-2xl shadow-md mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+    <div>
+      <label class="block text-gray-300 font-medium mb-1">Status</label>
+      <select id="status" name="status"
+              class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+        <option value="">All</option>
+        <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
+        <option value="Approved" {% if status_filter == "Approved" %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-gray-300 font-medium mb-1">Department</label>
+      <select id="department" name="department"
+              class="w-full bg-gray-700 text-gray-200 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-400">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if selected_department|int == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white">
+        <i class="fa-solid fa-filter"></i> Apply
+      </button>
+    </div>
+  </form>
+
+  <!-- TABLE -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow-md p-4">
+    <table class="min-w-full divide-y divide-gray-700 text-gray-200">
+      <thead class="bg-gray-900 text-gray-200">
+        <tr>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Employee</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Leave Type</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Start Date</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">End Date</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Reason</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Status</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Requested At</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for leave in leaves.items %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-3 flex items-center gap-2">
+            <i class="fa-solid fa-user text-blue-400"></i>
+            {{ leave.employee.get_full_name() }}
+          </td>
+          <td class="px-4 py-3 flex items-center gap-2">
+            <i class="fa-solid fa-file-invoice text-yellow-400"></i>
+            {{ leave.leave_type.name }}
+          </td>
+          <td class="px-4 py-3">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-3">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-3">{{ leave.reason }}</td>
+          <td class="px-4 py-3">
+            <span class="font-semibold inline-flex items-center gap-1
+              {% if leave.status == 'Approved' %}text-green-500
+              {% elif leave.status == 'Pending' %}text-yellow-400
+              {% elif leave.status == 'Rejected' %}text-red-500{% endif %}">
+              {% if leave.status == 'Approved' %}<i class="fa-solid fa-circle-check"></i>{% endif %}
+              {% if leave.status == 'Pending' %}<i class="fa-solid fa-hourglass-half"></i>{% endif %}
+              {% if leave.status == 'Rejected' %}<i class="fa-solid fa-circle-xmark"></i>{% endif %}
+              {{ leave.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3">{{ leave.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="px-4 py-4 text-center text-gray-400">No leave requests found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- PAGINATION -->
+    {% if leaves.pages > 1 %}
+    <div class="flex justify-between items-center mt-4 text-gray-200">
+      {% if leaves.has_prev %}
+      <a href="{{ url_for('leave_officer.view_leaves', page=leaves.prev_num, status=status_filter, department=selected_department) }}"
+         class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg flex items-center gap-2">
+        <i class="fa-solid fa-chevron-left"></i> Previous
+      </a>
+      {% else %}<span></span>{% endif %}
+
+      <span>Page {{ leaves.page }} of {{ leaves.pages }}</span>
+
+      {% if leaves.has_next %}
+      <a href="{{ url_for('leave_officer.view_leaves', page=leaves.next_num, status=status_filter, department=selected_department) }}"
+         class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg flex items-center gap-2">
+        Next <i class="fa-solid fa-chevron-right"></i>
+      </a>
+      {% else %}<span></span>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('status').addEventListener('change', () => document.getElementById('filterForm').submit());
+  document.getElementById('department').addEventListener('change', () => document.getElementById('filterForm').submit());
+});
+</script>
+{% endblock %}

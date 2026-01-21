@@ -1,0 +1,144 @@
+{% extends 'hr/leave_officer/leave_base.html' %}
+
+{% block title %}Leave Report | Municipality of Norzagaray{% endblock %}
+
+{% block content %}
+<main class="p-6 bg-[#0f172a] min-h-screen text-gray-100">
+
+  <!-- ================== Report Header ================== -->
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-blue-400 flex justify-center items-center gap-2">
+      <i class="fa-solid fa-file-chart-line text-blue-400"></i>
+      Municipality of Norzagaray
+    </h1>
+    <h2 class="text-xl text-gray-300 mt-1">HR Leave Report</h2>
+    <p class="text-gray-400 mt-1">
+      Date Range: <span class="font-medium">{{ start_date }} to {{ end_date }}</span>
+    </p>
+    <p class="text-gray-400 text-sm mt-1">Generated: {{ current_date }}</p>
+  </div>
+
+  <!-- ================== Insights / Summary ================== -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+      <p class="text-gray-400 text-sm">Total Leave Requests</p>
+      <p class="text-2xl font-bold text-blue-400">{{ total_leaves }}</p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+      <p class="text-gray-400 text-sm">Average Days per Leave</p>
+      <p class="text-2xl font-bold text-green-400">{{ avg_days_per_leave }}</p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+      <p class="text-gray-400 text-sm">Most Common Leave Request Type</p>
+      <p class="text-2xl font-bold text-yellow-400">{{ most_common_leave_type or 'N/A' }}</p>
+    </div>
+  </div>
+
+  <!-- ================== Filters / Export ================== -->
+  <div class="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-6">
+    <form method="get" class="flex gap-2 flex-wrap items-center">
+      <input type="date" name="start_date" value="{{ start_date }}" class="px-3 py-2 rounded-lg bg-[#1e293b] border border-gray-700 text-gray-100">
+      <input type="date" name="end_date" value="{{ end_date }}" class="px-3 py-2 rounded-lg bg-[#1e293b] border border-gray-700 text-gray-100">
+      <select name="department_id" class="px-3 py-2 rounded-lg bg-[#1e293b] border border-gray-700 text-gray-100">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-white flex items-center gap-2 transition">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
+    </form>
+
+    <a href="#"
+       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-white transition">
+       <i class="fa-solid fa-download"></i> Export (.docx)
+    </a>
+  </div>
+
+  <!-- ================== Leave Table ================== -->
+  <div class="overflow-x-auto bg-[#1e293b] rounded-2xl shadow-lg border border-blue-900/40">
+    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base table-auto">
+      <thead class="bg-[#111827] text-gray-400 uppercase">
+        <tr>
+          <th class="px-4 py-3 text-left">Employee Name</th>
+          <th class="px-4 py-3 text-left">Department</th>
+          <th class="px-4 py-3 text-left">Leave Type</th>
+          <th class="px-4 py-3 text-left">Start Date</th>
+          <th class="px-4 py-3 text-left">End Date</th>
+          <th class="px-4 py-3 text-left">Days</th>
+          <th class="px-4 py-3 text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for lv in leave_data %}
+        <tr class="hover:bg-[#111827] transition">
+          <td class="px-4 py-2 flex items-center gap-2">
+            <i class="fa-solid fa-user text-blue-400"></i> {{ lv.employee.get_full_name() }}
+          </td>
+          <td class="px-4 py-2">{{ lv.employee.department.name if lv.employee.department else "N/A" }}</td>
+          <td class="px-4 py-2">{{ lv.leave_type.name if lv.leave_type else "N/A" }}</td>
+          <td class="px-4 py-2">{{ lv.start_date }}</td>
+          <td class="px-4 py-2">{{ lv.end_date }}</td>
+          <td class="px-4 py-2">{{ lv.days_requested }}</td>
+          <td class="px-4 py-2 font-semibold
+            {% if lv.status == 'Approved' %}text-green-400
+            {% elif lv.status == 'Pending' %}text-yellow-400
+            {% elif lv.status == 'Rejected' %}text-red-400{% endif %}">
+            {{ lv.status }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-gray-400">No leave requests found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================== Department Summary ================== -->
+  {% if dept_summary %}
+  <div class="mt-8">
+    <h3 class="text-xl font-semibold text-blue-400 mb-4">Department Summary</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% for dept, data in dept_summary.items() %}
+      <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+        <p class="text-gray-400 text-sm">Department: {{ dept }}</p>
+        <p class="text-lg font-bold text-blue-400">Total Leaves: {{ data.total }}</p>
+        <p class="text-lg font-bold text-yellow-400">Avg Days: {{ data.avg_days }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ================== Footer ================== -->
+  <div class="mt-10 text-gray-400 text-sm text-center">
+    Generated by: <b>{{ current_user.get_full_name() }}</b> | Leave Officer | Municipality of Norzagaray
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    main, main * {
+      visibility: visible;
+    }
+    main {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    button, a {
+      display: none;
+    }
+  }
+</style>
+{% endblock %}

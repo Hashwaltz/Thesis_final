@@ -1,0 +1,146 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Leave Requests | HR Admin{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Page Header -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+      <i class="fa-solid fa-calendar-days text-3xl"></i>
+      Leave Requests
+    </h1>
+  </header>
+
+  <!-- Filters -->
+  <form method="get" id="leaveFilterForm"
+        class="flex flex-col md:flex-row md:flex-wrap gap-4 items-start md:items-end bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
+
+    <!-- Status Filter -->
+    <div class="flex flex-col gap-2 w-full sm:w-1/2 md:w-1/4">
+      <label for="status" class="text-gray-400">Status</label>
+      <select id="status" name="status"
+              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+              onchange="document.getElementById('leaveFilterForm').submit()">
+        <option value="">All Status</option>
+        <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
+        <option value="Approved" {% if status_filter == "Approved" %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
+
+    <!-- Employee Filter -->
+    <div class="flex flex-col gap-2 w-full sm:w-1/2 md:w-1/4">
+      <label for="employee" class="text-gray-400">Employee</label>
+      <select id="employee" name="employee"
+              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+              onchange="document.getElementById('leaveFilterForm').submit()">
+        <option value="">All Employees</option>
+        {% for emp in employees %}
+          <option value="{{ emp.id }}" {% if employee_filter == emp.id|string %}selected{% endif %}>
+            {{ emp.get_full_name() }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Leave Type Filter -->
+    <div class="flex flex-col gap-2 w-full sm:w-1/2 md:w-1/4">
+      <label for="leave_type" class="text-gray-400">Leave Type</label>
+      <select id="leave_type" name="leave_type"
+              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+              onchange="document.getElementById('leaveFilterForm').submit()">
+        <option value="">All Types</option>
+        {% for ltype in leave_types %}
+          <option value="{{ ltype.id }}" {% if leave_type_filter == ltype.id|string %}selected{% endif %}>
+            {{ ltype.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="flex w-full sm:w-auto md:self-end">
+      <button type="submit"
+              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 w-full sm:w-auto justify-center transition">
+        <i class="fa-solid fa-magnifying-glass"></i> Filter
+      </button>
+    </div>
+  </form>
+
+  <!-- Leave Records Table -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base table-auto">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Employee</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Leave Type</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Start Date</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">End Date</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Reason</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Status</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Requested At</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for leave in leaves.items %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ leave.employee.get_full_name() }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ leave.leave_type.name }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-300 break-words max-w-xs">{{ leave.reason }}</td>
+          <td class="px-2 sm:px-4 py-2">
+            {% if leave.status == 'Approved' %}
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-700">
+                <i class="fa-solid fa-circle-check text-sm"></i> Approved
+              </span>
+            {% elif leave.status == 'Pending' %}
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-900/30 text-yellow-400 border border-yellow-700">
+                <i class="fa-solid fa-hourglass-half text-sm"></i> Pending
+              </span>
+            {% elif leave.status == 'Rejected' %}
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-900/30 text-red-400 border border-red-700">
+                <i class="fa-solid fa-circle-xmark text-sm"></i> Rejected
+              </span>
+            {% endif %}
+          </td>
+          <td class="px-2 sm:px-4 py-2 text-gray-400 whitespace-nowrap">{{ leave.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="px-4 py-3 text-center text-gray-400">No leave requests found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
+    {% if leaves.has_prev %}
+      <a href="{{ url_for('hr_admin.view_leaves', page=leaves.prev_num, status=status_filter, employee=employee_filter, leave_type=leave_type_filter) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Previous</a>
+    {% endif %}
+
+    <span class="px-4 py-2">Page {{ leaves.page }} of {{ leaves.pages }}</span>
+
+    {% if leaves.has_next %}
+      <a href="{{ url_for('hr_admin.view_leaves', page=leaves.next_num, status=status_filter, employee=employee_filter, leave_type=leave_type_filter) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Next</a>
+    {% endif %}
+  </div>
+
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Auto-submit on filter change
+  const form = document.getElementById("leaveFilterForm");
+  ["status","employee","leave_type"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", () => form.submit());
+  });
+});
+</script>
+{% endblock %}

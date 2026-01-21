@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Features | GovHRPay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1"
+      type="module"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link
+      rel="icon"
+      type="image/avif"
+      href="{{ url_for('static', filename='img/favicon.avif') }}"
+    />
+
+    <!-- Animations -->
+    <style>
+      @keyframes fadeInUp {0%{opacity:0; transform:translateY(30px);} 100%{opacity:1; transform:translateY(0);}}
+      .animate-fade-up {animation: fadeInUp 1s ease forwards;}
+      .delay-100 {animation-delay: 0.1s;}
+      .delay-200 {animation-delay: 0.2s;}
+      .delay-300 {animation-delay: 0.3s;}
+      .delay-400 {animation-delay: 0.4s;}
+      .delay-500 {animation-delay: 0.5s;}
+      .delay-600 {animation-delay: 0.6s;}
+      .delay-700 {animation-delay: 0.7s;}
+      .delay-800 {animation-delay: 0.8s;}
+      .delay-900 {animation-delay: 0.9s;}
+      .delay-1000 {animation-delay: 1s;}
+    </style>
+  </head>
+
+  <body class="bg-gray-900 text-gray-100">
+
+    <!-- HEADER -->
+    <header class="absolute inset-x-0 top-0 z-50 animate-fade-up delay-100">
+      <nav class="flex items-center justify-between p-6 lg:px-8">
+        <div class="flex lg:flex-1 items-center animate-fade-up delay-200">
+          <a href="/" class="-m-1.5 p-1.5 flex items-center space-x-2">
+            <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500" alt="Logo" class="h-8 w-auto"/>
+            <span class="text-white font-semibold text-lg">GovHRPay</span>
+          </a>
+        </div>
+        <div class="flex lg:hidden animate-fade-up delay-200">
+          <button type="button" command="show-modal" commandfor="mobile-menu" class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-300">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+        <div class="hidden lg:flex lg:gap-x-10 animate-fade-up delay-300">
+          <a href="{{ url_for('index') }}" class="text-sm font-semibold text-white hover:text-indigo-400">Home</a>
+          <a href="{{ url_for('about') }}" class="text-sm font-semibold text-white hover:text-indigo-400">About</a>
+          <a href="{{ url_for('features') }}" class="text-sm font-semibold text-indigo-400 border-b-2 border-indigo-400 pb-1">System Features</a>
+        </div>
+      </nav>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="relative isolate overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-700 py-32 animate-fade-up delay-400">
+      <div class="mx-auto max-w-3xl text-center px-6">
+        <h1 class="text-5xl font-bold text-white mb-4 animate-fade-up delay-500">Powerful Features</h1>
+        <p class="text-gray-200 text-lg animate-fade-up delay-600">
+          Discover what makes <span class="text-white font-semibold">GovHRPay</span> the most efficient and seamless Human Resources and Payroll management platform for modern organizations.
+        </p>
+      </div>
+    </section>
+
+    <!-- FEATURES GRID -->
+    <section id="features" class="py-20 bg-gray-900">
+      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-10">
+        {% set features = [
+          {'icon': 'fa-users', 'color': 'text-indigo-400', 'title': 'Employee Management', 'desc': 'Maintain complete employee profiles and monitor workforce activities.'},
+          {'icon': 'fa-calendar-check', 'color': 'text-green-400', 'title': 'Attendance Tracking', 'desc': 'Real-time attendance tracking integrated with biometrics or GSM-based systems.'},
+          {'icon': 'fa-coins', 'color': 'text-yellow-400', 'title': 'Payroll Automation', 'desc': 'Automatically compute salaries, deductions, and generate payslips with ease.'},
+          {'icon': 'fa-chart-pie', 'color': 'text-pink-400', 'title': 'Analytics Dashboard', 'desc': 'Get real-time insights into HR and payroll data with visual analytics.'},
+          {'icon': 'fa-lock', 'color': 'text-red-400', 'title': 'Secure Access Control', 'desc': 'Multi-role authentication ensures data confidentiality and security.'},
+          {'icon': 'fa-sync-alt', 'color': 'text-cyan-400', 'title': 'HR & Payroll Integration', 'desc': 'Seamless synchronization between HR records and payroll processes.'}
+        ] %}
+        {% for f in features %}
+        <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2 animate-fade-up delay-{{ 200 + loop.index*100 }}">
+          <i class="fas {{ f.icon }} text-5xl {{ f.color }} mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">{{ f.title }}</h3>
+          <p class="text-gray-400">{{ f.desc }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- MODULES -->
+    <section id="modules" class="py-20 bg-gray-950">
+      <div class="max-w-7xl mx-auto text-center px-6">
+        <h2 class="text-3xl font-bold text-white mb-12 animate-fade-up delay-500">System Modules</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {% set modules = [
+            {'icon': 'fa-user-tie', 'color': 'text-indigo-400', 'title': 'HR Management', 'desc': 'Employee data, leave requests, and personnel files.'},
+            {'icon': 'fa-receipt', 'color': 'text-green-400', 'title': 'Payroll Management', 'desc': 'Salary computation, allowances, and payslip generation.'},
+            {'icon': 'fa-clock', 'color': 'text-yellow-400', 'title': 'Attendance System', 'desc': 'Automated attendance with manual override options.'},
+            {'icon': 'fa-chart-line', 'color': 'text-pink-400', 'title': 'Analytics & Reports', 'desc': 'Customizable reports for HR and payroll summaries.'},
+            {'icon': 'fa-envelope', 'color': 'text-cyan-400', 'title': 'Notification Center', 'desc': 'Alerts for payroll releases, leave approvals, and system updates.'},
+            {'icon': 'fa-database', 'color': 'text-purple-400', 'title': 'Centralized Database', 'desc': 'Unified data access for HR and Payroll modules.'}
+          ] %}
+          {% for m in modules %}
+          <div class="bg-gray-800 rounded-2xl p-8 shadow hover:shadow-xl transition-transform hover:-translate-y-1 animate-fade-up delay-{{ 200 + loop.index*100 }}">
+            <i class="fas {{ m.icon }} text-4xl {{ m.color }} mb-3"></i>
+            <h4 class="text-lg font-semibold mb-1">{{ m.title }}</h4>
+            <p class="text-gray-400 text-sm">{{ m.desc }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-gray-950 text-gray-400 text-center py-6 animate-fade-up delay-1000">
+      <p>&copy; 2025 GovHRPay. All rights reserved.</p>
+    </footer>
+  </body>
+</html>

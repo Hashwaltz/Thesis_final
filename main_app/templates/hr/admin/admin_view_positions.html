@@ -1,0 +1,68 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Positions | HR Admin{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+  <!-- Page Header -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+      <i class="fa-solid fa-id-badge text-3xl"></i>
+      Position Details
+    </h1>
+
+    <a href="{{ url_for('hr_admin.add_position') }}"
+       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+      <i class="fa-solid fa-plus"></i> Add Position
+    </a>
+  </header>
+
+  <!-- Positions Table -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base table-auto">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Position Name</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Description</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Employees</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for position in positions.items %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ position.name }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ position.description or '-' }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee_counts.get(position.id, 0) }}</td>
+          <td class="px-2 sm:px-4 py-2">
+            <a href="{{ url_for('hr_admin.edit_position', position_id=position.id) }}"
+               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl text-sm flex items-center gap-1 transition justify-center">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span class="hidden sm:inline">Edit</span>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="px-4 py-3 text-center text-gray-400">No positions found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
+    {% if positions.has_prev %}
+      <a href="{{ url_for('hr_admin.view_positions', page=positions.prev_num) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Previous</a>
+    {% endif %}
+
+    <span class="px-4 py-2">Page {{ positions.page }} of {{ positions.pages }}</span>
+
+    {% if positions.has_next %}
+      <a href="{{ url_for('hr_admin.view_positions', page=positions.next_num) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Next</a>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "hr/employee/employee_base.html" %}
+{% block title %}Employee - Change Password{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10 p-6 bg-gray-800 rounded-2xl shadow-lg text-gray-100">
+  <h1 class="text-2xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
+    <i class="fa-solid fa-lock text-3xl"></i>
+    Change Password
+  </h1>
+
+  <form id="changePasswordForm" class="space-y-6">
+
+    <!-- Current Password -->
+    <div>
+      <label class="block text-gray-300 text-sm mb-1">Current Password</label>
+      <input type="password" name="current_password" required
+             class="w-full px-4 py-2 rounded-xl bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500"
+             placeholder="Enter current password">
+    </div>
+
+    <!-- New Password -->
+    <div>
+      <label class="block text-gray-300 text-sm mb-1">New Password</label>
+      <input type="password" name="new_password" required
+             class="w-full px-4 py-2 rounded-xl bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500"
+             placeholder="Enter new password">
+    </div>
+
+    <!-- Confirm Password -->
+    <div>
+      <label class="block text-gray-300 text-sm mb-1">Confirm New Password</label>
+      <input type="password" name="confirm_password" required
+             class="w-full px-4 py-2 rounded-xl bg-gray-700 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500"
+             placeholder="Confirm new password">
+    </div>
+
+    <button type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+      <i class="fa-solid fa-key"></i> Update Password
+    </button>
+
+  </form>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById("changePasswordForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData.entries());
+
+  // Validate password match
+  if (data.new_password !== data.confirm_password) {
+    return Swal.fire({
+      icon: 'error',
+      title: 'Mismatch',
+      text: 'New password and confirm password do not match.',
+      confirmButtonColor: '#2563EB'
+    });
+  }
+
+  // Confirm before submission
+  const confirm = await Swal.fire({
+    title: 'Confirm Change',
+    text: 'Are you sure you want to change your password?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#2563EB',
+    cancelButtonColor: '#6B7280',
+    confirmButtonText: 'Yes, change it!'
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  try {
+    const response = await fetch('{{ url_for("employee.edit_password") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+
+    const res = await response.json();
+    if (res.status === 'success') {
+      Swal.fire('Success!', res.message, 'success').then(() => location.reload());
+    } else {
+      Swal.fire('Error', res.message, 'error');
+    }
+  } catch (err) {
+    Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+  }
+});
+</script>
+{% endblock %}

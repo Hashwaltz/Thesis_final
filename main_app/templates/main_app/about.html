@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Norzagaray, Bulacan | GovHRPay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1"
+      type="module"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link
+      rel="icon"
+      type="image/avif"
+      href="{{ url_for('static', filename='img/favicon.avif') }}"
+    />
+
+    <!-- Custom Animations -->
+    <style>
+      @keyframes fadeInUp { 0% {opacity:0; transform:translateY(30px);} 100% {opacity:1; transform:translateY(0);} }
+      @keyframes fadeInLeft { 0% {opacity:0; transform:translateX(-30px);} 100% {opacity:1; transform:translateX(0);} }
+      @keyframes fadeInRight { 0% {opacity:0; transform:translateX(30px);} 100% {opacity:1; transform:translateX(0);} }
+
+      .animate-fade-up { animation: fadeInUp 1s ease forwards; }
+      .animate-fade-left { animation: fadeInLeft 1s ease forwards; }
+      .animate-fade-right { animation: fadeInRight 1s ease forwards; }
+
+      .delay-100 { animation-delay: 0.1s; }
+      .delay-200 { animation-delay: 0.2s; }
+      .delay-300 { animation-delay: 0.3s; }
+      .delay-400 { animation-delay: 0.4s; }
+      .delay-500 { animation-delay: 0.5s; }
+      .delay-600 { animation-delay: 0.6s; }
+      .delay-700 { animation-delay: 0.7s; }
+      .delay-800 { animation-delay: 0.8s; }
+      .delay-900 { animation-delay: 0.9s; }
+    </style>
+  </head>
+
+  <body class="bg-gray-900 text-gray-100">
+
+    <!-- NAVBAR -->
+    <header class="absolute inset-x-0 top-0 z-50 animate-fade-up delay-100">
+      <nav class="flex items-center justify-between p-6 lg:px-8">
+        <div class="flex lg:flex-1 items-center animate-fade-left delay-200">
+          <a href="{{ url_for('index') }}" class="-m-1.5 p-1.5 flex items-center space-x-2">
+            <span class="text-white font-semibold text-lg">GovHRPay</span>
+          </a>
+        </div>
+        <div class="flex lg:hidden animate-fade-right delay-200">
+          <button
+            type="button"
+            command="show-modal"
+            commandfor="mobile-menu"
+            class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-300 hover:text-white"
+          >
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+        <div class="hidden lg:flex lg:gap-x-10 animate-fade-up delay-300">
+          <a href="{{url_for('index')}}" class="text-sm font-semibold text-white hover:text-indigo-400">Home</a>
+          <a href="{{url_for('about')}}" class="text-sm font-semibold text-indigo-400">About</a>
+          <a href="{{url_for('features')}}" class="text-sm font-semibold text-white hover:text-indigo-400">System Features</a>
+        </div>
+      </nav>
+    </header>
+
+    <!-- HERO -->
+    <section
+      class="relative isolate w-full h-[90vh] flex items-center justify-center bg-cover bg-center animate-fade-up delay-400"
+      style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');"
+    >
+      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="relative text-center text-white px-6 z-10">
+        <h1 class="text-5xl font-bold tracking-tight sm:text-7xl mb-6 drop-shadow-lg animate-fade-up delay-500">
+          Discover Norzagaray, Bulacan
+        </h1>
+        <p class="mt-4 text-lg text-gray-200 max-w-2xl mx-auto drop-shadow animate-fade-up delay-600">
+          A land of heritage, progress, and natural beauty — the pride of Eastern Bulacan.
+        </p>
+      </div>
+    </section>
+
+    <!-- ABOUT NORZAGARAY -->
+    <section class="py-20 bg-gray-900">
+      <div class="max-w-6xl mx-auto px-6 animate-fade-up delay-400">
+        <h2 class="text-4xl font-bold text-center mb-12 text-white animate-fade-up delay-500">
+          About Norzagaray
+        </h2>
+
+        <div class="grid md:grid-cols-2 gap-10 items-center">
+          <div class="text-gray-300 text-lg leading-relaxed animate-fade-left delay-600">
+            <p class="mb-6">
+              <span class="text-green-400 font-semibold">Norzagaray</span> is a first-class municipality in Bulacan, known for its remarkable balance of nature and modern progress. It was established in <span class="font-semibold">1860</span> and named after the Spanish Governor-General <span class="italic">Fernando Norzagaray y Escudero</span>.
+            </p>
+            <p class="mb-6">
+              The town boasts significant landmarks such as the <span class="text-indigo-400">Angat Dam</span>, one of the most important water sources for Metro Manila, the <span class="text-indigo-400">Pinagrealan Cave</span> — a historic refuge for revolutionaries, and the <span class="text-indigo-400">Bakas River</span> — a scenic natural retreat.
+            </p>
+            <p class="mb-6">
+              Today, Norzagaray stands as a model of sustainable local governance. With thriving industries, eco-tourism, and strong leadership, the municipality continues to uphold its commitment to development while preserving its rich cultural roots.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 animate-fade-right delay-700">
+            <img src="{{ url_for('static', filename='img/angat_dam.jpg') }}" alt="Angat Dam" class="rounded-2xl shadow-lg hover:scale-105 transform transition duration-500" />
+            <img src="{{ url_for('static', filename='img/cave.webp') }}" alt="Pinagrealan Cave" class="rounded-2xl shadow-lg hover:scale-105 transform transition duration-500" />
+            <img src="{{ url_for('static', filename='img/bakas.JPG') }}" alt="Bakas River" class="rounded-2xl shadow-lg hover:scale-105 transform transition duration-500" />
+            <img src="{{url_for('static', filename='img/church.jpg')}}" alt="Norzagaray Church" class="rounded-2xl shadow-lg hover:scale-105 transform transition duration-500" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CULTURE -->
+    <section class="bg-gray-950 py-20">
+      <div class="max-w-6xl mx-auto px-6 text-center animate-fade-up delay-500">
+        <h3 class="text-3xl font-bold text-white mb-8">Culture & Heritage</h3>
+        <p class="text-gray-300 max-w-3xl mx-auto mb-12 animate-fade-up delay-600">
+          Norzagaray is celebrated for its lively <span class="text-indigo-400">Mayohan Festival</span>, traditional crafts, and agricultural pride. Its people are known for their hospitality, resilience, and dedication to both community and progress.
+        </p>
+
+        <div class="grid md:grid-cols-3 gap-6 animate-fade-up delay-700">
+          <div class="bg-gray-800 rounded-xl p-6 shadow hover:shadow-2xl animate-fade-up delay-800">
+            <img src="{{ url_for('static', filename='img/hall.jpg') }}" alt="Municipal Hall" class="rounded-lg mb-4" />
+            <h4 class="text-green-400 font-semibold mb-2">Municipal Hall</h4>
+            <p class="text-sm text-gray-400">The seat of governance symbolizing leadership and transparency.</p>
+          </div>
+          <div class="bg-gray-800 rounded-xl p-6 shadow hover:shadow-2xl animate-fade-up delay-900">
+            <img src="{{ url_for('static', filename='img/market.JPG') }}" alt="Public Market" class="rounded-lg mb-4" />
+            <h4 class="text-green-400 font-semibold mb-2">Public Market</h4>
+            <p class="text-sm text-gray-400">A hub of commerce and local livelihood that supports the town’s economy.</p>
+          </div>
+          <div class="bg-gray-800 rounded-xl p-6 shadow hover:shadow-2xl animate-fade-up delay-1000">
+            <img src="{{ url_for('static', filename='img/church2.jpg')}}" alt="Church" class="rounded-lg mb-4" />
+            <h4 class="text-green-400 font-semibold mb-2">St. Andrew Parish Church</h4>
+            <p class="text-sm text-gray-400">A timeless landmark representing the faith and culture of the Norzagarayeños.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOCIAL MEDIA -->
+    <section class="py-16 bg-gradient-to-r from-indigo-600 to-green-600 text-center text-white animate-fade-up delay-900">
+      <h3 class="text-2xl font-semibold mb-6">Connect with Norzagaray</h3>
+      <div class="flex justify-center gap-8 text-3xl">
+        <a href="https://www.facebook.com/InfoGaray" target="_blank" class="hover:text-blue-200"><i class="fab fa-facebook-square"></i></a>
+        <a href="https://www.instagram.com/explore/tags/norzagaray/" target="_blank" class="hover:text-pink-200"><i class="fab fa-instagram"></i></a>
+        <a href="https://norzagaray.gov.ph" target="_blank" class="hover:text-green-200"><i class="fa-solid fa-globe"></i></a>
+      </div>
+      <p class="mt-4 text-sm text-blue-100">Follow Norzagaray for updates, events, and community programs.</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-gray-950 text-gray-400 text-center py-6 animate-fade-up delay-1000">
+      &copy; {{ current_year or '2025' }} Municipality of Norzagaray, Bulacan | GovHRPay. All rights reserved.
+    </footer>
+  </body>
+</html>

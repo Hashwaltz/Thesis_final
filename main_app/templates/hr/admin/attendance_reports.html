@@ -1,0 +1,131 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Attendance Report | Municipality of Norzagaray{% endblock %}
+
+{% block content %}
+<main class="p-6 bg-[#0f172a] min-h-screen text-gray-100">
+
+  <!-- ================== Report Header ================== -->
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-blue-400">Municipality of Norzagaray</h1>
+    <h2 class="text-xl text-gray-300 mt-1">HR Attendance Report</h2>
+    <p class="text-gray-400 mt-1">
+      Date Range: <span class="font-medium">{{ start_date }} to {{ end_date }}</span>
+    </p>
+    <p class="text-gray-400 text-sm mt-1">Generated: {{ current_date }}</p>
+  </div>
+
+  <!-- ================== Insights / Summary ================== -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+      <p class="text-gray-400 text-sm">Total Employees</p>
+      <p class="text-2xl font-bold text-blue-400">{{ total_employees }}</p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+      <p class="text-gray-400 text-sm">Average Attendance Rate</p>
+      <p class="text-2xl font-bold text-green-400">{{ avg_attendance_rate }}%</p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+      <p class="text-gray-400 text-sm">Total Hours Worked</p>
+      <p class="text-2xl font-bold text-yellow-400">{{ total_hours_worked }}</p>
+    </div>
+  </div>
+
+  <!-- ================== Filters / Export ================== -->
+  <div class="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 mb-6">
+    <form method="get" class="flex gap-2 flex-wrap items-center">
+      <input type="date" name="start_date" value="{{ start_date }}" class="px-3 py-2 rounded-lg bg-[#1e293b] border border-gray-700 text-gray-100">
+      <input type="date" name="end_date" value="{{ end_date }}" class="px-3 py-2 rounded-lg bg-[#1e293b] border border-gray-700 text-gray-100">
+      <select name="department_id" class="px-3 py-2 rounded-lg bg-[#1e293b] border border-gray-700 text-gray-100">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+        <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-white flex items-center gap-2 transition">
+        <i class="fa-solid fa-filter"></i> Filter
+      </button>
+    </form>
+
+    <a href="{{ url_for('hr_admin.attendance_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
+       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-white transition">
+       <i class="fa-solid fa-file-arrow-down"></i> Export (.docx)
+    </a>
+  </div>
+
+  <!-- ================== Attendance Table ================== -->
+  <div class="overflow-x-auto bg-[#1e293b] rounded-2xl shadow-lg border border-blue-900/40">
+    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base table-auto">
+      <thead class="bg-[#111827] text-gray-400 uppercase">
+        <tr>
+          <th class="px-4 py-3 text-left">Employee Name</th>
+          <th class="px-4 py-3 text-left">Department</th>
+          <th class="px-4 py-3 text-left">Days Present</th>
+          <th class="px-4 py-3 text-left">Days Absent</th>
+          <th class="px-4 py-3 text-left">Late Count</th>
+          <th class="px-4 py-3 text-left">Total Hours Worked</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for row in report_data %}
+        <tr class="hover:bg-[#111827] transition">
+          <td class="px-4 py-2">{{ row.employee_name }}</td>
+          <td class="px-4 py-2">{{ row.department_name }}</td>
+          <td class="px-4 py-2">{{ row.days_present }}</td>
+          <td class="px-4 py-2">{{ row.days_absent }}</td>
+          <td class="px-4 py-2">{{ row.late_count }}</td>
+          <td class="px-4 py-2">{{ row.total_hours }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-4 text-gray-400">No attendance records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================== Department Summary ================== -->
+  {% if department_summary %}
+  <div class="mt-8">
+    <h3 class="text-xl font-semibold text-blue-400 mb-4">Department Summary</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% for dept in department_summary %}
+      <div class="bg-[#1e293b] p-4 rounded-2xl shadow-md border border-blue-900/40">
+        <p class="text-gray-400 text-sm"><i class="fa-solid fa-building"></i> Department: {{ dept.name }}</p>
+        <p class="text-lg font-bold text-blue-400"><i class="fa-solid fa-user-check"></i> Avg. Attendance: {{ dept.avg_attendance }}%</p>
+        <p class="text-lg font-bold text-yellow-400"><i class="fa-solid fa-clock"></i> Avg. Hours Worked: {{ dept.avg_hours }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ================== Footer ================== -->
+  <div class="mt-10 text-gray-400 text-sm text-center">
+    Generated by: <b>{{ current_user.get_full_name() }}</b> | HR Admin | Municipality of Norzagaray
+  </div>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    main, main * {
+      visibility: visible;
+    }
+    main {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+    }
+    button, a {
+      display: none;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,1 +1,0 @@
-from main_app.extensions import db, login_manager

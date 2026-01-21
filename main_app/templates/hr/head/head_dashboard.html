@@ -1,0 +1,205 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}GovHRPay | Dashboard{% endblock %}
+
+{% block content %}
+
+{% if not_assigned %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+Swal.fire({
+    icon: 'info',
+    title: 'Access Denied',
+    text: 'You are not assigned as a department head yet. Please wait for the admins to assign you.',
+    confirmButtonText: 'OK'
+}).then(() => {
+    window.location.href = "{{ url_for('hr_auth.logout') }}";
+});
+</script>
+{% endif %}
+
+<section class="p-6">
+
+  <!-- Header -->
+  <h1 class="text-2xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
+    <i class="fas fa-tachometer-alt text-3xl"></i>
+    {{ department.name if department else '' }} Department Head Dashboard
+  </h1>
+
+  <!-- Stats Overview -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Employees -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-blue-600 bg-opacity-20 rounded-full">
+        <i class="fas fa-users text-blue-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Total Employees</p>
+        <h2 class="text-3xl font-bold text-blue-400 mt-2">{{ total_employees }}</h2>
+      </div>
+    </div>
+
+    <!-- Recent Leave Requests -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-yellow-400 bg-opacity-20 rounded-full">
+        <i class="fas fa-file-medical text-yellow-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Recent Leave Requests</p>
+        <h2 class="text-3xl font-bold text-yellow-400 mt-2">{{ recent_leaves|length }}</h2>
+      </div>
+    </div>
+
+    <!-- Present -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-green-600 bg-opacity-20 rounded-full">
+        <i class="fas fa-check-circle text-green-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Present This Month</p>
+        <h2 class="text-3xl font-bold text-green-400 mt-2">{{ attendance_summary.total_present }}</h2>
+      </div>
+    </div>
+
+    <!-- Absent -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-red-600 bg-opacity-20 rounded-full">
+        <i class="fas fa-times-circle text-red-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Absent This Month</p>
+        <h2 class="text-3xl font-bold text-red-400 mt-2">{{ attendance_summary.total_absent }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Components -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Reminders -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fas fa-bell"></i> Reminders
+      </h3>
+      <ul class="list-disc list-inside text-gray-300 space-y-2">
+        {% for reminder in reminders %} <li>{{ reminder }}</li> {% else %} <li>No reminders</li> {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fas fa-bolt"></i> Quick Actions
+      </h3>
+      <div class="flex flex-col gap-3">
+        <a href="{{ url_for('dept_head.employees') }}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-center">Add Employee</a>
+        <a href="#" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-center">Approve Leave</a>
+        <a href="{{ url_for('dept_head.add_attendance') }}" class="bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded text-center">Add Attendance</a>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fas fa-sticky-note"></i> Notes
+      </h3>
+      <ul class="list-disc list-inside text-gray-300 space-y-2">
+        {% for note in notes %} <li>{{ note }}</li> {% else %} <li>No notes</li> {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Monthly Attendance Chart -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fas fa-calendar-check"></i> Monthly Attendance
+      </h3>
+      <div class="relative h-[300px]">
+        <canvas id="attendanceChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent Leave Chart + Table -->
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fas fa-file-alt"></i> Recent Leave Requests
+      </h3>
+      <div class="relative h-[300px] mb-4">
+        <canvas id="leaveChart"></canvas>
+      </div>
+
+      <!-- Recent Leaves Table -->
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-gray-300">
+          <thead class="border-b border-gray-600">
+            <tr>
+              <th class="px-4 py-2">Employee</th>
+              <th class="px-4 py-2">Leave Type</th>
+              <th class="px-4 py-2">From</th>
+              <th class="px-4 py-2">To</th>
+              <th class="px-4 py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for leave in recent_leaves %}
+            <tr class="border-b border-gray-700">
+              <td class="px-4 py-2">{{ leave.employee.name }}</td>
+              <td class="px-4 py-2">{{ leave.type }}</td>
+              <td class="px-4 py-2">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+              <td class="px-4 py-2">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+              <td class="px-4 py-2">{{ leave.status }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="px-4 py-2 text-center text-gray-500">No recent leave requests</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Attendance Chart
+  new Chart(document.getElementById('attendanceChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ attendance_summary.dates|tojson }},
+      datasets: [
+        { label: 'Present', data: {{ attendance_summary.present_counts|tojson }}, backgroundColor: 'rgba(16, 185, 129, 0.7)' },
+        { label: 'Absent', data: {{ attendance_summary.absent_counts|tojson }}, backgroundColor: 'rgba(239, 68, 68, 0.7)' },
+        { label: 'Late', data: {{ attendance_summary.late_counts|tojson }}, backgroundColor: 'rgba(245, 158, 11, 0.7)' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#d1d5db' } } },
+      scales: { x: { ticks: { color: '#9ca3af' } }, y: { ticks: { color: '#9ca3af' }, beginAtZero: true } }
+    }
+  });
+
+  // Leave Requests Chart
+  new Chart(document.getElementById('leaveChart'), {
+    type: 'bar',
+    data: {
+      labels: {{ recent_leaves|map(attribute='employee.name')|list|tojson }},
+      datasets: [{ label: 'Leave Days', data: {{ recent_leaves|map(attribute='days')|list|tojson }}, backgroundColor: 'rgba(59, 130, 246, 0.7)' }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#9ca3af' } }, y: { ticks: { color: '#9ca3af' }, beginAtZero: true } }
+    }
+  });
+});
+</script>
+
+{% endblock %}

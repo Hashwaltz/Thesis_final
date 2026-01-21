@@ -1,0 +1,120 @@
+{% extends 'hr/admin/admin_base.html' %} {% block title %}Departments |
+HR-Admin{% endblock %} {% block content %}
+<main class="p-6 space-y-6 text-white">
+  <!-- Header Section -->
+  <header
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4"
+  >
+    <h1 class="text-2xl font-bold flex items-center gap-2">
+      <i class="fa-solid fa-building text-blue-400"></i>
+      Department List
+    </h1>
+
+    <!-- Search Bar -->
+    <form
+      method="get"
+      action="{{ url_for('hr_admin.view_departments') }}"
+      class="relative w-full sm:w-72"
+    >
+      <input
+        type="text"
+        name="search"
+        value="{{ request.args.get('search', '') }}"
+        placeholder="Search department..."
+        class="w-full bg-gray-800 text-white border border-gray-700 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <i
+        class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+      ></i>
+    </form>
+  </header>
+
+  {% if departments.items %}
+  <!-- Department Cards -->
+  <div
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6"
+  >
+    {% for dept in departments.items %}
+    <a
+      href="{{ url_for('hr_admin.department_details', department_id=dept.id) }}"
+      class="group bg-gray-800 hover:shadow-[0_0_20px_4px_rgba(64,112,244,0.4)] hover:-translate-y-1 transition-all duration-300 p-6 rounded-2xl shadow-lg flex flex-col justify-between border border-gray-700 hover:border-blue-500"
+    >
+      <div class="flex flex-col items-start space-y-4">
+        <div
+          class="flex items-center justify-center w-14 h-14 rounded-full bg-blue-600 bg-opacity-20 text-blue-400 group-hover:bg-opacity-30 transition"
+        >
+          <i class="fa-solid fa-building-columns text-4xl"></i>
+        </div>
+
+        <h2 class="text-xl font-semibold">{{ dept.name }}</h2>
+      </div>
+
+      <div
+        class="mt-auto pt-4 space-y-2 text-sm border-t border-gray-700 w-full"
+      >
+        <p class="flex items-center gap-2">
+          <i class="fa-solid fa-id-badge text-blue-400 text-lg"></i>
+          <span class="font-semibold text-blue-400">Head:</span>
+          {% if dept.head %} {{ dept.head.get_full_name() }} {% else %}
+          <em class="text-gray-400">No Head Assigned</em>
+          {% endif %}
+        </p>
+
+        <p class="flex items-center gap-2">
+          <i class="fa-solid fa-users text-blue-400 text-lg"></i>
+          <span class="font-semibold text-blue-400">Employees:</span>
+          {{ employee_counts.get(dept.id, 0) }}
+        </p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex justify-center items-center gap-4 mt-8">
+    {% if departments.has_prev %}
+    <a
+      href="{{ url_for('hr_admin.view_departments', page=departments.prev_num, search=request.args.get('search')) }}"
+      class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-blue-600"
+      >Previous</a
+    >
+    {% endif %}
+    <span>Page {{ departments.page }} of {{ departments.pages }}</span>
+    {% if departments.has_next %}
+    <a
+      href="{{ url_for('hr_admin.view_departments', page=departments.next_num, search=request.args.get('search')) }}"
+      class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-blue-600"
+      >Next</a
+    >
+    {% endif %}
+  </div>
+
+  {% else %}
+  <p class="text-center text-gray-400 mt-6">No departments found.</p>
+  {% endif %}
+</main>
+
+<script>
+  const searchInput = document.querySelector('input[name="search"]');
+  const departmentContainer = document.getElementById("department-container");
+
+  let debounceTimer;
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const query = searchInput.value;
+
+      fetch(`{{ url_for('hr_admin.view_departments') }}?search=${query}`, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then((res) => res.text())
+        .then((html) => {
+          departmentContainer.innerHTML = html;
+        });
+    }, 300); // debounce 300ms
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "hr/head/head_base.html" %}
+{% block title %}HR Head - Change Password{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 flex justify-center">
+
+  <div class="w-full max-w-lg bg-gray-800 border border-gray-700
+              rounded-2xl shadow-lg p-6 space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl
+                  flex items-center justify-center">
+        <i class="fa-solid fa-lock text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-semibold text-gray-100">Change Password</h1>
+        <p class="text-sm text-gray-400">Update your account security</p>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST"
+          action="{{ url_for('dept_head.edit_password') }}"
+          id="editProfileForm"
+          class="space-y-4">
+
+      <!-- Email -->
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Email</label>
+        <input type="email"
+               value="{{ current_user.email }}"
+               readonly
+               class="w-full bg-gray-700 text-gray-300 rounded-lg px-3 py-2
+                      border border-gray-600 cursor-not-allowed">
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">New Password</label>
+        <input type="password"
+               name="password"
+               id="password"
+               placeholder="Enter new password"
+               class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                      border border-gray-600 focus:outline-none
+                      focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-end gap-3 pt-4">
+        <a href="{{ url_for('dept_head.dashboard') }}"
+           class="bg-gray-600 hover:bg-gray-700 text-white
+                  px-4 py-2 rounded-xl transition">
+          Cancel
+        </a>
+
+        <button type="button"
+                id="saveProfileBtn"
+                class="bg-blue-600 hover:bg-blue-700 text-white
+                       px-5 py-2 rounded-xl flex items-center gap-2 transition">
+          <i class="fa-solid fa-floppy-disk"></i>
+          Update Password
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const saveBtn = document.getElementById("saveProfileBtn");
+  const form = document.getElementById("editProfileForm");
+
+  saveBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    Swal.fire({
+      title: "Update password?",
+      text: "Make sure you remember your new password.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, update",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#6b7280",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      Swal.fire({
+        icon: '{{ "success" if category=="success" else "warning" }}',
+        title: '{{ "Success" if category=="success" else "Warning" }}',
+        text: '{{ message }}',
+        confirmButtonColor: '#2563eb'
+      });
+    {% endfor %}
+  {% endwith %}
+});
+</script>
+{% endblock %}

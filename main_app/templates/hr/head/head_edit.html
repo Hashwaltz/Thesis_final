@@ -1,0 +1,175 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Employee Details{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl
+                  flex items-center justify-center">
+        <i class="fa-solid fa-user text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-100">Employee Details</h1>
+        <p class="text-sm text-gray-400">View complete employee information</p>
+      </div>
+    </div>
+
+    <a href="{{ url_for('dept_head.employees') }}"
+       class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl
+              flex items-center gap-2 transition">
+      <i class="fa-solid fa-arrow-left"></i>
+      Back to List
+    </a>
+  </header>
+
+  <!-- Profile Summary -->
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-5
+              flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <img src="{{ employee.photo if employee.photo else url_for('static', filename='images/user/user_logo.webp') }}"
+           class="w-16 h-16 rounded-full object-cover border border-gray-600">
+
+      <div>
+        <h2 class="text-lg font-semibold text-gray-100">
+          {{ employee.get_full_name() }}
+        </h2>
+        <p class="text-sm text-gray-400">
+          {{ employee.position.name if employee.position else 'No Position' }}
+        </p>
+        <p class="text-xs text-gray-500">
+          {{ department.name if department else 'Unassigned Department' }}
+        </p>
+      </div>
+    </div>
+
+    <span class="px-4 py-2 rounded-full text-sm font-medium
+      {% if employee.active %}
+        bg-green-600/20 text-green-400
+      {% else %}
+        bg-red-600/20 text-red-400
+      {% endif %}
+    ">
+      {{ 'Active Employee' if employee.active else 'Inactive Employee' }}
+    </span>
+  </div>
+
+  <!-- Details Card -->
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow p-6 space-y-8">
+
+    {% macro field(label, value) %}
+    <div>
+      <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+        {{ label }}
+      </label>
+      <input type="text" value="{{ value }}" readonly
+             class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                    border border-gray-600 cursor-not-allowed">
+    </div>
+    {% endmacro %}
+
+    <!-- Personal Information -->
+    <section>
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-id-card"></i>
+        Personal Information
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {{ field("First Name", employee.first_name) }}
+        {{ field("Middle Name", employee.middle_name) }}
+        {{ field("Last Name", employee.last_name) }}
+        {{ field("Email", employee.email) }}
+        {{ field("Mobile Number", employee.phone) }}
+        {{ field("Address", employee.address) }}
+      </div>
+    </section>
+
+    <!-- Employment Information -->
+    <section>
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-briefcase"></i>
+        Employment Information
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        {{ field("Salary", employee.salary) }}
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+            Date of Birth
+          </label>
+          <input type="date"
+                 value="{{ employee.date_of_birth.strftime('%Y-%m-%d') if employee.date_of_birth else '' }}"
+                 readonly
+                 class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                        border border-gray-600 cursor-not-allowed">
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+            Date Hired
+          </label>
+          <input type="date"
+                 value="{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '' }}"
+                 readonly
+                 class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                        border border-gray-600 cursor-not-allowed">
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+            Position
+          </label>
+          <select disabled class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+            {% for pos in positions %}
+            <option {% if employee.position_id == pos.id %}selected{% endif %}>{{ pos.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+            Department
+          </label>
+          <select disabled class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+            {% for dept in departments %}
+            <option {% if employee.department_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-gray-400 mb-1">
+            Marital Status
+          </label>
+          <select disabled class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+            {% for s in ['Single','Married','Separated','Divorced','Widowed'] %}
+            <option {% if employee.marital_status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Emergency Contact -->
+    <section>
+      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-phone"></i>
+        Emergency Contact
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {{ field("Emergency Contact Name", employee.emergency_contact) }}
+        {{ field("Emergency Contact Number", employee.emergency_phone) }}
+      </div>
+    </section>
+
+  </div>
+
+</main>
+{% endblock %}

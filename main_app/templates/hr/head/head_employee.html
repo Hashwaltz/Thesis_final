@@ -1,0 +1,125 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Department Head | Employees{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Page Header -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+      <i class="fa-solid fa-id-badge text-3xl"></i>
+      Employee Records
+      <span class="text-gray-400 text-sm font-normal">
+        — {{ department.name if department else "Unassigned Department" }}
+      </span>
+    </h1>
+  </header>
+
+  <!-- Search -->
+  <form method="get" action="{{ url_for('dept_head.employees') }}"
+        class="flex flex-col md:flex-row gap-4 items-end bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
+
+    <div class="flex flex-col gap-2 w-full md:flex-1">
+      <label class="text-gray-400">Search</label>
+      <input type="text" name="search" value="{{ search }}"
+             placeholder="Search employees..."
+             class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full
+                    focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>
+
+    <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl
+                   flex items-center gap-2 transition">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span class="hidden sm:inline">Search</span>
+    </button>
+  </form>
+
+  <!-- Employee Table -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Full Name</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Email</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Position</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Date Hired</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Status</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for employee in employees.items %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ employee.get_full_name() }}
+          </td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ employee.email }}
+          </td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ employee.position.name if employee.position else '-' }}
+          </td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}
+          </td>
+          <td class="px-2 sm:px-4 py-2">
+            <span class="px-2 py-1 rounded-xl text-sm font-medium
+              {% if employee.status == 'Active' %}
+                text-green-500
+              {% elif employee.status == 'Retired' %}
+                text-gray-400
+              {% elif employee.status == 'Resigned' %}
+                text-yellow-500
+              {% elif employee.status == 'Fired' %}
+                text-red-600
+              {% else %}
+                text-gray-300
+              {% endif %}
+            ">
+              {{ employee.status }}
+            </span>
+          </td>
+          <td class="px-2 sm:px-4 py-2">
+            <a href="{{ url_for('dept_head.edit_employee', employee_id=employee.id) }}"
+               class="bg-blue-600 hover:bg-blue-700 text-white
+                      px-3 py-1 rounded-xl text-sm
+                      flex items-center gap-1 transition justify-center w-fit">
+              <i class="fa-solid fa-eye text-sm"></i>
+              <span class="hidden sm:inline">View</span>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="px-4 py-4 text-center text-gray-400">
+            No employees found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
+    {% if employees.has_prev %}
+    <a href="{{ url_for('dept_head.employees', page=employees.prev_num, search=search) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
+      Previous
+    </a>
+    {% endif %}
+
+    <span class="px-4 py-2">{{ employees.page }} of {{ employees.pages }}</span>
+
+    {% if employees.has_next %}
+    <a href="{{ url_for('dept_head.employees', page=employees.next_num, search=search) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
+      Next
+    </a>
+    {% endif %}
+  </div>
+
+</main>
+{% endblock %}

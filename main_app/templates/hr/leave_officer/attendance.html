@@ -1,0 +1,106 @@
+{% extends "hr/leave_officer/leave_base.html" %}
+{% block title %}Attendance Overview{% endblock %}
+
+{% block content %}
+<main class="p-6 max-w-7xl mx-auto space-y-6 text-gray-100">
+
+  <!-- HEADER -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-blue-400">
+      Attendance Overview
+    </h1>
+    <p class="text-gray-400">Late, Absent, and On Leave employees</p>
+  </div>
+
+  <!-- FILTER FORM -->
+  <form method="get" class="bg-gray-800 p-4 rounded-2xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-6">
+    <div>
+      <label class="block text-gray-300 font-medium mb-1">Date</label>
+      <input type="date" name="date" value="{{ selected_date }}"
+             class="w-full px-3 py-2 bg-gray-700 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400">
+    </div>
+
+    <div>
+      <label class="block text-gray-300 font-medium mb-1">Status</label>
+      <select name="status"
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400">
+        <option value="">All Status</option>
+        <option value="late" {{ 'selected' if status == 'late' }}>Late</option>
+        <option value="absent" {{ 'selected' if status == 'absent' }}>Absent</option>
+        <option value="on_leave" {{ 'selected' if status == 'on_leave' }}>On Leave</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-gray-300 font-medium mb-1">Department</label>
+      <select name="department_id"
+              class="w-full px-3 py-2 bg-gray-700 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400">
+        <option value="">All Departments</option>
+        {% for d in departments %}
+          <option value="{{ d.id }}" {{ 'selected' if department_id == d.id }}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg">
+        Apply
+      </button>
+    </div>
+  </form>
+
+  <!-- ATTENDANCE TABLE -->
+  <div class="bg-gray-800 rounded-2xl shadow-md overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-700 text-gray-200">
+      <thead class="bg-gray-900 text-gray-200">
+        <tr>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Employee</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Department</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Date</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider">Status</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for r in records %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-3">{{ r.employee.get_full_name() }}</td>
+          <td class="px-4 py-3">{{ r.department }}</td>
+          <td class="px-4 py-3">{{ r.date }}</td>
+          <td class="px-4 py-3 font-semibold
+            {% if r.status == 'Late' %}text-yellow-400{% elif r.status == 'Absent' %}text-red-400{% elif r.status == 'On Leave' %}text-green-400{% endif %}">
+            {{ r.status }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="py-6 text-center text-gray-400">No records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="flex justify-between items-center mt-6 text-gray-200">
+    <span class="text-sm">Showing {{ records|length }} of {{ total }}</span>
+
+    <div class="flex gap-2">
+      {% if page > 1 %}
+      <a href="{{ url_for('leave_officer.attendance', page=page-1, status=status, department_id=department_id, date=selected_date) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 flex items-center gap-2">
+        Prev
+      </a>
+      {% endif %}
+
+      {% if total > page * 10 %}
+      <a href="{{ url_for('leave_officer.attendance', page=page+1, status=status, department_id=department_id, date=selected_date) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 flex items-center gap-2">
+        Next
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+</main>
+{% endblock %}

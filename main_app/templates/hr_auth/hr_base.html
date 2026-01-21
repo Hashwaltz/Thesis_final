@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}GovHRPay | HR System{% endblock %}</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='img/favicon.avif') }}"
+    />
+    <!-- Font Awesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      referrerpolicy="no-referrer"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#2563eb",
+                dark: "#1e40af",
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Animations -->
+    <style>
+      @keyframes fadeInUp {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-up {
+        animation: fadeInUp 0.8s ease forwards;
+      }
+      .delay-100 { animation-delay: 0.1s; }
+      .delay-200 { animation-delay: 0.2s; }
+      .delay-300 { animation-delay: 0.3s; }
+      .delay-400 { animation-delay: 0.4s; }
+      .delay-500 { animation-delay: 0.5s; }
+      .delay-600 { animation-delay: 0.6s; }
+      .delay-700 { animation-delay: 0.7s; }
+      .delay-800 { animation-delay: 0.8s; }
+      .delay-900 { animation-delay: 0.9s; }
+    </style>
+  </head>
+
+  <body
+    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white"
+  >
+    <!-- Navbar -->
+    <header class="bg-gray-900 shadow-md sticky top-0 z-50 animate-fade-up delay-100">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16"
+      >
+        <!-- Logo -->
+        <a
+          href="{{ url_for('index') }}"
+          class="flex items-center space-x-2 text-white animate-fade-up delay-200"
+        >
+          <img
+            src="{{ url_for('static', filename='img/logo2.avif') }}"
+            alt="Logo"
+            class="w-10 h-10 rounded-full object-cover"
+          />
+          <span class="text-xl font-semibold">GovHRPay HR System</span>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex space-x-8 text-gray-300 font-medium animate-fade-up delay-300">
+          <a
+            href="{{ url_for('index') }}"
+            class="hover:text-blue-400 transition-colors"
+            >Home</a
+          >
+          <a
+            href="{{ url_for('hr_auth.login') }}"
+            class="hover:text-blue-400 transition-colors"
+            >Login</a
+          >
+          <a
+            href="{{ url_for('hr_auth.about_hr') }}"
+            class="hover:text-blue-400 transition-colors"
+            >About</a
+          >
+          <a
+            href="{{ url_for('hr_auth.hr_features') }}"
+            class="hover:text-blue-400 transition-colors"
+            >Features</a
+          >
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button
+          id="menu-toggle"
+          class="md:hidden text-gray-300 hover:text-white focus:outline-none animate-fade-up delay-400"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16m-7 6h7"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Dropdown Menu -->
+      <div id="mobile-menu" class="hidden md:hidden bg-gray-800 border-t border-gray-700 animate-fade-up delay-500">
+        <nav class="flex flex-col items-center py-3 space-y-3">
+          <a
+            href="{{ url_for('index') }}"
+            class="text-gray-300 hover:text-blue-400 transition-colors"
+            >Home</a
+          >
+          <a
+            href="{{ url_for('hr_auth.about_hr') }}"
+            class="text-gray-300 hover:text-blue-400 transition-colors"
+            >About</a
+          >
+          <a
+            href="{{ url_for('hr_auth.hr_features') }}"
+            class="text-gray-300 hover:text-blue-400 transition-colors"
+            >Features</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 flex justify-center items-center py-10 px-4 animate-fade-up delay-600">
+      {% block content %}
+      <!-- Page-specific content -->
+      {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer
+      class="bg-gray-900 text-gray-400 py-6 text-center text-sm border-t border-gray-800 animate-fade-up delay-700"
+    >
+      &copy; {{ current_year or '2025' }} GovHRPay | HR System. All rights
+      reserved.
+    </footer>
+
+    <!-- Scripts -->
+    {% block scripts %}
+    <script>
+      const menuToggle = document.getElementById("menu-toggle");
+      const mobileMenu = document.getElementById("mobile-menu");
+      menuToggle.addEventListener("click", () => {
+        mobileMenu.classList.toggle("hidden");
+      });
+    </script>
+    {% endblock %}
+  </body>
+</html>

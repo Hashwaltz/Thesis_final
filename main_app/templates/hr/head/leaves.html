@@ -1,0 +1,193 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Department Head - Leave Requests{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl
+                  flex items-center justify-center">
+        <i class="fa-solid fa-calendar-check text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-100">Leave Requests</h1>
+        <p class="text-sm text-gray-400">Review and manage employee leave applications</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filters -->
+  <form method="get" id="statusFilterForm"
+        class="bg-gray-800 border border-gray-700 rounded-2xl p-4
+               flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+
+    <div class="flex flex-col w-full sm:w-64">
+      <label class="text-xs uppercase tracking-wide text-gray-400 mb-1">
+        Status
+      </label>
+      <select name="status"
+              onchange="document.getElementById('statusFilterForm').submit()"
+              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                     border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All</option>
+        <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
+        <option value="Approved" {% if status_filter == "Approved" %}selected{% endif %}>Approved</option>
+        <option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+      </select>
+    </div>
+
+  </form>
+
+  <!-- Leave Table -->
+  <div class="overflow-x-auto bg-gray-800 border border-gray-700 rounded-2xl shadow">
+    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-4 py-3 text-left text-gray-400">Employee</th>
+          <th class="px-4 py-3 text-left text-gray-400">Leave Type</th>
+          <th class="px-4 py-3 text-left text-gray-400">Start</th>
+          <th class="px-4 py-3 text-left text-gray-400">End</th>
+          <th class="px-4 py-3 text-left text-gray-400">Reason</th>
+          <th class="px-4 py-3 text-left text-gray-400">Status</th>
+          <th class="px-4 py-3 text-left text-gray-400">Requested At</th>
+          <th class="px-4 py-3 text-left text-gray-400">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for leave in leaves.items %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ leave.employee.get_full_name() }}
+          </td>
+
+          <td class="px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ leave.leave_type.name }}
+          </td>
+
+          <td class="px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ leave.start_date.strftime('%Y-%m-%d') }}
+          </td>
+
+          <td class="px-4 py-2 text-gray-200 whitespace-nowrap">
+            {{ leave.end_date.strftime('%Y-%m-%d') }}
+          </td>
+
+          <td class="px-4 py-2 text-gray-300 max-w-xs truncate">
+            {{ leave.reason }}
+          </td>
+
+          <td class="px-4 py-2">
+            <span class="px-3 py-1 rounded-full text-sm font-medium
+              {% if leave.status == 'Approved' %}
+                bg-green-600/20 text-green-400
+              {% elif leave.status == 'Pending' %}
+                bg-yellow-500/20 text-yellow-400
+              {% elif leave.status == 'Rejected' %}
+                bg-red-600/20 text-red-400
+              {% endif %}
+            ">
+              {{ leave.status }}
+            </span>
+          </td>
+
+          <td class="px-4 py-2 text-gray-400 whitespace-nowrap">
+            {{ leave.created_at.strftime('%Y-%m-%d %H:%M') }}
+          </td>
+
+          <td class="px-4 py-2">
+            {% if leave.status == 'Pending' %}
+            <div class="flex flex-col gap-2 w-44">
+
+              <!-- Approve -->
+              <form method="POST"
+                    action="{{ url_for('dept_head.approve_leave', leave_id=leave.id) }}"
+                    class="space-y-1">
+                <input type="hidden" name="status" value="Approved">
+                <input type="text" name="comments"
+                       placeholder="Optional comment"
+                       class="w-full bg-gray-700 text-gray-200 rounded-lg px-2 py-1
+                              border border-gray-600 focus:ring-2 focus:ring-green-500">
+                <button type="submit"
+                        class="w-full bg-green-600 hover:bg-green-700 text-white
+                               px-3 py-1 rounded-xl transition flex items-center justify-center gap-1">
+                  <i class="fa-solid fa-check"></i> Approve
+                </button>
+              </form>
+
+              <!-- Reject -->
+              <form method="POST"
+                    action="{{ url_for('dept_head.approve_leave', leave_id=leave.id) }}"
+                    class="space-y-1">
+                <input type="hidden" name="status" value="Rejected">
+                <input type="text" name="comments"
+                       placeholder="Optional comment"
+                       class="w-full bg-gray-700 text-gray-200 rounded-lg px-2 py-1
+                              border border-gray-600 focus:ring-2 focus:ring-red-500">
+                <button type="submit"
+                        class="w-full bg-red-600 hover:bg-red-700 text-white
+                               px-3 py-1 rounded-xl transition flex items-center justify-center gap-1">
+                  <i class="fa-solid fa-xmark"></i> Reject
+                </button>
+              </form>
+
+            </div>
+            {% else %}
+              <span class="text-gray-500 text-sm">No actions</span>
+            {% endif %}
+          </td>
+        </tr>
+
+        {% else %}
+        <tr>
+          <td colspan="8" class="px-4 py-6 text-center text-gray-400">
+            No leave requests found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if leaves.pages > 1 %}
+  <div class="flex justify-center items-center gap-4 mt-4 text-gray-400">
+    {% if leaves.has_prev %}
+    <a href="{{ url_for('dept_head.leaves', page=leaves.prev_num, status=status_filter) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
+      Previous
+    </a>
+    {% endif %}
+
+    <span>{{ leaves.page }} of {{ leaves.pages }}</span>
+
+    {% if leaves.has_next %}
+    <a href="{{ url_for('dept_head.leaves', page=leaves.next_num, status=status_filter) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
+      Next
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      Swal.fire({
+        icon: '{{ "success" if category=="success" else "error" }}',
+        title: '{{ msg }}',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    {% endfor %}
+  {% endwith %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "hr/leave_officer/leave_base.html" %}
+{% block title %}Leave Officer Dashboard{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- HEADER -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+      <i class="fa-solid fa-file-signature text-3xl"></i>
+      Leave Officer Dashboard
+    </h1>
+    <span class="text-gray-400 text-sm">{{ current_month_year }}</span>
+  </header>
+
+  <!-- INFO CARDS -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
+      <i class="fa-solid fa-hourglass-half text-yellow-400 text-3xl"></i>
+      <div>
+        <p class="text-gray-400 text-sm">Pending Leaves</p>
+        <h2 class="text-3xl font-bold text-yellow-400">{{ pending_leaves }}</h2>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
+      <i class="fa-solid fa-circle-check text-green-400 text-3xl"></i>
+      <div>
+        <p class="text-gray-400 text-sm">Approved Leaves</p>
+        <h2 class="text-3xl font-bold text-green-400">{{ approved_leaves }}</h2>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
+      <i class="fa-solid fa-circle-xmark text-red-400 text-3xl"></i>
+      <div>
+        <p class="text-gray-400 text-sm">Rejected Leaves</p>
+        <h2 class="text-3xl font-bold text-red-400">{{ rejected_leaves }}</h2>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
+      <i class="fa-solid fa-users text-blue-400 text-3xl"></i>
+      <div>
+        <p class="text-gray-400 text-sm">Active Employees</p>
+        <h2 class="text-3xl font-bold text-blue-400">{{ total_users }}</h2>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- REMINDERS -->
+  {% if reminders %}
+  <div class="bg-yellow-900/30 border border-yellow-600 rounded-xl p-4">
+    <h3 class="font-semibold text-yellow-400 mb-2">
+      <i class="fa-solid fa-bell mr-2"></i> Reminders
+    </h3>
+    <ul class="list-disc list-inside text-yellow-300 text-sm">
+      {% for reminder in reminders %}
+        <li>{{ reminder }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- LEAVE GRAPH -->
+  <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+    <h2 class="text-lg font-semibold text-gray-200 mb-3">
+      <i class="fa-solid fa-chart-line mr-2"></i> Monthly Leave Requests
+    </h2>
+
+    <canvas id="leaveChart" height="110"></canvas>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById("leaveChart");
+
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ monthly_leave_labels | tojson }},
+      datasets: [
+        {
+          label: "Pending",
+          data: {{ pending_data | tojson }},
+          borderColor: "#FACC15",
+          backgroundColor: "#FACC1580",
+          borderWidth: 2,
+          tension: 0.4
+        },
+        {
+          label: "Approved",
+          data: {{ approved_data | tojson }},
+          borderColor: "#22C55E",
+          backgroundColor: "#22C55E80",
+          borderWidth: 2,
+          tension: 0.4
+        },
+        {
+          label: "Rejected",
+          data: {{ rejected_data | tojson }},
+          borderColor: "#EF4444",
+          backgroundColor: "#EF444480",
+          borderWidth: 2,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: "#E5E7EB"
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#9CA3AF" },
+          grid: { color: "#374151" }
+        },
+        y: {
+          ticks: { color: "#9CA3AF" },
+          grid: { color: "#374151" }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

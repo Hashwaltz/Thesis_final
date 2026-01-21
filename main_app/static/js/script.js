@@ -286,22 +286,29 @@ function makeRequest(url, method, data, callback) {
 }
 */
 // Function to toggle password visibility
-function togglePasswordVisibility(passwordFieldId, toggleButtonId) {
-    const passwordInput = document.getElementById(passwordFieldId);
-    const toggleBtn = document.getElementById(toggleButtonId);
 
-    if (passwordInput && toggleBtn) {
-        toggleBtn.addEventListener('click', function () {
-            const type = passwordInput.type === 'password' ? 'text' : 'password';
-            passwordInput.type = type;
 
-            // Optional: toggle a class for styling the icon
-            toggleBtn.classList.toggle('showing');
-        });
-    }
-}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const logoutBtn = document.getElementById("logoutBtn");
 
-// Call the function when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    togglePasswordVisibility('password', 'passwordToggle');
+  logoutBtn.addEventListener("click", function (e) {
+    e.preventDefault(); // Prevent default action
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out and might need to login again!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Redirect to logout route
+        window.location.href = "{{ url_for('auth.logout') }}";
+      }
+    });
+  });
 });
+</script>
