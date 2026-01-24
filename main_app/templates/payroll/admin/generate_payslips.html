@@ -2,35 +2,38 @@
 {% block title %}Generate Payslips by Period{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Generate Payslips by Payroll Period</b></h1>
+<main class="p-6 bg-gray-900 min-h-screen text-gray-200">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-100">Generate Payslips by Payroll Period</h1>
   </header>
 
-  <div class="form-container" 
-       style="max-width: 500px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1);">
+  <div class="max-w-md mx-auto bg-gray-800 p-6 rounded-lg shadow-md">
 
-    <form method="POST" id="generateForm">
-      <label for="pay_period_id" style="font-weight: bold;">Select Payroll Period:</label>
-      <select name="pay_period_id" id="pay_period_id" required
-        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 8px; margin-bottom: 16px;">
-        <option value="">-- Choose Payroll Period --</option>
-        {% for p in payroll_periods %}
-          <option value="{{ p.id }}">
-            {{ p.start_date.strftime('%B %d, %Y') }} — {{ p.end_date.strftime('%B %d, %Y') }}
-          </option>
-        {% endfor %}
-      </select>
+    <form method="POST" id="generateForm" class="space-y-4">
+
+      <div>
+        <label for="pay_period_id" class="block font-semibold mb-2 text-gray-300">Select Payroll Period:</label>
+        <select name="pay_period_id" id="pay_period_id" required
+          class="w-full bg-gray-700 text-gray-200 border border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+          <option value="">-- Choose Payroll Period --</option>
+          {% for p in payroll_periods %}
+            <option value="{{ p.id }}">
+              {{ p.start_date.strftime('%B %d, %Y') }} — {{ p.end_date.strftime('%B %d, %Y') }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
 
       <button type="button" id="generateBtn"
-        style="width: 100%; background-color: #198754; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-md transition">
         Generate Payslips
       </button>
 
       <a href="{{ url_for('payroll_admin.view_payslips') }}" 
-        style="display: block; text-align: center; margin-top: 12px; color: #3d6ef7; text-decoration: none;">
+        class="block text-center mt-2 text-blue-500 hover:underline">
         ← Back to Payslip List
       </a>
+
     </form>
   </div>
 </main>

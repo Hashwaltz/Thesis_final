@@ -2,90 +2,80 @@
 {% block title %}Payroll Admin - Payroll Details{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Payroll Details</b></h1>
-    <p>
+<main class="p-6 bg-gray-900 min-h-screen text-gray-200">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-100 mb-2">Payroll Details</h1>
+    <p class="text-gray-300">
       Period: <b>{{ period.period_name }}</b><br>
-      From {{ period.start_date.strftime('%b %d, %Y') }}
-      to {{ period.end_date.strftime('%b %d, %Y') }}
+      From {{ period.start_date.strftime('%b %d, %Y') }} to {{ period.end_date.strftime('%b %d, %Y') }}
     </p>
   </header>
 
-  <div class="table-container">
-    <div class="centered-container">
-      <div class="table-actions" style="margin-bottom: 1rem;">
-        <a href="{{ url_for('payroll_admin.payroll') }}" class="btn btn-secondary">← Back to Processing</a>
-        <a href="#" class="btn btn-primary">Download Report</a>
-      </div>
+  <div class="space-y-6">
 
-      <table class="responsive-table">
-        <caption><b>Employee Payroll Summary</b></caption>
-        <thead>
+    <!-- Actions -->
+    <div class="flex space-x-4">
+      <a href="{{ url_for('payroll_admin.payroll') }}"
+         class="px-4 py-2 bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 transition">
+         ← Back to Processing
+      </a>
+      <a href="#"
+         class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+         Download Report
+      </a>
+    </div>
+
+    <!-- Payroll Table -->
+    <div class="overflow-x-auto bg-gray-800 rounded-lg shadow-md">
+      <table class="min-w-full divide-y divide-gray-700">
+        <caption class="text-lg font-semibold text-gray-100 p-4 text-left">Employee Payroll Summary</caption>
+        <thead class="bg-gray-700">
           <tr>
-            <th>Employee ID</th>
-            <th>Full Name</th>
-            <th>Basic Salary</th>
-            <th>Gross Pay</th>
-            <th>Total Deductions</th>
-            <th>Net Pay</th>
-            <th>Status</th>
-            <th>Processed Date</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Employee ID</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Full Name</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Basic Salary</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Gross Pay</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Total Deductions</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Net Pay</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Processed Date</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-gray-700 bg-gray-800">
           {% for p in payrolls %}
-          <tr>
-            <td data-label="Employee ID">{{ p.employee.employee_id }}</td>
-            <td data-label="Full Name">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
-            <td data-label="Basic Salary">₱ {{ "%.2f"|format(p.basic_salary) }}</td>
-            <td data-label="Gross Pay">₱ {{ "%.2f"|format(p.gross_pay) }}</td>
-            <td data-label="Total Deductions">₱ {{ "%.2f"|format(p.total_deductions) }}</td>
-            <td data-label="Net Pay"><b>₱ {{ "%.2f"|format(p.net_pay) }}</b></td>
-            <td data-label="Status">
-              <span style="color: {{ 'green' if p.status == 'Processed' else 'orange' }};">
+          <tr class="hover:bg-gray-700">
+            <td class="px-4 py-2">{{ p.employee.employee_id }}</td>
+            <td class="px-4 py-2">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
+            <td class="px-4 py-2">₱ {{ "%.2f"|format(p.basic_salary) }}</td>
+            <td class="px-4 py-2">₱ {{ "%.2f"|format(p.gross_pay) }}</td>
+            <td class="px-4 py-2">₱ {{ "%.2f"|format(p.total_deductions) }}</td>
+            <td class="px-4 py-2 font-semibold">₱ {{ "%.2f"|format(p.net_pay) }}</td>
+            <td class="px-4 py-2">
+              <span class="{{ 'text-green-400' if p.status == 'Processed' else 'text-orange-400' }}">
                 {{ p.status }}
               </span>
             </td>
-            <td data-label="Processed Date">{{ p.created_at.strftime('%Y-%m-%d') }}</td>
+            <td class="px-4 py-2">{{ p.created_at.strftime('%Y-%m-%d') }}</td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="8">No payrolls found for this period.</td>
+            <td colspan="8" class="px-4 py-4 text-center text-gray-400">No payrolls found for this period.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-
-      {% if payrolls %}
-      <div class="summary-card">
-        <h3>Overall Summary</h3>
-        <p><b>Total Gross Pay:</b> ₱ {{ "%.2f"|format(total_gross) }}</p>
-        <p><b>Total Deductions:</b> ₱ {{ "%.2f"|format(total_deductions) }}</p>
-        <p><b>Total Net Pay:</b> ₱ {{ "%.2f"|format(total_net) }}</p>
-      </div>
-      {% endif %}
     </div>
+
+    <!-- Summary Card -->
+    {% if payrolls %}
+    <div class="bg-gray-800 rounded-lg shadow-md p-6">
+      <h3 class="text-lg font-semibold text-gray-100 mb-3">Overall Summary</h3>
+      <p class="text-gray-300"><b>Total Gross Pay:</b> ₱ {{ "%.2f"|format(total_gross) }}</p>
+      <p class="text-gray-300"><b>Total Deductions:</b> ₱ {{ "%.2f"|format(total_deductions) }}</p>
+      <p class="text-gray-300"><b>Total Net Pay:</b> ₱ {{ "%.2f"|format(total_net) }}</p>
+    </div>
+    {% endif %}
+
   </div>
 </main>
-
-<style>
-.summary-card {
-  background: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  margin-top: 20px;
-  padding: 20px;
-  width: 60%;
-}
-.summary-card h3 {
-  color: #333;
-  margin-bottom: 10px;
-}
-.summary-card p {
-  font-size: 15px;
-  margin: 4px 0;
-}
-</style>
-
 {% endblock %}

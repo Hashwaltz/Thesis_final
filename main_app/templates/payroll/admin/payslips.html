@@ -2,147 +2,126 @@
 {% block title %}Payroll Admin - Payslips{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Payslip Management</b></h1>
+<main class="p-6 bg-gray-900 min-h-screen text-gray-200">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-100 mb-2">Payslip Management</h1>
   </header>
 
-  <div class="table-container">
-    <div class="centered-container">
+  <div class="space-y-6">
 
-      <!-- 🔍 Search Form -->
-      <div class="searching" style="margin-bottom: 15px;">
-        <form method="get" action="{{ url_for('payroll_admin.view_payslips') }}" class="search-form">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <input 
-              type="text" 
-              name="search" 
-              value="{{ search or '' }}" 
-              placeholder="Search employee name or payslip number..."
-              style="width: 280px; padding: 8px; border: 1px solid #ccc; border-radius: 6px;"
-            />
-            <button 
-              type="submit" 
-              style="background-color: #3d6ef7; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer;">
-              Search
-            </button>
-          </div>
-        </form>
-      </div>
+    <!-- 🔍 Search Form -->
+    <form method="get" action="{{ url_for('payroll_admin.view_payslips') }}" class="flex items-center gap-2">
+      <input 
+        type="text" 
+        name="search" 
+        value="{{ search or '' }}" 
+        placeholder="Search employee name or payslip number..."
+        class="w-72 p-2 rounded-md border border-gray-600 bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button type="submit"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">Search</button>
+    </form>
 
-      <!-- 🧭 Filters -->
-      <div class="filters" style="margin-bottom: 20px; display: flex; justify-content: flex-start; gap: 10px;">
-        <form method="get" action="{{ url_for('payroll_admin.view_payslips') }}" id="filterForm" style="display: flex; gap: 10px;">
+    <!-- 🧭 Filters -->
+    <form method="get" action="{{ url_for('payroll_admin.view_payslips') }}" id="filterForm" class="flex gap-2">
+      <select name="department_id" onchange="this.form.submit()"
+        class="h-10 px-2 rounded-md border border-gray-600 bg-gray-800 text-gray-200">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if dept.id == selected_department %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
 
-          <!-- Department Filter -->
-          <select name="department_id" onchange="this.form.submit()" style="height: 42px; padding: 0 10px; border: 1px solid #ccc; border-radius: 6px;">
-            <option value="">All Departments</option>
-            {% if departments %}
-              {% for dept in departments %}
-                <option value="{{ dept.id }}" {% if dept.id == selected_department %}selected{% endif %}>{{ dept.name }}</option>
-              {% endfor %}
-            {% else %}
-              <option disabled>No departments found</option>
-            {% endif %}
-          </select>
+      <select name="status" onchange="this.form.submit()"
+        class="h-10 px-2 rounded-md border border-gray-600 bg-gray-800 text-gray-200">
+        <option value="">All Status</option>
+        <option value="Not Claimed" {% if selected_status == "Not Claimed" %}selected{% endif %}>Not Claimed</option>
+        <option value="Claimed" {% if selected_status == "Claimed" %}selected{% endif %}>Claimed</option>
+      </select>
 
-          <!-- Status Filter -->
-          <select name="status" onchange="this.form.submit()" style="height: 42px; padding: 0 10px; border: 1px solid #ccc; border-radius: 6px;">
-            <option value="">All Status</option>
-            <option value="Not Claimed" {% if selected_status == "Not Claimed" %}selected{% endif %}>Not Claimed</option>
-            <option value="Claimed" {% if selected_status == "Claimed" %}selected{% endif %}>Claimed</option>
-          </select>
+      <select name="period_id" onchange="this.form.submit()"
+        class="h-10 px-2 rounded-md border border-gray-600 bg-gray-800 text-gray-200">
+        <option value="">All Periods</option>
+        {% for period in payroll_periods %}
+          <option value="{{ period.id }}" {% if period.id == selected_period %}selected{% endif %}>
+            {{ period.start_date.strftime('%Y-%m-%d') }} to {{ period.end_date.strftime('%Y-%m-%d') }}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
 
-          <!-- Payroll Period Filter -->
-          <select name="period_id" onchange="this.form.submit()" style="height: 42px; padding: 0 10px; border: 1px solid #ccc; border-radius: 6px;">
-            <option value="">All Periods</option>
-            {% for period in payroll_periods %}
-              <option value="{{ period.id }}" {% if period.id == selected_period %}selected{% endif %}>
-                {{ period.start_date.strftime('%Y-%m-%d') }} to {{ period.end_date.strftime('%Y-%m-%d') }}
-              </option>
-            {% endfor %}
-          </select>
+    <!-- 🧾 Generate Payslips -->
+    <div>
+      <button id="generatePayslipsByPeriodBtn"
+        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center gap-1">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span>Generate Payslips by Period</span>
+      </button>
+    </div>
 
-        </form>
-      </div>
-
-      <!-- 🧾 Generate Payslips -->
-      <div style="margin-bottom: 15px; text-align: left;">
-        <button 
-          type="button" 
-          id="generatePayslipsByPeriodBtn"
-          style="background-color: #198754; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer;">
-          <span class="material-symbols-outlined" style="vertical-align: middle;">receipt_long</span>
-          <span style="vertical-align: middle;">Generate Payslips by Period</span>
-        </button>
-      </div>
-
-      <!-- 📋 Payslip Table -->
-      <table class="responsive-table">
-        <caption><b>Payslip Records</b></caption>
-        <thead>
+    <!-- 📋 Payslip Table -->
+    <div class="overflow-x-auto bg-gray-800 rounded-lg shadow-md">
+      <table class="min-w-full divide-y divide-gray-700">
+        <caption class="text-lg font-semibold text-gray-100 p-4 text-left">Payslip Records</caption>
+        <thead class="bg-gray-700">
           <tr>
-            <th>Payslip No.</th>
-            <th>Employee</th>
-            <th>Department</th>
-            <th>Period</th>
-            <th>Net Pay</th>
-            <th>Generated</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Payslip No.</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Employee</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Department</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Period</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Net Pay</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Generated</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-gray-700 bg-gray-800">
           {% for p in payslips.items %}
-          <tr data-payslip-id="{{ p.id }}">
-            <td data-label="Payslip No.">{{ p.payslip_number }}</td>
-            <td data-label="Employee">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
-            <td data-label="Department">{{ p.employee.department.name if p.employee.department else '-' }}</td>
-            <td data-label="Period">{{ p.pay_period_start }} - {{ p.pay_period_end }}</td>
-            <td data-label="Net Pay"><b>₱ {{ "{:,.2f}".format(p.net_pay) }}</b></td>
-            <td data-label="Generated">{{ p.generated_at.strftime('%Y-%m-%d') }}</td>
-
-            <td data-label="Status">
+          <tr class="hover:bg-gray-700" data-payslip-id="{{ p.id }}">
+            <td class="px-4 py-2">{{ p.payslip_number }}</td>
+            <td class="px-4 py-2">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
+            <td class="px-4 py-2">{{ p.employee.department.name if p.employee.department else '-' }}</td>
+            <td class="px-4 py-2">{{ p.pay_period_start }} - {{ p.pay_period_end }}</td>
+            <td class="px-4 py-2 font-semibold">₱ {{ "{:,.2f}".format(p.net_pay) }}</td>
+            <td class="px-4 py-2">{{ p.generated_at.strftime('%Y-%m-%d') }}</td>
+            <td class="px-4 py-2">
               {% if p.status == 'Generated' %}
-                <span class="status-badge" style="background-color: #ffc107; color: black; padding: 4px 8px; border-radius: 5px;">Not Claimed</span>
+              <span class="px-2 py-1 rounded-md bg-yellow-500 text-black text-sm">Not Claimed</span>
               {% elif p.status == 'Distributed' %}
-                <span class="status-badge" style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 5px;">Claimed</span>
+              <span class="px-2 py-1 rounded-md bg-green-600 text-white text-sm">Claimed</span>
               {% endif %}
             </td>
-
-            <td data-label="Actions" class="action-cell">
+            <td class="px-4 py-2 flex gap-2">
               {% if p.status == 'Generated' %}
-                <button 
-                  type="button" 
-                  class="btn-action distribute-btn" 
-                  data-url="{{ url_for('payroll_admin.distribute_payslip', payslip_id=p.id) }}"
-                  style="background-color: #28a745; color: white;">
-                  Mark as Claimed
-                </button>
+              <button type="button" class="btn-action distribute-btn px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm"
+                data-url="{{ url_for('payroll_admin.distribute_payslip', payslip_id=p.id) }}">Mark as Claimed</button>
               {% else %}
-                <button class="btn-action claimed-btn" style="background-color: gray; color: white;" disabled>Claimed</button>
+              <button class="btn-action px-2 py-1 bg-gray-600 text-white rounded-md text-sm" disabled>Claimed</button>
               {% endif %}
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="10" class="text-muted">No payslips found.</td>
+            <td colspan="8" class="px-4 py-4 text-center text-gray-400">No payslips found.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-
-      <!-- 📄 Pagination -->
-      <div class="pagination">
-        {% if payslips.has_prev %}
-          <a href="{{ url_for('payroll_admin.view_payslips', page=payslips.prev_num, search=search, department_id=selected_department, status=selected_status, period_id=selected_period) }}">Previous</a>
-        {% endif %}
-        Page {{ payslips.page }} of {{ payslips.pages }}
-        {% if payslips.has_next %}
-          <a href="{{ url_for('payroll_admin.view_payslips', page=payslips.next_num, search=search, department_id=selected_department, status=selected_status, period_id=selected_period) }}">Next</a>
-        {% endif %}
-      </div>
     </div>
+
+    <!-- 📄 Pagination -->
+    <div class="flex justify-center gap-4 text-gray-200 mt-4">
+      {% if payslips.has_prev %}
+      <a href="{{ url_for('payroll_admin.view_payslips', page=payslips.prev_num, search=search, department_id=selected_department, status=selected_status, period_id=selected_period) }}"
+         class="px-3 py-1 bg-gray-700 rounded-md hover:bg-gray-600 transition">Previous</a>
+      {% endif %}
+      <span>Page {{ payslips.page }} of {{ payslips.pages }}</span>
+      {% if payslips.has_next %}
+      <a href="{{ url_for('payroll_admin.view_payslips', page=payslips.next_num, search=search, department_id=selected_department, status=selected_status, period_id=selected_period) }}"
+         class="px-3 py-1 bg-gray-700 rounded-md hover:bg-gray-600 transition">Next</a>
+      {% endif %}
+    </div>
+
   </div>
 </main>
 
@@ -185,31 +164,18 @@ document.querySelectorAll('.distribute-btn').forEach(button => {
     }).then((result) => {
       if (result.isConfirmed) {
         fetch(url, { method: 'POST' })
-          .then(response => {
-            if (response.redirected) {
-              return { success: true }; 
-            }
-            return response.json().catch(() => ({}));
-          })
+          .then(response => response.json().catch(() => ({})))
           .then(() => {
             const btn = payslipRow.querySelector('.btn-action');
             btn.textContent = 'Claimed';
             btn.style.backgroundColor = 'gray';
             btn.disabled = true;
-            btn.classList.add('claimed-btn');
 
-            const badge = payslipRow.querySelector('.status-badge');
+            const badge = payslipRow.querySelector('span');
             badge.textContent = 'Claimed';
-            badge.style.backgroundColor = '#28a745';
-            badge.style.color = 'white';
+            badge.className = 'px-2 py-1 rounded-md bg-green-600 text-white text-sm';
 
-            Swal.fire({
-              title: 'Payslip Claimed!',
-              text: 'Marked successfully.',
-              icon: 'success',
-              timer: 1500,
-              showConfirmButton: false
-            });
+            Swal.fire({ title: 'Payslip Claimed!', text: 'Marked successfully.', icon: 'success', timer: 1500, showConfirmButton: false });
           });
       }
     });

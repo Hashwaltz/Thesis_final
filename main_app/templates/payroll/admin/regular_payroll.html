@@ -1,105 +1,112 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
 {% block title %}Admin-Regular Payroll Processing{% endblock %}
+
 {% block content %}
-<h2><b>Regular Payroll Processing</b></h2>
+<div class="p-6">
+  <h2 class="text-2xl font-bold mb-6">Regular Payroll Processing</h2>
 
-<div class="searching" style="margin-bottom: 20px;">
-    <form id="payrollPeriodForm">
-        <div class="fields">
-            <div class="input-field">
-                <select id="pay_period_id">
-                    <option value="">-- Select Period --</option>
-                    {% for period in payroll_periods %}
-                        <option value="{{ period.id }}">{{ period.start_date }} to {{ period.end_date }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="input-field" style="align-self: flex-end;">
-                <button type="button" class="btn-action" onclick="calculateWorkedDays()">Calculate Worked Days</button>
-            </div>
-        </div>
-    </form>
-</div>
-
-<div class="table-wrapper">
-    {% if selected_department %}
-        <div style="margin-bottom: 15px;">
-            <strong>Department:</strong> {{ selected_department }}
-        </div>
-    {% endif %}
-
-    <div class="table-container" style="overflow-x:auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Employee</th>
-                    <th>Employment Type</th>
-                    <th>Monthly Salary</th>
-                    <th>Allowance</th>
-                    <th>Worked Days</th>
-                    <th>SSS</th>
-                    <th>PhilHealth</th>
-                    <th>Pag-IBIG</th>
-                    <th>Tax</th>
-                    <th>Other Deductions</th>
-                    <th>Net Pay</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if employees %}
-                    {% for emp in employees %}
-                    <tr id="row-{{ emp.id }}" data-existing-periods="{{ emp.existing_payrolls|join(',') }}">
-                        <td>{{ emp.full_name }}</td>
-                        <td>{{ emp.employment_type if emp.employment_type else "N/A" }}</td>
-                        <td><input type="text" name="basic_salary" value="{{ emp.basic_salary }}" class="table-input numeric-input" readonly/></td>
-                        <td><input type="text" name="allowance" value="{{ emp.allowance }}" class="table-input numeric-input"/></td>
-                        <td class="working-hours">0/0</td>
-                        <td><input type="text" name="sss" value="{{ emp.sss }}" class="table-input numeric-input"/></td>
-                        <td><input type="text" name="philhealth" value="{{ emp.philhealth }}" class="table-input numeric-input"/></td>
-                        <td><input type="text" name="pagibig" value="{{ emp.pagibig }}" class="table-input numeric-input"/></td>
-                        <td><input type="text" name="tax" value="0" class="table-input numeric-input"/></td>
-                        <td><input type="text" name="other" value="0" class="table-input numeric-input"/></td>
-                        <td class="net_pay">₱ 0.00</td>
-                        <td>
-                            <button class="btn-action" onclick="processPayroll({{ emp.id }})">Process</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="12" style="text-align:center; color:#666; padding:20px;">
-                            No employees found for this payroll period.
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-
-        </table>
+  <!-- Payroll Period Selection -->
+  <div class="mb-6 flex flex-col md:flex-row md:items-end md:gap-4">
+    <div class="flex-1">
+      <label for="pay_period_id" class="block font-semibold mb-2">Select Payroll Period</label>
+      <select id="pay_period_id" class="w-full border border-gray-300 rounded-md p-2 bg-white">
+        <option value="">-- Select Period --</option>
+        {% for period in payroll_periods %}
+          <option value="{{ period.id }}">{{ period.start_date }} to {{ period.end_date }}</option>
+        {% endfor %}
+      </select>
     </div>
+    <div>
+      <button type="button" onclick="calculateWorkedDays()" class="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md shadow">
+        Calculate Worked Days
+      </button>
+    </div>
+  </div>
+
+  <!-- Department Label -->
+  {% if selected_department %}
+  <div class="mb-4 text-gray-700">
+    <strong>Department:</strong> {{ selected_department }}
+  </div>
+  {% endif %}
+
+  <!-- Payroll Table -->
+  <div class="overflow-x-auto bg-white rounded-lg shadow-md p-4">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-100">
+        <tr class="text-gray-700 uppercase text-xs font-semibold">
+          <th class="px-3 py-2 text-left">Employee</th>
+          <th class="px-3 py-2 text-left">Employment Type</th>
+          <th class="px-3 py-2 text-right">Monthly Salary</th>
+          <th class="px-3 py-2 text-right">Allowance</th>
+          <th class="px-3 py-2 text-center">Worked Days</th>
+          <th class="px-3 py-2 text-right">SSS</th>
+          <th class="px-3 py-2 text-right">PhilHealth</th>
+          <th class="px-3 py-2 text-right">Pag-IBIG</th>
+          <th class="px-3 py-2 text-right">Tax</th>
+          <th class="px-3 py-2 text-right">Other Deductions</th>
+          <th class="px-3 py-2 text-right">Net Pay</th>
+          <th class="px-3 py-2 text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% if employees %}
+          {% for emp in employees %}
+          <tr id="row-{{ emp.id }}" data-existing-periods="{{ emp.existing_payrolls|join(',') }}">
+            <td class="px-3 py-2">{{ emp.full_name }}</td>
+            <td class="px-3 py-2">{{ emp.employment_type if emp.employment_type else "N/A" }}</td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="basic_salary" value="{{ emp.basic_salary }}" class="table-input numeric-input w-24 text-center border border-gray-300 rounded-md p-1" readonly/>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="allowance" value="{{ emp.allowance }}" class="table-input numeric-input w-24 text-center border border-gray-300 rounded-md p-1"/>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <span class="working-hours px-2 py-1 bg-yellow-200 rounded-md font-medium">0/0</span>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="sss" value="{{ emp.sss }}" class="table-input numeric-input w-20 text-center border border-gray-300 rounded-md p-1"/>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="philhealth" value="{{ emp.philhealth }}" class="table-input numeric-input w-20 text-center border border-gray-300 rounded-md p-1"/>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="pagibig" value="{{ emp.pagibig }}" class="table-input numeric-input w-20 text-center border border-gray-300 rounded-md p-1"/>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="tax" value="0" class="table-input numeric-input w-20 text-center border border-gray-300 rounded-md p-1"/>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <input type="text" name="other" value="0" class="table-input numeric-input w-20 text-center border border-gray-300 rounded-md p-1"/>
+            </td>
+            <td class="px-3 py-2 text-right font-bold text-green-600 net_pay">₱ 0.00</td>
+            <td class="px-3 py-2 text-center">
+              <button class="btn-action bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md" onclick="processPayroll({{ emp.id }})">Process</button>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="12" class="text-center text-gray-500 py-8">No employees found for this payroll period.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- SweetAlert2 CDN -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
+/* All your previous JS logic remains unchanged */
 const workingDaysUrl = "{{ url_for('payroll_admin.get_the_working_days_for_a_month') }}";
-
 function parseInput(value) { return parseFloat(value.replace(/,/g, '')) || 0; }
-
-document.querySelectorAll('.numeric-input').forEach(input => {
-    input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9.]/g, ''); });
-});
-
+document.querySelectorAll('.numeric-input').forEach(input => { input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9.]/g, ''); }); });
 function calculateWorkedDays() {
     const periodSelect = document.getElementById('pay_period_id');
     const periodText = periodSelect.selectedOptions[0]?.text;
-    if (!periodText) {
-        Swal.fire({ icon:'warning', title:'Select a payroll period!' });
-        return;
-    }
+    if (!periodText) { Swal.fire({ icon:'warning', title:'Select a payroll period!' }); return; }
     const [startDate, endDate] = periodText.split(' to ');
-
     document.querySelectorAll('tbody tr').forEach(row => {
         const empId = row.id.replace('row-', '');
         fetch(`${workingDaysUrl}?employee_id=${empId}&start_date=${startDate}&end_date=${endDate}`)
@@ -114,7 +121,6 @@ function calculateWorkedDays() {
         });
     });
 }
-
 function updateNetPay(row) {
     const basic = parseInput(row.querySelector('input[name="basic_salary"]').value);
     const allowance = parseInput(row.querySelector('input[name="allowance"]').value);
@@ -125,27 +131,16 @@ function updateNetPay(row) {
     const other = parseInput(row.querySelector('input[name="other"]').value);
     const workedDays = parseFloat(row.dataset.workedDays || 0);
     const totalDays = parseFloat(row.dataset.totalWorkingDays || 1);
-
     const net = ((basic / totalDays) * workedDays) + allowance - sss - philhealth - pagibig - tax - other;
-
     row.querySelector('.net_pay').innerText = `₱ ${net.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
 }
-
-document.querySelectorAll('.table-input').forEach(input => {
-    input.addEventListener('input', e => updateNetPay(e.target.closest('tr')));
-});
-
+document.querySelectorAll('.table-input').forEach(input => { input.addEventListener('input', e => updateNetPay(e.target.closest('tr'))); });
 function processPayroll(empId) {
     const row = document.getElementById(`row-${empId}`);
     const periodId = document.getElementById('pay_period_id').value;
     const processBtn = row.querySelector('.btn-action');
-
-    if (!periodId) {
-        Swal.fire({ icon:'warning', title:'Select a payroll period!' });
-        return;
-    }
+    if (!periodId) { Swal.fire({ icon:'warning', title:'Select a payroll period!' }); return; }
     if (processBtn.disabled) return;
-
     const data = {
         employee_id: empId,
         pay_period_id: periodId,
@@ -159,75 +154,38 @@ function processPayroll(empId) {
         worked_days: parseFloat(row.dataset.workedDays || 0),
         total_days: parseFloat(row.dataset.totalWorkingDays || 1)
     };
-
-    fetch("", {
-        method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: new URLSearchParams(data)
-    })
+    fetch("", { method:"POST", headers: {"Content-Type": "application/x-www-form-urlencoded"}, body: new URLSearchParams(data) })
     .then(res => res.json())
     .then(res => {
         if(res.status === "success") {
-            // Update row details
-            row.querySelector('.net_pay').innerText = `₱ ${res.net_pay.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            row.querySelector('.net_pay').innerText = `₱ ${res.net_pay.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
             row.querySelector('.working-hours').innerText = `${data.worked_days}/${data.total_days}`;
-
-            // Change button to Processed
             processBtn.disabled = true;
-            processBtn.style.backgroundColor = '#888';
-            processBtn.style.cursor = 'not-allowed';
+            processBtn.classList.remove('bg-blue-600','hover:bg-blue-700');
+            processBtn.classList.add('bg-gray-500','cursor-not-allowed');
             processBtn.innerText = 'Processed';
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Payroll Processed',
-                html: `
-                    <strong>${row.querySelector('td').innerText}</strong><br>
-                    Worked Days: ${data.worked_days}/${data.total_days}<br>
-                    Net Pay: ₱ ${res.net_pay.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}
-                `,
-                timer: 3500,
-                showConfirmButton: false
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to process payroll.' });
-        }
+            Swal.fire({icon:'success', title:'Payroll Processed', html:`<strong>${row.querySelector('td').innerText}</strong><br>Worked Days: ${data.worked_days}/${data.total_days}<br>Net Pay: ₱ ${res.net_pay.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}`, timer:3500, showConfirmButton:false});
+        } else { Swal.fire({icon:'error', title:'Error', text:'Failed to process payroll.'}); }
     })
-    .catch(err => {
-        console.error(err);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Unable to process payroll. Try again later.' });
-    });
+    .catch(err => { console.error(err); Swal.fire({icon:'error', title:'Error', text:'Unable to process payroll. Try again later.'}); });
 }
-
 document.getElementById('pay_period_id').addEventListener('change', () => {
     const selectedPeriodId = parseInt(document.getElementById('pay_period_id').value) || 0;
-
     document.querySelectorAll('tbody tr').forEach(row => {
         const btn = row.querySelector('.btn-action');
         const existingPeriods = row.dataset.existingPeriods.split(',').map(id => parseInt(id));
-
         if (existingPeriods.includes(selectedPeriodId)) {
             btn.disabled = true;
-            btn.style.backgroundColor = '#888';
-            btn.style.cursor = 'not-allowed';
+            btn.classList.remove('bg-blue-600','hover:bg-blue-700');
+            btn.classList.add('bg-gray-500','cursor-not-allowed');
             btn.innerText = 'Processed';
         } else {
             btn.disabled = false;
-            btn.style.backgroundColor = '#4070f4';
-            btn.style.cursor = 'pointer';
+            btn.classList.remove('bg-gray-500','cursor-not-allowed');
+            btn.classList.add('bg-blue-600','hover:bg-blue-700');
             btn.innerText = 'Process';
         }
     });
 });
 </script>
-
-<style>
-.table-container { min-width:1200px; background:#fff; border-radius:12px; padding:20px; margin-top:20px; box-shadow:0 5px 20px rgba(0,0,0,0.2); overflow-x:auto;}
-.table-container table {width:100%; border-collapse:collapse;}
-.table-container th, .table-container td {white-space:nowrap; text-align:center; padding:12px;}
-.table-input {width:120px; padding:6px 10px; border-radius:6px; border:1px solid #aaa; text-align:center;}
-.btn-action {background-color:#4070f4;color:#fff;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;}
-.btn-action:hover{background-color:#265df2;}
-.btn-action:disabled {background:#888; cursor:not-allowed;}
-</style>
 {% endblock %}

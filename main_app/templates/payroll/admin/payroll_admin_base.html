@@ -1,171 +1,184 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}GovHRPay | Payroll System{% endblock %}</title>
+    <title>{% block title %}Payroll Admin | GovHRPay{% endblock %}</title>
+
+    <!-- Favicon -->
     <link
       rel="icon"
       type="image/png"
       href="{{ url_for('static', filename='img/favicon.avif') }}"
     />
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
 
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                DEFAULT: "#16a34a",   /* green-600 */
-                dark: "#166534",      /* green-800 */
-              },
-            },
-          },
-        },
-      };
-    </script>
-    <style>
-      /* Loader Styles */
-      #loader {
-        position: fixed;
-        inset: 0;
-        background: #111827; /* same as bg-gray-950 */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        transition: opacity 0.5s ease, visibility 0.5s ease;
-      }
-      #loader.fade-out {
-        opacity: 0;
-        visibility: hidden;
-      }
-      .spinner {
-        border: 4px solid rgba(255, 255, 255, 0.2);
-        border-top: 4px solid #16a34a; /* primary color */
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    </style>
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4lKZrM5P4k5f5Z4bYx5m5F0+g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      crossorigin="anonymous"
+    />
   </head>
-
   <body
-    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-green-600 selection:text-white"
+    class="bg-gray-900 text-gray-100 flex flex-col md:flex-row min-h-screen font-sans"
   >
-    <!-- Loader -->
-    <div id="loader">
-      <div class="spinner"></div>
-    </div>
-
-    <!-- Navbar -->
-    <header class="bg-gray-900 shadow-md sticky top-0 z-50">
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16"
-      >
-        <!-- Logo -->
-        <a
-          href="{{ url_for('index') }}"
-          class="flex items-center space-x-2 text-white"
-        >
-          <img
-            src="{{ url_for('static', filename='img/logo2.avif') }}"
-            alt="Logo"
-            class="w-10 h-10 rounded-full object-cover"
-          />
-          <span class="text-xl font-semibold">GovHRPay Payroll System</span>
-        </a>
-
-        <!-- Desktop Nav -->
-        <nav class="hidden md:flex space-x-8 text-gray-300 font-medium">
-          <a
-            href="{{ url_for('index') }}"
-            class="hover:text-green-400 transition-colors"
-            >Home</a
-          >
-          <a
-            href="{{ url_for('payroll_auth.login') }}"
-            class="hover:text-green-400 transition-colors"
-            >Login</a
-          >
-          <a
-            href="{{ url_for('payroll_auth.about_payroll') }}"
-            class="hover:text-green-400 transition-colors"
-            >About</a
-          >
-          <a
-            href="{{ url_for('payroll_auth.payroll_features') }}"
-            class="hover:text-green-400 transition-colors"
-            >Features</a
-          >
-        </nav>
-
-        <!-- Mobile Menu Button -->
-        <button
-          id="menu-toggle"
-          class="md:hidden text-gray-300 hover:text-white focus:outline-none"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16m-7 6h7"
-            />
-          </svg>
+    <!-- ================= MOBILE HEADER ================= -->
+    <header
+      class="md:hidden bg-green-800 text-white flex justify-between items-center p-4 shadow sticky top-0 z-30"
+    >
+      <div class="flex items-center gap-3">
+        <button id="mobileMenuBtn">
+          <i class="fa-solid fa-bars text-2xl"></i>
         </button>
+        <span class="font-semibold text-lg">GovHRPay</span>
       </div>
-
-      <!-- Mobile Dropdown Menu -->
-      <div id="mobile-menu" class="hidden md:hidden bg-gray-800 border-t border-gray-700">
-        <nav class="flex flex-col items-center py-3 space-y-3">
-          <a href="{{ url_for('index') }}" class="text-gray-300 hover:text-green-400">Home</a>
-          <a href="#" class="text-gray-300 hover:text-green-400">About</a>
-          <a href="#" class="text-gray-300 hover:text-green-400">Features</a>
-        </nav>
-      </div>
+      <button id="logoutBtnMobile">
+        <i class="fa-solid fa-right-from-bracket text-xl"></i>
+      </button>
     </header>
 
-    <!-- Page Content -->
-    <main class="flex-1 flex justify-center items-center py-10 px-4">
+    <!-- ================= SIDEBAR ================= -->
+    <aside
+      id="sidebar"
+      class="bg-gray-950 w-64 sm:w-72 fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 z-40 flex flex-col border-r border-gray-800"
+    >
+      <!-- Sidebar Header -->
+      <div
+        class="px-6 py-5 border-b border-gray-800 flex items-center gap-3 sticky top-0 bg-gray-950 z-10"
+      >
+        <img
+          src="{{ url_for('static', filename='img/logo2.avif') }}"
+          class="w-12 h-12 rounded-full"
+        />
+        <div>
+          <h2 class="text-lg font-semibold text-green-400">GovHRPay</h2>
+          <p class="text-xs text-gray-400">Payroll Admin</p>
+          <p class="text-sm mt-1">
+            Welcome,
+            <b>{{ current_user.first_name }} {{ current_user.last_name }}</b>
+          </p>
+        </div>
+      </div>
+
+      <!-- ================= NAVIGATION ================= -->
+      <nav class="flex-1 overflow-y-auto px-4 py-4 text-gray-300">
+        {% set menu = { "Employee Payroll": [ ("fa-solid fa-chart-pie",
+        "Dashboard", "payroll_admin.payroll_dashboard"), ("fa-solid
+        fa-money-check-dollar", "View Payrolls", "payroll_admin.view_payrolls"),
+        ("fa-solid fa-cash-register", "Process Payrolls",
+        "payroll_admin.process_payroll"), ("fa-solid fa-users", "Employees",
+        "payroll_admin.view_employees") ], "Payroll Management": [ ("fa-solid
+        fa-calendar-days", "Payroll Periods",
+        "payroll_admin.view_payroll_periods"), ("fa-solid fa-clock-rotate-left",
+        "Payroll History", "payroll_admin.payroll_history_dashboard") ],
+        "Payslips": [ ("fa-solid fa-file-invoice-dollar", "Generate Payslips",
+        "payroll_admin.generate_payslips_by_period"), ("fa-solid
+        fa-paper-plane", "Distribute/View Payslips",
+        "payroll_admin.view_payslips") ] } %} {% for section, links in
+        menu.items() %}
+        <div class="mb-6">
+          <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">
+            {{ section }}
+          </h3>
+          <ul class="space-y-1">
+            {% for icon, label, endpoint in links %}
+            <li>
+              <a
+                href="{{ url_for(endpoint) }}"
+                class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-green-700/40 transition"
+              >
+                <i class="{{ icon }} w-5 text-green-400"></i>
+                <span>{{ label }}</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </nav>
+
+      <!-- ================= LOGOUT ================= -->
+      <div class="p-4 border-t border-gray-800">
+        <button
+          id="logoutBtn"
+          class="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 py-2 rounded-lg transition"
+        >
+          <i class="fa-solid fa-right-from-bracket"></i>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- ================= OVERLAY ================= -->
+    <div
+      id="overlay"
+      class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"
+    ></div>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+      <div
+        class="hidden md:flex items-center gap-3 bg-green-800 text-white p-4 rounded-lg shadow mb-6 sticky top-0 z-20"
+      >
+        <i class="fa-solid fa-money-bill-wave text-xl"></i>
+        <h1 class="text-lg font-semibold">Payroll Management System</h1>
+      </div>
+
       {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 py-6 text-center text-sm border-t border-gray-800">
-      &copy; {{ current_year or '2025' }} GovHRPay | Payroll System. All rights reserved.
-    </footer>
-
-    <!-- Scripts -->
-    {% block scripts %}
+    <!-- ================= SCRIPTS ================= -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-      // Mobile menu toggle
-      const menuToggle = document.getElementById("menu-toggle");
-      const mobileMenu = document.getElementById("mobile-menu");
-      menuToggle.addEventListener("click", () => {
-        mobileMenu.classList.toggle("hidden");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+
+      document
+        .getElementById("mobileMenuBtn")
+        ?.addEventListener("click", () => {
+          sidebar.classList.toggle("-translate-x-full");
+          overlay.classList.toggle("hidden");
+        });
+
+      overlay?.addEventListener("click", () => {
+        sidebar.classList.add("-translate-x-full");
+        overlay.classList.add("hidden");
       });
 
-      // Loader fade-out on page load
-      window.addEventListener("load", () => {
-        const loader = document.getElementById("loader");
-        loader.classList.add("fade-out");
-      });
+      document
+        .getElementById("logoutBtn")
+        ?.addEventListener("click", confirmLogout);
+      document
+        .getElementById("logoutBtnMobile")
+        ?.addEventListener("click", confirmLogout);
+
+      function confirmLogout(e) {
+        e.preventDefault();
+        Swal.fire({
+          title: "Logout?",
+          text: "You will be logged out of the system.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#16a34a",
+          cancelButtonColor: "#dc2626",
+          confirmButtonText: "Yes, logout",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = "{{ url_for('payroll_auth.logout') }}";
+          }
+        });
+      }
     </script>
-    {% endblock %}
   </body>
 </html>

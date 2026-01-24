@@ -1,76 +1,99 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
+
 {% block content %}
-<h2>Manual Payroll Processing</h2>
+<section class="p-6 space-y-6 text-gray-200">
 
-<div class="searching" style="margin-bottom: 20px;">
-    <form id="payrollPeriodForm">
-        <div class="fields">
-            <div class="input-field">
-                <select id="pay_period_id">
-                    <option value="">-- Select Period --</option>
-                    {% for period in payroll_periods %}
-                        <option value="{{ period.id }}">{{ period.start_date }} to {{ period.end_date }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="input-field" style="align-self: flex-end;">
-                <button type="button" class="btn-action" onclick="calculateWorkingHours()">Calculate Hours</button>
-            </div>
-        </div>
-    </form>
-</div>
+  <!-- ===== HEADER ===== -->
+  <h2 class="text-2xl font-semibold text-emerald-400">Manual Payroll Processing</h2>
 
-<div class="table-wrapper">
-    {% if selected_department %}
-    <div style="margin-bottom: 15px;">
-        <strong>Department:</strong> {{ selected_department }}
+  <!-- ===== PAY PERIOD SELECT ===== -->
+  <form id="payrollPeriodForm" class="flex flex-wrap gap-4 items-end">
+    <div class="flex flex-col">
+      <label for="pay_period_id" class="text-gray-300">Select Payroll Period</label>
+      <select id="pay_period_id" class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        <option value="">-- Select Period --</option>
+        {% for period in payroll_periods %}
+          <option value="{{ period.id }}">{{ period.start_date }} to {{ period.end_date }}</option>
+        {% endfor %}
+      </select>
     </div>
-    {% endif %}
+    <button type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition" onclick="calculateWorkingHours()">
+      <i class="fa-solid fa-clock"></i> Calculate Hours
+    </button>
+  </form>
 
-    <div class="table-container" style="overflow-x:auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Employee</th>
-                    <th>Employment Type</th>
-                    <th>Basic Salary</th>
-                    <th>Allowance</th>
-                    <th>Working Hours</th>
-                    <th>SSS</th>
-                    <th>PhilHealth</th>
-                    <th>Pag-IBIG</th>
-                    <th>Tax</th>
-                    <th>Other Deductions</th>
-                    <th>Net Pay</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for emp in employees %}
-                <tr id="row-{{ emp.id }}" data-existing-periods="{{ emp.existing_payrolls|join(',') }}">
-                    <td>{{ emp.full_name }}</td>
-                    <td>{{ emp.employment_type if emp.employment_type else "N/A" }}</td>
-                    
-                    <td><input type="text" name="basic_salary" value="{{ emp.basic_salary }}" class="table-input numeric-input" readonly/></td>
-                    <td><input type="text" name="allowance" value="{{ emp.allowance }}" class="table-input numeric-input"/></td>
-                    <td class="working-hours">0</td>
-                    <td><input type="text" name="sss" value="{{ emp.sss }}" class="table-input numeric-input"/></td>
-                    <td><input type="text" name="philhealth" value="{{ emp.philhealth }}" class="table-input numeric-input"/></td>
-                    <td><input type="text" name="pagibig" value="{{ emp.pagibig }}" class="table-input numeric-input"/></td>
-                    <td><input type="text" name="tax" value="0" class="table-input numeric-input"/></td>
-                    <td><input type="text" name="other" value="0" class="table-input numeric-input"/></td>
-                    <td class="net_pay">₱ 0.00</td>
-                    <td>
-                        <button class="btn-action" onclick="processPayroll({{ emp.id }})">Process</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  {% if selected_department %}
+    <div class="mt-4 text-gray-300">
+      <strong>Department:</strong> {{ selected_department }}
     </div>
-</div>
+  {% endif %}
 
-<!-- SweetAlert2 CDN -->
+  <!-- ===== PAYROLL TABLE ===== -->
+  <div class="overflow-x-auto mt-4 bg-gray-800 rounded-2xl border border-gray-700 shadow-lg p-4">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-4 py-2 text-left">Employee</th>
+          <th class="px-4 py-2 text-left">Employment Type</th>
+          <th class="px-4 py-2 text-center">Basic Salary</th>
+          <th class="px-4 py-2 text-center">Allowance</th>
+          <th class="px-4 py-2 text-center">Working Hours</th>
+          <th class="px-4 py-2 text-center">SSS</th>
+          <th class="px-4 py-2 text-center">PhilHealth</th>
+          <th class="px-4 py-2 text-center">Pag-IBIG</th>
+          <th class="px-4 py-2 text-center">Tax</th>
+          <th class="px-4 py-2 text-center">Other Deductions</th>
+          <th class="px-4 py-2 text-center">Net Pay</th>
+          <th class="px-4 py-2 text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% if employees %}
+          {% for emp in employees %}
+          <tr id="row-{{ emp.id }}" data-existing-periods="{{ emp.existing_payrolls|join(',') }}" class="hover:bg-gray-700/50 transition">
+            <td class="px-4 py-2">{{ emp.full_name }}</td>
+            <td class="px-4 py-2">{{ emp.employment_type if emp.employment_type else "N/A" }}</td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="basic_salary" value="{{ emp.basic_salary }}" class="table-input numeric-input w-20 text-center" readonly/>
+            </td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="allowance" value="{{ emp.allowance }}" class="table-input numeric-input w-20 text-center"/>
+            </td>
+            <td class="px-4 py-2 text-center working-hours">0</td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="sss" value="{{ emp.sss }}" class="table-input numeric-input w-20 text-center"/>
+            </td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="philhealth" value="{{ emp.philhealth }}" class="table-input numeric-input w-20 text-center"/>
+            </td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="pagibig" value="{{ emp.pagibig }}" class="table-input numeric-input w-20 text-center"/>
+            </td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="tax" value="0" class="table-input numeric-input w-20 text-center"/>
+            </td>
+            <td class="px-4 py-2 text-center">
+              <input type="text" name="other" value="0" class="table-input numeric-input w-20 text-center"/>
+            </td>
+            <td class="px-4 py-2 text-center net_pay">₱ 0.00</td>
+            <td class="px-4 py-2 text-center">
+              <button class="btn-action flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition" onclick="processPayroll({{ emp.id }})">
+                <i class="fa-solid fa-check"></i> Process
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="12" class="px-4 py-6 text-center text-gray-400">No employees found for payroll processing.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
@@ -79,134 +102,96 @@ const workingHoursUrl = "{{ url_for('payroll_admin.get_working_hours') }}";
 function parseInput(value) { return parseFloat(value.replace(/,/g, '')) || 0; }
 
 document.querySelectorAll('.numeric-input').forEach(input => {
-    input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9.]/g, ''); });
+  input.addEventListener('input', () => { input.value = input.value.replace(/[^0-9.]/g, ''); });
 });
 
 function calculateWorkingHours() {
-    const periodSelect = document.getElementById('pay_period_id');
-    const periodText = periodSelect.selectedOptions[0]?.text;
-    if (!periodText) {
-        Swal.fire({ icon:'warning', title:'Select a payroll period!' });
-        return;
-    }
-    const [startDate, endDate] = periodText.split(' to ');
+  const periodSelect = document.getElementById('pay_period_id');
+  const periodText = periodSelect.selectedOptions[0]?.text;
+  if (!periodText) { Swal.fire({ icon:'warning', title:'Select a payroll period!' }); return; }
+  const [startDate, endDate] = periodText.split(' to ');
 
-    document.querySelectorAll('tbody tr').forEach(row => {
-        const empId = row.id.replace('row-', '');
-        fetch(`${workingHoursUrl}?employee_id=${empId}&start_date=${startDate}&end_date=${endDate}`)
-        .then(res => res.json())
-        .then(data => {
-            const hours = data.working_hours || 0;
-            row.querySelector('.working-hours').innerText = hours.toFixed(2);
-            row.dataset.workingHours = hours;
-            updateNetPay(row);
-        });
-    });
+  document.querySelectorAll('tbody tr').forEach(row => {
+    const empId = row.id.replace('row-', '');
+    fetch(`${workingHoursUrl}?employee_id=${empId}&start_date=${startDate}&end_date=${endDate}`)
+      .then(res => res.json())
+      .then(data => {
+        const hours = data.working_hours || 0;
+        row.querySelector('.working-hours').innerText = hours.toFixed(2);
+        row.dataset.workingHours = hours;
+        updateNetPay(row);
+      });
+  });
 }
 
-// Update net pay for each row
 function updateNetPay(row) {
-    const basic = parseInput(row.querySelector('input[name="basic_salary"]').value);
-    const allowance = parseInput(row.querySelector('input[name="allowance"]').value);
-    const sss = parseInput(row.querySelector('input[name="sss"]').value);
-    const philhealth = parseInput(row.querySelector('input[name="philhealth"]').value);
-    const pagibig = parseInput(row.querySelector('input[name="pagibig"]').value);
-    const tax = parseInput(row.querySelector('input[name="tax"]').value);
-    const other = parseInput(row.querySelector('input[name="other"]').value);
-    const hours = parseFloat(row.dataset.workingHours || 0);
+  const basic = parseInput(row.querySelector('input[name="basic_salary"]').value);
+  const allowance = parseInput(row.querySelector('input[name="allowance"]').value);
+  const sss = parseInput(row.querySelector('input[name="sss"]').value);
+  const philhealth = parseInput(row.querySelector('input[name="philhealth"]').value);
+  const pagibig = parseInput(row.querySelector('input[name="pagibig"]').value);
+  const tax = parseInput(row.querySelector('input[name="tax"]').value);
+  const other = parseInput(row.querySelector('input[name="other"]').value);
+  const hours = parseFloat(row.dataset.workingHours || 0);
 
-    const net = (basic * hours) + allowance - sss - philhealth - pagibig - tax - other;
-    
-    row.querySelector('.net_pay').innerText = `₱ ${net.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  const net = (basic * hours) + allowance - sss - philhealth - pagibig - tax - other;
+  row.querySelector('.net_pay').innerText = `₱ ${net.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
 }
 
-// Update net pay on input change
-document.querySelectorAll('.table-input').forEach(input => {
-    input.addEventListener('input', e => updateNetPay(e.target.closest('tr')));
-});
+document.querySelectorAll('.table-input').forEach(input => input.addEventListener('input', e => updateNetPay(e.target.closest('tr'))));
 
-// Process payroll
 function processPayroll(empId) {
-    const row = document.getElementById(`row-${empId}`);
-    const periodId = document.getElementById('pay_period_id').value;
-    const processBtn = row.querySelector('.btn-action');
+  const row = document.getElementById(`row-${empId}`);
+  const periodId = document.getElementById('pay_period_id').value;
+  const processBtn = row.querySelector('.btn-action');
 
-    if (!periodId) {
-        Swal.fire({ icon:'warning', title:'Select a payroll period!' });
-        return;
-    }
-    if (processBtn.disabled) return;
+  if (!periodId) { Swal.fire({ icon:'warning', title:'Select a payroll period!' }); return; }
+  if (processBtn.disabled) return;
 
-    const data = {
-        employee_id: empId,
-        pay_period_id: periodId,
-        basic_salary: parseInput(row.querySelector('input[name="basic_salary"]').value),
-        allowance: parseInput(row.querySelector('input[name="allowance"]').value),
-        sss: parseInput(row.querySelector('input[name="sss"]').value),
-        philhealth: parseInput(row.querySelector('input[name="philhealth"]').value),
-        pagibig: parseInput(row.querySelector('input[name="pagibig"]').value),
-        tax: parseInput(row.querySelector('input[name="tax"]').value),
-        other: parseInput(row.querySelector('input[name="other"]').value),
-        working_hours: parseFloat(row.dataset.workingHours || 0)
-    };
+  const data = {
+    employee_id: empId,
+    pay_period_id: periodId,
+    basic_salary: parseInput(row.querySelector('input[name="basic_salary"]').value),
+    allowance: parseInput(row.querySelector('input[name="allowance"]').value),
+    sss: parseInput(row.querySelector('input[name="sss"]').value),
+    philhealth: parseInput(row.querySelector('input[name="philhealth"]').value),
+    pagibig: parseInput(row.querySelector('input[name="pagibig"]').value),
+    tax: parseInput(row.querySelector('input[name="tax"]').value),
+    other: parseInput(row.querySelector('input[name="other"]').value),
+    working_hours: parseFloat(row.dataset.workingHours || 0)
+  };
 
-    fetch("", {
-        method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: new URLSearchParams(data)
-    })
+  fetch("", { method: "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"}, body: new URLSearchParams(data) })
     .then(res => res.json())
     .then(res => {
-        if(res.status === "success") {
-            row.querySelector('.net_pay').innerText = `₱ ${res.net_pay.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-            processBtn.disabled = true;
-            processBtn.style.backgroundColor = '#888';
-            processBtn.style.cursor = 'not-allowed';
-            Swal.fire({
-                icon: 'success',
-                title: 'Payroll Processed',
-                text: `${row.querySelector('td').innerText} payroll has been saved successfully!`,
-                timer: 2500,
-                showConfirmButton: false
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to process payroll.' });
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'Unable to process payroll. Try again later.' });
-    });
+      if(res.status === "success") {
+        row.querySelector('.net_pay').innerText = `₱ ${res.net_pay.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+        processBtn.disabled = true;
+        processBtn.classList.replace('bg-blue-600', 'bg-gray-500');
+        Swal.fire({ icon:'success', title:'Payroll Processed', text:`${row.querySelector('td').innerText} payroll saved!`, timer:2500, showConfirmButton:false });
+      } else { Swal.fire({ icon:'error', title:'Error', text:'Failed to process payroll.' }); }
+    }).catch(err => { console.error(err); Swal.fire({ icon:'error', title:'Error', text:'Unable to process payroll.' }); });
 }
 
-// Disable process button if payroll already exists for selected period
 document.getElementById('pay_period_id').addEventListener('change', () => {
-    const selectedPeriodId = parseInt(document.getElementById('pay_period_id').value) || 0;
-
-    document.querySelectorAll('tbody tr').forEach(row => {
-        const btn = row.querySelector('.btn-action');
-        const existingPeriods = row.dataset.existingPeriods.split(',').map(id => parseInt(id));
-
-        if (existingPeriods.includes(selectedPeriodId)) {
-            btn.disabled = true;
-            btn.style.backgroundColor = '#888';
-            btn.style.cursor = 'not-allowed';
-        } else {
-            btn.disabled = false;
-            btn.style.backgroundColor = '#4070f4';
-            btn.style.cursor = 'pointer';
-        }
-    });
+  const selectedPeriodId = parseInt(document.getElementById('pay_period_id').value) || 0;
+  document.querySelectorAll('tbody tr').forEach(row => {
+    const btn = row.querySelector('.btn-action');
+    const existingPeriods = row.dataset.existingPeriods.split(',').map(id => parseInt(id));
+    if (existingPeriods.includes(selectedPeriodId)) {
+      btn.disabled = true;
+      btn.classList.replace('bg-blue-600', 'bg-gray-500');
+    } else {
+      btn.disabled = false;
+      btn.classList.replace('bg-gray-500', 'bg-blue-600');
+    }
+  });
 });
 </script>
 
 <style>
-.table-container { min-width:1200px; background:#fff; border-radius:12px; padding:20px; margin-top:20px; box-shadow:0 5px 20px rgba(0,0,0,0.2); overflow-x:auto;}
-.table-container table {width:100%; border-collapse:collapse;}
-.table-container th, .table-container td {white-space:nowrap; text-align:center; padding:12px;}
-.table-input {width:120px; padding:6px 10px; border-radius:6px; border:1px solid #aaa; text-align:center;}
-.btn-action {background-color:#4070f4;color:#fff;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;}
-.btn-action:hover{background-color:#265df2;}
-.btn-action:disabled {background:#888; cursor:not-allowed;}
+.table-input { @apply w-20 p-2 rounded-lg border border-gray-600 bg-gray-700 text-center text-gray-200; }
+.btn-action { @apply px-3 py-1 rounded-lg text-white transition; }
 </style>
+
 {% endblock %}

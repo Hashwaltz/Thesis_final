@@ -1,46 +1,54 @@
-{% extends 'payroll/admin/payroll_admin_base.html' %} {% block title %}Payroll
-History - {{ employee.first_name }} {{ employee.last_name }}{% endblock %} {%
-block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1>Payroll History: {{ employee.first_name }} {{ employee.last_name }}</h1>
-  </header>
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll History - {{ employee.first_name }} {{ employee.last_name }}{% endblock %}
 
-  <div class="table-container">
-     <a href="{{ url_for('payroll_admin.payroll_history_dashboard') }}" class="btn-back" style="display:inline-flex; align-items:center; gap:0.25rem; text-decoration:none;">
-      <span class="material-symbols-outlined">arrow_back</span>
-      Back
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      Payroll History: {{ employee.first_name }} {{ employee.last_name }}
+    </h1>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('payroll_admin.payroll_history_dashboard') }}" 
+       class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition">
+      <i class="fa-solid fa-arrow-left"></i>
+      <span>Back</span>
     </a>
+  </div>
 
-    <table class="responsive-table">
-      <thead>
+  <!-- ===== PAYROLL TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
         <tr>
-          <th>ID</th>
-          <th>Period</th>
-          <th>Gross Pay</th>
-          <th>Net Pay</th>
-          <th>Processed At</th>
+          <th class="px-6 py-3 text-left text-gray-400">ID</th>
+          <th class="px-6 py-3 text-left text-gray-400">Period</th>
+          <th class="px-6 py-3 text-left text-gray-400">Gross Pay</th>
+          <th class="px-6 py-3 text-left text-gray-400">Net Pay</th>
+          <th class="px-6 py-3 text-left text-gray-400">Processed At</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-700">
         {% for record in payroll_records %}
-        <tr>
-          <td>{{ record.id }}</td>
-          <td>{{ record.pay_period.period_name }}</td>
-          <td>₱ {{ "{:,.2f}".format(record.gross_pay) }}</td>
-          <td>₱ {{ "{:,.2f}".format(record.net_pay) }}</td>
-          <td>
-            {{ record.created_at.strftime('%b %d, %Y') if record.created_at else
-            'N/A' }}
+        <tr class="hover:bg-gray-700/50 transition">
+          <td class="px-6 py-3">{{ record.id }}</td>
+          <td class="px-6 py-3">{{ record.pay_period.period_name }}</td>
+          <td class="px-6 py-3">₱ {{ "{:,.2f}".format(record.gross_pay) }}</td>
+          <td class="px-6 py-3">₱ {{ "{:,.2f}".format(record.net_pay) }}</td>
+          <td class="px-6 py-3">
+            {{ record.created_at.strftime('%b %d, %Y') if record.created_at else 'N/A' }}
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6">No payroll records found.</td>
+          <td colspan="5" class="px-6 py-3 text-center text-gray-400">No payroll records found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-</main>
+
+</section>
 {% endblock %}

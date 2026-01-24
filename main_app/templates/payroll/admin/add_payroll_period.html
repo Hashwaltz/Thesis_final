@@ -25,77 +25,57 @@
   {% endif %}
 {% endwith %}
 
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Add Payroll Period</b></h1>
+<main class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
+  <header class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Add Payroll Period</h1>
+    <div class="h-1 w-16 bg-blue-600 mt-1 rounded"></div>
   </header>
 
-  <div class="payroll-container">
-    <header>Payroll Period Details</header>
+  <form method="POST" action="{{ url_for('payroll_admin.add_payroll_period') }}" id="payrollForm" class="space-y-6">
+    
+    <!-- Payroll Period Name -->
+    <div>
+      <label class="block text-gray-700 text-sm font-medium mb-1">Payroll Period Name</label>
+      <input type="text" name="period_name" placeholder="e.g. October 1–15, 2025"
+             required
+             class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+    </div>
 
-    <form method="POST" action="{{ url_for('payroll_admin.add_payroll_period') }}" id="payrollForm">
-      <div class="form first">
-        <div class="details personal">
-          <div class="fields">
-
-            <!-- Payroll Period Name -->
-            <div class="input-field">
-              <label>Payroll Period Name</label>
-              <input
-                type="text"
-                name="period_name"
-                class="form-control"
-                placeholder="e.g. October 1–15, 2025"
-                required
-              />
-            </div>
-
-            <!-- Start Date -->
-            <div class="input-field">
-              <label>Start Date</label>
-              <input
-                type="date"
-                name="start_date"
-                class="form-control"
-                required
-              />
-            </div>
-
-            <!-- End Date -->
-            <div class="input-field">
-              <label>End Date</label>
-              <input
-                type="date"
-                name="end_date"
-                class="form-control"
-                required
-              />
-            </div>
-
-            <!-- Pay Date -->
-            <div class="input-field">
-              <label>Pay Date</label>
-              <input
-                type="date"
-                name="pay_date"
-                class="form-control"
-                required
-              />
-            </div>
-
-            <!-- Status (hidden default: Open) -->
-            <input type="hidden" name="status" value="Open" />
-          </div>
-        </div>
-
-        <!-- Submit Button -->
-        <button type="button" class="submit" id="savePayrollBtn">
-          <span class="btnText">Create Payroll Period</span>
-          <i class="uil uil-navigator"></i>
-        </button>
+    <!-- Dates -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Start Date -->
+      <div>
+        <label class="block text-gray-700 text-sm font-medium mb-1">Start Date</label>
+        <input type="date" name="start_date" required
+               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
       </div>
-    </form>
-  </div>
+      
+      <!-- End Date -->
+      <div>
+        <label class="block text-gray-700 text-sm font-medium mb-1">End Date</label>
+        <input type="date" name="end_date" required
+               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+      </div>
+      
+      <!-- Pay Date -->
+      <div>
+        <label class="block text-gray-700 text-sm font-medium mb-1">Pay Date</label>
+        <input type="date" name="pay_date" required
+               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+      </div>
+    </div>
+
+    <!-- Hidden Status -->
+    <input type="hidden" name="status" value="Open" />
+
+    <!-- Submit Button -->
+    <button type="button" id="savePayrollBtn"
+            class="w-full md:w-64 bg-blue-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center space-x-2">
+      <span>Create Payroll Period</span>
+      <i class="uil uil-navigator"></i>
+    </button>
+
+  </form>
 </main>
 
 <!-- ✅ SweetAlert2 Confirmation -->
@@ -121,98 +101,4 @@
     });
   });
 </script>
-
-<style>
-.payroll-container {
-  background-color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
-  margin: 0 15px;
-  margin-top: 20px;
-  padding: 30px;
-  position: relative;
-  width: 50%;
-}
-
-.payroll-container .input-field input,
-.payroll-container .input-field select {
-  border: 1px solid #aaa;
-  border-radius: 5px;
-  color: #333;
-  height: 42px;
-  margin: 8px 0;
-  outline: none;
-  padding: 0 15px;
-  font-size: 14px;
-  font-weight: 400;
-}
-
-.payroll-container .input-field input[type="date"] {
-  color: #707070;
-}
-.payroll-container .input-field input[type="date"]:valid {
-  color: #333;
-}
-.payroll-container .input-field input:focus,
-.payroll-container .input-field select:focus {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.13);
-}
-
-.payroll-container .input-field label {
-  color: #2e2e2e;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.payroll-container form {
-  min-height: 300px;
-  margin-top: 16px;
-  padding: 20px;
-  padding-bottom: 50px;
-  position: relative;
-}
-
-.payroll-container form button {
-  background-color: #4070f4;
-  border: none;
-  border-radius: 5px;
-  color: #fff;
-  height: 45px;
-  margin: 25px 0;
-  max-width: 200px;
-  width: 100%;
-  transition: all 0.3s linear;
-}
-.payroll-container form button:hover {
-  background-color: #265df2;
-}
-
-.payroll-container form .fields {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.payroll-container form .fields .input-field {
-  width: calc(100% / 1 - 15px);
-}
-
-.payroll-container header {
-  color: #343a40;
-  font-size: 20px;
-  font-weight: 600;
-  position: relative;
-}
-
-.payroll-container header::before {
-  content: "";
-  position: absolute;
-  height: 3px;
-  width: 27px;
-  background-color: #4070f4;
-  bottom: -2px;
-  left: 0;
-}
-</style>
-
 {% endblock %}

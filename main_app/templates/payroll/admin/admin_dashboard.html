@@ -1,168 +1,187 @@
 {% extends "payroll/admin/payroll_admin_base.html" %}
-
 {% block title %}Payroll Dashboard{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-6">
+<section class="p-6 space-y-8">
+
+  <!-- ===== HEADER ===== -->
+  <h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+    <i class="fa-solid fa-money-check-dollar text-3xl"></i>
+    Payroll Dashboard
+  </h1>
 
   <!-- ===== METRICS ===== -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-gray-500 text-sm">Total Employees</h3>
-      <p class="text-3xl font-bold text-gray-800">{{ total_employees }}</p>
+
+    <!-- Total Employees -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-emerald-600/20 rounded-full">
+        <i class="fa-solid fa-users text-emerald-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Total Employees</p>
+        <h2 class="text-3xl font-bold text-emerald-400">
+          {{ total_employees or 0 }}
+        </h2>
+      </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-gray-500 text-sm">Employees Paid (This Month)</h3>
-      <p class="text-3xl font-bold text-green-600">{{ employees_paid }}</p>
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-gray-500 text-sm">Pending Payrolls</h3>
-      <p class="text-3xl font-bold text-yellow-500">{{ pending_payrolls }}</p>
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-gray-500 text-sm">Total Payroll Amount</h3>
-      <p class="text-3xl font-bold text-blue-600">
-        ₱{{ "{:,.2f}".format(total_payroll_amount) }}
-      </p>
-    </div>
-  </div>
-
-  <!-- ===== SECOND METRICS ===== -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-gray-500 text-sm">Average Salary</h3>
-      <p class="text-2xl font-bold text-indigo-600">
-        ₱{{ "{:,.2f}".format(avg_salary) }}
-      </p>
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-gray-500 text-sm">Approved Leaves This Month</h3>
-      <p class="text-2xl font-bold text-red-500">{{ leave_impact }}</p>
-    </div>
-  </div>
-
-  <!-- ===== PAYROLL CHART ===== -->
-  <div class="bg-white rounded-xl shadow p-6 h-[420px]">
-    <h2 class="text-lg font-semibold mb-4">Monthly Payroll Trend</h2>
-    <canvas id="payrollChart"></canvas>
-  </div>
-
-  <!-- ===== TABLES ===== -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    <!-- Recent Payrolls -->
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="font-semibold mb-4">Recent Payrolls</h3>
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-gray-500 border-b">
-            <th class="py-2 text-left">Employee</th>
-            <th class="py-2 text-left">Net Pay</th>
-            <th class="py-2 text-left">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for payroll in recent_payrolls %}
-          <tr class="border-b">
-            <td class="py-2">{{ payroll.employee.full_name }}</td>
-            <td class="py-2">₱{{ "{:,.2f}".format(payroll.net_pay) }}</td>
-            <td class="py-2">
-              <span class="px-2 py-1 rounded-full text-xs
-                {% if payroll.status == 'Approved' %}
-                  bg-green-100 text-green-700
-                {% else %}
-                  bg-yellow-100 text-yellow-700
-                {% endif %}
-              ">
-                {{ payroll.status }}
-              </span>
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="3" class="py-4 text-center text-gray-400">
-              No payroll records found
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- Employees Paid -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-green-600/20 rounded-full">
+        <i class="fa-solid fa-circle-check text-green-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Paid This Month</p>
+        <h2 class="text-3xl font-bold text-green-400">
+          {{ employees_paid or 0 }}
+        </h2>
+      </div>
     </div>
 
     <!-- Pending Payrolls -->
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="font-semibold mb-4">Pending Payrolls</h3>
-      <ul class="space-y-3">
-        {% for payroll in pending_list %}
-        <li class="flex justify-between items-center">
-          <span>{{ payroll.employee.full_name }}</span>
-          <span class="text-yellow-600 font-semibold">{{ payroll.status }}</span>
-        </li>
-        {% else %}
-        <p class="text-gray-400 text-sm">No pending payrolls</p>
-        {% endfor %}
-      </ul>
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-yellow-500/20 rounded-full">
+        <i class="fa-solid fa-clock text-yellow-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Pending Payrolls</p>
+        <h2 class="text-3xl font-bold text-yellow-400">
+          {{ pending_payrolls or 0 }}
+        </h2>
+      </div>
+    </div>
+
+    <!-- Total Payroll -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+      <div class="p-3 bg-emerald-500/20 rounded-full">
+        <i class="fa-solid fa-coins text-emerald-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Total Payroll</p>
+        <h2 class="text-2xl font-bold text-emerald-400">
+          ₱{{ "{:,.2f}".format(total_payroll_amount or 0) }}
+        </h2>
+      </div>
     </div>
 
   </div>
 
-  <!-- ===== PAYROLL PERIOD NOTICE ===== -->
-  {% if upcoming_period %}
-  <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-    <p class="text-blue-700 font-medium">
-      Open Payroll Period:
-      {{ upcoming_period.start_date }} – {{ upcoming_period.end_date }}
-    </p>
+  <!-- ===== PAYROLL NOTES ===== -->
+  <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+    <h3 class="text-sm font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+      <i class="fa-solid fa-note-sticky"></i>
+      Payroll Reminders
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-yellow-500/10 border-l-4 border-yellow-400 p-4 rounded-xl">
+        <h4 class="text-yellow-400 font-semibold mb-1">
+          <i class="fa-solid fa-clock mr-2"></i> Pending Approvals
+        </h4>
+        <p class="text-sm text-gray-300">Review pending payroll entries.</p>
+      </div>
+
+      <div class="bg-emerald-500/10 border-l-4 border-emerald-400 p-4 rounded-xl">
+        <h4 class="text-emerald-400 font-semibold mb-1">
+          <i class="fa-solid fa-calendar-check mr-2"></i> Payroll Period
+        </h4>
+        <p class="text-sm text-gray-300">
+          {% if upcoming_period %}
+            Open payroll period active.
+          {% else %}
+            No active payroll period.
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="bg-green-500/10 border-l-4 border-green-400 p-4 rounded-xl">
+        <h4 class="text-green-400 font-semibold mb-1">
+          <i class="fa-solid fa-file-invoice-dollar mr-2"></i> Payslips
+        </h4>
+        <p class="text-sm text-gray-300">Generate employee payslips.</p>
+      </div>
+    </div>
   </div>
-  {% endif %}
 
-</div>
+  <!-- ===== CHARTS ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<!-- ===== CHART JS ===== -->
+    <!-- Payroll Trend -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+      <h3 class="text-sm font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-chart-line"></i>
+        Monthly Payroll Trend
+      </h3>
+      <div class="h-[300px]">
+        <canvas id="payrollChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Salary Distribution -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+      <h3 class="text-sm font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-chart-pie"></i>
+        Salary Distribution
+      </h3>
+      <div class="h-[300px]">
+        <canvas id="salaryChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  const labels = {{ chart_labels | default([]) | tojson }};
-  const values = {{ chart_values | default([]) | tojson }};
+document.addEventListener('DOMContentLoaded', () => {
 
-  const ctx = document.getElementById('payrollChart').getContext('2d');
+  const payrollCtx = document.getElementById('payrollChart');
+  const salaryCtx = document.getElementById('salaryChart');
 
-  new Chart(ctx, {
+  /* ===== PAYROLL TREND CHART ===== */
+  new Chart(payrollCtx, {
     type: 'line',
     data: {
-      labels: labels,
+      labels: {{ chart_labels | default([]) | tojson }},
       datasets: [{
-        label: 'Total Payroll (₱)',
-        data: values,
-        borderWidth: 3,
+        data: {{ chart_values | default([]) | tojson }},
+        borderColor: '#10b981',
+        backgroundColor: '#10b98133',
+        tension: 0.45,
         fill: true,
-        tension: 0.4
+        pointRadius: 4
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            callback: value => '₱' + value.toLocaleString()
-          }
-        }
-      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ===== SALARY DISTRIBUTION ===== */
+  new Chart(salaryCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {{ salary_labels | default([]) | tojson }},
+      datasets: [{
+        data: {{ salary_values | default([]) | tojson }},
+        backgroundColor: ['#10b981','#22c55e','#4ade80','#86efac']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
       plugins: {
-        legend: {
-          labels: { font: { weight: 'bold' } }
-        }
+        legend: { position: 'bottom', labels: { color: '#d1d5db' } }
       }
     }
   });
+
 });
 </script>
-
 {% endblock %}

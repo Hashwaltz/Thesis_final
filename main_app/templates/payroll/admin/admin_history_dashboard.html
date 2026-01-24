@@ -2,69 +2,85 @@
 {% block title %}Payroll Admin - Payroll History Dashboard{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Payroll History Dashboard</b></h1>
+<main class="p-6 bg-gray-900 min-h-screen text-gray-200">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-100">Payroll History Dashboard</h1>
   </header>
 
-  <div class="table-container">
-    <div class="centered-container">
+  <div class="space-y-12">
 
-      <!-- Employees Table -->
-      <h2>Employees</h2>
-      <table class="responsive-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Department</th>
-            <th>Position</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for emp in employees %}
-          <tr>
-            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
-            <td>{{ emp.department.name if emp.department else 'N/A' }}</td>
-            <td>{{ emp.position.name if emp.position else 'N/A' }}</td>
-            <td>
-              <a href="{{ url_for('payroll_admin.view_employee_payroll_history', employee_id=emp.id) }}" class="btn-action">View Payroll</a>
-            </td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4">No employees found.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- Employees Table -->
+    <section class="bg-gray-800 shadow-md rounded-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-700">
+        <h2 class="text-xl font-semibold text-gray-100">Employees</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-700">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Department</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Position</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-gray-800 divide-y divide-gray-700">
+            {% for emp in employees %}
+            <tr class="hover:bg-gray-700">
+              <td class="px-6 py-4 whitespace-nowrap">{{ emp.first_name }} {{ emp.last_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ emp.department.name if emp.department else 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ emp.position.name if emp.position else 'N/A' }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <a href="{{ url_for('payroll_admin.view_employee_payroll_history', employee_id=emp.id) }}"
+                   class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">View Payroll</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-gray-400">No employees found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-      <!-- Payroll Periods Table -->
-      <h2 style="margin-top: 2rem;">Payroll Periods</h2>
-      <table class="responsive-table">
-        <thead>
-          <tr>
-            <th>Period Name</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for period in periods %}
-          <tr>
-            <td>{{ period.period_name }}</td>
-            <td>{{ period.start_date.strftime('%b %d, %Y') }}</td>
-            <td>{{ period.end_date.strftime('%b %d, %Y') }}</td>
-            <td>
-              <a href="{{ url_for('payroll_admin.payroll_period_history', period_id=period.id) }}" class="btn-action">View Payroll</a>
-            </td>
-          </tr>
-          {% else %}
-          <tr><td colspan="5">No payroll periods found.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- Payroll Periods Table -->
+    <section class="bg-gray-800 shadow-md rounded-lg overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-700">
+        <h2 class="text-xl font-semibold text-gray-100">Payroll Periods</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-700">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Period Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">End Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-gray-800 divide-y divide-gray-700">
+            {% for period in periods %}
+            <tr class="hover:bg-gray-700">
+              <td class="px-6 py-4 whitespace-nowrap">{{ period.period_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ period.start_date.strftime('%b %d, %Y') }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ period.end_date.strftime('%b %d, %Y') }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <a href="{{ url_for('payroll_admin.payroll_period_history', period_id=period.id) }}"
+                   class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">View Payroll</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="px-6 py-4 text-center text-gray-400">No payroll periods found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-    </div>
   </div>
 </main>
 {% endblock %}

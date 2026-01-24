@@ -1,69 +1,52 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Admin-Payroll Departments{% endblock %}
-{% block content %}
-<h2>Payroll Departments</h2>
+{% block title %}Admin – Payroll Departments{% endblock %}
 
-<div class="department-cards">
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+    <i class="fa-solid fa-warehouse text-3xl"></i>
+    Payroll Departments
+  </h2>
+
+  <!-- ===== DEPARTMENT CARDS ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
     {% for dept in departments %}
-    <div class="department-card" onclick="goToManualPayroll({{ dept.id }})">
-        <div class="dept-icon">
-            <span class="material-symbols-outlined">business</span>
-        </div>
-        <div class="dept-info">
-            <h4>{{ dept.name }}</h4>
-            <p>{{ dept.employee_count }} Employees</p>
-        </div>
+    <div
+      onclick="goToManualPayroll({{ dept.id }})"
+      class="cursor-pointer bg-gray-800 border border-gray-700 rounded-2xl p-5 flex items-center gap-4
+             hover:bg-gray-700/50 hover:-translate-y-1 hover:shadow-xl transition-all duration-200"
+    >
+
+      <!-- Icon -->
+      <div class="p-4 bg-emerald-600/20 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-warehouse text-emerald-400 text-3xl"></i>
+      </div>
+
+      <!-- Info -->
+      <div>
+        <h4 class="text-lg font-semibold text-white">
+          {{ dept.name }}
+        </h4>
+        <p class="text-sm text-gray-400">
+          {{ dept.employee_count }} Employees
+        </p>
+      </div>
+
     </div>
     {% endfor %}
-</div>
+
+  </div>
+
+</section>
 
 <script>
 function goToManualPayroll(deptId) {
-    window.location.href = "{{ url_for('payroll_admin.department_employees', department_id=0) }}".replace("0", deptId);
+  window.location.href =
+    "{{ url_for('payroll_admin.department_employees', department_id=0) }}"
+      .replace("0", deptId);
 }
-
 </script>
-
-<style>
-.department-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-.department-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
-.department-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-  background: #f8f9fa;
-}
-.dept-icon {
-  background: #198754;
-  color: white;
-  padding: 0.8rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.dept-info h4 {
-  margin: 0;
-  font-weight: bold;
-}
-.dept-info p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #666;
-}
-</style>
 {% endblock %}

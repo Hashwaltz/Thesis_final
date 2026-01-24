@@ -1,59 +1,65 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Admin-Employees List{% endblock %}
-{% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>{{ department.name }} Department Employees</b></h1>
-  </header>
+{% block title %}Admin - Employees List{% endblock %}
 
-  <div class="table-container">
-    <div class="input-field" style="display: flex; gap: 10px;">
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      {{ department.name }} Department Employees
+    </h1>
+    
+    <!-- Payroll Buttons -->
+    <div class="flex gap-3">
       <button 
-        class="btn btn-primary" 
-        style="background-color: #0d6efd; color: white; border: none; padding: 8px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center;" 
-        onclick="redirectPayroll('regular')">
-        <span class="material-symbols-outlined">cycle</span>
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('regular')"
+      >
+        <i class="fa-solid fa-repeat"></i>
         Regular Payroll
       </button>
 
       <button 
-        class="btn btn-primary" 
-        style="background-color: #0d6efd; color: white; border: none; padding: 8px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center;" 
-        onclick="redirectPayroll('casual')">
-        <span class="material-symbols-outlined">cycle</span>
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('casual')"
+      >
+        <i class="fa-solid fa-repeat"></i>
         Casual Payroll
       </button>
-      
+
       <button 
-        class="btn btn-primary" 
-        style="background-color: #0d6efd; color: white; border: none; padding: 8px 12px; border-radius: 6px; text-decoration: none; display: flex; align-items: center;" 
-        onclick="redirectPayroll('part-time')">
-        <span class="material-symbols-outlined">cycle</span>
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('part-time')"
+      >
+        <i class="fa-solid fa-repeat"></i>
         Part-Time Payroll
       </button>
     </div>
+  </div>
 
-    <h2>Employee List</h2>
-    <table>
-      <thead>
+  <!-- ===== EMPLOYEE TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
         <tr>
-          <th>Employee Name</th>
-          <th>Position</th>
-          <th>Employment Type</th>
+          <th class="px-6 py-3 text-left text-gray-400">Employee Name</th>
+          <th class="px-6 py-3 text-left text-gray-400">Position</th>
+          <th class="px-6 py-3 text-left text-gray-400">Employment Type</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-700">
         {% if employees %}
           {% for emp in employees %}
-          <tr data-employment-type="{{ emp.employment_type.name|lower }}">
-            <td data-label="Name">{{ emp.first_name }} {{ emp.last_name }}</td>
-            <td data-label="Position">{{ emp.position | replace("<", "") | replace(">", "") }}</td>
-            <td data-label="Employment Type">{{ emp.employment_type.name }}</td>
+          <tr class="hover:bg-gray-700/50 transition" data-employment-type="{{ emp.employment_type.name|lower }}">
+            <td class="px-6 py-3" data-label="Name">{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td class="px-6 py-3" data-label="Position">{{ emp.position | replace("<", "") | replace(">", "") }}</td>
+            <td class="px-6 py-3" data-label="Employment Type">{{ emp.employment_type.name }}</td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="3" style="text-align:center; color:#666; padding:20px;">
+            <td colspan="3" class="px-6 py-4 text-center text-gray-400">
               No employees found in this department.
             </td>
           </tr>
@@ -61,7 +67,8 @@
       </tbody>
     </table>
   </div>
-</main>
+
+</section>
 
 <script>
 function redirectPayroll(type) {

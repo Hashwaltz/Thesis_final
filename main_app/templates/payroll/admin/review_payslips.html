@@ -2,97 +2,93 @@
 {% block title %}Review Payslips{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Review & Approve Payslips</b></h1>
+<main class="p-6">
+  <header class="mb-6">
+    <h1 class="text-2xl font-bold">Review & Approve Payslips</h1>
   </header>
 
-  <div class="table-container">
-    <!-- Approve All Button -->
-    <div style="margin-bottom: 20px; text-align: left;">
-      <form method="POST">
-        <input type="hidden" name="action" value="approve_all">
-        <button type="submit"
-                class="btn btn-success"
-                id="approveAllBtn"
-                style="background-color: #198754; color: white; border: none; padding: 8px 14px; border-radius: 6px;">
-          Approve All
-        </button>
-      </form>
-    </div>
+  <!-- Approve All Button -->
+  <div class="mb-4">
+    <form method="POST">
+      <input type="hidden" name="action" value="approve_all">
+      <button type="submit"
+              id="approveAllBtn"
+              class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-md shadow">
+        Approve All
+      </button>
+    </form>
+  </div>
 
-    <table class="responsive-table">
-      <caption><b>Payslip Review Table</b></caption>
-      <thead>
+  <!-- Payslip Table -->
+  <div class="overflow-x-auto bg-white rounded-lg shadow-md p-4">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <caption class="text-lg font-semibold mb-2 text-left">Payslip Review Table</caption>
+      <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold">
         <tr>
-          <th>Payslip No.</th>
-          <th>Employee</th>
-          <th>Period</th>
-          <th>Net Pay</th>
-          <th>Status</th>
-          <th>Decision</th>
-          <th>Submit</th>
+          <th class="px-3 py-2 text-left">Payslip No.</th>
+          <th class="px-3 py-2 text-left">Employee</th>
+          <th class="px-3 py-2 text-left">Period</th>
+          <th class="px-3 py-2 text-right">Net Pay</th>
+          <th class="px-3 py-2 text-center">Status</th>
+          <th class="px-3 py-2 text-center">Decision</th>
+          <th class="px-3 py-2 text-center">Submit</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-gray-200">
         {% for p in payslips %}
-        {% if p.status == "Generated" %}
-        <tr>
-          <form method="POST">
-            <input type="hidden" name="payslip_id" value="{{ p.id }}">
+          {% if p.status == "Generated" %}
+          <tr>
+            <form method="POST" class="w-full flex flex-wrap items-center">
+              <input type="hidden" name="payslip_id" value="{{ p.id }}">
 
-            <td>{{ p.payslip_number }}</td>
-            <td>{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
-            <td>{{ p.pay_period_start }} → {{ p.pay_period_end }}</td>
-            <td><b>₱ {{ "%.2f"|format(p.net_pay) }}</b></td>
-            <td>
-              <span class="badge"
-                    style="background-color:#e2e3e5; color:#6c757d; padding:4px 8px; border-radius:6px;">
-                {{ p.status }}
-              </span>
+              <td class="px-3 py-2">{{ p.payslip_number }}</td>
+              <td class="px-3 py-2">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
+              <td class="px-3 py-2">{{ p.pay_period_start }} → {{ p.pay_period_end }}</td>
+              <td class="px-3 py-2 text-right font-bold text-green-600">₱ {{ "%.2f"|format(p.net_pay) }}</td>
+              <td class="px-3 py-2 text-center">
+                <span class="px-2 py-1 rounded-md bg-gray-200 text-gray-700 text-sm font-medium">
+                  {{ p.status }}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-center">
+                <select name="decision" class="px-2 py-1 border border-gray-300 rounded-md text-sm w-full">
+                  <option value="approve">Approve</option>
+                  <option value="reject">Reject</option>
+                </select>
+              </td>
+              <td class="px-3 py-2 text-center">
+                <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded-md shadow text-sm">
+                  Submit
+                </button>
+              </td>
+            </form>
+          </tr>
+          {% else %}
+          <tr>
+            <td class="px-3 py-2">{{ p.payslip_number }}</td>
+            <td class="px-3 py-2">{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
+            <td class="px-3 py-2">{{ p.pay_period_start }} → {{ p.pay_period_end }}</td>
+            <td class="px-3 py-2 text-right font-bold text-green-600">₱ {{ "%.2f"|format(p.net_pay) }}</td>
+            <td class="px-3 py-2 text-center">
+              {% if p.status == "Approved" %}
+              <span class="px-2 py-1 rounded-md bg-green-100 text-green-700 text-sm font-medium">{{ p.status }}</span>
+              {% elif p.status == "Rejected" %}
+              <span class="px-2 py-1 rounded-md bg-red-100 text-red-700 text-sm font-medium">{{ p.status }}</span>
+              {% else %}
+              <span class="px-2 py-1 rounded-md bg-gray-100 text-gray-500 text-sm font-medium">{{ p.status }}</span>
+              {% endif %}
             </td>
-
-            <td>
-              <select name="decision" class="decision-select" style="padding:6px; border-radius:6px;">
-                <option value="approve">Approve</option>
-                <option value="reject">Reject</option>
-              </select>
-            </td>
-
-            <td>
-              <button type="submit"
-                      class="btn btn-primary"
-                      style="background-color:#3d6ef7; color:white; border:none; padding:6px 12px; border-radius:6px;">
-                Submit
-              </button>
-            </td>
-          </form>
-        </tr>
-        {% else %}
-        <tr>
-          <td>{{ p.payslip_number }}</td>
-          <td>{{ p.employee.first_name }} {{ p.employee.last_name }}</td>
-          <td>{{ p.pay_period_start }} → {{ p.pay_period_end }}</td>
-          <td><b>₱ {{ "%.2f"|format(p.net_pay) }}</b></td>
-          <td>
-            {% if p.status == "Approved" %}
-            <span class="badge" style="background-color:#d1e7dd; color:#198754; padding:4px 8px; border-radius:6px;">{{ p.status }}</span>
-            {% elif p.status == "Rejected" %}
-            <span class="badge" style="background-color:#f8d7da; color:#dc3545; padding:4px 8px; border-radius:6px;">{{ p.status }}</span>
-            {% else %}
-            <span class="badge" style="background-color:#f8f9fa; color:gray; padding:4px 8px; border-radius:6px;">{{ p.status }}</span>
-            {% endif %}
-          </td>
-          <td colspan="2"><i class="text-muted">Already {{ p.status.lower() }}</i></td>
-        </tr>
-        {% endif %}
+            <td class="px-3 py-2 text-center italic text-gray-500" colspan="2">Already {{ p.status.lower() }}</td>
+          </tr>
+          {% endif %}
         {% endfor %}
       </tbody>
     </table>
   </div>
 </main>
 
-<!-- SweetAlert & JS -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById("approveAllBtn").addEventListener("click", function(e) {
