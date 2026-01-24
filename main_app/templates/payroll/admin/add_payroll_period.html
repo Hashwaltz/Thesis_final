@@ -3,96 +3,130 @@
 
 {% block content %}
 
-<!-- ✅ SweetAlert Toast Flash Messages -->
+<!-- SweetAlert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 {% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        {% for category, message in messages %}
-          Swal.fire({
-            icon: "{{ 'success' if category == 'success' else 'error' }}",
-            title: "{{ message }}",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 2500,
-            timerProgressBar: true
-          });
-        {% endfor %}
-      });
-    </script>
-  {% endif %}
+{% if messages %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    {% for category, message in messages %}
+    Swal.fire({
+      icon: "{{ 'success' if category == 'success' else 'error' }}",
+      title: "{{ message }}",
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true
+    });
+    {% endfor %}
+  });
+</script>
+{% endif %}
 {% endwith %}
 
-<main class="max-w-3xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-lg">
-  <header class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Add Payroll Period</h1>
-    <div class="h-1 w-16 bg-blue-600 mt-1 rounded"></div>
-  </header>
+<div class="max-w-3xl mx-auto mt-8">
+  <div class="bg-gray-950 border border-gray-800 rounded-xl shadow-xl p-6 sm:p-8">
 
-  <form method="POST" action="{{ url_for('payroll_admin.add_payroll_period') }}" id="payrollForm" class="space-y-6">
-    
-    <!-- Payroll Period Name -->
-    <div>
-      <label class="block text-gray-700 text-sm font-medium mb-1">Payroll Period Name</label>
-      <input type="text" name="period_name" placeholder="e.g. October 1–15, 2025"
-             required
-             class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-green-400">Add Payroll Period</h1>
+      <p class="text-sm text-gray-400 mt-1">
+        Define a new payroll cycle for employee compensation
+      </p>
+      <div class="h-1 w-20 bg-green-600 mt-3 rounded"></div>
     </div>
 
-    <!-- Dates -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Start Date -->
+    <!-- Form -->
+    <form method="POST"
+          action="{{ url_for('payroll_admin.add_payroll_period') }}"
+          id="payrollForm"
+          class="space-y-6">
+
+      <!-- Payroll Period Name -->
       <div>
-        <label class="block text-gray-700 text-sm font-medium mb-1">Start Date</label>
-        <input type="date" name="start_date" required
-               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        <label class="block text-sm font-medium text-gray-300 mb-1">
+          Payroll Period Name
+        </label>
+        <input type="text"
+               name="period_name"
+               required
+               placeholder="e.g. October 1–15, 2025"
+               class="w-full rounded-lg bg-gray-900 border border-gray-700 px-4 py-2.5 text-gray-100 placeholder-gray-500
+                      focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
       </div>
-      
-      <!-- End Date -->
-      <div>
-        <label class="block text-gray-700 text-sm font-medium mb-1">End Date</label>
-        <input type="date" name="end_date" required
-               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+      <!-- Dates -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
+          <input type="date"
+                 name="start_date"
+                 required
+                 class="w-full rounded-lg bg-gray-900 border border-gray-700 px-4 py-2.5 text-gray-100
+                        focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">End Date</label>
+          <input type="date"
+                 name="end_date"
+                 required
+                 class="w-full rounded-lg bg-gray-900 border border-gray-700 px-4 py-2.5 text-gray-100
+                        focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Pay Date</label>
+          <input type="date"
+                 name="pay_date"
+                 required
+                 class="w-full rounded-lg bg-gray-900 border border-gray-700 px-4 py-2.5 text-gray-100
+                        focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
+        </div>
       </div>
-      
-      <!-- Pay Date -->
-      <div>
-        <label class="block text-gray-700 text-sm font-medium mb-1">Pay Date</label>
-        <input type="date" name="pay_date" required
-               class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+
+      <!-- Hidden Status -->
+      <input type="hidden" name="status" value="Open">
+
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row gap-4 pt-4">
+        <button type="button"
+                id="savePayrollBtn"
+                class="inline-flex items-center justify-center gap-2
+                       bg-green-600 hover:bg-green-700 text-white
+                       font-semibold px-6 py-3 rounded-lg transition shadow-md w-full sm:w-auto">
+          Create Payroll Period
+        </button>
+
+        <a href="{{ url_for('payroll_admin.view_payroll_periods') }}"
+           class="inline-flex items-center justify-center
+                  border border-gray-700 hover:bg-gray-800
+                  text-gray-300 px-6 py-3 rounded-lg transition w-full sm:w-auto">
+          Cancel
+        </a>
       </div>
-    </div>
 
-    <!-- Hidden Status -->
-    <input type="hidden" name="status" value="Open" />
+    </form>
+  </div>
+</div>
 
-    <!-- Submit Button -->
-    <button type="button" id="savePayrollBtn"
-            class="w-full md:w-64 bg-blue-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center space-x-2">
-      <span>Create Payroll Period</span>
-      <i class="uil uil-navigator"></i>
-    </button>
-
-  </form>
-</main>
-
-<!-- ✅ SweetAlert2 Confirmation -->
+<!-- Confirmation -->
 <script>
   const form = document.getElementById("payrollForm");
   const saveBtn = document.getElementById("savePayrollBtn");
 
-  saveBtn.addEventListener("click", function (e) {
+  saveBtn.addEventListener("click", (e) => {
     e.preventDefault();
 
     Swal.fire({
-      title: "Confirm Creation",
-      text: "Are you sure you want to create this payroll period?",
+      title: "Create Payroll Period?",
+      text: "This payroll period will be opened for processing.",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: "#16a34a",
+      cancelButtonColor: "#dc2626",
       confirmButtonText: "Yes, create it"
     }).then((result) => {
       if (result.isConfirmed) {
@@ -101,4 +135,5 @@
     });
   });
 </script>
+
 {% endblock %}

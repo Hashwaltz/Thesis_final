@@ -35,6 +35,15 @@
         <i class="fa-solid fa-repeat"></i>
         Part-Time Payroll
       </button>
+
+      <!-- ✅ Job Order Payroll Button -->
+      <button 
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('jo')"
+      >
+        <i class="fa-solid fa-repeat"></i>
+        JO Payroll
+      </button>
     </div>
   </div>
 
@@ -81,6 +90,8 @@ function redirectPayroll(type) {
         url = `{{ url_for('payroll_admin.casual_payroll') }}?department_id=${departmentId}`;
     } else if (type === 'part-time') {
         url = `{{ url_for('payroll_admin.parttime_payroll') }}?department_id=${departmentId}`;
+    } else if (type === 'jo') {
+        url = `{{ url_for('payroll_admin.jo_payroll') }}?department_id=${departmentId}`;
     }
 
     window.location.href = url;

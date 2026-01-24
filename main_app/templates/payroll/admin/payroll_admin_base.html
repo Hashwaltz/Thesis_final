@@ -81,9 +81,11 @@
         "payroll_admin.view_employees") ], "Payroll Management": [ ("fa-solid
         fa-calendar-days", "Payroll Periods",
         "payroll_admin.view_payroll_periods"), ("fa-solid fa-clock-rotate-left",
-        "Payroll History", "payroll_admin.payroll_history_dashboard") ],
-        "Payslips": [ ("fa-solid fa-file-invoice-dollar", "Generate Payslips",
-        "payroll_admin.generate_payslips_by_period"), ("fa-solid
+        "Payroll History", "payroll_admin.payroll_history_dashboard"),
+        ("fa-solid fa-calculator", "Deduction Formulas",
+        "payroll_admin.deduction_formulas")
+        ], "Payslips": [ ("fa-solid fa-file-invoice-dollar", "Generate
+        Payslips", "payroll_admin.generate_payslips_by_period"), ("fa-solid
         fa-paper-plane", "Distribute/View Payslips",
         "payroll_admin.view_payslips") ] } %} {% for section, links in
         menu.items() %}

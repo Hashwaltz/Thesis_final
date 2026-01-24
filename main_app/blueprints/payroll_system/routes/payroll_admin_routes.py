@@ -5,6 +5,17 @@ from g4f.client import Client
 from main_app.models.payroll_models import (
     Employee, Payroll, Payslip, PayrollPeriod, Deduction, Allowance, Tax, EmployeeDeduction, EmployeeAllowance
 )
+from main_app.deductions import (
+    compute_philhealth_deduction,
+    compute_pagibig_deduction,
+    compute_sss_deduction,
+    compute_gsis_deduction,
+    compute_withholding_tax,
+    compute_menpc_deduction,
+    compute_pagibig_loan
+
+)
+
 from main_app.forms import (
     PayrollPeriodForm, PayrollForm, PayslipForm,
     DeductionForm, AllowanceForm, TaxForm, PayrollSummaryForm
@@ -16,7 +27,7 @@ from main_app.utils import (
 )
 from main_app.extensions import db
 from main_app.models.user import User
-from main_app.models.hr_models import Department, Employee as HREmployee, Attendance, EmploymentType, Leave
+from main_app.models.hr_models import Department, Employee as HREmployee, Attendance, EmploymentType, Leave, LateComputation
 from datetime import datetime, date, timedelta, time
 import os
 from reportlab.lib.pagesizes import A4
@@ -214,6 +225,151 @@ def department_employees(department_id):
         'payroll/admin/employee_list.html',
         employees=employees,
         department=department
+    )
+
+
+# ---------------------------
+# GET WORKED DAYS
+# ---------------------------
+@payroll_admin_bp.route('/get_worked_days', methods=['GET'])
+@payroll_admin_required
+def get_worked_days():
+    employee_id = request.args.get('employee_id', type=int)
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+
+    if not employee_id or not start_date_str or not end_date_str:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+    attendances = Attendance.query.filter(
+        Attendance.employee_id == employee_id,
+        Attendance.date.between(start_date, end_date)
+    ).all()
+
+    total_hours = sum(a.working_hours or 0 for a in attendances)
+    worked_days = round(total_hours / 8, 2)  # 8 hours per day
+
+    return jsonify({
+        "employee_id": employee_id,
+        "worked_days": worked_days
+    })
+
+
+# ---------------------------
+# JOB ORDER PAYROLL
+# ---------------------------
+@payroll_admin_bp.route('/jo', methods=['GET', 'POST'])
+@payroll_admin_required
+def jo_payroll():
+    department_id = request.args.get('department_id', type=int)
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+
+    # Base query: active employees
+    query = Employee.query.filter_by(status="Active")
+    if department_id:
+        query = query.filter_by(department_id=department_id)
+
+    # Filter only Job Order employees by ID
+    JO_EMPLOYMENT_TYPE_ID = 5
+    employees = query.filter_by(employment_type_id=JO_EMPLOYMENT_TYPE_ID).all()
+
+    selected_department = None
+    if department_id:
+        from main_app.models.hr_models import Department
+        department = Department.query.get(department_id)
+        selected_department = department.name if department else None
+
+    # --------------------------
+    # POST: Process Payroll
+    # --------------------------
+    if request.method == 'POST':
+        employee_id = int(request.form.get('employee_id'))
+        pay_period_id = int(request.form.get('pay_period_id'))
+
+        payroll_period = PayrollPeriod.query.get(pay_period_id)
+        employee = Employee.query.get(employee_id)
+
+        daily_rate = float(request.form.get('daily_rate', 0))
+        worked_days = float(request.form.get('worked_days', 0))
+        allowance = float(request.form.get('allowance', 0))
+        sss = float(request.form.get('sss', 0))
+        philhealth = float(request.form.get('philhealth', 0))
+        pagibig = float(request.form.get('pagibig', 0))
+        tax = float(request.form.get('tax', 0))
+        other = float(request.form.get('other', 0))
+
+        gross_pay = round(daily_rate * worked_days, 2)
+        total_deductions = round(sss + philhealth + pagibig + tax + other, 2)
+        net_pay = round((gross_pay + allowance) - total_deductions, 2)
+
+        # Prevent duplicate payroll
+        existing = Payroll.query.filter_by(
+            employee_id=employee_id,
+            pay_period_id=pay_period_id
+        ).first()
+        if existing:
+            return jsonify({"status": "error", "message": "Payroll already exists for this employee."})
+
+        payroll = Payroll(
+            employee_id=employee_id,
+            pay_period_id=pay_period_id,
+            pay_period_start=payroll_period.start_date,
+            pay_period_end=payroll_period.end_date,
+            basic_salary=daily_rate,
+            working_hours=worked_days * 8,
+            overtime_hours=0,
+            holiday_pay=0,
+            night_differential=0,
+            sss_contribution=sss,
+            philhealth_contribution=philhealth,
+            pagibig_contribution=pagibig,
+            tax_withheld=tax,
+            other_deductions=other,
+            net_pay=net_pay
+        )
+
+        db.session.add(payroll)
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "gross_pay": gross_pay,
+            "deductions": total_deductions,
+            "net_pay": net_pay
+        })
+
+    # --------------------------
+    # GET: Prepare Employee Data
+    # --------------------------
+    employee_data = []
+    for emp in employees:
+        allowance_total = sum([ea.allowance.amount for ea in emp.employee_allowances]) if emp.employee_allowances else 0
+        sss_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() == "sss"]) if emp.employee_deductions else 0
+        philhealth_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() == "philhealth"]) if emp.employee_deductions else 0
+        pagibig_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() in ["pag-ibig","pagibig"]]) if emp.employee_deductions else 0
+        existing_payrolls = [p.pay_period_id for p in emp.payrolls] if emp.payrolls else []
+
+        daily_rate = emp.salary or 0  # flexible salary
+
+        employee_data.append({
+            "id": emp.id,
+            "full_name": emp.get_full_name(),
+            "daily_rate": daily_rate,
+            "allowance": allowance_total,
+            "sss": sss_total,
+            "philhealth": philhealth_total,
+            "pagibig": pagibig_total,
+            "existing_payrolls": existing_payrolls
+        })
+
+    return render_template(
+        'payroll/admin/jo_payroll.html',
+        employees=employee_data,
+        payroll_periods=payroll_periods,
+        selected_department=selected_department
     )
 
 # ---------------------------
@@ -593,39 +749,8 @@ def casual_payroll():
     )
 
 
-# ---------------------------
-# GET WORKED DAYS FOR CASUAL EMPLOYEES
-# ---------------------------
-@payroll_admin_bp.route('/get_worked_days', methods=['GET'])
-@payroll_admin_required
-def get_worked_days():
-    employee_id = request.args.get('employee_id', type=int)
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-
-    if not employee_id or not start_date_str or not end_date_str:
-        return jsonify({"error": "Missing parameters"}), 400
-
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-
-    attendances = Attendance.query.filter(
-        Attendance.employee_id == employee_id,
-        Attendance.date >= start_date,
-        Attendance.date <= end_date
-    ).all()
-
-    total_hours = sum(a.working_hours or 0 for a in attendances)
-    worked_days = round(total_hours / 8, 2)  # 8 hours = 1 day
-
-    return jsonify({
-        "employee_id": employee_id,
-        "worked_days": worked_days
-    })
-
 
 @payroll_admin_bp.route('/employees')
-@payroll_admin_required
 @payroll_admin_required
 def view_employees():
     search = request.args.get('search', '', type=str)
@@ -2041,14 +2166,12 @@ def export_earnings_pdf():
 
 @payroll_admin_bp.route('/employees/benefits')
 @payroll_admin_required
-@payroll_admin_required
 def list_employee_benefits():
     employees = Employee.query.all()
     return render_template('payroll/admin/manage_benefits_list.html', employees=employees)
 
     
 @payroll_admin_bp.route('/employee/<int:employee_id>/benefits/<string:benefit_type>', methods=['GET', 'POST'])
-@payroll_admin_required
 @payroll_admin_required
 def manage_employee_benefits(employee_id, benefit_type):
     employee = Employee.query.get_or_404(employee_id)
@@ -2097,4 +2220,41 @@ def manage_employee_benefits(employee_id, benefit_type):
         selected_items=selected_items,
         benefit_type=benefit_type,
         success_message=success_message
+    )
+
+@payroll_admin_bp.route('/deduction-formulas')
+def deduction_formulas():
+    salary = 25000  # Example salary
+
+    # Compute all contributions
+    philhealth = compute_philhealth_deduction(salary)
+    pagibig = compute_pagibig_deduction(salary)
+    sss = compute_sss_deduction(salary)
+    gsis = compute_gsis_deduction(salary)
+    menpc = compute_menpc_deduction(salary)  # <-- Make sure this exists
+
+    # Pag-IBIG loans
+    loans = {
+        "ShortTerm": compute_pagibig_loan(salary, "short-term"),
+        "Calamity": compute_pagibig_loan(salary, "calamity"),
+        "Emergency": compute_pagibig_loan(salary, "emergency")
+    }
+
+    # Withholding tax
+    withholding = {
+        "formula": "Based on TRAIN 2023-2026 table",
+        "tax": compute_withholding_tax(salary)
+    }
+
+    # Pass menpc to template
+    return render_template(
+        "payroll/admin/deduction.html",
+        salary=salary,
+        philhealth=philhealth,
+        pagibig=pagibig,
+        sss=sss,
+        gsis=gsis,
+        menpc=menpc,  # <-- Pass it here
+        loans=loans,
+        withholding=withholding
     )
