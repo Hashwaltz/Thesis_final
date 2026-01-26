@@ -227,91 +227,84 @@ def department_employees(department_id):
         department=department
     )
 
-
-# ---------------------------
-# GET WORKED DAYS
-# ---------------------------
-@payroll_admin_bp.route('/get_worked_days', methods=['GET'])
+@payroll_admin_bp.route('/jo/worked-days', methods=['GET'])
 @payroll_admin_required
-def get_worked_days():
+def get_jo_worked_days():
     employee_id = request.args.get('employee_id', type=int)
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
 
-    if not employee_id or not start_date_str or not end_date_str:
+    if not employee_id or not start_date or not end_date:
         return jsonify({"error": "Missing parameters"}), 400
 
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    start = datetime.strptime(start_date, "%Y-%m-%d").date()
+    end = datetime.strptime(end_date, "%Y-%m-%d").date()
 
+    # Fetch attendances in the period
     attendances = Attendance.query.filter(
         Attendance.employee_id == employee_id,
-        Attendance.date.between(start_date, end_date)
+        Attendance.date.between(start, end)
     ).all()
 
-    total_hours = sum(a.working_hours or 0 for a in attendances)
-    worked_days = round(total_hours / 8, 2)  # 8 hours per day
+    # Compute worked days
+    worked_days = 0.0
+    for a in attendances:
+        if a.status in ['Present', 'Late']:
+            # Base 1 day
+            day_equiv = 1.0
+
+            # If Late, subtract LateComputation day_equivalent
+            late = LateComputation.query.filter_by(attendance_id=a.id).first()
+            if late:
+                day_equiv -= late.day_equivalent  # subtract late fraction
+
+            worked_days += day_equiv
+
+    worked_days = round(worked_days, 2)
+
+    # Count total weekdays in period (Mon-Fri)
+    total_working_days = sum(
+        1 for i in range((end - start).days + 1)
+        if (start + timedelta(days=i)).weekday() < 5
+    )
 
     return jsonify({
-        "employee_id": employee_id,
-        "worked_days": worked_days
+        "worked_days": worked_days,
+        "total_working_days": total_working_days
     })
 
 
-# ---------------------------
-# JOB ORDER PAYROLL
-# ---------------------------
 @payroll_admin_bp.route('/jo', methods=['GET', 'POST'])
 @payroll_admin_required
 def jo_payroll():
-    department_id = request.args.get('department_id', type=int)
-    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    payroll_periods = PayrollPeriod.query.order_by(
+        PayrollPeriod.start_date.desc()
+    ).all()
 
-    # Base query: active employees
-    query = Employee.query.filter_by(status="Active")
-    if department_id:
-        query = query.filter_by(department_id=department_id)
+    # JOB ORDER = employment_type_id = 5
+    employees = Employee.query.filter(
+        Employee.status == "Active",
+        Employee.employment_type_id == 5
+    ).all()
 
-    # Filter only Job Order employees by ID
-    JO_EMPLOYMENT_TYPE_ID = 5
-    employees = query.filter_by(employment_type_id=JO_EMPLOYMENT_TYPE_ID).all()
-
-    selected_department = None
-    if department_id:
-        from main_app.models.hr_models import Department
-        department = Department.query.get(department_id)
-        selected_department = department.name if department else None
-
-    # --------------------------
-    # POST: Process Payroll
-    # --------------------------
+    # ---------------- POST: PROCESS PAYROLL ----------------
     if request.method == 'POST':
-        employee_id = int(request.form.get('employee_id'))
-        pay_period_id = int(request.form.get('pay_period_id'))
+        employee_id = int(request.form['employee_id'])
+        pay_period_id = int(request.form['pay_period_id'])
+        daily_rate = float(request.form['daily_rate'])
+        worked_days = float(request.form['worked_days'])
 
-        payroll_period = PayrollPeriod.query.get(pay_period_id)
-        employee = Employee.query.get(employee_id)
-
-        daily_rate = float(request.form.get('daily_rate', 0))
-        worked_days = float(request.form.get('worked_days', 0))
-        allowance = float(request.form.get('allowance', 0))
-        sss = float(request.form.get('sss', 0))
-        philhealth = float(request.form.get('philhealth', 0))
-        pagibig = float(request.form.get('pagibig', 0))
-        tax = float(request.form.get('tax', 0))
-        other = float(request.form.get('other', 0))
-
-        gross_pay = round(daily_rate * worked_days, 2)
-        total_deductions = round(sss + philhealth + pagibig + tax + other, 2)
-        net_pay = round((gross_pay + allowance) - total_deductions, 2)
+        payroll_period = PayrollPeriod.query.get_or_404(pay_period_id)
 
         # Prevent duplicate payroll
-        existing = Payroll.query.filter_by(
+        exists = Payroll.query.filter_by(
             employee_id=employee_id,
             pay_period_id=pay_period_id
         ).first()
-        if existing:
-            return jsonify({"status": "error", "message": "Payroll already exists for this employee."})
+        if exists:
+            return jsonify({"status": "error", "message": "Already processed"})
+
+        gross_pay = round(daily_rate * worked_days, 2)
 
         payroll = Payroll(
             employee_id=employee_id,
@@ -320,15 +313,7 @@ def jo_payroll():
             pay_period_end=payroll_period.end_date,
             basic_salary=daily_rate,
             working_hours=worked_days * 8,
-            overtime_hours=0,
-            holiday_pay=0,
-            night_differential=0,
-            sss_contribution=sss,
-            philhealth_contribution=philhealth,
-            pagibig_contribution=pagibig,
-            tax_withheld=tax,
-            other_deductions=other,
-            net_pay=net_pay
+            net_pay=gross_pay
         )
 
         db.session.add(payroll)
@@ -336,41 +321,28 @@ def jo_payroll():
 
         return jsonify({
             "status": "success",
-            "gross_pay": gross_pay,
-            "deductions": total_deductions,
-            "net_pay": net_pay
+            "net_pay": gross_pay
         })
 
-    # --------------------------
-    # GET: Prepare Employee Data
-    # --------------------------
+    # ---------------- GET: DISPLAY PAGE ----------------
     employee_data = []
     for emp in employees:
-        allowance_total = sum([ea.allowance.amount for ea in emp.employee_allowances]) if emp.employee_allowances else 0
-        sss_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() == "sss"]) if emp.employee_deductions else 0
-        philhealth_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() == "philhealth"]) if emp.employee_deductions else 0
-        pagibig_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() in ["pag-ibig","pagibig"]]) if emp.employee_deductions else 0
-        existing_payrolls = [p.pay_period_id for p in emp.payrolls] if emp.payrolls else []
-
-        daily_rate = emp.salary or 0  # flexible salary
+        existing_periods = [p.pay_period_id for p in emp.payrolls]
 
         employee_data.append({
             "id": emp.id,
             "full_name": emp.get_full_name(),
-            "daily_rate": daily_rate,
-            "allowance": allowance_total,
-            "sss": sss_total,
-            "philhealth": philhealth_total,
-            "pagibig": pagibig_total,
-            "existing_payrolls": existing_payrolls
+            "daily_rate": emp.salary or 0,
+            "existing_payrolls": existing_periods
         })
 
     return render_template(
-        'payroll/admin/jo_payroll.html',
+        "payroll/admin/jo_payroll.html",
         employees=employee_data,
-        payroll_periods=payroll_periods,
-        selected_department=selected_department
+        payroll_periods=payroll_periods
     )
+
+
 
 # ---------------------------
 # PART-TIME PAYROLL
