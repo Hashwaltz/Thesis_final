@@ -1,154 +1,138 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Job Order Payroll{% endblock %}
 
 {% block content %}
 <section class="p-6 space-y-6 text-gray-200">
 
   <!-- ===== HEADER ===== -->
-  <h2 class="text-2xl font-semibold text-emerald-400">Job Order Payroll</h2>
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      Job Order Payroll
+    </h1>
+  </div>
 
-  <!-- ===== PAY PERIOD SELECT ===== -->
-  <form id="payrollPeriodForm" class="flex flex-wrap gap-4 items-end">
-    <div class="flex flex-col">
-      <label for="pay_period_id" class="text-gray-300">Select Payroll Period</label>
-      <select id="pay_period_id" class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        <option value="">-- Select Period --</option>
-        {% for period in payroll_periods %}
-          <option value="{{ period.id }}" data-start="{{ period.start_date }}" data-end="{{ period.end_date }}">
-            {{ period.start_date }} to {{ period.end_date }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
-    <button type="button" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition" onclick="calculateWorkedDays()">
-      <i class="fa-solid fa-clock"></i> Calculate Worked Days
-    </button>
-  </form>
+  <!-- ===== PAYROLL PERIOD SELECT ===== -->
+  <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 max-w-sm">
+    <label class="block text-gray-300 mb-1">Payroll Period</label>
+    <select
+      id="period"
+      onchange="loadWorkedDays()"
+      class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+    >
+      <option value="">Select Period</option>
+      {% for p in payroll_periods %}
+        <option
+          value="{{ p.id }}"
+          data-start="{{ p.start_date }}"
+          data-end="{{ p.end_date }}"
+        >
+          {{ p.start_date }} – {{ p.end_date }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
 
-  <!-- ===== PAYROLL TABLE ===== -->
-  <div class="overflow-x-auto mt-4 bg-gray-800 rounded-2xl border border-gray-700 shadow-lg p-4">
-    <table class="min-w-full divide-y divide-gray-700 text-sm text-center">
+  <!-- ===== JOB ORDER PAYROLL TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
       <thead class="bg-gray-900">
         <tr>
-          <th class="px-4 py-2 text-left">Employee</th>
-          <th class="px-4 py-2">Daily Rate</th>
-          <th class="px-4 py-2">Worked Days</th>
-          <th class="px-4 py-2">Net Pay</th>
-          <th class="px-4 py-2">Action</th>
+          <th class="px-6 py-3 text-left text-gray-400">Employee</th>
+          <th class="px-6 py-3 text-left text-gray-400">Daily Rate</th>
+          <th class="px-6 py-3 text-left text-gray-400">Worked Days</th>
+          <th class="px-6 py-3 text-left text-gray-400">Employment Type</th>
+          <th class="px-6 py-3 text-left text-gray-400">Action</th>
         </tr>
       </thead>
+
       <tbody class="divide-y divide-gray-700">
-        {% if employees %}
-          {% for emp in employees %}
-          <tr id="row-{{ emp.id }}" data-daily-rate="{{ emp.daily_rate }}" data-existing-periods="{{ emp.existing_payrolls|join(',') }}" class="hover:bg-gray-700/50 transition">
-            <!-- Employee Name (Left-aligned) -->
-            <td class="px-4 py-2 text-left">{{ emp.full_name }}</td>
-            <!-- Daily Rate -->
-            <td class="px-4 py-2">₱ {{ emp.daily_rate }}</td>
-            <!-- Worked Days -->
-            <td class="px-4 py-2 worked-days">0</td>
-            <!-- Net Pay -->
-            <td class="px-4 py-2 font-bold text-green-400 net-pay">₱ 0.00</td>
-            <!-- Action Button -->
-            <td class="px-4 py-2">
-              <button class="btn-action px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm mx-auto block" onclick="processPayroll({{ emp.id }})">
-                <i class="fa-solid fa-check"></i> Process
-              </button>
-            </td>
-          </tr>
-          {% endfor %}
+        {% for emp in employees %}
+        <tr
+          class="hover:bg-gray-700/50 transition"
+          data-employee-id="{{ emp.id }}"
+        >
+          <td class="px-6 py-3 font-medium text-gray-100">
+            {{ emp.get_full_name() }}
+          </td>
+
+          <td class="px-6 py-3">
+            ₱ {{ "{:,.2f}".format(emp.salary) }}
+          </td>
+
+          <!-- WORKED DAYS -->
+          <td class="px-6 py-3 worked-days text-yellow-400">
+            —
+          </td>
+
+          <td class="px-6 py-3">
+            Job Order
+          </td>
+
+          <td class="px-6 py-3">
+            <button
+              onclick="goPreview({{ emp.id }})"
+              class="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm transition"
+            >
+              <i class="fa-solid fa-eye"></i>
+              Preview
+            </button>
+          </td>
+        </tr>
         {% else %}
-          <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-gray-400">No employees found for payroll processing.</td>
-          </tr>
-        {% endif %}
+        <tr>
+          <td colspan="5" class="px-6 py-4 text-center text-gray-400">
+            No Job Order employees found.
+          </td>
+        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
+
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-const workedDaysUrl = "{{ url_for('payroll_admin.get_jo_worked_days') }}";
-const processUrl = "{{ url_for('payroll_admin.jo_payroll') }}";
+const workedDaysUrl = "{{ url_for('payroll_admin.jo_worked_days') }}";
 
-function parseInput(value) { return parseFloat(value.replace(/,/g, '')) || 0; }
-
-function calculateWorkedDays() {
-  const select = document.getElementById('pay_period_id');
+// Load worked days dynamically
+function loadWorkedDays() {
+  const select = document.getElementById("period");
   const option = select.selectedOptions[0];
-  if (!option) { Swal.fire({ icon:'warning', title:'Select a payroll period!' }); return; }
+  if (!option || !option.value) return;
 
   const start = option.dataset.start;
   const end = option.dataset.end;
 
-  document.querySelectorAll("tr[id^='row-']").forEach(row => {
-    const empId = row.id.replace('row-', '');
-    const rate = parseFloat(row.dataset.dailyRate);
+  document.querySelectorAll("tr[data-employee-id]").forEach(row => {
+    const empId = row.dataset.employeeId;
+    const cell = row.querySelector(".worked-days");
+    cell.textContent = "Loading...";
 
     fetch(`${workedDaysUrl}?employee_id=${empId}&start_date=${start}&end_date=${end}`)
       .then(res => res.json())
       .then(data => {
-        row.dataset.workedDays = data.worked_days;
-        row.querySelector('.worked-days').innerText = `${data.worked_days} / ${data.total_working_days}`;
-
-        const net = rate * data.worked_days;
-        row.querySelector('.net-pay').innerText = `₱ ${net.toLocaleString('en-PH',{minimumFractionDigits:2})}`;
+        cell.textContent = `${data.worked_days} / ${data.total_working_days}`;
+      })
+      .catch(() => {
+        cell.textContent = "—";
       });
   });
 }
 
-function processPayroll(empId) {
-  const row = document.getElementById(`row-${empId}`);
-  const periodId = document.getElementById('pay_period_id').value;
-  const processBtn = row.querySelector('.btn-action');
+// Preview payroll for employee
+function goPreview(empId) {
+  const periodId = document.getElementById("period").value;
+  if (!periodId) {
+    Swal.fire('Select payroll period','','warning');
+    return;
+  }
 
-  if (!periodId) { Swal.fire({ icon:'warning', title:'Select a payroll period!' }); return; }
-  if (processBtn.disabled) return;
-
-  fetch(processUrl, {
-    method: "POST",
-    headers: {"Content-Type":"application/x-www-form-urlencoded"},
-    body: new URLSearchParams({
-      employee_id: empId,
-      pay_period_id: periodId,
-      daily_rate: row.dataset.dailyRate,
-      worked_days: row.dataset.workedDays
-    })
-  })
-  .then(res => res.json())
-  .then(resp => {
-    if(resp.status === "success") {
-      row.querySelector('.net-pay').innerText = `₱ ${resp.net_pay.toLocaleString('en-PH',{minimumFractionDigits:2})}`;
-      processBtn.disabled = true;
-      processBtn.classList.replace('bg-blue-600', 'bg-gray-500');
-      Swal.fire({ icon: 'success', title: 'Payroll Processed', text: `${row.querySelector('td').innerText} payroll saved!`, timer: 2500, showConfirmButton:false });
-    } else {
-      Swal.fire({ icon:'error', title:'Error', text:'Failed to process payroll.' });
-    }
-  });
+  // Build URL with Flask url_for
+  const urlTemplate = "{{ url_for('payroll_admin.jo_payroll_preview', employee_id=0) }}";
+  const url = urlTemplate.replace("0", empId) + "?period_id=" + periodId;
+  window.location.href = url;
 }
-
-// Disable Process button if payroll already exists
-document.getElementById('pay_period_id').addEventListener('change', () => {
-  const selectedPeriodId = parseInt(document.getElementById('pay_period_id').value) || 0;
-  document.querySelectorAll('tbody tr').forEach(row => {
-    const btn = row.querySelector('.btn-action');
-    const existingPeriods = row.dataset.existingPeriods.split(',').map(id => parseInt(id));
-    if (existingPeriods.includes(selectedPeriodId)) {
-      btn.disabled = true;
-      btn.classList.replace('bg-blue-600','bg-gray-500');
-      btn.innerText = 'Processed';
-    } else {
-      btn.disabled = false;
-      btn.classList.replace('bg-gray-500','bg-blue-600');
-      btn.innerHTML = '<i class="fa-solid fa-check"></i> Process';
-    }
-  });
-});
 </script>
-
-<style>
-.btn-action { @apply px-3 py-1 rounded-lg text-white transition; }
-</style>
 {% endblock %}

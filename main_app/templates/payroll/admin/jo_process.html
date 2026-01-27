@@ -1,0 +1,79 @@
+{% extends "payroll/admin/payroll_admin_base.html" %}
+{% block title %}Payroll Preview{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 shadow-lg">
+  <!-- HEADER -->
+  <div class="mb-6 text-center">
+    <h2 class="text-2xl font-bold text-emerald-400">Payroll Preview</h2>
+    <p class="text-gray-300 mt-1">Review employee payroll before saving</p>
+  </div>
+
+  <!-- EMPLOYEE INFO -->
+  <div class="grid grid-cols-2 gap-4 mb-6 text-gray-200">
+    <div>
+      <p class="font-semibold text-gray-400">Employee</p>
+      <p class="text-white">{{ employee.get_full_name() }}</p>
+    </div>
+    <div>
+      <p class="font-semibold text-gray-400">Payroll Period</p>
+      <p class="text-white">{{ period.start_date }} – {{ period.end_date }}</p>
+    </div>
+    <div>
+      <p class="font-semibold text-gray-400">Worked Days</p>
+      <p class="text-yellow-400">{{ worked_days }} / {{ total_days }}</p>
+    </div>
+    <div>
+      <p class="font-semibold text-gray-400">Daily Rate</p>
+      <p class="text-white">₱ {{ "{:,.2f}".format(employee.salary) }}</p>
+    </div>
+    <div>
+      <p class="font-semibold text-gray-400">Gross Pay</p>
+      <p class="text-white">₱ {{ "{:,.2f}".format(gross_pay) }}</p>
+    </div>
+  </div>
+
+  <!-- DEDUCTIONS -->
+  <div class="mb-6">
+    <h3 class="text-lg font-semibold text-gray-300 mb-2">Deductions</h3>
+    <div class="grid grid-cols-2 gap-4 text-gray-200">
+      <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
+        <p class="text-gray-400">SSS</p>
+        <p class="text-white">₱ {{ deductions.sss.employee_share }}</p>
+      </div>
+      <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
+        <p class="text-gray-400">PhilHealth</p>
+        <p class="text-white">₱ {{ deductions.philhealth.employee_share }}</p>
+      </div>
+      <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
+        <p class="text-gray-400">Pag-IBIG</p>
+        <p class="text-white">₱ {{ deductions.pagibig.employee_share }}</p>
+      </div>
+      <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
+        <p class="text-gray-400">Withholding Tax</p>
+        <p class="text-white">₱ {{ deductions.withholding_tax }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- NET PAY -->
+  <div class="mb-6 text-center">
+    <h3 class="text-xl font-bold text-emerald-400">Net Pay</h3>
+    <p class="text-white text-2xl">₱ {{ "{:,.2f}".format(net_pay) }}</p>
+  </div>
+
+  <!-- SAVE PAYROLL FORM -->
+  <form method="POST" action="{{ url_for('payroll_admin.jo_payroll_save') }}" class="text-center">
+    <input type="hidden" name="employee_id" value="{{ employee.id }}">
+    <input type="hidden" name="period_id" value="{{ period.id }}">
+    <input type="hidden" name="worked_days" value="{{ worked_days }}">
+    <input type="hidden" name="daily_rate" value="{{ employee.salary }}">
+    <button 
+      type="submit"
+      class="mt-4 bg-green-600 hover:bg-green-500 text-white font-semibold px-6 py-2 rounded-lg transition"
+    >
+      Save Payroll
+    </button>
+  </form>
+</div>
+{% endblock %}

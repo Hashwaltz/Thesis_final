@@ -1,27 +1,25 @@
 # payroll_deductions.py
 from typing import Dict
 
-# ------------------------
-# SSS Contribution
-# ------------------------
 def compute_sss_deduction(salary: float) -> dict:
-    """
-    Compute SSS contribution based on approximate 2026 rules.
-    - Employee share: 4%
-    - Employer share: 8.5%
-    - Maximum salary credit: 25,000
-    """
-    max_salary = 25_000
-    effective_salary = min(salary, max_salary)
-    employee_share = effective_salary * 0.04
-    employer_share = effective_salary * 0.085
+    # SSS 2025 minimum & maximum Salary Credit (MSC)
+    min_msc = 5000
+    max_msc = 35000
+
+    # Find MSC: floor & ceiling
+    effective_msc = max(min_msc, min(salary, max_msc))
+
+    # Contribution shares
+    employee_share = effective_msc * 0.05
+    employer_share = effective_msc * 0.10
     total = employee_share + employer_share
+
     return {
         "salary": salary,
-        "effective_salary": effective_salary,
-        "employee_share": round(employee_share,2),
-        "employer_share": round(employer_share,2),
-        "total": round(total,2)
+        "msc": effective_msc,
+        "employee_share": round(employee_share, 2),
+        "employer_share": round(employer_share, 2),
+        "total": round(total, 2),
     }
 
 # ------------------------

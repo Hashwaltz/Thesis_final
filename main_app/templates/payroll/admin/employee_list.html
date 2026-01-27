@@ -91,9 +91,9 @@ function redirectPayroll(type) {
     } else if (type === 'part-time') {
         url = `{{ url_for('payroll_admin.parttime_payroll') }}?department_id=${departmentId}`;
     } else if (type === 'jo') {
-        url = `{{ url_for('payroll_admin.jo_payroll') }}?department_id=${departmentId}`;
+        // ✅ Updated: use the correct blueprint route
+        url = `{{ url_for('payroll_admin.jo_payroll_page') }}?department_id=${departmentId}`;
     }
-
     window.location.href = url;
 }
 </script>

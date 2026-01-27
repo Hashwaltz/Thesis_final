@@ -227,120 +227,161 @@ def department_employees(department_id):
         department=department
     )
 
-@payroll_admin_bp.route('/jo/worked-days', methods=['GET'])
-@payroll_admin_required
-def get_jo_worked_days():
-    employee_id = request.args.get('employee_id', type=int)
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
+JOB_ORDER_ID = 5
+@payroll_admin_bp.route("/jo-payroll")
+@login_required
+def jo_payroll_page():
+    department_id = request.args.get("department_id", type=int)
 
-    if not employee_id or not start_date or not end_date:
-        return jsonify({"error": "Missing parameters"}), 400
+    query = Employee.query.filter(
+        Employee.employment_type_id == JOB_ORDER_ID,
+        Employee.status == "Active"
+    )
+
+    if department_id:
+        query = query.filter(Employee.department_id == department_id)
+
+    employees = query.all()
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+
+    return render_template(
+        "payroll/admin/jo_payroll.html",
+        employees=employees,
+        payroll_periods=payroll_periods
+    )
+
+
+@payroll_admin_bp.route("/jo/worked-days")
+@login_required
+def jo_worked_days():
+    employee_id = request.args.get("employee_id", type=int)
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
 
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     end = datetime.strptime(end_date, "%Y-%m-%d").date()
 
-    # Fetch attendances in the period
     attendances = Attendance.query.filter(
         Attendance.employee_id == employee_id,
         Attendance.date.between(start, end)
     ).all()
 
-    # Compute worked days
-    worked_days = 0.0
+    worked_days = 0
     for a in attendances:
-        if a.status in ['Present', 'Late']:
-            # Base 1 day
-            day_equiv = 1.0
+        if a.status in ("Present", "Late"):
+            worked_days += 1
 
-            # If Late, subtract LateComputation day_equivalent
-            late = LateComputation.query.filter_by(attendance_id=a.id).first()
-            if late:
-                day_equiv -= late.day_equivalent  # subtract late fraction
-
-            worked_days += day_equiv
-
-    worked_days = round(worked_days, 2)
-
-    # Count total weekdays in period (Mon-Fri)
-    total_working_days = sum(
+    total_days = sum(
         1 for i in range((end - start).days + 1)
         if (start + timedelta(days=i)).weekday() < 5
     )
 
-    return jsonify({
+    return {
         "worked_days": worked_days,
-        "total_working_days": total_working_days
-    })
+        "total_working_days": total_days
+    }
 
 
-@payroll_admin_bp.route('/jo', methods=['GET', 'POST'])
-@payroll_admin_required
-def jo_payroll():
-    payroll_periods = PayrollPeriod.query.order_by(
-        PayrollPeriod.start_date.desc()
+@payroll_admin_bp.route("/jo-payroll/preview/<int:employee_id>")
+@login_required
+def jo_payroll_preview(employee_id):
+    JOB_ORDER_ID = 5  # ensure same as your page
+
+    period_id = request.args.get("period_id", type=int)
+
+    employee = Employee.query.filter_by(
+        id=employee_id,
+        employment_type_id=JOB_ORDER_ID,
+        status="Active"
+    ).first_or_404()
+
+    period = PayrollPeriod.query.get_or_404(period_id)
+
+    attendances = Attendance.query.filter(
+        Attendance.employee_id == employee.id,
+        Attendance.date.between(period.start_date, period.end_date)
     ).all()
 
-    # JOB ORDER = employment_type_id = 5
-    employees = Employee.query.filter(
-        Employee.status == "Active",
-        Employee.employment_type_id == 5
-    ).all()
+    worked_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
+    total_days = sum(
+        1
+        for i in range((period.end_date - period.start_date).days + 1)
+        if (period.start_date + timedelta(days=i)).weekday() < 5
+    )
 
-    # ---------------- POST: PROCESS PAYROLL ----------------
-    if request.method == 'POST':
-        employee_id = int(request.form['employee_id'])
-        pay_period_id = int(request.form['pay_period_id'])
-        daily_rate = float(request.form['daily_rate'])
-        worked_days = float(request.form['worked_days'])
+    daily_rate = employee.salary
+    gross_pay = daily_rate * worked_days
 
-        payroll_period = PayrollPeriod.query.get_or_404(pay_period_id)
+    sss = compute_sss_deduction(gross_pay)
+    philhealth = compute_philhealth_deduction(gross_pay)
+    pagibig = compute_pagibig_deduction(gross_pay)
+    withholding_tax = compute_withholding_tax(gross_pay)
 
-        # Prevent duplicate payroll
-        exists = Payroll.query.filter_by(
-            employee_id=employee_id,
-            pay_period_id=pay_period_id
-        ).first()
-        if exists:
-            return jsonify({"status": "error", "message": "Already processed"})
-
-        gross_pay = round(daily_rate * worked_days, 2)
-
-        payroll = Payroll(
-            employee_id=employee_id,
-            pay_period_id=pay_period_id,
-            pay_period_start=payroll_period.start_date,
-            pay_period_end=payroll_period.end_date,
-            basic_salary=daily_rate,
-            working_hours=worked_days * 8,
-            net_pay=gross_pay
-        )
-
-        db.session.add(payroll)
-        db.session.commit()
-
-        return jsonify({
-            "status": "success",
-            "net_pay": gross_pay
-        })
-
-    # ---------------- GET: DISPLAY PAGE ----------------
-    employee_data = []
-    for emp in employees:
-        existing_periods = [p.pay_period_id for p in emp.payrolls]
-
-        employee_data.append({
-            "id": emp.id,
-            "full_name": emp.get_full_name(),
-            "daily_rate": emp.salary or 0,
-            "existing_payrolls": existing_periods
-        })
+    total_deductions = (
+        sss["employee_share"]
+        + philhealth["employee_share"]
+        + pagibig["employee_share"]
+        + withholding_tax
+    )
+    net_pay = gross_pay - total_deductions
 
     return render_template(
-        "payroll/admin/jo_payroll.html",
-        employees=employee_data,
-        payroll_periods=payroll_periods
+        "payroll/admin/jo_process.html",
+        employee=employee,
+        period=period,
+        worked_days=worked_days,
+        total_days=total_days,
+        gross_pay=gross_pay,
+        deductions={"sss": sss, "philhealth": philhealth, "pagibig": pagibig, "withholding_tax": withholding_tax},
+        net_pay=net_pay
     )
+
+
+@payroll_admin_bp.route("/jo-payroll/save", methods=["POST"])
+@login_required
+def jo_payroll_save():
+    employee_id = int(request.form["employee_id"])
+    period_id = int(request.form["period_id"])
+    worked_days = float(request.form["worked_days"])
+    daily_rate = float(request.form["daily_rate"])
+
+    exists = Payroll.query.filter_by(
+        employee_id=employee_id,
+        pay_period_id=period_id
+    ).first()
+
+    if exists:
+        flash("Payroll already processed.", "warning")
+        return redirect(request.referrer)
+
+    gross_pay = daily_rate * worked_days
+    sss = compute_sss_deduction(gross_pay)
+    philhealth = compute_philhealth_deduction(gross_pay)
+    pagibig = compute_pagibig_deduction(gross_pay)
+    withholding_tax = compute_withholding_tax(gross_pay)
+
+    total_deductions = (
+        sss["employee_share"]
+        + philhealth["employee_share"]
+        + pagibig["employee_share"]
+        + withholding_tax
+    )
+
+    net_pay = gross_pay - total_deductions
+
+    payroll = Payroll(
+        employee_id=employee_id,
+        pay_period_id=period_id,
+        gross_pay=gross_pay,
+        total_deductions=total_deductions,
+        net_pay=net_pay
+    )
+
+    db.session.add(payroll)
+    db.session.commit()
+
+    flash("Payroll successfully processed.", "success")
+    return redirect(url_for("payroll_admin.jo_payroll_page"))
 
 
 
@@ -443,6 +484,9 @@ def parttime_payroll():
         payroll_periods=payroll_periods,
         selected_department=selected_department
     )
+
+
+
 # ---------------------------
 # GET WORKING HOURS (UPDATED)
 # ---------------------------
