@@ -282,12 +282,16 @@ def jo_worked_days():
     }
 
 
+
 @payroll_admin_bp.route("/jo-payroll/preview/<int:employee_id>")
 @login_required
 def jo_payroll_preview(employee_id):
-    JOB_ORDER_ID = 5  # ensure same as your page
+    JOB_ORDER_ID = 5  # must match employment_type_id
 
     period_id = request.args.get("period_id", type=int)
+    if not period_id:
+        flash("Payroll period is required.", "danger")
+        return redirect(request.referrer)
 
     employee = Employee.query.filter_by(
         id=employee_id,
@@ -303,6 +307,7 @@ def jo_payroll_preview(employee_id):
     ).all()
 
     worked_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
+
     total_days = sum(
         1
         for i in range((period.end_date - period.start_date).days + 1)
@@ -310,20 +315,26 @@ def jo_payroll_preview(employee_id):
     )
 
     daily_rate = employee.salary
-    gross_pay = daily_rate * worked_days
+    base_gross_pay = daily_rate * worked_days  # 🔥 REQUIRED BY UI
 
-    sss = compute_sss_deduction(gross_pay)
-    philhealth = compute_philhealth_deduction(gross_pay)
-    pagibig = compute_pagibig_deduction(gross_pay)
-    withholding_tax = compute_withholding_tax(gross_pay)
+    # Government deductions (preview only)
+    sss = compute_sss_deduction(base_gross_pay)
+    philhealth = compute_philhealth_deduction(base_gross_pay)
+    pagibig = compute_pagibig_deduction(base_gross_pay)
+    withholding_tax = compute_withholding_tax(base_gross_pay)
 
-    total_deductions = (
-        sss["employee_share"]
-        + philhealth["employee_share"]
-        + pagibig["employee_share"]
-        + withholding_tax
-    )
-    net_pay = gross_pay - total_deductions
+    deductions = {
+        "sss": sss,
+        "philhealth": philhealth,
+        "pagibig": pagibig,
+        "withholding_tax": round(withholding_tax, 2)
+    }
+
+    # Check if payroll already exists
+    payroll_exists = Payroll.query.filter_by(
+        employee_id=employee.id,
+        pay_period_id=period.id
+    ).first() is not None
 
     return render_template(
         "payroll/admin/jo_process.html",
@@ -331,10 +342,12 @@ def jo_payroll_preview(employee_id):
         period=period,
         worked_days=worked_days,
         total_days=total_days,
-        gross_pay=gross_pay,
-        deductions={"sss": sss, "philhealth": philhealth, "pagibig": pagibig, "withholding_tax": withholding_tax},
-        net_pay=net_pay
+        base_gross_pay=base_gross_pay,
+        deductions=deductions,
+        payroll_exists=payroll_exists  # ✅ pass to template
     )
+
+
 
 
 @payroll_admin_bp.route("/jo-payroll/save", methods=["POST"])
@@ -345,6 +358,10 @@ def jo_payroll_save():
     worked_days = float(request.form["worked_days"])
     daily_rate = float(request.form["daily_rate"])
 
+    allowance = float(request.form.get("allowance", 0))
+    other_deductions = float(request.form.get("other_deductions", 0))
+
+    # Prevent duplicate payroll
     exists = Payroll.query.filter_by(
         employee_id=employee_id,
         pay_period_id=period_id
@@ -354,7 +371,15 @@ def jo_payroll_save():
         flash("Payroll already processed.", "warning")
         return redirect(request.referrer)
 
-    gross_pay = daily_rate * worked_days
+    period = PayrollPeriod.query.get_or_404(period_id)
+
+    # 🧮 Base gross
+    base_gross_pay = daily_rate * worked_days
+
+    # 💰 Gross including allowance
+    gross_pay = base_gross_pay + allowance
+
+    # Government deductions
     sss = compute_sss_deduction(gross_pay)
     philhealth = compute_philhealth_deduction(gross_pay)
     pagibig = compute_pagibig_deduction(gross_pay)
@@ -365,6 +390,7 @@ def jo_payroll_save():
         + philhealth["employee_share"]
         + pagibig["employee_share"]
         + withholding_tax
+        + other_deductions
     )
 
     net_pay = gross_pay - total_deductions
@@ -372,9 +398,22 @@ def jo_payroll_save():
     payroll = Payroll(
         employee_id=employee_id,
         pay_period_id=period_id,
+        pay_period_start=period.start_date,
+        pay_period_end=period.end_date,
+
+        basic_salary=base_gross_pay,
         gross_pay=gross_pay,
+
+        sss_contribution=sss["employee_share"],
+        philhealth_contribution=philhealth["employee_share"],
+        pagibig_contribution=pagibig["employee_share"],
+        tax_withheld=withholding_tax,
+
+        other_deductions=other_deductions,
         total_deductions=total_deductions,
-        net_pay=net_pay
+        net_pay=net_pay,
+
+        status="Draft"
     )
 
     db.session.add(payroll)
