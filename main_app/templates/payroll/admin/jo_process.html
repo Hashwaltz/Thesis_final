@@ -1,150 +1,106 @@
-{% extends "payroll/admin/payroll_admin_base.html" %} {% block title %}JO
-Payroll Preview{% endblock %} {% block content %}
-<div
-  class="p-6 max-w-3xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 shadow-lg"
->
+{% extends "payroll/admin/payroll_admin_base.html" %}
+{% block title %}JO Payroll Preview{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto bg-gray-800 rounded-2xl border border-gray-700">
+
   <form method="POST" action="{{ url_for('payroll_admin.jo_payroll_save') }}">
-    <!-- HEADER -->
-    <div class="mb-6 text-center">
-      <h2 class="text-2xl font-bold text-emerald-400">Payroll Preview</h2>
-      <p class="text-gray-300 mt-1">Review employee payroll before saving</p>
-    </div>
 
-    <!-- EMPLOYEE INFO -->
-    <div class="grid grid-cols-2 gap-4 mb-6 text-gray-200">
+    <h2 class="text-2xl font-bold text-emerald-400 text-center mb-6">
+      Payroll Preview
+    </h2>
+
+    <!-- Employee & Payroll Info -->
+    <div class="grid grid-cols-2 gap-4 text-gray-200 mb-6">
       <div>
-        <p class="font-semibold text-gray-400">Employee</p>
-        <p class="text-white">{{ employee.get_full_name() }}</p>
+        <p class="text-gray-400">Employee</p>
+        <p>{{ employee.get_full_name() }}</p>
       </div>
 
       <div>
-        <p class="font-semibold text-gray-400">Payroll Period</p>
-        <p class="text-white">
-          {{ period.start_date }} – {{ period.end_date }}
-        </p>
+        <p class="text-gray-400">Payroll Period</p>
+        <p>{{ period.start_date }} – {{ period.end_date }}</p>
       </div>
 
       <div>
-        <p class="font-semibold text-gray-400">Worked Days</p>
+        <p class="text-gray-400">Worked Days</p>
         <p class="text-yellow-400">{{ worked_days }} / {{ total_days }}</p>
       </div>
 
       <div>
-        <p class="font-semibold text-gray-400">Daily Rate</p>
-        <p class="text-white">₱ {{ "{:,.2f}".format(employee.salary) }}</p>
+        <p class="text-gray-400">Daily Rate</p>
+        <p>₱ {{ "{:,.2f}".format(employee.salary) }}</p>
       </div>
 
       <div class="col-span-2">
-        <p class="font-semibold text-gray-400">Base Gross Pay</p>
-        <p class="text-white text-lg">
-          ₱ {{ "{:,.2f}".format(base_gross_pay) }}
-        </p>
+        <p class="text-gray-400">Base Gross Pay</p>
+        <p class="text-lg">₱ {{ "{:,.2f}".format(base_gross_pay) }}</p>
       </div>
     </div>
 
-    <!-- ADJUSTMENTS -->
-    <div class="mb-6">
-      <h3 class="text-lg font-semibold text-gray-300 mb-2">Adjustments</h3>
+    <!-- Allowance & Other Deductions -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div>
+        <label class="text-gray-400">Allowance</label>
+        <input type="number" step="0.01" name="allowance"
+          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
+          value="{{ allowance | round(2) }}"
+          {% if payroll_exists %}readonly{% endif %}>
+        <p class="text-gray-400 mt-1">₱ {{ "{:,.2f}".format(allowance) }}</p>
+      </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-gray-400 mb-1">Allowance</label>
-          <input
-            type="number"
-            step="0.01"
-            name="allowance"
-            value="0"
-            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
-            {%
-            if
-            payroll_exists
-            %}
-            readonly
-            {%
-            endif
-            %}
-          />
-        </div>
-
-        <div>
-          <label class="block text-gray-400 mb-1">Other Deductions</label>
-          <input
-            type="number"
-            step="0.01"
-            name="other_deductions"
-            value="0"
-            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
-            {%
-            if
-            payroll_exists
-            %}
-            readonly
-            {%
-            endif
-            %}
-          />
-        </div>
+      <div>
+        <label class="text-gray-400">Other Deductions</label>
+        <input type="number" step="0.01" name="other_deductions"
+          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
+          value="{{ other_deductions | round(2) }}"
+          {% if payroll_exists %}readonly{% endif %}>
+        <p class="text-gray-400 mt-1">₱ {{ "{:,.2f}".format(other_deductions) }}</p>
       </div>
     </div>
 
-    <!-- GOVERNMENT DEDUCTIONS -->
-    <div class="mb-6">
-      <h3 class="text-lg font-semibold text-gray-300 mb-2">
-        Government Deductions
-      </h3>
-
-      <div class="grid grid-cols-2 gap-4 text-gray-200">
-        <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
-          <p class="text-gray-400">SSS</p>
-          <p class="text-white">₱ {{ deductions.sss.employee_share }}</p>
-        </div>
-
-        <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
-          <p class="text-gray-400">PhilHealth</p>
-          <p class="text-white">₱ {{ deductions.philhealth.employee_share }}</p>
-        </div>
-
-        <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
-          <p class="text-gray-400">Pag-IBIG</p>
-          <p class="text-white">₱ {{ deductions.pagibig.employee_share }}</p>
-        </div>
-
-        <div class="bg-gray-900 p-3 rounded-lg border border-gray-700">
-          <p class="text-gray-400">Withholding Tax</p>
-          <p class="text-white">₱ {{ deductions.withholding_tax }}</p>
-        </div>
-      </div>
+    <!-- Withholding Tax -->
+    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
+      <p class="text-gray-400">Withholding Tax</p>
+      <p class="text-white text-lg">
+        ₱ {{ "{:,.2f}".format(deductions.withholding_tax) }}
+      </p>
     </div>
 
-    <!-- NOTE -->
-    <p class="text-sm text-gray-400 text-center mb-4">
-      Final net pay will be recalculated after clicking
-      <b>Process Payroll</b>.
-    </p>
-
-    <!-- HIDDEN VALUES -->
-    <input type="hidden" name="employee_id" value="{{ employee.id }}" />
-    <input type="hidden" name="period_id" value="{{ period.id }}" />
-    <input type="hidden" name="worked_days" value="{{ worked_days }}" />
-    <input type="hidden" name="daily_rate" value="{{ employee.salary }}" />
-
-    <div class="text-center">
-      <button
-        type="submit"
-        class="px-6 py-2 rounded-lg font-semibold transition {% if payroll_exists %} bg-gray-500 text-gray-200 cursor-not-allowed {% else %} bg-green-600 text-white hover:bg-green-500 {% endif %}"
-        {%
-        if
-        payroll_exists
-        %}
-        disabled
-        {%
-        endif
-        %}
-      >
-        {% if payroll_exists %} Payroll Processed {% else %} Process Payroll {%
-        endif %}
-      </button>
+    <!-- Gross Pay -->
+    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
+      <p class="text-gray-400">Gross Pay</p>
+      <p class="text-white text-lg">
+        ₱ {{ "{:,.2f}".format(base_gross_pay + allowance) }}
+      </p>
     </div>
+
+    <!-- Net Pay -->
+    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
+      <p class="text-gray-400">Net Pay</p>
+      <p class="text-white text-lg">
+        ₱ {{ "{:,.2f}".format((base_gross_pay + allowance) - (deductions.withholding_tax + other_deductions)) }}
+      </p>
+    </div>
+
+    <!-- Hidden Fields -->
+    <input type="hidden" name="employee_id" value="{{ employee.id }}">
+    <input type="hidden" name="period_id" value="{{ period.id }}">
+    <input type="hidden" name="worked_days" value="{{ worked_days }}">
+    <input type="hidden" name="daily_rate" value="{{ employee.salary }}">
+
+    <!-- Submit Button -->
+    <button type="submit"
+      class="w-full py-2 rounded-lg font-semibold
+      {% if payroll_exists %}
+        bg-gray-500 cursor-not-allowed
+      {% else %}
+        bg-emerald-600 hover:bg-emerald-500
+      {% endif %}"
+      {% if payroll_exists %}disabled{% endif %}>
+      {% if payroll_exists %}Payroll Processed{% else %}Process Payroll{% endif %}
+    </button>
+
   </form>
 </div>
 {% endblock %}

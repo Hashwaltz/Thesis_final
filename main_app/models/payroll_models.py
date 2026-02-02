@@ -41,44 +41,45 @@ class Payroll(db.Model):
     employee = db.relationship('Employee', back_populates='payrolls', lazy=True)
     pay_period = db.relationship('PayrollPeriod', back_populates='payrolls', lazy=True)
 
-    # ======================================================
-    # 🧮 Payroll Calculation Helper
-    # ======================================================
     def calculate_earnings(self):
-        """Safely compute gross pay, deductions, and net pay."""
-        # Prevent NoneType math
         basic = self.basic_salary or 0
         work_hours = self.working_hours or 0
         overtime_hours = self.overtime_hours or 0
         holiday = self.holiday_pay or 0
         night_diff = self.night_differential or 0
 
-        # 🕒 Hourly rate (assuming 160 hrs per month = full-time)
+        # Hourly rate
         hourly_rate = basic / 160 if basic > 0 else 0
         base_earnings = hourly_rate * work_hours
 
-        # 💪 Overtime = 1.25x hourly rate × overtime hours
+        # Overtime
         self.overtime_pay = hourly_rate * 1.25 * overtime_hours
 
-        # 💰 Compute gross pay
-        self.gross_pay = base_earnings + self.overtime_pay + holiday + night_diff
+        # Add allowances dynamically
+        allowances = self.total_allowance
 
-        # 📉 Compute total deductions
+        # Gross pay = base + overtime + holiday + night_diff + allowances
+        self.gross_pay = base_earnings + self.overtime_pay + holiday + night_diff + allowances
+
+        # Deductions = sss + philhealth + pagibig + tax + other dynamic deductions
+        dynamic_deductions = self.total_other_deductions
         self.total_deductions = sum([
             self.sss_contribution or 0,
             self.philhealth_contribution or 0,
             self.pagibig_contribution or 0,
             self.tax_withheld or 0,
-            self.other_deductions or 0
+            self.other_deductions or 0,
+            dynamic_deductions
         ])
 
-        # 🧾 Net pay = gross - deductions
+        # Net pay
         self.net_pay = self.gross_pay - self.total_deductions
 
         return {
             "hourly_rate": hourly_rate,
             "base_earnings": base_earnings,
             "overtime_pay": self.overtime_pay,
+            "allowances": allowances,
             "gross_pay": self.gross_pay,
             "total_deductions": self.total_deductions,
             "net_pay": self.net_pay
@@ -101,6 +102,28 @@ class Payroll(db.Model):
         self.calculate_total_deductions()
         self.net_pay = (self.gross_pay or 0) - self.total_deductions
         return self.net_pay
+    
+    @property
+    def total_allowance(self):
+        """Sum all active allowances for this employee."""
+        if not self.employee or not hasattr(self.employee, "employee_allowances"):
+            return 0
+        return sum(
+            ea.allowance.amount
+            for ea in self.employee.employee_allowances
+            if ea.allowance.active
+        )
+
+    @property
+    def total_other_deductions(self):
+        """Sum all active deductions for this employee."""
+        if not self.employee or not hasattr(self.employee, "employee_deductions"):
+            return 0
+        return sum(
+            ed.deduction.amount
+            for ed in self.employee.employee_deductions
+            if ed.deduction.active
+        )
 
 # =========================================================
 # PAYSLIP

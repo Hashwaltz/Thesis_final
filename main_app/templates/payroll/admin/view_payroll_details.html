@@ -92,6 +92,7 @@
           <th class="px-4 py-3 text-left">Employee</th>
           <th class="px-4 py-3 text-left">Department</th>
           <th class="px-4 py-3 text-right">Basic Salary</th>
+          <th class="px-4 py-3 text-right">Allowance</th>
           <th class="px-4 py-3 text-right">Gross Pay</th>
           <th class="px-4 py-3 text-right">Deductions</th>
           <th class="px-4 py-3 text-right">Net Pay</th>
@@ -112,7 +113,10 @@
             ₱ {{ "{:,.2f}".format(payroll.basic_salary or 0) }}
           </td>
           <td class="px-4 py-3 text-right">
-            ₱ {{ "{:,.2f}".format((payroll.net_pay or 0) + payroll.total_deductions_calc()) }}
+            ₱ {{ "{:,.2f}".format(payroll.allowance or 0) }}
+          </td>
+          <td class="px-4 py-3 text-right">
+            ₱ {{ "{:,.2f}".format((payroll.net_pay or 0) + payroll.total_deductions_calc() + (payroll.allowance or 0)) }}
           </td>
           <td class="px-4 py-3 text-right text-yellow-400">
             ₱ {{ "{:,.2f}".format(payroll.total_deductions_calc()) }}
@@ -128,7 +132,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="7" class="text-center py-6 text-gray-400">
+          <td colspan="8" class="text-center py-6 text-gray-400">
             No payroll records found.
           </td>
         </tr>

@@ -167,3 +167,29 @@ def compute_all_deductions(salary: float) -> dict:
         "WithholdingTax": compute_withholding_tax(salary)
     }
 
+
+def compute_jo_withholding_tax(gross_pay: float) -> float:
+    """
+    Simplified TRAIN withholding tax for Job Order employees.
+    Assumes monthly equivalent.
+    """
+
+    TAX_FREE_MONTHLY = 250_000 / 12  # 20,833.33
+
+    if gross_pay <= TAX_FREE_MONTHLY:
+        return 0.00
+
+    excess = gross_pay - TAX_FREE_MONTHLY
+    return round(excess * 0.20, 2)
+
+
+# main_app/utils/payroll_utils.py (or wherever you keep helper functions)
+def compute_regular_withholding_tax(gross_pay: float) -> float:
+    """
+    Compute withholding tax for regular employees.
+    Example: flat 10% of gross pay. Adjust logic as needed.
+    """
+    if gross_pay <= 0:
+        return 0.0
+    tax_rate = 0.10  # 10% flat rate, change if needed
+    return round(gross_pay * tax_rate, 2)

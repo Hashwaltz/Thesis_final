@@ -1,0 +1,108 @@
+{% extends "payroll/admin/payroll_admin_base.html" %}
+{% block title %}Regular Payroll Preview{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6 text-gray-200">
+
+  <h1 class="text-2xl font-bold text-emerald-400 mb-4 text-center">
+    REGULAR PAYROLL PREVIEW
+  </h1>
+
+  <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 mb-6 text-sm">
+    <p>LGU: MUNICIPALITY OF NORZAGARAY</p>
+    <p>Payroll Period: {{ period.start_date }} – {{ period.end_date }}</p>
+    <p>Fund: {{ fund_name or 'GENERAL FUND' }}</p>
+    <p>Payroll No.: {{ payroll_no or '—' }}</p>
+  </div>
+
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-xs">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-2 py-2 text-left text-gray-400">No.</th>
+          <th class="px-2 py-2 text-left text-gray-400">Name</th>
+          <th class="px-2 py-2 text-left text-gray-400">Position</th>
+          <th class="px-2 py-2 text-right text-gray-400">Monthly Salary</th>
+          <th class="px-2 py-2 text-right text-gray-400">Allowance</th>
+          <th class="px-2 py-2 text-right text-gray-400">Overtime</th>
+          <th class="px-2 py-2 text-right text-gray-400">Holiday Pay</th>
+          <th class="px-2 py-2 text-right text-gray-400">Night Diff</th>
+          <th class="px-2 py-2 text-right text-gray-400">Gross Pay</th>
+          <th class="px-2 py-2 text-right text-gray-400">SSS</th>
+          <th class="px-2 py-2 text-right text-gray-400">PhilHealth</th>
+          <th class="px-2 py-2 text-right text-gray-400">Pag-IBIG</th>
+          <th class="px-2 py-2 text-right text-gray-400">Tax</th>
+          <th class="px-2 py-2 text-right text-gray-400">Other Deductions</th>
+          <th class="px-2 py-2 text-right text-gray-400">Net Pay</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% set total_salary = 0 %}
+        {% set total_allowance = 0 %}
+        {% set total_overtime = 0 %}
+        {% set total_holiday = 0 %}
+        {% set total_night = 0 %}
+        {% set total_gross = 0 %}
+        {% set total_sss = 0 %}
+        {% set total_philhealth = 0 %}
+        {% set total_pagibig = 0 %}
+        {% set total_tax = 0 %}
+        {% set total_other_ded = 0 %}
+        {% set total_net = 0 %}
+
+        {% for idx, emp in enumerate(employees, start=1) %}
+        <tr class="hover:bg-gray-700/50 transition">
+          <td class="px-2 py-1">{{ idx }}</td>
+          <td class="px-2 py-1">{{ emp.full_name }}</td>
+          <td class="px-2 py-1">{{ emp.position or '—' }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.basic_salary|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.total_allowance|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.overtime_pay|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.holiday_pay|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.night_differential|default(0)) }}</td>
+          <td class="px-2 py-1 text-right font-bold">₱ {{ "{:,.2f}".format(emp.gross_pay|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.sss_contribution|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.philhealth_contribution|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.pagibig_contribution|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.tax_withheld|default(0)) }}</td>
+          <td class="px-2 py-1 text-right">₱ {{ "{:,.2f}".format(emp.other_deductions + emp.total_other_deductions|default(0)) }}</td>
+          <td class="px-2 py-1 text-right font-bold text-green-400">₱ {{ "{:,.2f}".format(emp.net_pay|default(0)) }}</td>
+        </tr>
+
+        {% set total_salary = total_salary + (emp.basic_salary|default(0)) %}
+        {% set total_allowance = total_allowance + (emp.total_allowance|default(0)) %}
+        {% set total_overtime = total_overtime + (emp.overtime_pay|default(0)) %}
+        {% set total_holiday = total_holiday + (emp.holiday_pay|default(0)) %}
+        {% set total_night = total_night + (emp.night_differential|default(0)) %}
+        {% set total_gross = total_gross + (emp.gross_pay|default(0)) %}
+        {% set total_sss = total_sss + (emp.sss_contribution|default(0)) %}
+        {% set total_philhealth = total_philhealth + (emp.philhealth_contribution|default(0)) %}
+        {% set total_pagibig = total_pagibig + (emp.pagibig_contribution|default(0)) %}
+        {% set total_tax = total_tax + (emp.tax_withheld|default(0)) %}
+        {% set total_other_ded = total_other_ded + (emp.other_deductions + emp.total_other_deductions|default(0)) %}
+        {% set total_net = total_net + (emp.net_pay|default(0)) %}
+        {% endfor %}
+
+        <!-- TOTAL ROW -->
+        <tr class="bg-gray-900 font-bold">
+          <td colspan="3" class="px-2 py-2 text-center">TOTAL</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_salary) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_allowance) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_overtime) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_holiday) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_night) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_gross) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_sss) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_philhealth) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_pagibig) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_tax) }}</td>
+          <td class="px-2 py-2 text-right">₱ {{ "{:,.2f}".format(total_other_ded) }}</td>
+          <td class="px-2 py-2 text-right text-green-400">₱ {{ "{:,.2f}".format(total_net) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

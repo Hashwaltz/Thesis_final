@@ -85,7 +85,7 @@ function redirectPayroll(type) {
     let url = '';
     
     if (type === 'regular') {
-        url = `{{ url_for('payroll_admin.regular_payroll') }}?department_id=${departmentId}`;
+        url = `{{ url_for('payroll_admin.regular_payroll_page') }}?department_id=${departmentId}`;
     } else if (type === 'casual') {
         url = `{{ url_for('payroll_admin.casual_payroll') }}?department_id=${departmentId}`;
     } else if (type === 'part-time') {

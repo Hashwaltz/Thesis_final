@@ -12,7 +12,9 @@ from main_app.deductions import (
     compute_gsis_deduction,
     compute_withholding_tax,
     compute_menpc_deduction,
-    compute_pagibig_loan
+    compute_pagibig_loan,
+    compute_jo_withholding_tax,
+    compute_regular_withholding_tax
 
 )
 
@@ -242,14 +244,15 @@ def jo_payroll_page():
         query = query.filter(Employee.department_id == department_id)
 
     employees = query.all()
-    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    payroll_periods = PayrollPeriod.query.order_by(
+        PayrollPeriod.start_date.desc()
+    ).all()
 
     return render_template(
         "payroll/admin/jo_payroll.html",
         employees=employees,
         payroll_periods=payroll_periods
     )
-
 
 @payroll_admin_bp.route("/jo/worked-days")
 @login_required
@@ -266,10 +269,9 @@ def jo_worked_days():
         Attendance.date.between(start, end)
     ).all()
 
-    worked_days = 0
-    for a in attendances:
-        if a.status in ("Present", "Late"):
-            worked_days += 1
+    worked_days = sum(
+        1 for a in attendances if a.status in ("Present", "Late")
+    )
 
     total_days = sum(
         1 for i in range((end - start).days + 1)
@@ -281,13 +283,9 @@ def jo_worked_days():
         "total_working_days": total_days
     }
 
-
-
 @payroll_admin_bp.route("/jo-payroll/preview/<int:employee_id>")
 @login_required
 def jo_payroll_preview(employee_id):
-    JOB_ORDER_ID = 5  # must match employment_type_id
-
     period_id = request.args.get("period_id", type=int)
     if not period_id:
         flash("Payroll period is required.", "danger")
@@ -307,34 +305,35 @@ def jo_payroll_preview(employee_id):
     ).all()
 
     worked_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
-
     total_days = sum(
-        1
-        for i in range((period.end_date - period.start_date).days + 1)
+        1 for i in range((period.end_date - period.start_date).days + 1)
         if (period.start_date + timedelta(days=i)).weekday() < 5
     )
 
-    daily_rate = employee.salary
-    base_gross_pay = daily_rate * worked_days  # 🔥 REQUIRED BY UI
-
-    # Government deductions (preview only)
-    sss = compute_sss_deduction(base_gross_pay)
-    philhealth = compute_philhealth_deduction(base_gross_pay)
-    pagibig = compute_pagibig_deduction(base_gross_pay)
-    withholding_tax = compute_withholding_tax(base_gross_pay)
-
-    deductions = {
-        "sss": sss,
-        "philhealth": philhealth,
-        "pagibig": pagibig,
-        "withholding_tax": round(withholding_tax, 2)
-    }
-
-    # Check if payroll already exists
-    payroll_exists = Payroll.query.filter_by(
+    # Check if payroll exists
+    payroll = Payroll.query.filter_by(
         employee_id=employee.id,
         pay_period_id=period.id
-    ).first() is not None
+    ).first()
+
+    if payroll:
+        payroll_exists = True
+        # Use saved values
+        base_gross_pay = payroll.basic_salary
+        allowance = payroll.gross_pay - payroll.basic_salary
+        other_deductions = payroll.other_deductions
+        deductions = {"withholding_tax": payroll.tax_withheld}
+    else:
+        payroll_exists = False
+        base_gross_pay = employee.salary * worked_days
+        # Calculate total allowance from EmployeeAllowance table
+        allowance = sum(
+            ea.allowance.amount
+            for ea in employee.employee_allowances
+            if ea.allowance.active
+        )
+        other_deductions = 0
+        deductions = {"withholding_tax": compute_jo_withholding_tax(base_gross_pay + allowance)}
 
     return render_template(
         "payroll/admin/jo_process.html",
@@ -343,12 +342,11 @@ def jo_payroll_preview(employee_id):
         worked_days=worked_days,
         total_days=total_days,
         base_gross_pay=base_gross_pay,
+        allowance=allowance,
+        other_deductions=other_deductions,
         deductions=deductions,
-        payroll_exists=payroll_exists  # ✅ pass to template
+        payroll_exists=payroll_exists
     )
-
-
-
 
 @payroll_admin_bp.route("/jo-payroll/save", methods=["POST"])
 @login_required
@@ -358,10 +356,16 @@ def jo_payroll_save():
     worked_days = float(request.form["worked_days"])
     daily_rate = float(request.form["daily_rate"])
 
-    allowance = float(request.form.get("allowance", 0))
+    # ✅ Compute allowance from EmployeeAllowance table
+    employee = Employee.query.get_or_404(employee_id)
+    allowance = sum(
+        ea.allowance.amount
+        for ea in employee.employee_allowances
+        if ea.allowance.active
+    )
+
     other_deductions = float(request.form.get("other_deductions", 0))
 
-    # Prevent duplicate payroll
     exists = Payroll.query.filter_by(
         employee_id=employee_id,
         pay_period_id=period_id
@@ -373,26 +377,11 @@ def jo_payroll_save():
 
     period = PayrollPeriod.query.get_or_404(period_id)
 
-    # 🧮 Base gross
     base_gross_pay = daily_rate * worked_days
-
-    # 💰 Gross including allowance
     gross_pay = base_gross_pay + allowance
 
-    # Government deductions
-    sss = compute_sss_deduction(gross_pay)
-    philhealth = compute_philhealth_deduction(gross_pay)
-    pagibig = compute_pagibig_deduction(gross_pay)
-    withholding_tax = compute_withholding_tax(gross_pay)
-
-    total_deductions = (
-        sss["employee_share"]
-        + philhealth["employee_share"]
-        + pagibig["employee_share"]
-        + withholding_tax
-        + other_deductions
-    )
-
+    withholding_tax = compute_jo_withholding_tax(gross_pay)
+    total_deductions = withholding_tax + other_deductions
     net_pay = gross_pay - total_deductions
 
     payroll = Payroll(
@@ -404,12 +393,9 @@ def jo_payroll_save():
         basic_salary=base_gross_pay,
         gross_pay=gross_pay,
 
-        sss_contribution=sss["employee_share"],
-        philhealth_contribution=philhealth["employee_share"],
-        pagibig_contribution=pagibig["employee_share"],
+        other_deductions=other_deductions,
         tax_withheld=withholding_tax,
 
-        other_deductions=other_deductions,
         total_deductions=total_deductions,
         net_pay=net_pay,
 
@@ -419,9 +405,8 @@ def jo_payroll_save():
     db.session.add(payroll)
     db.session.commit()
 
-    flash("Payroll successfully processed.", "success")
+    flash("Job Order payroll successfully processed.", "success")
     return redirect(url_for("payroll_admin.jo_payroll_page"))
-
 
 
 # ---------------------------
@@ -556,111 +541,201 @@ def get_working_hours():
         "working_hours": round(total_hours, 2)
     })
 
+
+
+
+REGULAR_ID = 1
+
 # ---------------------------
-# REGULAR PAYROLL
+# Regular Payroll Page
 # ---------------------------
-@payroll_admin_bp.route('/regular', methods=['GET', 'POST'])
-@payroll_admin_required
-def regular_payroll():
-    department_id = request.args.get('department_id', type=int)
+@payroll_admin_bp.route("/regular-payroll")
+@login_required
+def regular_payroll_page():
+    department_id = request.args.get("department_id", type=int)
 
-    # Filter payroll periods to only monthly periods (28–31 days)
-    payroll_periods = [
-        period for period in PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
-        if 28 <= (period.end_date - period.start_date).days + 1 <= 31
-    ]
+    query = Employee.query.filter(
+        Employee.employment_type_id == REGULAR_ID,
+        Employee.status == "Active"
+    )
 
-    # Filter employees by department AND employment type "Regular"
-    query = Employee.query.filter_by(status="Active")
     if department_id:
-        query = query.filter_by(department_id=department_id)
+        query = query.filter(Employee.department_id == department_id)
 
-    employees = query.join(Employee.employment_type).filter(EmploymentType.name.ilike("regular")).all()
-
-    selected_department = None
-    if department_id:
-        department = Department.query.get(department_id)
-        selected_department = department.name if department else None
-
-    # Process payroll submission
-    if request.method == 'POST':
-        employee_id = int(request.form.get('employee_id'))
-        pay_period_id = int(request.form.get('pay_period_id'))
-        payroll_period = PayrollPeriod.query.get(pay_period_id)
-        employee = Employee.query.get(employee_id)
-
-        allowance = float(request.form.get('allowance', 0))
-        sss = float(request.form.get('sss', 0))
-        philhealth = float(request.form.get('philhealth', 0))
-        pagibig = float(request.form.get('pagibig', 0))
-        tax = float(request.form.get('tax', 0))
-        other = float(request.form.get('other', 0))
-        basic_salary = float(request.form.get('basic_salary', 0))
-        worked_days = float(request.form.get('worked_days', 0))
-        total_days = float(request.form.get('total_days', 1))
-
-        prorated_salary = (basic_salary / total_days) * worked_days
-        total_deductions = sss + philhealth + pagibig + tax + other
-        net_pay = round(prorated_salary - total_deductions, 2)
-
-        payroll = Payroll(
-            employee_id=employee_id,
-            pay_period_id=pay_period_id,
-            pay_period_start=payroll_period.start_date,
-            pay_period_end=payroll_period.end_date,
-            basic_salary=basic_salary,
-            working_hours=worked_days,
-            overtime_hours=0,
-            holiday_pay=0,
-            night_differential=0,
-            sss_contribution=sss,
-            philhealth_contribution=philhealth,
-            pagibig_contribution=pagibig,
-            tax_withheld=tax,
-            other_deductions=other,
-            net_pay=net_pay
-        )
-
-        db.session.add(payroll)
-        db.session.commit()
-
-        return jsonify({
-            "status": "success",
-            "gross_pay": round(prorated_salary, 2),
-            "total_deductions": round(total_deductions, 2),
-            "net_pay": net_pay,
-            "pay_period": f"{payroll_period.start_date} - {payroll_period.end_date}"
-        })
-
-    # Pre-fill allowances, deductions, and existing payrolls
-    employee_data = []
-    for emp in employees:
-        allowance_total = sum([ea.allowance.amount for ea in emp.employee_allowances])
-        sss_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() == "sss"])
-        philhealth_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() == "philhealth"])
-        pagibig_total = sum([ed.deduction.amount for ed in emp.employee_deductions if ed.deduction.name.lower() in ["pag-ibig", "pagibig"]])
-        
-        payrolls_dict = {p.pay_period_id: p for p in emp.payrolls}
-
-        employee_data.append({
-            "id": emp.id,
-            "full_name": emp.get_full_name(),
-            "basic_salary": emp.salary or 0,
-            "employment_type": emp.employment_type.name if emp.employment_type else "N/A",
-            "allowance": allowance_total,
-            "sss": sss_total,
-            "philhealth": philhealth_total,
-            "pagibig": pagibig_total,
-            "existing_payrolls": list(payrolls_dict.keys()),
-            "payrolls_dict": payrolls_dict
-        })
+    employees = query.all()
+    payroll_periods = PayrollPeriod.query.order_by(
+        PayrollPeriod.start_date.desc()
+    ).all()
 
     return render_template(
-        'payroll/admin/regular_payroll.html',
-        employees=employee_data,
-        payroll_periods=payroll_periods,
-        selected_department=selected_department
+        "payroll/admin/regular_payroll.html",
+        employees=employees,
+        payroll_periods=payroll_periods
     )
+
+
+# ---------------------------
+# Worked Days API
+# ---------------------------
+@payroll_admin_bp.route("/regular/worked-days")
+@login_required
+def regular_worked_days():
+    employee_id = request.args.get("employee_id", type=int)
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    start = datetime.strptime(start_date, "%Y-%m-%d").date()
+    end = datetime.strptime(end_date, "%Y-%m-%d").date()
+
+    attendances = Attendance.query.filter(
+        Attendance.employee_id == employee_id,
+        Attendance.date.between(start, end)
+    ).all()
+
+    worked_days = sum(
+        1 for a in attendances if a.status in ("Present", "Late")
+    )
+
+    total_days = sum(
+        1 for i in range((end - start).days + 1)
+        if (start + timedelta(days=i)).weekday() < 5
+    )
+
+    return {
+        "worked_days": worked_days,
+        "total_working_days": total_days
+    }
+
+
+# ---------------------------
+# Preview Payroll
+# ---------------------------
+@payroll_admin_bp.route("/regular-payroll/preview/<int:employee_id>")
+@login_required
+def regular_payroll_preview(employee_id):
+    period_id = request.args.get("period_id", type=int)
+    if not period_id:
+        flash("Payroll period is required.", "danger")
+        return redirect(request.referrer)
+
+    employee = Employee.query.filter_by(
+        id=employee_id,
+        employment_type_id=REGULAR_ID,
+        status="Active"
+    ).first_or_404()
+
+    period = PayrollPeriod.query.get_or_404(period_id)
+
+    attendances = Attendance.query.filter(
+        Attendance.employee_id == employee.id,
+        Attendance.date.between(period.start_date, period.end_date)
+    ).all()
+
+    worked_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
+    total_days = sum(
+        1 for i in range((period.end_date - period.start_date).days + 1)
+        if (period.start_date + timedelta(days=i)).weekday() < 5
+    )
+
+    # Check if payroll exists
+    payroll = Payroll.query.filter_by(
+        employee_id=employee.id,
+        pay_period_id=period.id
+    ).first()
+
+    if payroll:
+        payroll_exists = True
+        base_gross_pay = payroll.basic_salary
+        allowance = payroll.gross_pay - payroll.basic_salary
+        other_deductions = payroll.other_deductions
+        deductions = {"withholding_tax": payroll.tax_withheld}
+    else:
+        payroll_exists = False
+        base_gross_pay = employee.salary * worked_days
+        allowance = sum(
+            ea.allowance.amount
+            for ea in employee.employee_allowances
+            if ea.allowance.active
+        )
+        other_deductions = 0
+        # Use a regular withholding tax function (to be defined)
+        deductions = {"withholding_tax": compute_regular_withholding_tax(base_gross_pay + allowance)}
+
+    return render_template(
+        "payroll/admin/regular_process.html",
+        employee=employee,
+        period=period,
+        worked_days=worked_days,
+        total_days=total_days,
+        base_gross_pay=base_gross_pay,
+        allowance=allowance,
+        other_deductions=other_deductions,
+        deductions=deductions,
+        payroll_exists=payroll_exists
+    )
+
+
+# ---------------------------
+# Save Payroll
+# ---------------------------
+@payroll_admin_bp.route("/regular-payroll/save", methods=["POST"])
+@login_required
+def regular_payroll_save():
+    employee_id = int(request.form["employee_id"])
+    period_id = int(request.form["period_id"])
+    worked_days = float(request.form["worked_days"])
+    daily_rate = float(request.form["daily_rate"])
+
+    employee = Employee.query.get_or_404(employee_id)
+    allowance = sum(
+        ea.allowance.amount
+        for ea in employee.employee_allowances
+        if ea.allowance.active
+    )
+
+    other_deductions = float(request.form.get("other_deductions", 0))
+
+    exists = Payroll.query.filter_by(
+        employee_id=employee_id,
+        pay_period_id=period_id
+    ).first()
+
+    if exists:
+        flash("Payroll already processed.", "warning")
+        return redirect(request.referrer)
+
+    period = PayrollPeriod.query.get_or_404(period_id)
+
+    base_gross_pay = daily_rate * worked_days
+    gross_pay = base_gross_pay + allowance
+
+    withholding_tax = compute_regular_withholding_tax(gross_pay)
+    total_deductions = withholding_tax + other_deductions
+    net_pay = gross_pay - total_deductions
+
+    payroll = Payroll(
+        employee_id=employee_id,
+        pay_period_id=period_id,
+        pay_period_start=period.start_date,
+        pay_period_end=period.end_date,
+
+        basic_salary=base_gross_pay,
+        gross_pay=gross_pay,
+
+        other_deductions=other_deductions,
+        tax_withheld=withholding_tax,
+
+        total_deductions=total_deductions,
+        net_pay=net_pay,
+
+        status="Draft"
+    )
+
+    db.session.add(payroll)
+    db.session.commit()
+
+    flash("Regular payroll successfully processed.", "success")
+    return redirect(url_for("payroll_admin.regular_payroll_page"))
 
 
 
