@@ -1,0 +1,81 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %} {% block title %}{{ action
+}} Deduction{% endblock %} {% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+  <header class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      {{ action }} Deduction
+    </h1>
+    <a
+      href="{{ url_for('payroll_admin.deductions') }}"
+      class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition"
+      >Back to Deductions</a
+    >
+  </header>
+
+  <form
+    method="POST"
+    class="bg-gray-800 p-6 rounded-2xl border border-gray-700 max-w-lg space-y-4"
+  >
+    <!-- Deduction Name -->
+    <div>
+      <label class="block mb-2">Deduction Name</label>
+      <input
+        type="text"
+        name="name"
+        value="{{ deduction.name if deduction else '' }}"
+        class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600"
+        required
+      />
+    </div>
+
+    <!-- Min Salary -->
+    <div>
+      <label class="block mb-2">Minimum Salary</label>
+      <input
+        type="number"
+        step="0.01"
+        name="min_salary"
+        value="{{ deduction.min_salary if deduction else 0 }}"
+        class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600"
+      />
+    </div>
+
+    <!-- Max Salary -->
+    <div>
+      <label class="block mb-2">Maximum Salary (optional)</label>
+      <input
+        type="number"
+        step="0.01"
+        name="max_salary"
+        value="{{ deduction.max_salary if deduction and deduction.max_salary else '' }}"
+        class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600"
+      />
+    </div>
+
+    <!-- Active -->
+    <div class="flex items-center space-x-2">
+      <input
+        type="checkbox"
+        name="active"
+        {%
+        if
+        not
+        deduction
+        or
+        deduction.active
+        %}checked{%
+        endif
+        %}
+      />
+      <label>Active</label>
+    </div>
+
+    <button
+      type="submit"
+      class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg"
+    >
+      {{ action }}
+    </button>
+  </form>
+</section>
+{% endblock %}

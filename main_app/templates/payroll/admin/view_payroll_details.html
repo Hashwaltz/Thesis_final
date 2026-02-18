@@ -116,18 +116,25 @@
             ₱ {{ "{:,.2f}".format(payroll.allowance or 0) }}
           </td>
           <td class="px-4 py-3 text-right">
-            ₱ {{ "{:,.2f}".format((payroll.net_pay or 0) + payroll.total_deductions_calc() + (payroll.allowance or 0)) }}
+            {% set gross_pay = (payroll.basic_salary or 0) + (payroll.allowance or 0) %}
+            ₱ {{ "{:,.2f}".format(gross_pay) }}
           </td>
           <td class="px-4 py-3 text-right text-yellow-400">
-            ₱ {{ "{:,.2f}".format(payroll.total_deductions_calc()) }}
+            {% set deductions = (payroll.total_deductions or 0) %}
+            ₱ {{ "{:,.2f}".format(deductions) }}
           </td>
           <td class="px-4 py-3 text-right font-semibold text-emerald-400">
-            ₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}
+            {% set net = (payroll.net_pay or 0) %}
+            ₱ {{ "{:,.2f}".format(net) }}
           </td>
           <td class="px-4 py-3">
-            {{ payroll.pay_period_start.strftime('%Y-%m-%d') }}
-            –
-            {{ payroll.pay_period_end.strftime('%Y-%m-%d') }}
+            {% if payroll.payroll_period %}
+              {{ payroll.payroll_period.start_date.strftime('%Y-%m-%d') }}
+              –
+              {{ payroll.payroll_period.end_date.strftime('%Y-%m-%d') }}
+            {% else %}
+              -
+            {% endif %}
           </td>
         </tr>
         {% else %}

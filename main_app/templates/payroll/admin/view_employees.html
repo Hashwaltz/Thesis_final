@@ -44,7 +44,6 @@
           <th class="px-6 py-3 text-left text-gray-400">Email</th>
           <th class="px-6 py-3 text-left text-gray-400">Department</th>
           <th class="px-6 py-3 text-left text-gray-400">Position</th>
-          <th class="px-6 py-3 text-left text-gray-400">Status</th>
           <th class="px-6 py-3 text-left text-gray-400">Actions</th>
         </tr>
       </thead>
@@ -58,22 +57,17 @@
             <td class="px-6 py-3">{{ employee.department.name if employee.department else '-' }}</td>
             <td class="px-6 py-3">{{ employee.position.name if employee.position else '-' }}</td>
             <td class="px-6 py-3">
-              <span class="font-semibold" 
-                    style="color: {{ 'green' if employee.active else 'red' }}">
-                {{ 'Active' if employee.active else 'Inactive' }}
-              </span>
-            </td>
-            <td class="px-6 py-3">
               <a href="#" data-id="{{ employee.id }}" 
-                 class="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition">
-                <i class="fa-solid fa-eye"></i> View
+                class="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition">
+                  <i class="fa-solid fa-eye"></i>
+                  <span>View</span>
               </a>
             </td>
           </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="7" class="px-6 py-4 text-center text-gray-400">
+            <td colspan="6" class="px-6 py-4 text-center text-gray-400">
               No employees found.
             </td>
           </tr>

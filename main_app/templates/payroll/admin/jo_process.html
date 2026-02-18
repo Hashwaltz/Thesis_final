@@ -38,39 +38,55 @@
       </div>
     </div>
 
-    <!-- Allowance & Other Deductions -->
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <div>
-        <label class="text-gray-400">Allowance</label>
-        <input type="number" step="0.01" name="allowance"
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
-          value="{{ allowance | round(2) }}"
-          {% if payroll_exists %}readonly{% endif %}>
-        <p class="text-gray-400 mt-1">₱ {{ "{:,.2f}".format(allowance) }}</p>
-      </div>
-
-      <div>
-        <label class="text-gray-400">Other Deductions</label>
-        <input type="number" step="0.01" name="other_deductions"
-          class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white"
-          value="{{ other_deductions | round(2) }}"
-          {% if payroll_exists %}readonly{% endif %}>
-        <p class="text-gray-400 mt-1">₱ {{ "{:,.2f}".format(other_deductions) }}</p>
-      </div>
+    <!-- Allowance -->
+    <div class="mb-6">
+      <label class="text-gray-400">Allowance</label>
+      <p class="text-white">₱ {{ "{:,.2f}".format(allowance) }}</p>
+      <input type="hidden" name="allowance" value="{{ allowance }}">
     </div>
 
-    <!-- Withholding Tax -->
-    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
-      <p class="text-gray-400">Withholding Tax</p>
-      <p class="text-white text-lg">
-        ₱ {{ "{:,.2f}".format(deductions.withholding_tax) }}
-      </p>
+    <!-- Deductions with checkboxes -->
+    <div class="mb-6">
+      <label class="text-gray-400">Deductions</label>
+      <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+
+        <!-- SSS -->
+        <div class="flex items-center mb-2">
+          <input type="checkbox" name="deductions" value="sss" class="mr-2 w-4 h-4 text-emerald-600" checked>
+          <span class="text-gray-200">SSS (₱ {{ "{:,.2f}".format(deductions.sss) }})</span>
+        </div>
+
+        <!-- PhilHealth -->
+        <div class="flex items-center mb-2">
+          <input type="checkbox" name="deductions" value="philhealth" class="mr-2 w-4 h-4 text-emerald-600" checked>
+          <span class="text-gray-200">PhilHealth (₱ {{ "{:,.2f}".format(deductions.philhealth) }})</span>
+        </div>
+
+        <!-- Pag-IBIG -->
+        <div class="flex items-center mb-2">
+          <input type="checkbox" name="deductions" value="pagibig" class="mr-2 w-4 h-4 text-emerald-600" checked>
+          <span class="text-gray-200">Pag-IBIG (₱ {{ "{:,.2f}".format(deductions.pagibig) }})</span>
+        </div>
+
+        <!-- Tax -->
+        <div class="flex items-center mb-2">
+          <input type="checkbox" name="deductions" value="tax" class="mr-2 w-4 h-4 text-red-600" checked disabled>
+          <span class="text-gray-200">Withholding Tax (₱ {{ "{:,.2f}".format(deductions.tax) }})</span>
+        </div>
+
+        <!-- Other -->
+        <div class="flex items-center mb-2">
+          <input type="checkbox" name="deductions" value="other" class="mr-2 w-4 h-4 text-emerald-600" checked>
+          <span class="text-gray-200">Other Deductions (₱ {{ "{:,.2f}".format(other_deductions) }})</span>
+        </div>
+
+      </div>
     </div>
 
     <!-- Gross Pay -->
     <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
       <p class="text-gray-400">Gross Pay</p>
-      <p class="text-white text-lg">
+      <p class="text-white text-lg" id="gross-pay">
         ₱ {{ "{:,.2f}".format(base_gross_pay + allowance) }}
       </p>
     </div>
@@ -78,8 +94,8 @@
     <!-- Net Pay -->
     <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
       <p class="text-gray-400">Net Pay</p>
-      <p class="text-white text-lg">
-        ₱ {{ "{:,.2f}".format((base_gross_pay + allowance) - (deductions.withholding_tax + other_deductions)) }}
+      <p class="text-white text-lg" id="net-pay">
+        ₱ {{ "{:,.2f}".format((base_gross_pay + allowance) - (deductions.sss + deductions.philhealth + deductions.pagibig + deductions.tax + other_deductions)) }}
       </p>
     </div>
 
@@ -103,4 +119,35 @@
 
   </form>
 </div>
+
+<!-- JS: Update Net Pay live when checkboxes toggle -->
+<script>
+const checkboxes = document.querySelectorAll('input[name="deductions"]');
+const netPayEl = document.getElementById('net-pay');
+const grossPay = parseFloat({{ (base_gross_pay + allowance) }});
+const sss = parseFloat({{ deductions.sss }});
+const philhealth = parseFloat({{ deductions.philhealth }});
+const pagibig = parseFloat({{ deductions.pagibig }});
+const tax = parseFloat({{ deductions.tax }});
+const other = parseFloat({{ other_deductions }});
+
+function updateNetPay() {
+    let totalDeductions = 0;
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            switch(cb.value){
+                case 'sss': totalDeductions += sss; break;
+                case 'philhealth': totalDeductions += philhealth; break;
+                case 'pagibig': totalDeductions += pagibig; break;
+                case 'tax': totalDeductions += tax; break;
+                case 'other': totalDeductions += other; break;
+            }
+        }
+    });
+    netPayEl.textContent = '₱ ' + totalDeductions ? (grossPay - totalDeductions).toLocaleString('en-PH', {minimumFractionDigits: 2}) : grossPay.toFixed(2);
+}
+
+checkboxes.forEach(cb => cb.addEventListener('change', updateNetPay));
+</script>
+
 {% endblock %}

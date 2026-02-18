@@ -65,7 +65,7 @@
           </td>
 
           <td class="px-6 py-3">
-            Job Order
+            Job Orders
           </td>
 
           <td class="px-6 py-3">
@@ -73,7 +73,7 @@
               onclick="goPreview({{ emp.id }})"
               class="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm transition"
             >
-            Process
+              Process
             </button>
           </td>
         </tr>
@@ -120,7 +120,7 @@ function loadWorkedDays() {
   });
 }
 
-// Preview payroll for employee
+// Redirect to payroll page
 function goPreview(empId) {
   const periodId = document.getElementById("period").value;
   if (!periodId) {
@@ -128,8 +128,7 @@ function goPreview(empId) {
     return;
   }
 
-  // Build URL with Flask url_for
-  const urlTemplate = "{{ url_for('payroll_admin.jo_payroll_preview', employee_id=0) }}";
+  const urlTemplate = "{{ url_for('payroll_admin.jo_payroll_page', employee_id=0) }}";
   const url = urlTemplate.replace("0", empId) + "?period_id=" + periodId;
   window.location.href = url;
 }

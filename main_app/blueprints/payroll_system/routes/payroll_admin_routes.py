@@ -61,87 +61,100 @@ payroll_admin_bp = Blueprint(
 @payroll_admin_bp.route('/dashboard')
 @payroll_admin_required
 def payroll_dashboard():
+
     today = date.today()
     start_month = today.replace(day=1)
 
-    # ===== METRICS =====
     total_employees = Employee.query.count()
 
-    employees_paid = Payroll.query.filter(
-        Payroll.status == "Approved",
-        Payroll.pay_period_start >= start_month
-    ).count()
+    # ================= METRICS =================
 
-    pending_payrolls = Payroll.query.filter(
-        Payroll.status != "Approved",
-        Payroll.pay_period_start >= start_month
-    ).count()
+    employees_paid = (
+        db.session.query(Payroll)
+        .join(PayrollPeriod)
+        .filter(
+            Payroll.status == "Approved",
+            PayrollPeriod.start_date >= start_month
+        )
+        .count()
+    )
 
-    total_payroll_amount = db.session.query(
-        func.sum(Payroll.net_pay)
-    ).filter(
-        Payroll.pay_period_start >= start_month
-    ).scalar() or 0
+    pending_payrolls = (
+        db.session.query(Payroll)
+        .join(PayrollPeriod)
+        .filter(
+            Payroll.status != "Approved",
+            PayrollPeriod.start_date >= start_month
+        )
+        .count()
+    )
 
-    avg_salary = db.session.query(
-        func.avg(Payroll.net_pay)
-    ).filter(
-        Payroll.pay_period_start >= start_month
-    ).scalar() or 0
+    total_payroll_amount = (
+        db.session.query(func.sum(Payroll.net_pay))
+        .join(PayrollPeriod)
+        .filter(PayrollPeriod.start_date >= start_month)
+        .scalar() or 0
+    )
 
-    leave_impact = db.session.query(
-        func.count(Leave.id)
-    ).filter(
-        Leave.status == 'Approved',
-        Leave.start_date >= start_month
-    ).scalar() or 0
+    avg_salary = (
+        db.session.query(func.avg(Payroll.net_pay))
+        .join(PayrollPeriod)
+        .filter(PayrollPeriod.start_date >= start_month)
+        .scalar() or 0
+    )
 
-    # ===== PAYROLL TREND CHART =====
-    monthly_data = db.session.query(
-        func.strftime('%Y-%m', Payroll.pay_period_start),
-        func.sum(Payroll.net_pay)
-    ).group_by(
-        func.strftime('%Y-%m', Payroll.pay_period_start)
-    ).order_by(
-        func.strftime('%Y-%m', Payroll.pay_period_start)
-    ).all()
+    leave_impact = (
+        db.session.query(func.count(Leave.id))
+        .filter(
+            Leave.status == 'Approved',
+            Leave.start_date >= start_month
+        )
+        .scalar() or 0
+    )
+
+    # ================= PAYROLL TREND =================
+
+    monthly_data = (
+        db.session.query(
+            func.strftime('%Y-%m', PayrollPeriod.start_date),
+            func.sum(Payroll.net_pay)
+        )
+        .join(PayrollPeriod)
+        .group_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
+        .order_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
+        .all()
+    )
 
     chart_labels = [m for m, _ in monthly_data]
     chart_values = [float(v or 0) for _, v in monthly_data]
 
-    # ===== SALARY TREND CHART (FIX FOR ERROR) =====
-    salary_data = db.session.query(
-        func.strftime('%Y-%m', Payroll.pay_period_start),
-        func.avg(Payroll.net_pay)
-    ).group_by(
-        func.strftime('%Y-%m', Payroll.pay_period_start)
-    ).order_by(
-        func.strftime('%Y-%m', Payroll.pay_period_start)
-    ).all()
+    # ================= SALARY TREND =================
+
+    salary_data = (
+        db.session.query(
+            func.strftime('%Y-%m', PayrollPeriod.start_date),
+            func.avg(Payroll.net_pay)
+        )
+        .join(PayrollPeriod)
+        .group_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
+        .order_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
+        .all()
+    )
 
     salary_labels = [m for m, _ in salary_data]
     salary_values = [float(v or 0) for _, v in salary_data]
 
-    # ===== TABLE DATA =====
-    recent_payrolls = Payroll.query\
-        .order_by(Payroll.created_at.desc())\
-        .limit(8)\
-        .all()
+    # ================= TABLES =================
 
-    pending_list = Payroll.query\
-        .filter(Payroll.status != 'Approved')\
-        .limit(8)\
-        .all()
+    recent_payrolls = Payroll.query.order_by(Payroll.created_at.desc()).limit(8).all()
 
-    # ===== PAYROLL PERIOD =====
-    upcoming_period = PayrollPeriod.query\
-        .filter(PayrollPeriod.status == 'Open')\
-        .first()
+    pending_list = Payroll.query.filter(Payroll.status != 'Approved').limit(8).all()
+
+    upcoming_period = PayrollPeriod.query.filter_by(status="Open").first()
 
     return render_template(
         'payroll/admin/admin_dashboard.html',
 
-        # metrics
         total_employees=total_employees,
         employees_paid=employees_paid,
         pending_payrolls=pending_payrolls,
@@ -149,20 +162,15 @@ def payroll_dashboard():
         avg_salary=avg_salary,
         leave_impact=leave_impact,
 
-        # charts (SAFE)
-        chart_labels=chart_labels or [],
-        chart_values=chart_values or [],
-        salary_labels=salary_labels or [],
-        salary_values=salary_values or [],
+        chart_labels=chart_labels,
+        chart_values=chart_values,
+        salary_labels=salary_labels,
+        salary_values=salary_values,
 
-        # tables
         recent_payrolls=recent_payrolls,
         pending_list=pending_list,
-
-        # notice
         upcoming_period=upcoming_period
     )
-
 
 @payroll_admin_bp.route('/process', methods=['GET'])
 @payroll_admin_required
@@ -283,6 +291,8 @@ def jo_worked_days():
         "total_working_days": total_days
     }
 
+
+
 @payroll_admin_bp.route("/jo-payroll/preview/<int:employee_id>")
 @login_required
 def jo_payroll_preview(employee_id):
@@ -347,6 +357,7 @@ def jo_payroll_preview(employee_id):
         deductions=deductions,
         payroll_exists=payroll_exists
     )
+
 
 @payroll_admin_bp.route("/jo-payroll/save", methods=["POST"])
 @login_required
@@ -921,7 +932,6 @@ def view_employees():
 
 @payroll_admin_bp.route('/payrolls/edit/<int:payroll_id>', methods=['GET', 'POST'])
 @payroll_admin_required
-@payroll_admin_required
 def edit_payroll(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
 
@@ -941,46 +951,49 @@ def edit_payroll(payroll_id):
 @payroll_admin_bp.route('/payrolls')
 @payroll_admin_required
 def view_payrolls():
+
+    from flask import request, render_template
+    from sqlalchemy import or_
+    from main_app.models.payroll_models import Payroll, PayrollPeriod
+    from main_app.models.hr_models import Employee, Department
+
     search = request.args.get('search', '', type=str).strip()
     department_id = request.args.get('department_id', type=int)
     pay_period_id = request.args.get('pay_period_id', type=int)
     page = request.args.get('page', 1, type=int)
 
-    # Base query
-    query = Payroll.query.join(Employee)
+    # ================= BASE QUERY =================
+    query = Payroll.query.join(Employee, Payroll.employee_id == Employee.id)
 
-    # Apply department filter
+    # ---------------- Department Filter ----------------
     if department_id:
         query = query.filter(Employee.department_id == department_id)
 
-    # Apply search filter
+    # ---------------- Search ----------------
     if search:
         query = query.filter(
-            (Employee.first_name.ilike(f"%{search}%")) |
-            (Employee.last_name.ilike(f"%{search}%")) |
-            (Employee.employee_id.ilike(f"%{search}%"))
+            or_(
+                Employee.first_name.ilike(f"%{search}%"),
+                Employee.last_name.ilike(f"%{search}%"),
+                Employee.employee_id.ilike(f"%{search}%")
+            )
         )
 
-    # Apply payroll period filter
+    # ---------------- Payroll Period ----------------
     if pay_period_id:
-        query = query.filter(Payroll.pay_period_id == pay_period_id)
+        query = query.filter(Payroll.payroll_period_id == pay_period_id)
 
-    # Paginate results
-    payrolls = query.order_by(Payroll.created_at.desc()).paginate(page=page, per_page=10)
+    # ---------------- Pagination ----------------
+    payrolls = query.order_by(Payroll.id.desc()).paginate(page=page, per_page=10, error_out=False)
 
-    # Get department list for dropdown
-    from main_app.models.hr_models import Department
+    # Dropdown Data
     departments = Department.query.all()
-
-    # Get payroll periods for dropdown
-    from main_app.models.payroll_models import PayrollPeriod
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
-    # Get selected payroll period object
     selected_pay_period = PayrollPeriod.query.get(pay_period_id) if pay_period_id else None
 
     return render_template(
-        'payroll/admin/view_payroll_details.html',
+        "payroll/admin/view_payroll_details.html",
         payrolls=payrolls,
         search=search,
         departments=departments,
@@ -988,7 +1001,6 @@ def view_payrolls():
         payroll_periods=payroll_periods,
         selected_pay_period=selected_pay_period
     )
-
 
 
 @payroll_admin_bp.route('/payroll/export_excel', methods=['GET'])
@@ -1684,29 +1696,20 @@ def reject_payslip(payslip_id):
 
 
 # ==========================
-# DEDUCTIONS
+# LIST & SEARCH DEDUCTIONS
 # ==========================
 @payroll_admin_bp.route('/deductions')
-@payroll_admin_required
 @payroll_admin_required
 def deductions():
     search = request.args.get('search', '', type=str).strip()
     page = request.args.get('page', 1, type=int)
-    per_page = 10  # You can adjust how many per page
+    per_page = 10  # adjust page size
 
-    # Base query
     query = Deduction.query
-
-    # Search filter
     if search:
         search_pattern = f"%{search}%"
-        query = query.filter(
-            Deduction.name.ilike(search_pattern) |
-            Deduction.description.ilike(search_pattern) |
-            Deduction.type.ilike(search_pattern)
-        )
+        query = query.filter(Deduction.name.ilike(search_pattern))
 
-    # Paginate
     deductions_paginated = query.order_by(Deduction.id.desc()).paginate(page=page, per_page=per_page)
 
     return render_template(
@@ -1717,78 +1720,60 @@ def deductions():
     )
 
 
-@payroll_admin_bp.route('/deductions/add', methods=['GET', 'POST'])
+# ==========================
+# CREATE DEDUCTION
+# ==========================
+@payroll_admin_bp.route('/deductions/create', methods=['GET', 'POST'])
 @payroll_admin_required
-@payroll_admin_required
-def add_deduction():
+def create_deduction():
     if request.method == 'POST':
-        name = request.form.get('name')
-        description = request.form.get('description')
-        type_ = request.form.get('type')
-        amount = request.form.get('amount') or 0
-        percentage = request.form.get('percentage') or 0
-        is_mandatory = bool(int(request.form.get('is_mandatory', 0)))
-        active = bool(int(request.form.get('active', 1)))
+        name = request.form.get('name').strip()
+        if not name:
+            flash('Deduction name is required.', 'danger')
+            return redirect(url_for('payroll_admin.create_deduction'))
 
-        deduction = Deduction(
-            name=name,
-            description=description,
-            type=type_,
-            amount=float(amount),
-            percentage=float(percentage),
-            is_mandatory=is_mandatory,
-            active=active
-        )
+        deduction = Deduction(name=name)
+        db.session.add(deduction)
+        db.session.commit()
+        flash('Deduction created successfully!', 'success')
+        return redirect(url_for('payroll_admin.deductions'))
 
-        try:
-            db.session.add(deduction)
-            db.session.commit()
-            flash('Deduction added successfully!', 'success')
+    return render_template('payroll/admin/deduction_form.html', action="Create", deduction=None)
 
 
-            return redirect(url_for('payroll_admin.deductions'))
-
-        except Exception as e:
-            db.session.rollback()
-            print("Error adding deduction:", e)
-            flash('Error adding deduction. Please try again.', 'error')
-
-    return render_template('payroll/admin/deduction_add.html')
-
-
-
-
-@payroll_admin_bp.route('/deductions/<int:deduction_id>/edit', methods=['GET', 'POST'])
-@payroll_admin_required
+# ==========================
+# EDIT DEDUCTION
+# ==========================
+@payroll_admin_bp.route('/deductions/edit/<int:deduction_id>', methods=['GET', 'POST'])
 @payroll_admin_required
 def edit_deduction(deduction_id):
     deduction = Deduction.query.get_or_404(deduction_id)
 
-    # If AJAX request, return only the modal form HTML
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('payroll/admin/deduction_edit.html', deduction=deduction)
-
-    # Normal POST submission (redirect back)
     if request.method == 'POST':
-        try:
-            deduction.name = request.form.get('name')
-            deduction.description = request.form.get('description')
-            deduction.type = request.form.get('type')
-            deduction.amount = float(request.form.get('amount') or 0)
-            deduction.percentage = float(request.form.get('percentage') or 0)
-            deduction.is_mandatory = request.form.get('is_mandatory') == '1'
-            deduction.active = request.form.get('active') == '1'
-            db.session.commit()
-            flash('Deduction updated successfully!', 'success')
-            return redirect(url_for('payroll_admin.deductions'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Error updating deduction: ' + str(e), 'error')
-            return redirect(url_for('payroll_admin.deductions'))
+        name = request.form.get('name').strip()
+        if not name:
+            flash('Deduction name is required.', 'danger')
+            return redirect(url_for('payroll_admin.edit_deduction', deduction_id=deduction_id))
 
-    return render_template('payroll/admin/deduction_edit.html', deduction=deduction)
+        deduction.name = name
+        db.session.commit()
+        flash('Deduction updated successfully!', 'success')
+        return redirect(url_for('payroll_admin.deductions'))
+
+    return render_template('payroll/admin/deduction_form.html', action="Edit", deduction=deduction)
 
 
+# ==========================
+# DELETE DEDUCTION
+# ==========================
+@payroll_admin_bp.route('/deductions/delete/<int:deduction_id>', methods=['POST'])
+@payroll_admin_required
+def delete_deduction(deduction_id):
+    deduction = Deduction.query.get_or_404(deduction_id)
+    db.session.delete(deduction)
+    db.session.commit()
+    flash('Deduction deleted successfully!', 'success')
+    return redirect(url_for('payroll_admin.deductions'))
 
 
 

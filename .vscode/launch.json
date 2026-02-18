@@ -8,16 +8,16 @@
             "module": "flask",
             "env": {
                 "FLASK_APP": "main_app.run:app",
-                "FLASK_ENV": "development",
-                "FLASK_DEBUG": "1"
+                "FLASK_ENV": "development"
             },
             "args": [
                 "run",
                 "--host=0.0.0.0",
                 "--port=5000",
-                "--reload"
+                "--no-reload"
             ],
-            "jinja": true
+            "jinja": true,
+            "justMyCode": true
         }
     ]
 }
