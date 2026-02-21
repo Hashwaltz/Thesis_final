@@ -17,6 +17,8 @@ def create_app():
         static_folder="static"
     )
 
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+
     # Load global config (for both HR and Payroll)
     from main_app.config import Config
     app.config.from_object(Config)

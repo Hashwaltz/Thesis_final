@@ -44,6 +44,8 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from main_app.utils import payroll_admin_required
 from reportlab.lib.styles import getSampleStyleSheet
+from math import ceil
+
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
@@ -292,7 +294,6 @@ def jo_worked_days():
     }
 
 
-
 @payroll_admin_bp.route("/jo-payroll/preview/<int:employee_id>")
 @login_required
 def jo_payroll_preview(employee_id):
@@ -309,6 +310,7 @@ def jo_payroll_preview(employee_id):
 
     period = PayrollPeriod.query.get_or_404(period_id)
 
+    # Calculate worked days
     attendances = Attendance.query.filter(
         Attendance.employee_id == employee.id,
         Attendance.date.between(period.start_date, period.end_date)
@@ -320,30 +322,27 @@ def jo_payroll_preview(employee_id):
         if (period.start_date + timedelta(days=i)).weekday() < 5
     )
 
-    # Check if payroll exists
-    payroll = Payroll.query.filter_by(
-        employee_id=employee.id,
-        pay_period_id=period.id
-    ).first()
+    # Base gross pay
+    base_gross_pay = employee.salary * worked_days
 
-    if payroll:
-        payroll_exists = True
-        # Use saved values
-        base_gross_pay = payroll.basic_salary
-        allowance = payroll.gross_pay - payroll.basic_salary
-        other_deductions = payroll.other_deductions
-        deductions = {"withholding_tax": payroll.tax_withheld}
-    else:
-        payroll_exists = False
-        base_gross_pay = employee.salary * worked_days
-        # Calculate total allowance from EmployeeAllowance table
-        allowance = sum(
-            ea.allowance.amount
-            for ea in employee.employee_allowances
-            if ea.allowance.active
-        )
-        other_deductions = 0
-        deductions = {"withholding_tax": compute_jo_withholding_tax(base_gross_pay + allowance)}
+    # Employee allowances
+    allowance = sum(
+        ea.allowance.amount for ea in employee.employee_allowances if ea.allowance.active
+    )
+
+    # Employee-specific deductions
+    emp_deductions = [
+        {
+            "id": ed.id,
+            "name": ed.deduction.name,
+            "amount": ed.calculate(),
+            "active": ed.active
+        }
+        for ed in employee.employee_deductions if ed.active
+    ]
+
+    payroll = Payroll.query.filter_by(employee_id=employee.id, payroll_period_id=period.id).first()
+    payroll_exists = bool(payroll)
 
     return render_template(
         "payroll/admin/jo_process.html",
@@ -353,8 +352,7 @@ def jo_payroll_preview(employee_id):
         total_days=total_days,
         base_gross_pay=base_gross_pay,
         allowance=allowance,
-        other_deductions=other_deductions,
-        deductions=deductions,
+        employee_deductions=emp_deductions,
         payroll_exists=payroll_exists
     )
 
@@ -1776,6 +1774,64 @@ def delete_deduction(deduction_id):
     return redirect(url_for('payroll_admin.deductions'))
 
 
+@payroll_admin_bp.route("/deductions/manage/<int:deduction_id>", methods=["GET", "POST"])
+@payroll_admin_required
+def manage_deduction_employees(deduction_id):
+    deduction = Deduction.query.get_or_404(deduction_id)
+
+    # === SEARCH ===
+    search_query = request.args.get("search", "").strip()
+
+    # Base query for active employees
+    employees_query = Employee.query.filter_by(status="Active")
+
+    # Apply search filter if provided
+    if search_query:
+        employees_query = employees_query.filter(
+            db.or_(
+                Employee.first_name.ilike(f"%{search_query}%"),
+                Employee.last_name.ilike(f"%{search_query}%"),
+                Employee.employee_id.ilike(f"%{search_query}%")
+            )
+        )
+
+    # === PAGINATION ===
+    page = request.args.get("page", 1, type=int)
+    per_page = 10  # Change this to adjust items per page
+    pagination = employees_query.order_by(Employee.last_name, Employee.first_name).paginate(page=page, per_page=per_page, error_out=False)
+    employees = pagination.items
+
+    if request.method == "POST":
+        selected_ids = request.form.getlist("employees")  # list of employee IDs as strings
+
+        # Remove existing links not in selected_ids
+        for ed in deduction.employees:
+            if str(ed.employee_id) not in selected_ids:
+                db.session.delete(ed)
+
+        # Add new links
+        for emp_id in selected_ids:
+            emp_id = int(emp_id)
+            exists = EmployeeDeduction.query.filter_by(employee_id=emp_id, deduction_id=deduction.id).first()
+            if not exists:
+                new_link = EmployeeDeduction(employee_id=emp_id, deduction_id=deduction.id)
+                db.session.add(new_link)
+
+        db.session.commit()
+        flash("Employees updated for deduction.", "success")
+        return redirect(url_for("payroll_admin.manage_deduction_employees", deduction_id=deduction.id))
+
+    # Pre-select employees already linked
+    linked_employee_ids = [ed.employee_id for ed in deduction.employees]
+
+    return render_template(
+        "payroll/admin/manage_deduction_employees.html",
+        deduction=deduction,
+        employees=employees,
+        linked_employee_ids=linked_employee_ids,
+        pagination=pagination,
+        search=search_query
+    )
 
 # ==========================
 # ALLOWANCES

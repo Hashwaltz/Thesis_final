@@ -13,8 +13,7 @@
             "args": [
                 "run",
                 "--host=0.0.0.0",
-                "--port=5000",
-                "--no-reload"
+                "--port=5000"
             ],
             "jinja": true,
             "justMyCode": true

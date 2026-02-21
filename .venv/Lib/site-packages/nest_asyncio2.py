@@ -215,6 +215,18 @@ def _patch_loop(loop):
             if not f.done():
                 raise RuntimeError(
                     'Event loop stopped before Future completed.')
+
+            # When a task completes inside _run_once(), Task.__step calls
+            # Future.set_result(), which schedules all done callbacks via call_soon().
+            # These callbacks are added to loop._ready but the `while not f.done()` loop
+            # exits immediately — before the next _run_once() that would process them.
+            # https://github.com/Chaoses-Ib/nest-asyncio2/issues/3
+
+            # Process any callbacks scheduled during task completion
+            # (e.g. task done callbacks added via call_soon in set_result).
+            if self._ready:
+                self._run_once()
+
             return f.result()
 
     def _run_once(self):
