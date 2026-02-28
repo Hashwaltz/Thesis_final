@@ -1,0 +1,100 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Admin - Employees List{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      {{ department.name }} Department Employees
+    </h1>
+    
+    <!-- Payroll Buttons -->
+    <div class="flex gap-3">
+      <button 
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('regular')"
+      >
+        <i class="fa-solid fa-repeat"></i>
+        Regular Payroll
+      </button>
+
+      <button 
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('casual')"
+      >
+        <i class="fa-solid fa-repeat"></i>
+        Casual Payroll
+      </button>
+
+      <button 
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('part-time')"
+      >
+        <i class="fa-solid fa-repeat"></i>
+        Part-Time Payroll
+      </button>
+
+      <!-- ✅ Job Order Payroll Button -->
+      <button 
+        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition"
+        onclick="redirectPayroll('jo')"
+      >
+        <i class="fa-solid fa-repeat"></i>
+        JO Payroll
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== EMPLOYEE TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-6 py-3 text-left text-gray-400">Employee Name</th>
+          <th class="px-6 py-3 text-left text-gray-400">Position</th>
+          <th class="px-6 py-3 text-left text-gray-400">Employment Type</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% if employees %}
+          {% for emp in employees %}
+          <tr class="hover:bg-gray-700/50 transition" data-employment-type="{{ emp.employment_type.name|lower }}">
+            <td class="px-6 py-3" data-label="Name">{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td class="px-6 py-3" data-label="Position">{{ emp.position | replace("<", "") | replace(">", "") }}</td>
+            <td class="px-6 py-3" data-label="Employment Type">{{ emp.employment_type.name }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="3" class="px-6 py-4 text-center text-gray-400">
+              No employees found in this department.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<script>
+function redirectPayroll(type) {
+    const departmentId = {{ department.id }};
+    let url = '';
+    
+    if (type === 'regular') {
+        url = `{{ url_for('payroll_admin_bp.regular_payroll_page') }}?department_id=${departmentId}`;
+    } else if (type === 'casual') {
+        url = `{{ url_for('payroll_admin_bp.casual_payroll') }}?department_id=${departmentId}`;
+    } else if (type === 'part-time') {
+        url = `{{ url_for('payroll_admin_bp.parttime_payroll') }}?department_id=${departmentId}`;
+    } else if (type === 'jo') {
+        // ✅ Updated: use the correct blueprint route
+        url = `{{ url_for('payroll_admin_bp.jo_payroll_page') }}?department_id=${departmentId}`;
+    }
+    window.location.href = url;
+}
+</script>
+{% endblock %}

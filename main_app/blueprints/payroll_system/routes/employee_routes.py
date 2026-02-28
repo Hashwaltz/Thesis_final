@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from main_app.models.users import PayrollUser
-from main_app.models.payroll_models import Employee, Payroll, Payslip
+from main_app.models.payroll_models import  Payroll, Payslip
+from main_app.models.hr_models import  Employee
 from main_app.forms import PayslipSearchForm
 from main_app.extensions import db
 from datetime import datetime, date

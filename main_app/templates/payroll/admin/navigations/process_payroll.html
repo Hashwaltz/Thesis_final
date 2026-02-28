@@ -1,0 +1,52 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Admin – Payroll Departments{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+    <i class="fa-solid fa-warehouse text-3xl"></i>
+    Payroll Departments
+  </h2>
+
+  <!-- ===== DEPARTMENT CARDS ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    {% for dept in departments %}
+    <div
+      onclick="goToManualPayroll({{ dept.id }})"
+      class="cursor-pointer bg-gray-800 border border-gray-700 rounded-2xl p-5 flex items-center gap-4
+             hover:bg-gray-700/50 hover:-translate-y-1 hover:shadow-xl transition-all duration-200"
+    >
+
+      <!-- Icon -->
+      <div class="p-4 bg-emerald-600/20 rounded-full flex items-center justify-center">
+        <i class="fa-solid fa-warehouse text-emerald-400 text-3xl"></i>
+      </div>
+
+      <!-- Info -->
+      <div>
+        <h4 class="text-lg font-semibold text-white">
+          {{ dept.name }}
+        </h4>
+        <p class="text-sm text-gray-400">
+          {{ dept.employee_count }} Employees
+        </p>
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+</section>
+
+<script>
+function goToManualPayroll(deptId) {
+  window.location.href =
+    "{{ url_for('payroll_admin_bp.department_employees', department_id=0) }}"
+      .replace("0", deptId);
+}
+</script>
+{% endblock %}

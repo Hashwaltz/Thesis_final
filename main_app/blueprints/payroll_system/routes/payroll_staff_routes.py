@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
 from main_app.models.users import PayrollUser
-from main_app.models.payroll_models import Employee, Payroll, Payslip, PayrollPeriod, EmployeeDeduction, EmployeeAllowance
+from main_app.models.payroll_models import  Payroll, Payslip, PayrollPeriod, EmployeeDeduction, EmployeeAllowance
 from main_app.forms import PayslipForm, PayrollSummaryForm
 from main_app.utils import staff_required, calculate_payroll_summary, get_current_payroll_period
 from main_app.extensions import db
@@ -14,7 +14,7 @@ from calendar import monthrange
 from sqlalchemy import case, func, asc
 import random
 from main_app.models.user import User
-from main_app.models.hr_models import Attendance, Department, Position, EmploymentType
+from main_app.models.hr_models import Attendance, Department, Position, EmploymentType, Employee
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))

@@ -1,0 +1,119 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+
+{% block title %}Payroll History Dashboard{% endblock %}
+
+{% block content %}
+
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- HEADER -->
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      Payroll History Dashboard
+    </h1>
+  </div>
+
+  <!-- FILTER SECTION -->
+  <div class="grid md:grid-cols-2 gap-4">
+
+    <!-- Employee Selector -->
+    <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700">
+      <label class="block text-gray-300 mb-2">Select Employee</label>
+
+      <select class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+        <option value="">All Employees</option>
+
+        {% for emp in employees %}
+        <option value="{{ emp.id }}">
+          {{ emp.first_name }} {{ emp.last_name }}
+        </option>
+        {% endfor %}
+
+      </select>
+    </div>
+
+    <!-- Payroll Period Selector -->
+    <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700">
+      <label class="block text-gray-300 mb-2">Payroll Period</label>
+
+      <select class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+        <option value="">All Periods</option>
+
+        {% for p in periods %}
+        <option value="{{ p.id }}">
+          {{ p.start_date }} – {{ p.end_date }}
+        </option>
+        {% endfor %}
+
+      </select>
+    </div>
+
+  </div>
+
+  <!-- HISTORY TABLE -->
+  <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-x-auto shadow-lg">
+
+    <table class="w-full text-sm divide-y divide-gray-700">
+
+      <thead class="bg-gray-900 text-gray-400">
+        <tr>
+          <th class="px-6 py-3 text-left">Employee</th>
+          <th class="px-6 py-3 text-left">Period</th>
+          <th class="px-6 py-3 text-right">Gross Pay</th>
+          <th class="px-6 py-3 text-right">Deductions</th>
+          <th class="px-6 py-3 text-right">Net Pay</th>
+          <th class="px-6 py-3 text-center">Status</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+
+        {% for emp in employees %}
+        <tr class="hover:bg-gray-700/50 transition">
+
+          <td class="px-6 py-3 font-medium text-gray-200">
+            {{ emp.first_name }} {{ emp.last_name }}
+          </td>
+
+          <td class="px-6 py-3 text-gray-400">
+            Payroll History
+          </td>
+
+          <td class="px-6 py-3 text-right text-emerald-400">
+            —
+          </td>
+
+          <td class="px-6 py-3 text-right text-red-400">
+            —
+          </td>
+
+          <td class="px-6 py-3 text-right text-indigo-400">
+            —
+          </td>
+
+          <td class="px-6 py-3 text-center">
+            <span class="px-3 py-1 text-xs rounded-lg bg-gray-700 text-gray-300">
+              Record
+            </span>
+          </td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+          <td colspan="6" class="text-center py-8 text-gray-400">
+            No payroll history records found.
+          </td>
+        </tr>
+
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+  </div>
+
+</section>
+
+{% endblock %}

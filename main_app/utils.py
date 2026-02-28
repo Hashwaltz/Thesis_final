@@ -5,7 +5,7 @@ from flask_login import current_user
 from main_app.models.hr_models import Department, Employee, Leave, LeaveType, LeaveCredit
 from main_app.extensions import db
 from main_app.models.user import User
-from main_app.models.payroll_models import  Employee as PayrollEmployee, Payroll, Payslip, PayrollPeriod  
+from main_app.models.payroll_models import  Payroll, Payslip, PayrollPeriod  
 import requests
 import zipfile, tempfile, shutil, re
 import pandas as pd

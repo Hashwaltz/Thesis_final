@@ -63,7 +63,7 @@ def login():
 def redirect_by_role(role: str):
     role = role.lower() if role else ""
     if role in ["payroll_admin"]:
-        return redirect(url_for("payroll_admin.payroll_dashboard"))
+        return redirect(url_for("payroll_admin_bp.payroll_dashboard"))
     elif role in ["payroll_staff"]:
         return redirect(url_for("payroll_staff.dashboard"))
     elif role in ["employee", "officer", "dept_head"]:

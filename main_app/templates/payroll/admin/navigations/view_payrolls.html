@@ -1,0 +1,201 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Admin – Employee Payrolls{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <header class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+      <i class="fa-solid fa-file-invoice-dollar text-3xl"></i>
+      Employee Payrolls
+    </h1>
+  </header>
+
+  <!-- ===== FILTERS & SEARCH ===== -->
+  <form method="get" action="{{ url_for('payroll_admin_bp.view_payrolls') }}"
+        class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex flex-wrap gap-4 items-center">
+
+    <!-- Search -->
+    <div class="flex gap-2">
+      <input
+        type="text"
+        name="search"
+        value="{{ search }}"
+        placeholder="Search payrolls..."
+        class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-500 outline-none"
+      />
+      <button class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 transition">
+        Search
+      </button>
+    </div>
+
+    <!-- Department -->
+    <select name="department_id"
+            onchange="this.form.submit()"
+            class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+        <option value="{{ dept.id }}" {% if dept.id == selected_department %}selected{% endif %}>
+          {{ dept.name }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Payroll Period -->
+    <select name="pay_period_id"
+            onchange="this.form.submit()"
+            class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+      <option value="">All Periods</option>
+      {% for period in payroll_periods %}
+        <option value="{{ period.id }}"
+          {% if selected_pay_period and period.id == selected_pay_period.id %}selected{% endif %}>
+          {{ period.period_name }}
+          ({{ period.start_date.strftime('%Y-%m-%d') }} - {{ period.end_date.strftime('%Y-%m-%d') }})
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <!-- ===== ACTION BUTTONS ===== -->
+  <div class="flex flex-wrap gap-3">
+
+    <!-- Generate Payslips -->
+    <form id="generateAllPayslipsForm"
+          action="{{ url_for('payroll_admin_bp.generate_payslips_by_period',
+                            pay_period_id=selected_pay_period.id if selected_pay_period else 1) }}"
+          method="POST">
+      <button type="button"
+              id="generateAllPayslipsBtn"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 transition">
+        <i class="fa-solid fa-receipt"></i>
+        Generate All Payslips
+      </button>
+    </form>
+
+    <!-- Export Excel -->
+    <a href="{{ url_for('payroll_admin_bp.export_payroll_excel_route',
+              search=search,
+              department_id=selected_department,
+              pay_period_id=selected_pay_period.id if selected_pay_period else '') }}"
+       class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition">
+      <i class="fa-solid fa-file-excel"></i>
+      Export to Excel
+    </a>
+  </div>
+
+  <!-- ===== PAYROLL TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-900 text-emerald-400">
+        <tr>
+          <th class="px-4 py-3 text-left">Employee</th>
+          <th class="px-4 py-3 text-left">Department</th>
+          <th class="px-4 py-3 text-right">Basic Salary</th>
+          <th class="px-4 py-3 text-right">Allowance</th>
+          <th class="px-4 py-3 text-right">Gross Pay</th>
+          <th class="px-4 py-3 text-right">Deductions</th>
+          <th class="px-4 py-3 text-right">Net Pay</th>
+          <th class="px-4 py-3 text-left">Payroll Period</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for payroll in payrolls.items %}
+        <tr class="hover:bg-gray-700/40 transition">
+          <td class="px-4 py-3">
+            {{ payroll.employee.first_name }} {{ payroll.employee.last_name }}
+          </td>
+          <td class="px-4 py-3">
+            {{ payroll.employee.department.name if payroll.employee.department else '-' }}
+          </td>
+          <td class="px-4 py-3 text-right">
+            ₱ {{ "{:,.2f}".format(payroll.basic_salary or 0) }}
+          </td>
+          <td class="px-4 py-3 text-right">
+            ₱ {{ "{:,.2f}".format(payroll.allowance or 0) }}
+          </td>
+          <td class="px-4 py-3 text-right">
+            {% set gross_pay = (payroll.basic_salary or 0) + (payroll.allowance or 0) %}
+            ₱ {{ "{:,.2f}".format(gross_pay) }}
+          </td>
+          <td class="px-4 py-3 text-right text-yellow-400">
+            {% set deductions = (payroll.total_deductions or 0) %}
+            ₱ {{ "{:,.2f}".format(deductions) }}
+          </td>
+          <td class="px-4 py-3 text-right font-semibold text-emerald-400">
+            {% set net = (payroll.net_pay or 0) %}
+            ₱ {{ "{:,.2f}".format(net) }}
+          </td>
+          <td class="px-4 py-3">
+            {% if payroll.payroll_period %}
+              {{ payroll.payroll_period.start_date.strftime('%Y-%m-%d') }}
+              –
+              {{ payroll.payroll_period.end_date.strftime('%Y-%m-%d') }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-6 text-gray-400">
+            No payroll records found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== PAGINATION ===== -->
+  <div class="flex justify-center items-center gap-4 mt-4">
+    {% if payrolls.has_prev %}
+      <a class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
+         href="{{ url_for('payroll_admin_bp.view_payrolls',
+                          page=payrolls.prev_num,
+                          search=search,
+                          department_id=selected_department,
+                          pay_period_id=selected_pay_period.id if selected_pay_period else '') }}">
+        Previous
+      </a>
+    {% endif %}
+
+    <span class="text-gray-300">
+      Page {{ payrolls.page }} of {{ payrolls.pages }}
+    </span>
+
+    {% if payrolls.has_next %}
+      <a class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600"
+         href="{{ url_for('payroll_admin_bp.view_payrolls',
+                          page=payrolls.next_num,
+                          search=search,
+                          department_id=selected_department,
+                          pay_period_id=selected_pay_period.id if selected_pay_period else '') }}">
+        Next
+      </a>
+    {% endif %}
+  </div>
+
+</section>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById("generateAllPayslipsBtn").addEventListener("click", () => {
+  Swal.fire({
+    title: 'Generate All Payslips?',
+    text: 'This will generate payslips for all employees in this payroll period.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#16a34a',
+    cancelButtonColor: '#dc2626',
+    confirmButtonText: 'Yes, generate'
+  }).then(result => {
+    if (result.isConfirmed) {
+      document.getElementById("generateAllPayslipsForm").submit();
+    }
+  });
+});
+</script>
+{% endblock %}

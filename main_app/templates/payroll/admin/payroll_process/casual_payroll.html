@@ -1,0 +1,169 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Casual Payroll{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      Casual Payroll Processing
+    </h1>
+  </div>
+
+  <!-- ===== PAYROLL PERIOD SELECT ===== -->
+  <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 max-w-md">
+    <label class="block text-gray-300 mb-1">Payroll Period</label>
+    <select
+      id="period"
+      onchange="calculateWorkedDays()"
+      class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+    >
+      <option value="">Select Period</option>
+      {% for period in payroll_periods %}
+        <option
+          value="{{ period.id }}"
+          data-start="{{ period.start_date }}"
+          data-end="{{ period.end_date }}"
+        >
+          {{ period.start_date }} – {{ period.end_date }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {% if selected_department %}
+  <div class="text-sm text-gray-400">
+    <span class="font-medium text-gray-300">Department:</span>
+    {{ selected_department }}
+  </div>
+  {% endif %}
+
+  <!-- ===== CASUAL PAYROLL TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-6 py-3 text-left text-gray-400">Employee</th>
+          <th class="px-6 py-3 text-left text-gray-400">Daily Rate</th>
+          <th class="px-6 py-3 text-left text-gray-400">Allowance</th>
+          <th class="px-6 py-3 text-left text-gray-400">Worked Days</th>
+          <th class="px-6 py-3 text-left text-gray-400">SSS</th>
+          <th class="px-6 py-3 text-left text-gray-400">PhilHealth</th>
+          <th class="px-6 py-3 text-left text-gray-400">Pag-IBIG</th>
+          <th class="px-6 py-3 text-left text-gray-400">Tax</th>
+          <th class="px-6 py-3 text-left text-gray-400">Other</th>
+          <th class="px-6 py-3 text-left text-gray-400">Net Pay</th>
+          <th class="px-6 py-3 text-left text-gray-400">Action</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for emp in employees %}
+        <tr class="hover:bg-gray-700/50 transition" data-employee-id="{{ emp.id }}">
+          
+          <td class="px-6 py-3 font-medium text-gray-100">
+            {{ emp.full_name }}
+            <div class="text-xs text-gray-400">
+              {{ emp.employment_type or "Casual" }}
+            </div>
+          </td>
+
+          <td class="px-6 py-3">
+            ₱ {{ "{:,.2f}".format(emp.basic_salary) }}
+          </td>
+
+          <td class="px-6 py-3">
+            <input type="number"
+                   name="allowance"
+                   value="{{ emp.allowance }}"
+                   class="w-24 px-2 py-1 rounded-md bg-gray-900 border border-gray-700 text-gray-200 focus:ring-1 focus:ring-emerald-500 outline-none">
+          </td>
+
+          <td class="px-6 py-3 worked-days text-yellow-400">
+            —
+          </td>
+
+          <td class="px-6 py-3">
+            <input type="number"
+                   value="{{ emp.sss }}"
+                   class="w-20 px-2 py-1 rounded-md bg-gray-900 border border-gray-700 text-gray-200">
+          </td>
+
+          <td class="px-6 py-3">
+            <input type="number"
+                   value="{{ emp.philhealth }}"
+                   class="w-20 px-2 py-1 rounded-md bg-gray-900 border border-gray-700 text-gray-200">
+          </td>
+
+          <td class="px-6 py-3">
+            <input type="number"
+                   value="{{ emp.pagibig }}"
+                   class="w-20 px-2 py-1 rounded-md bg-gray-900 border border-gray-700 text-gray-200">
+          </td>
+
+          <td class="px-6 py-3">
+            <input type="number"
+                   value="0"
+                   class="w-20 px-2 py-1 rounded-md bg-gray-900 border border-gray-700 text-gray-200">
+          </td>
+
+          <td class="px-6 py-3">
+            <input type="number"
+                   value="0"
+                   class="w-20 px-2 py-1 rounded-md bg-gray-900 border border-gray-700 text-gray-200">
+          </td>
+
+          <td class="px-6 py-3 net-pay text-emerald-400 font-medium">
+            ₱ 0.00
+          </td>
+
+          <td class="px-6 py-3">
+            <button
+              onclick="processPayroll({{ emp.id }})"
+              class="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm transition"
+            >
+              Process
+            </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="11" class="px-6 py-4 text-center text-gray-400">
+            No Casual employees found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<script>
+function calculateWorkedDays() {
+  const select = document.getElementById("period");
+  const option = select.selectedOptions[0];
+  if (!option || !option.value) return;
+
+  const start = option.dataset.start;
+  const end = option.dataset.end;
+
+  document.querySelectorAll("tr[data-employee-id]").forEach(row => {
+    const empId = row.dataset.employeeId;
+    const cell = row.querySelector(".worked-days");
+    cell.textContent = "Loading...";
+
+    fetch(`/admin/casual/worked-days?employee_id=${empId}&start_date=${start}&end_date=${end}`)
+      .then(res => res.json())
+      .then(data => {
+        cell.textContent = `${data.worked_days} / ${data.total_working_days}`;
+      })
+      .catch(() => {
+        cell.textContent = "—";
+      });
+  });
+}
+</script>
+
+{% endblock %}

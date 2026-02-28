@@ -1,0 +1,197 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Payroll Periods{% endblock %}
+
+{% block content %}
+{% include 'payroll/admin/payroll_periods/period_modal.html' %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- ===== HEADER ===== -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-emerald-400">
+      Payroll Periods
+    </h1>
+
+    <button onclick="openAddModal()"
+        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white text-sm transition">
+    + Create Period
+    </button>
+  </div>
+
+  <!-- ===== FILTER CARD ===== -->
+  <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700">
+    <form method="GET" class="grid md:grid-cols-4 gap-4">
+
+      <!-- Status -->
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Status</label>
+        <select name="status"
+                class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+          <option value="">All</option>
+          <option value="Open" {{ request.args.get('status') == 'Open' and 'selected' }}>Open</option>
+          <option value="Closed" {{ request.args.get('status') == 'Closed' and 'selected' }}>Closed</option>
+        </select>
+      </div>
+
+      <!-- Start Date -->
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Start Date</label>
+        <input type="date"
+               name="start_date"
+               value="{{ request.args.get('start_date','') }}"
+               class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+
+      <!-- End Date -->
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">End Date</label>
+        <input type="date"
+               name="end_date"
+               value="{{ request.args.get('end_date','') }}"
+               class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-700 text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex items-end gap-2">
+        <button type="submit"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-sm transition w-full">
+          Filter
+        </button>
+
+        <a href="{{ url_for('payroll_admin_bp.view_payroll_periods') }}"
+           class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white text-sm transition w-full text-center">
+          Reset
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ===== TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-6 py-3 text-left text-gray-400">Period</th>
+          <th class="px-6 py-3 text-left text-gray-400">Start Date</th>
+          <th class="px-6 py-3 text-left text-gray-400">End Date</th>
+          <th class="px-6 py-3 text-left text-gray-400">Status</th>
+          <th class="px-6 py-3 text-left text-gray-400">Created</th>
+          <th class="px-6 py-3 text-left text-gray-400">Action</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for period in periods %}
+        <tr class="hover:bg-gray-700/50 transition">
+          <td class="px-6 py-3 font-medium text-gray-100">
+            {{ period.start_date }} – {{ period.end_date }}
+          </td>
+
+          <td class="px-6 py-3">
+            {{ period.start_date }}
+          </td>
+
+          <td class="px-6 py-3">
+            {{ period.end_date }}
+          </td>
+
+          <td class="px-6 py-3">
+            {% if period.status == 'Open' %}
+              <span class="px-3 py-1 text-xs rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-600">
+                Open
+              </span>
+            {% else %}
+              <span class="px-3 py-1 text-xs rounded-full bg-red-600/20 text-red-400 border border-red-600">
+                Closed
+              </span>
+            {% endif %}
+          </td>
+
+          <td class="px-6 py-3 text-gray-400 text-xs">
+            {{ period.created_at.strftime('%b %d, %Y') if period.created_at else '-' }}
+          </td>
+
+          <td class="px-6 py-3">
+                <button onclick="openEditModal(
+                    {{ period.id }},
+                    '{{ period.start_date }}',
+                    '{{ period.end_date }}',
+                    '{{ period.status }}'
+                    )"
+                    class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white text-xs transition">
+                    Edit
+                </button>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="px-6 py-6 text-center text-gray-400">
+            No payroll periods found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== PAGINATION ===== -->
+  {% if pagination.pages > 1 %}
+  <div class="flex justify-center gap-2">
+
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('payroll_admin_bp.view_payroll_periods', page=pagination.prev_num, **request.args) }}"
+         class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-sm">
+        Previous
+      </a>
+    {% endif %}
+
+    <span class="px-4 py-1 bg-emerald-600 rounded-md text-sm">
+      Page {{ pagination.page }} of {{ pagination.pages }}
+    </span>
+
+    {% if pagination.has_next %}
+      <a href="{{ url_for('payroll_admin_bp.view_payroll_periods', page=pagination.next_num, **request.args) }}"
+         class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-sm">
+        Next
+      </a>
+    {% endif %}
+
+  </div>
+  {% endif %}
+
+</section>
+<script>
+function openAddModal() {
+  document.getElementById('modalTitle').innerText = "Add Payroll Period";
+  document.getElementById('periodForm').action =
+    "{{ url_for('payroll_admin_bp.create_payroll_period') }}";
+
+  document.getElementById('start_date').value = "";
+  document.getElementById('end_date').value = "";
+  document.getElementById('status').value = "Open";
+
+  document.getElementById('periodModal').classList.remove('hidden');
+  document.getElementById('periodModal').classList.add('flex');
+}
+
+function openEditModal(id, start, end, status) {
+  document.getElementById('modalTitle').innerText = "Edit Payroll Period";
+  document.getElementById('periodForm').action =
+    `/admin/payroll-periods/edit/${id}`;
+
+  document.getElementById('start_date').value = start;
+  document.getElementById('end_date').value = end;
+  document.getElementById('status').value = status;
+
+  document.getElementById('periodModal').classList.remove('hidden');
+  document.getElementById('periodModal').classList.add('flex');
+}
+
+function closePeriodModal() {
+  document.getElementById('periodModal').classList.add('hidden');
+  document.getElementById('periodModal').classList.remove('flex');
+}
+</script>
+{% endblock %}
+
+
