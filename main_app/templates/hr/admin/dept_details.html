@@ -39,11 +39,11 @@
     <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
       <i class="fa-solid fa-id-badge text-blue-400"></i> Department Head
     </h2>
-    {% if department.head %}
+    {% if head %}
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-900 p-4 rounded-xl shadow-md">
       <div>
-        <p class="text-lg font-medium">{{ department.head.get_full_name() }}</p>
-        <p class="text-gray-400 text-sm">{{ department.head.email }}</p>
+        <p class="text-lg font-medium">{{ head.get_full_name() }}</p>
+        <p class="text-gray-400 text-sm">{{ head.email }}</p>
       </div>
     </div>
     {% else %}

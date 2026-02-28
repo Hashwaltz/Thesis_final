@@ -599,6 +599,7 @@ def edit_employee(employee_id):
             current_app.logger.error(f"Error updating employee {employee_id}: {e}")
             return redirect(url_for('hr_admin.view_employees'))
 
+
 @hr_admin_bp.route('/employees/<int:employee_id>/service_record')
 @login_required
 @admin_required
@@ -709,6 +710,214 @@ def export_service_record(employee_id):
         as_attachment=True,
         download_name=f"service_record_{employee.employee_id}.docx",
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+
+@hr_admin_bp.route("/employee/<int:employee_id>/generate-coe")
+@login_required
+def generate_coe(employee_id):
+
+    import os
+    import io
+    from datetime import datetime
+    from flask import current_app, send_file
+
+    from reportlab.platypus import (
+        SimpleDocTemplate,
+        Paragraph,
+        Spacer,
+        Image,
+        Table,
+        TableStyle
+    )
+
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+    from reportlab.lib import colors
+
+    employee = Employee.query.get_or_404(employee_id)
+
+    buffer = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=50,
+        leftMargin=50,
+        topMargin=40,
+        bottomMargin=60
+    )
+
+    styles = getSampleStyleSheet()
+
+    # ===============================
+    # Styles
+    # ===============================
+
+    center_style = ParagraphStyle(
+        "Center",
+        parent=styles["Normal"],
+        alignment=TA_CENTER,
+        fontSize=11
+    )
+
+    title_style = ParagraphStyle(
+        "Title",
+        parent=styles["Heading1"],
+        alignment=TA_CENTER,
+        spaceAfter=20
+    )
+
+    right_style = ParagraphStyle(
+        "Right",
+        parent=styles["Normal"],
+        alignment=TA_RIGHT,
+        fontSize=10
+    )
+
+    body_style = ParagraphStyle(
+        "Body",
+        parent=styles["Normal"],
+        alignment=TA_CENTER,
+        leading=18,
+        fontSize=11
+    )
+
+    # ===============================
+    # Logo
+    # ===============================
+
+    logo_path = os.path.join(
+        current_app.root_path,
+        "static",
+        "img",
+        "garay.png"
+    )
+
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=70, height=70)
+        header_table = Table([[logo]], colWidths=[450], hAlign="CENTER")
+    else:
+        header_table = Table([[""]], colWidths=[450])
+
+    # ===============================
+    # Header Text
+    # ===============================
+
+    header_text = """
+    Republic of the Philippines<br/>
+    Province of Bulacan<br/>
+    MUNICIPALITY OF NORZAGARAY<br/>
+    HUMAN RESOURCE MANAGEMENT OFFICE
+    """
+
+    separator = Table([[""]], colWidths=[450])
+    separator.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.darkblue),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2)
+    ]))
+
+    # ===============================
+    # Date
+    # ===============================
+
+    today_date = datetime.now().strftime("%B %d, %Y")
+    date_paragraph = Paragraph(today_date, right_style)
+
+    # ===============================
+    # Gender Title Logic
+    # ===============================
+
+    gender = (employee.gender or "").lower()
+
+    if gender == "male":
+        title_prefix = "Mr."
+    elif gender == "female":
+        title_prefix = "Ms."
+    else:
+        title_prefix = "Mr./Ms."
+
+    display_name = f"{title_prefix} {employee.last_name}"
+
+    # ===============================
+    # Model Data Extraction ⭐ IMPORTANT
+    # ===============================
+
+    department_name = employee.department.name if employee.department else "N/A"
+    position_name = employee.position.name if employee.position else "N/A"
+    employment_type = employee.employment_type.name if employee.employment_type else "N/A"
+
+    hire_date = employee.date_hired.strftime("%B %d, %Y") if employee.date_hired else "N/A"
+
+    end_date = "Present" if employee.status == "Active" else (employee.status or "N/A")
+
+    working_duration = employee.get_working_duration()
+
+    # ===============================
+    # Certificate Body (Correct Version)
+    # ===============================
+
+    body_text = f"""
+    <b>TO WHOM IT MAY CONCERN:</b><br/><br/>
+
+    This is to certify that <b>{display_name}</b>,
+    a <b>{position_name}</b> under the <b>{department_name}</b>,
+    is employed as <b>{employment_type}</b> status in this office.
+
+    <br/><br/>
+
+    This employee has been working since <b>{hire_date}</b>
+    up to <b>{end_date}</b> with a total working duration of
+    <b>{working_duration}</b>.
+
+    <br/><br/>
+
+    This certification is issued upon the request of {display_name}
+    for whatever legal purpose this may serve.
+    """
+
+    # ===============================
+    # Signature Block
+    # ===============================
+
+    signature_block = Paragraph("""
+    <br/><br/><br/>
+    <b>FERNANDO DG. CRUZ</b><br/>
+    Acting MHRMO
+    """, right_style)
+
+    # ===============================
+    # Build PDF
+    # ===============================
+
+    story = [
+        header_table,
+        Paragraph(header_text, center_style),
+
+        Spacer(1, 6),
+        separator,
+        Spacer(1, 20),
+
+        date_paragraph,
+        Spacer(1, 20),
+
+        Paragraph("CERTIFICATION", title_style),
+
+        Paragraph(body_text, body_style),
+
+        signature_block
+    ]
+
+    doc.build(story)
+
+    buffer.seek(0)
+
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"COE_{employee.employee_id}.pdf",
+        mimetype="application/pdf"
     )
 
 @hr_admin_bp.route("/employees/<int:employee_id>/archive", methods=["POST"])
@@ -1386,19 +1595,36 @@ def view_departments():
         departments=departments,
         employee_counts=employee_counts
     )
-
-
 @hr_admin_bp.route('/departments/<int:department_id>')
 @login_required
 @admin_required
 def department_details(department_id):
+
     department = Department.query.get_or_404(department_id)
-    employees = Employee.query.filter_by(department_id=department_id).all()
+
+    # ✅ Force reload to avoid ORM stale relationship cache
+    db.session.refresh(department)
+
+    # ✅ Validate head belongs to department
+    head = None
+    if department.head_id:
+        head = Employee.query.filter_by(
+            id=department.head_id,
+            department_id=department.id,
+            status="Active"
+        ).first()
+
+    # ✅ Load department employees
+    employees = Employee.query.filter(
+        Employee.department_id == department_id,
+        Employee.status == "Active"
+    ).all()
 
     return render_template(
         'hr/admin/dept_details.html',
         department=department,
-        employees=employees
+        employees=employees,
+        head=head
     )
 
 @hr_admin_bp.route('/departments/add', methods=['GET', 'POST'])
@@ -1441,46 +1667,57 @@ def add_department():
 @login_required
 @admin_required
 def edit_department(department_id):
+
     department = Department.query.get_or_404(department_id)
 
     try:
-        # Update department name
         department.name = request.form.get("name") or department.name
-
-        # Get selected employee for head
-        head_emp_id = request.form.get("dept_head")
-        new_head_user = None
-
-        if head_emp_id:
-            employee = Employee.query.get(int(head_emp_id))
-            if employee and employee.user_id:
-                new_head_user = employee.user
-        # Handle previous head
-        prev_head_user = department.head
-
-        # Assign/unassign department head
-        if new_head_user:
-            department.head_id = new_head_user.id
-            # Update new head role
-            new_head_user.role = "dept_head"
-        else:
-            department.head_id = None
-
-        # If previous head exists and is different, reset their role
-        if prev_head_user and prev_head_user != new_head_user:
-            prev_head_user.role = "employee"
-
-        # Update description
         department.description = request.form.get("description") or department.description
 
+        head_emp_id = request.form.get("dept_head")
+
+        # ⭐ Get previous head
+        previous_head = None
+        if department.head_id:
+            previous_head = Employee.query.get(department.head_id)
+
+        # ⭐ If new head is selected
+        if head_emp_id:
+
+            new_head = Employee.query.get(int(head_emp_id))
+
+            if not new_head:
+                return jsonify(status="error", message="Employee not found.")
+
+            if new_head.department_id != department.id:
+                return jsonify(
+                    status="error",
+                    message="Employee must belong to this department."
+                )
+
+            # ✅ If head is changing → downgrade previous head
+            if previous_head and previous_head.id != new_head.id:
+                previous_head.role = "employee"
+
+            # ✅ Assign new head
+            new_head.role = "dept_head"
+            department.head_id = new_head.id
+
+        else:
+            # ✅ Remove head if none selected
+            if previous_head:
+                previous_head.role = "employee"
+
+            department.head_id = None
+
         db.session.commit()
+
         return jsonify(status="success", message="Department updated successfully!")
 
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating department {department_id}: {e}")
-        return jsonify(status="error", message="Error updating department. Please try again.")
-
+        current_app.logger.error(str(e))
+        return jsonify(status="error", message="Error updating department.")
 
 @hr_admin_bp.route('/hr/admin/positions')
 @login_required

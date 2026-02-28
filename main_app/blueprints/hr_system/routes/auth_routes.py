@@ -39,10 +39,12 @@ def hr_features():
 # ----------------- LOGIN -----------------
 @hr_auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+
     if current_user.is_authenticated:
         role = current_user.role.lower()
+
         if role == 'hr_admin':
-            return redirect(url_for('hr_admin.hr_dashboard'))   
+            return redirect(url_for('hr_admin.hr_dashboard'))
         elif role == 'officer':
             return redirect(url_for('officer.hr_dashboard'))
         elif role == 'leave_officer':
@@ -53,44 +55,40 @@ def login():
             return redirect(url_for('employee.dashboard'))
 
     if request.method == 'POST':
+
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '').strip()
 
-        if not email or not password:
-            flash('Please enter both email and password.', 'error')
-            return render_template('hr_auth/hr_login.html')
-
         user = User.query.filter_by(email=email).first()
 
-        if not user:
+        if not user or user.password.strip() != password:
             flash('Invalid email or password.', 'error')
-            return render_template('hr_auth/hr_login.html')
+            return redirect(url_for('hr_auth.login'))
 
-        # NOTE: still plain-text comparison — change this to bcrypt later
-        if user.password.strip() == password:
-            if not user.active:
-                flash('Your account has been deactivated. Please contact administrator.', 'error')
-                return render_template('hr_auth/hr_login.html')
+        if not user.active:
+            flash('Account deactivated.', 'error')
+            return redirect(url_for('hr_auth.login'))
 
-            login_user(user)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
+        # ⭐ FORCE SESSION SAVE
+        login_user(user, remember=True)
 
-            # Redirect by role
-            role = user.role.lower()
-            if role == 'admin':
-                return redirect(url_for('hr_admin.hr_dashboard'))
-            elif role == 'officer':
-                return redirect(url_for('officer.hr_dashboard'))
-            elif role == 'dept_head':
-                return redirect(url_for('dept_head.dashboard'))
-            elif role in ['employee', 'staff']:
-                return redirect(url_for('employee.dashboard'))
-        else:
-            flash('Invalid email or password.', 'error')
+        db.session.commit()
+        db.session.flush()
+
+        role = user.role.lower()
+
+        if role in ['hr_admin', 'admin']:
+            return redirect(url_for('hr_admin.hr_dashboard'))
+        elif role == 'officer':
+            return redirect(url_for('officer.hr_dashboard'))
+        elif role == 'dept_head':
+            return redirect(url_for('dept_head.dashboard'))
+        elif role in ['employee', 'staff']:
+            return redirect(url_for('employee.dashboard'))
+
+        return redirect(url_for('index'))
 
     return render_template('hr_auth/hr_login.html')
-
 
 # ----------------- LOGOUT -----------------
 @hr_auth_bp.route('/logout')
