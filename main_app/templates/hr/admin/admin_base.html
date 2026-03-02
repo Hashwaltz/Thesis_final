@@ -58,25 +58,25 @@
 
     {% set menu = {
       "Employee Management": [
-        ("fa-gauge", "Dashboard", "hr_admin.hr_dashboard"),
-        ("fa-users", "Employees", "hr_admin.view_employees"),
-        ("fa-user-shield", "User Accounts", "hr_admin.view_users")
+        ("fa-gauge", "Dashboard", "hr_admin_bp.hr_dashboard"),
+        ("fa-users", "Employees", "hr_admin_bp.view_employees"),
+        ("fa-user-shield", "User Accounts", "hr_admin_bp.view_users")
       ],
       "Attendance & Leave": [
-        ("fa-calendar-check", "Attendance", "hr_admin.attendance"),
-        ("fa-clock", "Add Attendance", "hr_admin.add_attendance"),
-        ("fa-plane-departure", "Leave Requests", "hr_admin.view_leaves")
+        ("fa-calendar-check", "Attendance", "hr_admin_bp.view_attendance"),
+        ("fa-clock", "Add Attendance", "hr_admin_bp.add_attendance"),
+        ("fa-plane-departure", "Leave Requests", "hr_admin_bp.view_leaves")
       ],
       "Organization": [
-        ("fa-building", "Departments", "hr_admin.view_departments"),
-        ("fa-circle-plus", "Add Department", "hr_admin.add_department"),
-        ("fa-id-badge", "Positions", "hr_admin.view_positions"),
-        ("fa-user-plus", "Add Position", "hr_admin.add_position")
+        ("fa-building", "Departments", "hr_admin_bp.view_departments"),
+        ("fa-circle-plus", "Add Department", "hr_admin_bp.add_department"),
+        ("fa-id-badge", "Positions", "hr_admin_bp.view_positions"),
+        ("fa-user-plus", "Add Position", "hr_admin_bp.add_position")
       ],
       "Reports & Settings": [
-        ("fa-chart-line", "Attendance Reports", "hr_admin.attendance_report"),
-        ("fa-chart-pie", "Leave Reports", "hr_admin.leave_report"),
-        ("fa-gear", "Account Settings", "hr_admin.profile")
+        ("fa-chart-line", "Attendance Reports", "hr_admin_bp.attendance_report"),
+        ("fa-chart-pie", "Leave Reports", "hr_admin_bp.leave_report"),
+        ("fa-gear", "Account Settings", "hr_admin_bp.profile")
       ]
     } %}
 
@@ -163,7 +163,7 @@
       confirmButtonText: "Yes, logout"
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = "{{ url_for('hr_auth.logout') }}";
+        window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
       }
     });
   }

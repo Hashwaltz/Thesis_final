@@ -1,0 +1,32 @@
+<h3>Preview Attendance Records</h3>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Employee ID</th>
+      <th>Date</th>
+      <th>Time In</th>
+      <th>Time Out</th>
+      <th>Status</th>
+      <th>Remarks</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rec in records %}
+    <tr>
+      <td>{{ rec.employee_id }}</td>
+      <td>{{ rec.date }}</td>
+      <td>{{ rec.time_in }}</td>
+      <td>{{ rec.time_out }}</td>
+      <td>{{ rec.status }}</td>
+      <td>{{ rec.remarks }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<form
+  method="post"
+  action="{{ url_for('hr_admin.confirm_import_attendance') }}"
+>
+  <button type="submit">Confirm Import</button>
+</form>

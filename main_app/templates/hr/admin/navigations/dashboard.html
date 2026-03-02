@@ -1,0 +1,281 @@
+{% extends "hr/admin/admin_base.html" %} {% block title %}HR Dashboard{%
+endblock %} {% block content %}
+<section class="p-6 space-y-8">
+  <!-- ===== HEADER ===== -->
+  <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-3">
+    <i class="fa-solid fa-user-gear text-3xl"></i>
+    HR Dashboard
+  </h1>
+
+  <!-- ===== METRICS ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div
+      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
+    >
+      <div class="p-3 bg-blue-600/20 rounded-full">
+        <i class="fa-solid fa-users text-blue-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Total Employees</p>
+        <h2 class="text-3xl font-bold text-blue-400">{{ total_employees }}</h2>
+      </div>
+    </div>
+
+    <div
+      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
+    >
+      <div class="p-3 bg-emerald-600/20 rounded-full">
+        <i class="fa-solid fa-user-check text-emerald-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Active Employees</p>
+        <h2 class="text-3xl font-bold text-emerald-400">
+          {{ active_employees }}
+        </h2>
+      </div>
+    </div>
+
+    <div
+      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
+    >
+      <div class="p-3 bg-yellow-500/20 rounded-full">
+        <i class="fa-solid fa-building text-yellow-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Departments</p>
+        <h2 class="text-3xl font-bold text-yellow-400">
+          {{ total_departments }}
+        </h2>
+      </div>
+    </div>
+
+    <div
+      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
+    >
+      <div class="p-3 bg-indigo-600/20 rounded-full">
+        <i class="fa-solid fa-calendar-xmark text-indigo-400 text-3xl"></i>
+      </div>
+      <div>
+        <p class="text-gray-400">Recent Leaves</p>
+        <h2 class="text-3xl font-bold text-indigo-400">
+          {{ recent_leaves|length }}
+        </h2>
+      </div>
+    </div>
+  </div>
+  <!-- ===== REMINDERS (NOTE STYLE) ===== -->
+  <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+    <h3
+      class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
+    >
+      <i class="fa-solid fa-note-sticky"></i>
+      HR Notes & Reminders
+    </h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-yellow-500/10 border-l-4 border-yellow-400 p-4 rounded-xl">
+        <h4 class="text-yellow-400 font-semibold mb-1">
+          <i class="fa-solid fa-circle-exclamation mr-2"></i> Leave Requests
+        </h4>
+        <p class="text-sm text-gray-300">Review pending leave requests.</p>
+      </div>
+
+      <div class="bg-blue-500/10 border-l-4 border-blue-400 p-4 rounded-xl">
+        <h4 class="text-blue-400 font-semibold mb-1">
+          <i class="fa-solid fa-user-plus mr-2"></i> New Employees
+        </h4>
+        <p class="text-sm text-gray-300">Verify newly added employees.</p>
+      </div>
+
+      <div
+        class="bg-emerald-500/10 border-l-4 border-emerald-400 p-4 rounded-xl"
+      >
+        <h4 class="text-emerald-400 font-semibold mb-1">
+          <i class="fa-solid fa-calendar-days mr-2"></i> Attendance
+        </h4>
+        <p class="text-sm text-gray-300">Check weekly attendance completion.</p>
+      </div>
+    </div>
+  </div>
+  <!-- ===== CHARTS (2 PER ROW) ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Employee Growth -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+      <h3
+        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
+      >
+        <i class="fa-solid fa-chart-line"></i>
+        Employee Growth (6 Months)
+      </h3>
+      <div class="h-[300px]">
+        <canvas id="growthChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Department Distribution (DONUT) -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+      <h3
+        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
+      >
+        <i class="fa-solid fa-diagram-project"></i>
+        Department Distribution
+      </h3>
+      <div class="h-[300px]">
+        <canvas id="deptChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Employees per Barangay -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+      <h3
+        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
+      >
+        <i class="fa-solid fa-location-dot"></i>
+        Employees per Barangay
+      </h3>
+      <div class="h-[300px]">
+        <canvas id="barangayChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Attendance Overview -->
+    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+      <h3
+        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
+      >
+        <i class="fa-solid fa-calendar-check"></i>
+        Attendance (7 Days)
+      </h3>
+      <div class="h-[300px]">
+        <canvas id="attendanceChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ===== EMPLOYEE GROWTH ===== */
+  new Chart(growthChart, {
+    type: 'line',
+    data: {
+      labels: {{ growth_labels|tojson }},
+      datasets: [{
+        data: {{ growth_counts|tojson }},
+        borderColor: '#60a5fa',
+        backgroundColor: '#60a5fa33',
+        tension: 0.5,
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animations: {
+        tension: { duration: 1200, easing: 'easeOutQuart' },
+        y: { duration: 1500, easing: 'easeOutCubic' }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ===== DEPARTMENT DISTRIBUTION ===== */
+  new Chart(deptChart, {
+    type: 'doughnut',
+    data: {
+      labels: {{ dept_labels|tojson }},
+      datasets: [{
+        data: {{ dept_counts|tojson }},
+        backgroundColor: ['#60a5fa','#10b981','#f59e0b','#8b5cf6','#f43f5e'],
+        borderWidth: 3,
+        hoverOffset: 12
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      animation: {
+        animateRotate: true,
+        animateScale: true,
+        duration: 1400,
+        easing: 'easeOutBack'
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#d1d5db' }
+        }
+      }
+    }
+  });
+
+  /* ===== BARANGAY BAR CHART ===== */
+  new Chart(barangayChart, {
+    type: 'bar',
+    data: {
+      labels: {{ barangay_labels|tojson }},
+      datasets: [{
+        data: {{ barangay_counts|tojson }},
+        backgroundColor: '#60a5fa',
+        borderRadius: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animations: {
+        y: {
+          from: 0,
+          delay(ctx) {
+            return ctx.dataIndex * 120;
+          },
+          duration: 1400,
+          easing: 'easeOutQuart'
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  /* ===== ATTENDANCE LINE CHART ===== */
+  new Chart(attendanceChart, {
+    type: 'line',
+    data: {
+      labels: {{ attendance_labels|tojson }},
+      datasets: [{
+        data: {{ attendance_counts|tojson }},
+        borderColor: '#10b981',
+        backgroundColor: '#10b98133',
+        tension: 0.5,
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animations: {
+        x: { duration: 1000 },
+        y: { duration: 1500, easing: 'easeOutCubic' }
+      },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          ticks: { callback: v => v + '%' }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+});
+</script>
+
+{% endblock %}

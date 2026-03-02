@@ -1,0 +1,149 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}HR Admin - Reports{% endblock %}
+{% block content %}
+<main class="content-wrap">
+  <header class="content-head">
+    <h1>HR Reports</h1>
+  </header>
+  <br>
+
+  <!-- Filter Form -->
+  <div class="search-box">
+    <form method="get" class="filter-form">
+      <div class="fields">
+
+        <div class="input-field">
+          <label>Report Type</label>
+          <select id="report_type" name="report_type">
+            <option value="attendance" {% if report_type == 'attendance' %}selected{% endif %}>Attendance</option>
+            <option value="leaves" {% if report_type == 'leaves' %}selected{% endif %}>Leaves</option>
+            <option value="payroll" {% if report_type == 'payroll' %}selected{% endif %}>Payroll</option>
+          </select>
+        </div>
+
+        <div class="input-field">
+          <label>Start Date</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+        </div>
+
+        <div class="input-field">
+          <label>End Date</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+        </div>
+
+        <div class="input-field">
+          <label>&nbsp;</label>
+          <button type="submit" class="submit">
+            <span class="btnText">Filter</span>
+            <i class="uil uil-filter"></i>
+          </button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- Report Table -->
+  <div class="table-container">
+    <div class="centered-container">
+      {% if report_type == 'attendance' %}
+        <table class="responsive-table">
+          <caption><b>Attendance Report</b></caption>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Employee</th>
+              <th>Time In</th>
+              <th>Time Out</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for att in data.items %}
+            <tr>
+              <td data-label="Date">{{ att.date.strftime('%Y-%m-%d') }}</td>
+              <td data-label="Employee">{{ att.employee.get_full_name() }}</td>
+              <td data-label="Time In">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
+              <td data-label="Time Out">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
+              <td data-label="Status">{{ att.status }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5">No attendance records found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'leaves' %}
+        <table class="responsive-table">
+          <caption><b>Leave Report</b></caption>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Leave Type</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for leave in data.items %}
+            <tr>
+              <td data-label="Employee">{{ leave.employee.get_full_name() }}</td>
+              <td data-label="Leave Type">{{ leave.leave_type }}</td>
+              <td data-label="Start Date">{{ leave.start_date }}</td>
+              <td data-label="End Date">{{ leave.end_date }}</td>
+              <td data-label="Status">{{ leave.status }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5">No leave records found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+     {% elif report_type == 'payroll' %}
+  <table class="responsive-table">
+    <caption><b>Payroll Report</b></caption>
+    <thead>
+      <tr>
+        <th>Employee</th>
+        <th>Salary</th>
+        <th>Deductions</th>
+        <th>Net Pay</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emp in data.items %}
+      <tr>
+        <td data-label="Employee">{{ emp.get_full_name() }}</td>
+        <td data-label="Salary">₱ {{ "{:,.2f}".format(emp.salary) }}</td>
+        <td data-label="Deductions">₱ {{ "{:,.2f}".format(emp.deductions if emp.deductions else 0) }}</td>
+        <td data-label="Net Pay">₱ {{ "{:,.2f}".format(emp.salary - (emp.deductions if emp.deductions else 0)) }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4">No payroll records found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+      <!-- Pagination -->
+      <div class="pagination">
+        {% if data.has_prev %}
+          <a href="{{ url_for('hr_admin.reports', page=data.prev_num, report_type=report_type, start_date=start_date, end_date=end_date) }}">Previous</a>
+        {% endif %}
+
+        Page {{ data.page }} of {{ data.pages }}
+
+        {% if data.has_next %}
+          <a href="{{ url_for('hr_admin.reports', page=data.next_num, report_type=report_type, start_date=start_date, end_date=end_date) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
