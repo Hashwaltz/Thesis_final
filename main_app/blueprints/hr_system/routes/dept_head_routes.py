@@ -4,7 +4,8 @@ from datetime import datetime
 from main_app.models.user import User
 from main_app.models.hr_models import Employee, Attendance, Leave, Department, Position
 from main_app.forms import AttendanceForm, LeaveForm
-from main_app.utils import dept_head_required, get_attendance_summary, get_current_month_range,get_department_attendance_summary
+from main_app.helpers.utils import get_attendance_summary, get_current_month_range,get_department_attendance_summary
+from main_app.helpers.decorators import dept_head_required
 from main_app.extensions import db
 import csv
 from io import BytesIO

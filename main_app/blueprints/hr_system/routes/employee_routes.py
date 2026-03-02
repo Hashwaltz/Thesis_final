@@ -4,7 +4,8 @@ from datetime import datetime, date
 from main_app.models.user import User
 from main_app.models.hr_models import Employee, Attendance, Leave, LeaveType
 from main_app.forms import LeaveForm
-from main_app.utils import get_attendance_summary, get_leave_balance, get_current_month_range, employee_required, get_attendance_chart_data, generate_csform4_quadrants_pdf
+from main_app.helpers.utils import get_attendance_summary, get_leave_balance, get_attendance_chart_data, generate_csform4_quadrants_pdf
+from main_app.helpers.decorators import employee_required
 from main_app.extensions import db
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch

@@ -14,7 +14,8 @@ from datetime import datetime, date, timedelta, time
 from main_app.models.user import User
 from main_app.models.hr_models import Employee, Attendance, Leave, Department, Position, LateComputation
 from main_app.forms import EmployeeForm, AttendanceForm, LeaveForm
-from main_app.utils import hr_officer_required, get_attendance_summary, get_current_month_range
+from main_app.helpers.utils import  get_attendance_summary, get_current_month_range
+from main_app.helpers.decorators import hr_officer_required
 from main_app.extensions import db
 from sqlalchemy.orm import joinedload
 import os

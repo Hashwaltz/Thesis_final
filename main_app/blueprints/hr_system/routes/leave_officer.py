@@ -8,7 +8,8 @@ from flask import (
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta,   date
 from main_app.models.hr_models import Employee, Leave, Department, LeaveType
-from main_app.utils import leave_officer_required, get_current_month_range
+from main_app.helpers.decorators import leave_officer_required
+from main_app.helpers.utils import get_current_month_range
 import os
 from main_app.extensions import db
 import calendar
