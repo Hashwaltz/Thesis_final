@@ -65,16 +65,16 @@
             <h3 class="text-sm uppercase tracking-wider text-gray-500 mb-2">Dashboard & Employee Management</h3>
             <ul class="space-y-2">
               <li>
-                <a href="{{ url_for('dept_head.dashboard') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                <a href="{{ url_for('hr_head_bp.dashboard') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
                   <i class="fas fa-tachometer-alt text-blue-400"></i>
                   Dashboard
                 </a>
               </li>
 
               <li>
-                <a href="{{ url_for('dept_head.employees') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                <a href="{{ url_for('hr_head_bp.employees') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
                   <i class="fas fa-users text-blue-400"></i>
-                  Employees Record
+                  Organizational Chart and Record
                 </a>
               </li>
             </ul>
@@ -85,7 +85,7 @@
             <h3 class="text-sm uppercase tracking-wider text-gray-500 mb-2">Attendance</h3>
             <ul class="space-y-2">
               <li>
-                <a href="{{ url_for('dept_head.attendance') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                <a href="{{ url_for('hr_head_bp.attendance') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
                   <i class="fas fa-calendar-check text-blue-400"></i>
                   Attendance Records
                 </a>
@@ -98,7 +98,7 @@
             <h3 class="text-sm uppercase tracking-wider text-gray-500 mb-2">Leave Management</h3>
             <ul class="space-y-2">
               <li>
-                <a href="{{ url_for('dept_head.leaves') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                <a href="{{ url_for('hr_head_bp.leaves') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
                   <i class="fas fa-calendar-alt text-blue-400"></i>
                   Review Leaves
                 </a>
@@ -111,7 +111,7 @@
             <h3 class="text-sm uppercase tracking-wider text-gray-500 mb-2">Profile Settings</h3>
             <ul class="space-y-2">
               <li>
-                <a href="{{ url_for('dept_head.edit_password') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                <a href="{{ url_for('hr_head_bp.edit_password') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
                   <i class="fas fa-cog text-blue-400"></i>
                   Profile Settings
                 </a>
@@ -178,7 +178,7 @@
           confirmButtonText: "Yes, logout!"
         }).then((result) => {
           if (result.isConfirmed) {
-            window.location.href = "{{ url_for('hr_auth.logout') }}";
+            window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
           }
         });
       }

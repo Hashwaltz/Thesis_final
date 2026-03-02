@@ -8,7 +8,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
-from flask import current_app
+from flask import current_app, send_file
 from datetime import datetime
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -475,3 +475,51 @@ def generate_coe_pdf(employee):
     buffer.seek(0)
 
     return buffer
+
+
+
+
+
+def generate_leave_print_pdf_route(
+    leave,
+    employee,
+    filename_prefix="Leave_Form"
+):
+    """
+    Reusable leave form PDF generator wrapper
+    """
+
+    pdf_buffer = io.BytesIO()
+
+    # ----------------------------
+    # Create PDF Document
+    # ----------------------------
+    doc = SimpleDocTemplate(
+        pdf_buffer,
+        pagesize=letter
+    )
+
+    # ---------------------------------------------------
+    # IMPORTANT
+    # Replace this with your real PDF content generator
+    # Example assumes you already have:
+    # generate_csform4_quadrants_pdf()
+    # ---------------------------------------------------
+
+    from main_app.helpers.docs import generate_csform4_quadrants_pdf
+
+    pdf_buffer = generate_csform4_quadrants_pdf(
+        leave,
+        employee
+    )
+
+    filename = f"{filename_prefix}_{employee.last_name}_{leave.id}.pdf"
+
+    pdf_buffer.seek(0)
+
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/pdf"
+    )

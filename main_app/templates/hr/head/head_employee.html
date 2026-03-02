@@ -2,124 +2,216 @@
 {% block title %}Department Head | Employees{% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-6 space-y-6">
 
-  <!-- Page Header -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-id-badge text-3xl"></i>
-      Employee Records
-      <span class="text-gray-400 text-sm font-normal">
-        — {{ department.name if department else "Unassigned Department" }}
-      </span>
-    </h1>
-  </header>
+<main class="p-6 space-y-12">
 
-  <!-- Search -->
-  <form method="get" action="{{ url_for('dept_head.employees') }}"
-        class="flex flex-col md:flex-row gap-4 items-end bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
+<header>
+<h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+<i class="fa-solid fa-sitemap text-3xl"></i>
+Municipal Organizational Structure
+</h1>
+</header>
 
-    <div class="flex flex-col gap-2 w-full md:flex-1">
-      <label class="text-gray-400">Search</label>
-      <input type="text" name="search" value="{{ search }}"
-             placeholder="Search employees..."
-             class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full
-                    focus:outline-none focus:ring-2 focus:ring-blue-400">
-    </div>
+<!-- ================= ORGANIZATION TREE ================= -->
 
-    <button type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl
-                   flex items-center gap-2 transition">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <span class="hidden sm:inline">Search</span>
-    </button>
-  </form>
+<section class="bg-gray-800 rounded-2xl shadow border border-gray-700 p-8">
 
-  <!-- Employee Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
-    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
-      <thead class="bg-gray-900">
-        <tr>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Full Name</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Email</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Position</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Date Hired</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Status</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
-        </tr>
-      </thead>
+<div class="flex flex-col items-center space-y-10">
 
-      <tbody class="divide-y divide-gray-700">
-        {% for employee in employees.items %}
-        <tr class="hover:bg-gray-700 transition">
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
-            {{ employee.get_full_name() }}
-          </td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
-            {{ employee.email }}
-          </td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
-            {{ employee.position.name if employee.position else '-' }}
-          </td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
-            {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}
-          </td>
-          <td class="px-2 sm:px-4 py-2">
-            <span class="px-2 py-1 rounded-xl text-sm font-medium
-              {% if employee.status == 'Active' %}
-                text-green-500
-              {% elif employee.status == 'Retired' %}
-                text-gray-400
-              {% elif employee.status == 'Resigned' %}
-                text-yellow-500
-              {% elif employee.status == 'Fired' %}
-                text-red-600
-              {% else %}
-                text-gray-300
-              {% endif %}
-            ">
-              {{ employee.status }}
-            </span>
-          </td>
-          <td class="px-2 sm:px-4 py-2">
-            <a href="{{ url_for('dept_head.edit_employee', employee_id=employee.id) }}"
-               class="bg-blue-600 hover:bg-blue-700 text-white
-                      px-3 py-1 rounded-xl text-sm
-                      flex items-center gap-1 transition justify-center w-fit">
-              <i class="fa-solid fa-eye text-sm"></i>
-              <span class="hidden sm:inline">View</span>
-            </a>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="6" class="px-4 py-4 text-center text-gray-400">
-            No employees found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+<!-- ===== MAYOR ===== -->
+<div class="flex flex-col items-center">
 
-  <!-- Pagination -->
-  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
-    {% if employees.has_prev %}
-    <a href="{{ url_for('dept_head.employees', page=employees.prev_num, search=search) }}"
-       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
-      Previous
-    </a>
-    {% endif %}
+<div class="bg-purple-600 text-white px-8 py-5 rounded-2xl shadow-xl text-center w-72">
 
-    <span class="px-4 py-2">{{ employees.page }} of {{ employees.pages }}</span>
+<p class="font-bold text-lg">
+{% if mayors|length >= 1 %}
+{{ mayors[0].get_full_name() }}
+{% else %}
+Vacant Position
+{% endif %}
+</p>
 
-    {% if employees.has_next %}
-    <a href="{{ url_for('dept_head.employees', page=employees.next_num, search=search) }}"
-       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
-      Next
-    </a>
-    {% endif %}
-  </div>
+<p class="text-sm opacity-80">Mayor</p>
+
+</div>
+
+<div class="w-1 h-12 bg-gray-600"></div>
+
+</div>
+
+<!-- ===== VICE MAYOR ===== -->
+
+<div class="flex flex-col items-center">
+
+<div class="bg-indigo-600 text-white px-6 py-4 rounded-2xl shadow text-center w-64">
+
+<p class="font-semibold">
+{% if vice_mayors|length >= 1 %}
+{{ vice_mayors[0].get_full_name() }}
+{% else %}
+Vacant Position
+{% endif %}
+</p>
+
+<p class="text-sm opacity-80">Vice Mayor</p>
+
+</div>
+
+<div class="w-1 h-12 bg-gray-600"></div>
+
+</div>
+
+<!-- ===== COUNCILORS ===== -->
+
+<div class="flex flex-col items-center space-y-4">
+
+<div class="bg-teal-600 text-white px-6 py-4 rounded-2xl shadow text-center w-64">
+
+<p class="font-semibold">Sangguniang Bayan</p>
+
+<p class="text-xs opacity-80">
+Municipal Council ({{ councilors|length }})
+</p>
+
+</div>
+
+{% if councilors|length > 0 %}
+
+<div class="border-l border-gray-600 pl-6 space-y-3">
+
+{% for member in councilors %}
+<div class="bg-gray-700 bg-opacity-60 backdrop-blur-md
+px-4 py-3 rounded-xl text-sm w-56 text-center shadow">
+
+{{ member.get_full_name() }}
+
+</div>
+{% endfor %}
+
+</div>
+
+{% else %}
+
+<div class="bg-gray-700 text-red-400 px-4 py-3 rounded-xl text-sm w-56 text-center">
+Vacant Position
+</div>
+
+{% endif %}
+
+</div>
+
+<div class="w-1 h-12 bg-gray-600"></div>
+
+<!-- ===== MUNICIPAL ADMINISTRATOR ===== -->
+
+<div class="flex flex-col items-center">
+
+<div class="bg-yellow-600 text-white px-6 py-4 rounded-2xl shadow text-center w-64">
+
+<p class="font-semibold">
+{% if municipal_admins|length >= 1 %}
+{{ municipal_admins[0].get_full_name() }}
+{% else %}
+Vacant Position
+{% endif %}
+</p>
+
+<p class="text-sm opacity-80">Municipal Administrator</p>
+
+</div>
+
+<div class="w-1 h-12 bg-gray-600"></div>
+
+</div>
+
+<!-- ===== DEPARTMENT HEAD ===== -->
+
+<div class="flex flex-col items-center">
+
+<div class="bg-blue-600 text-white px-8 py-5 rounded-2xl shadow-xl text-center w-72">
+
+<p class="font-bold text-lg">
+{{ current_user.get_full_name() }}
+</p>
+
+<p class="text-xs opacity-70 mt-1">
+Department Head
+</p>
+
+</div>
+
+<div class="w-1 h-12 bg-gray-600"></div>
+
+</div>
+
+<!-- ===== EMPLOYEES ===== -->
+
+<div class="w-full max-w-6xl bg-gray-700 bg-opacity-40 backdrop-blur-md
+rounded-2xl shadow-xl p-6">
+
+<div class="text-gray-300 font-semibold mb-6 text-center text-lg">
+Department Employees
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+
+{% for employee in employees.items %}
+
+<div class="bg-gray-800 bg-opacity-70 backdrop-blur-md
+text-white px-5 py-5 rounded-2xl shadow-lg w-64 text-center
+hover:scale-105 transition duration-300">
+
+<p class="font-semibold truncate">
+{{ employee.get_full_name() }}
+</p>
+
+<p class="text-sm text-gray-300 mt-1 truncate">
+{{ employee.position.name if employee.position else '-' }}
+</p>
+
+<p class="text-xs mt-3
+{% if employee.status == 'Active' %}
+text-green-400
+{% elif employee.status == 'Retired' %}
+text-gray-400
+{% elif employee.status == 'Resigned' %}
+text-yellow-400
+{% elif employee.status == 'Fired' %}
+text-red-500
+{% else %}
+text-gray-300
+{% endif %}
+">
+{{ employee.status }}
+</p>
+
+<a href="{{ url_for('hr_head_bp.edit_employee', employee_id=employee.id) }}"
+class="mt-4 inline-flex items-center gap-1
+bg-blue-500 hover:bg-blue-600
+px-4 py-2 rounded-xl text-sm transition">
+
+View
+
+</a>
+
+</div>
+
+{% else %}
+
+<p class="text-gray-400 text-center col-span-full">
+No employees found.
+</p>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+</section>
 
 </main>
+
 {% endblock %}

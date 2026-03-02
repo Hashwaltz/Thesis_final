@@ -45,12 +45,8 @@ def create_app():
     # -----------------------------
 
     from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
-    from main_app.blueprints.hr_system.routes.dept_head_routes import dept_head_bp
-    from main_app.blueprints.hr_system.routes.employee_routes import employee_bp
 
     app.register_blueprint(leave_officer_bp, url_prefix="/hr/leave_officer")
-    app.register_blueprint(dept_head_bp, url_prefix="/hr/dept_head")
-    app.register_blueprint(employee_bp, url_prefix="/hr/employee")
 
 
     # -----------------------------

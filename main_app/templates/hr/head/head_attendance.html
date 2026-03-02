@@ -38,8 +38,11 @@
     <!-- Submit Button -->
     <div class="flex items-end">
       <button type="submit"
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1">
-        <span class="material-symbols-outlined">database_search</span> Filter
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+
+        <i class="fa-solid fa-filter"></i>
+        <span>Filter</span>
+
       </button>
     </div>
   </form>
@@ -83,14 +86,14 @@
   {% if attendances.pages > 1 %}
   <div class="flex justify-between items-center mt-4 text-gray-200">
     {% if attendances.has_prev %}
-    <a href="{{ url_for('dept_head.attendance', page=attendances.prev_num, date=date_filter, employee=employee_filter) }}"
+    <a href="{{ url_for('hr_head_bp.attendance', page=attendances.prev_num, date=date_filter, employee=employee_filter) }}"
        class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Previous</a>
     {% else %}<span></span>{% endif %}
 
     <span>Page {{ attendances.page }} of {{ attendances.pages }}</span>
 
     {% if attendances.has_next %}
-    <a href="{{ url_for('dept_head.attendance', page=attendances.next_num, date=date_filter, employee=employee_filter) }}"
+    <a href="{{ url_for('hr_head_bp.attendance', page=attendances.next_num, date=date_filter, employee=employee_filter) }}"
        class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Next</a>
     {% else %}<span></span>{% endif %}
   </div>

@@ -24,9 +24,9 @@ def login():
         elif role == 'leave_officer':
             return redirect(url_for('leave_officer.leave_dashboard'))
         elif role == 'dept_head':
-            return redirect(url_for('dept_head.dashboard'))
+            return redirect(url_for('hr_head_bp.dashboard'))
         elif role in ['employee', 'staff']:
-            return redirect(url_for('employee.dashboard'))
+            return redirect(url_for('hr_employee_bp.dashboard'))
 
     if request.method == 'POST':
 
@@ -56,9 +56,9 @@ def login():
         elif role == 'officer':
             return redirect(url_for('hr_officer_bp.hr_dashboard'))
         elif role == 'dept_head':
-            return redirect(url_for('dept_head.dashboard'))
+            return redirect(url_for('hr_head_bp.dashboard'))
         elif role in ['employee', 'staff']:
-            return redirect(url_for('employee.dashboard'))
+            return redirect(url_for('hr_employee_bp.dashboard'))
 
         return redirect(url_for('hr_auth_bp.login'))
 

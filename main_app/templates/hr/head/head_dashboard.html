@@ -12,7 +12,7 @@ Swal.fire({
     text: 'You are not assigned as a department head yet. Please wait for the admins to assign you.',
     confirmButtonText: 'OK'
 }).then(() => {
-    window.location.href = "{{ url_for('hr_auth.logout') }}";
+    window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
 });
 </script>
 {% endif %}
@@ -90,9 +90,8 @@ Swal.fire({
         <i class="fas fa-bolt"></i> Quick Actions
       </h3>
       <div class="flex flex-col gap-3">
-        <a href="{{ url_for('dept_head.employees') }}" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-center">Add Employee</a>
         <a href="#" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-center">Approve Leave</a>
-        <a href="{{ url_for('dept_head.add_attendance') }}" class="bg-pink-600 hover:bg-pink-700 text-white py-2 px-4 rounded text-center">Add Attendance</a>
+        
       </div>
     </div>
 
