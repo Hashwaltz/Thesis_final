@@ -31,32 +31,6 @@
         },
       };
     </script>
-
-    <!-- Animations -->
-    <style>
-      @keyframes fadeInUp {
-        0% {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        100% {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .animate-fade-up {
-        animation: fadeInUp 0.8s ease forwards;
-      }
-      .delay-100 { animation-delay: 0.1s; }
-      .delay-200 { animation-delay: 0.2s; }
-      .delay-300 { animation-delay: 0.3s; }
-      .delay-400 { animation-delay: 0.4s; }
-      .delay-500 { animation-delay: 0.5s; }
-      .delay-600 { animation-delay: 0.6s; }
-      .delay-700 { animation-delay: 0.7s; }
-      .delay-800 { animation-delay: 0.8s; }
-      .delay-900 { animation-delay: 0.9s; }
-    </style>
   </head>
 
   <body
@@ -88,17 +62,17 @@
             >Home</a
           >
           <a
-            href="{{ url_for('hr_auth.login') }}"
+            href="{{ url_for('hr_auth_bp.login') }}"
             class="hover:text-blue-400 transition-colors"
             >Login</a
           >
           <a
-            href="{{ url_for('hr_auth.about_hr') }}"
+            href="{{ url_for('hr_auth_bp.about_hr') }}"
             class="hover:text-blue-400 transition-colors"
             >About</a
           >
           <a
-            href="{{ url_for('hr_auth.hr_features') }}"
+            href="{{ url_for('hr_auth_bp.hr_features') }}"
             class="hover:text-blue-400 transition-colors"
             >Features</a
           >
@@ -135,12 +109,12 @@
             >Home</a
           >
           <a
-            href="{{ url_for('hr_auth.about_hr') }}"
+            href="{{ url_for('hr_auth_bp.about_hr') }}"
             class="text-gray-300 hover:text-blue-400 transition-colors"
             >About</a
           >
           <a
-            href="{{ url_for('hr_auth.hr_features') }}"
+            href="{{ url_for('hr_auth_bp.hr_features') }}"
             class="text-gray-300 hover:text-blue-400 transition-colors"
             >Features</a
           >
