@@ -1,2 +1,22 @@
-.venv
-venv
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Instance folder
+instance/
+
+# Database files
+*.db
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
