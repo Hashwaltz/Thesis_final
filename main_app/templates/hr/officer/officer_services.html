@@ -1,0 +1,284 @@
+{% extends 'hr/officer/officer_base.html' %}
+
+{% block title %}HR Officer - Services{% endblock %}
+
+{% block content %}
+
+<div class="space-y-8">
+
+<h1 class="text-2xl font-bold text-white">HR Officer Services</h1>
+
+<p class="text-slate-400">
+Access document generation and export utilities.
+</p>
+
+<!-- Services Grid -->
+<div class="grid md:grid-cols-3 gap-6">
+
+<!-- MOA Service -->
+<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center space-y-4 hover:bg-slate-700 transition">
+
+<div class="text-blue-400 text-5xl">
+<i class="fa-solid fa-file-excel"></i>
+</div>
+
+<h2 class="text-xl font-semibold text-white">MOA Bulk Export</h2>
+
+<p class="text-slate-400 text-sm">
+Generate MOA list in Excel format.
+</p>
+
+<button id="openMoaModal"
+class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition">
+Generate MOA List
+</button>
+
+</div>
+
+<!-- Service Record -->
+<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center space-y-4 hover:bg-slate-700 transition">
+
+<div class="text-green-400 text-5xl">
+<i class="fa-solid fa-file-lines"></i>
+</div>
+
+<h2 class="text-xl font-semibold text-white">
+Service Record Document
+</h2>
+
+<p class="text-slate-400 text-sm">
+Download employee service record in DOCX format.
+</p>
+
+<button id="openServiceRecordModal"
+class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition">
+Export Service Record
+</button>
+
+</div>
+
+<!-- COE Certificate -->
+<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center space-y-4 hover:bg-slate-700 transition">
+
+<div class="text-yellow-400 text-5xl">
+<i class="fa-solid fa-file-pdf"></i>
+</div>
+
+<h2 class="text-xl font-semibold text-white">
+Certificate of Employment
+</h2>
+
+<p class="text-slate-400 text-sm">
+Generate COE certificate in PDF format.
+</p>
+
+<button id="openCOEModal"
+class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-xl transition">
+Generate COE
+</button>
+
+</div>
+
+</div>
+</div>
+
+<!-- ============================= -->
+<!-- MODALS -->
+<!-- ============================= -->
+
+<!-- MOA Modal -->
+<div id="moaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div class="bg-slate-800 p-6 rounded-2xl w-full max-w-md border border-slate-700 space-y-4">
+
+<div class="flex justify-between items-center">
+<h2 class="text-xl font-semibold text-blue-400">Generate MOA</h2>
+<button class="closeModal text-slate-400 hover:text-white">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+
+<form id="moaForm">
+<label class="text-slate-300">Select Employment Type</label>
+
+<select id="employmentTypeSelect"
+class="bg-slate-700 text-white w-full rounded-lg px-3 py-2 mt-2" required>
+
+<option value="">Select Type</option>
+{% for etype in employment_types %}
+<option value="{{ etype.id }}">{{ etype.name }}</option>
+{% endfor %}
+
+</select>
+
+<div class="flex justify-end gap-2 mt-4">
+<button type="button" class="closeModal bg-gray-600 px-4 py-2 rounded-xl">
+Cancel
+</button>
+
+<button type="submit"
+class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-xl text-white">
+Generate
+</button>
+</div>
+
+</form>
+</div>
+</div>
+
+<!-- Service Record Modal -->
+<div id="serviceRecordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div class="bg-slate-800 p-6 rounded-2xl w-full max-w-md border border-slate-700 space-y-4">
+
+<h2 class="text-xl text-green-400 font-semibold">Service Record Export</h2>
+
+<select id="serviceEmployeeId"
+class="w-full bg-slate-700 text-white px-3 py-2 rounded-lg">
+
+<option value="">Select Employee</option>
+
+{% for emp in employees %}
+<option value="{{ emp.id }}">
+{{ emp.get_full_name() }}
+</option>
+{% endfor %}
+
+</select>
+
+<div class="flex justify-end gap-2">
+<button class="closeModal bg-gray-600 px-4 py-2 rounded-xl">
+Cancel
+</button>
+
+<button id="generateServiceRecordBtn"
+class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-white">
+Generate
+</button>
+</div>
+
+</div>
+</div>
+
+<!-- COE Modal -->
+<div id="coeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div class="bg-slate-800 p-6 rounded-2xl w-full max-w-md border border-slate-700 space-y-4">
+
+<h2 class="text-xl text-yellow-400 font-semibold">COE Certificate</h2>
+
+<select id="coeEmployeeId"
+class="w-full bg-slate-700 text-white px-3 py-2 rounded-lg">
+
+<option value="">Select Employee</option>
+
+{% for emp in employees %}
+<option value="{{ emp.id }}">
+{{ emp.get_full_name() }}
+</option>
+{% endfor %}
+
+</select>
+
+<div class="flex justify-end gap-2">
+<button class="closeModal bg-gray-600 px-4 py-2 rounded-xl">
+Cancel
+</button>
+
+<button id="generateCOEBtn"
+class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-xl text-white">
+Generate
+</button>
+</div>
+
+</div>
+</div>
+
+<!-- ============================= -->
+<!-- JAVASCRIPT -->
+<!-- ============================= -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+
+const modals = {
+moa: document.getElementById("moaModal"),
+service: document.getElementById("serviceRecordModal"),
+coe: document.getElementById("coeModal")
+};
+
+function openModal(modal){
+Object.values(modals).forEach(m => m.classList.add("hidden"));
+modal.classList.remove("hidden");
+modal.classList.add("flex");
+}
+
+function closeAllModal(){
+Object.values(modals).forEach(m=>{
+m.classList.add("hidden");
+m.classList.remove("flex");
+});
+}
+
+document.getElementById("openMoaModal")
+.addEventListener("click", ()=> openModal(modals.moa));
+
+document.getElementById("openServiceRecordModal")
+.addEventListener("click", ()=> openModal(modals.service));
+
+document.getElementById("openCOEModal")
+.addEventListener("click", ()=> openModal(modals.coe));
+
+document.querySelectorAll(".closeModal").forEach(btn=>{
+btn.addEventListener("click", closeAllModal);
+});
+
+// ===== MOA EXPORT =====
+document.getElementById("moaForm").addEventListener("submit", function(e){
+e.preventDefault();
+
+const typeId = document.getElementById("employmentTypeSelect").value;
+
+if(!typeId){
+Swal.fire("Missing", "Select employment type", "warning");
+return;
+}
+
+const baseUrl = "{{ url_for('hr_officer_bp.generate_moa_all', employment_type_id=0) }}".replace("/0", "");
+window.location.href = baseUrl + "/" + typeId;
+});
+
+// ===== SERVICE RECORD =====
+document.getElementById("generateServiceRecordBtn").addEventListener("click", function(){
+
+const employeeId = document.getElementById("serviceEmployeeId").value;
+
+if(!employeeId){
+Swal.fire("Missing", "Enter employee ID", "warning");
+return;
+}
+
+const baseUrl = "{{ url_for('hr_officer_bp.export_service_record', employee_id=0) }}";
+window.location.href = baseUrl.replace("0", employeeId);
+
+});
+
+// ===== COE =====
+document.getElementById("generateCOEBtn").addEventListener("click", function(){
+
+const employeeId = document.getElementById("coeEmployeeId").value;
+
+if(!employeeId){
+Swal.fire("Missing", "Enter employee ID", "warning");
+return;
+}
+
+const baseUrl = "{{ url_for('hr_officer_bp.generate_coe', employee_id=0) }}";
+window.location.href = baseUrl.replace("0", employeeId);
+
+
+});
+
+});
+
+</script>
+
+{% endblock %}

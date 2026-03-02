@@ -61,19 +61,12 @@
         <nav class="mt-4 px-4 text-gray-300 space-y-6">
           {% for section, links in {
             "Employee & User Management": [
-              ("fa-gauge-high", "Dashboard", "officer.hr_dashboard"),
-              ("fa-users", "Employees Records", "officer.employees")
-            ],
-            "Attendance Management": [
-              ("fa-calendar-check", "Attendance Records", "officer.attendance"),
-              ("fa-plus", "Add Attendance", "officer.add_attendance"),
-              ("fa-clock", "Late Computation", "officer.late_computation")
-            ],
-            "Leave Management": [
-              ("fa-file-lines", "View All Leaves", "officer.view_leaves")
+              ("fa-gauge-high", "Dashboard", "hr_officer_bp.hr_dashboard"),
+              ("fa-users", "Employees Records", "hr_officer_bp.employees"),
+              ("fa-file-lines", "Services", "hr_officer_bp.view_services")
             ],
             "Settings": [
-              ("fa-user-gear", "Account Settings", "officer.edit_password")
+              ("fa-user-gear", "Account Settings", "hr_officer_bp.edit_password")
             ]
           }.items() %}
 
@@ -151,7 +144,7 @@
           confirmButtonText: "Yes, logout!",
         }).then((result) => {
           if (result.isConfirmed) {
-            window.location.href = "{{ url_for('hr_auth.logout') }}";
+            window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
           }
         });
       }

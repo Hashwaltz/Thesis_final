@@ -11,7 +11,7 @@ from main_app.blueprints.hr_system.routes.hr_auth  import hr_auth_bp
 
 
 # ----------------- LOGIN -----------------
-@hr_auth_bp.route('/login', methods=['GET', 'POST'])
+@hr_auth_bp.route('/hr-login', methods=['GET', 'POST'])
 def login():
 
     if current_user.is_authenticated:
@@ -20,7 +20,7 @@ def login():
         if role == 'hr_admin':
             return redirect(url_for('hr_admin_bp.hr_dashboard'))
         elif role == 'officer':
-            return redirect(url_for('officer.hr_dashboard'))
+            return redirect(url_for('hr_officer_bp.hr_dashboard'))
         elif role == 'leave_officer':
             return redirect(url_for('leave_officer.leave_dashboard'))
         elif role == 'dept_head':
@@ -54,13 +54,13 @@ def login():
         if role in ['hr_admin', 'admin']:
             return redirect(url_for('hr_admin_bp.hr_dashboard'))
         elif role == 'officer':
-            return redirect(url_for('officer.hr_dashboard'))
+            return redirect(url_for('hr_officer_bp.hr_dashboard'))
         elif role == 'dept_head':
             return redirect(url_for('dept_head.dashboard'))
         elif role in ['employee', 'staff']:
             return redirect(url_for('employee.dashboard'))
 
-        return redirect(url_for('index'))
+        return redirect(url_for('hr_auth_bp.login'))
 
     return render_template('hr_auth/hr_login.html')
 

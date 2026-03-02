@@ -4,8 +4,6 @@ from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload
 from sqlalchemy import and_
 from werkzeug.utils import secure_filename
-import os
-import uuid
 import pandas as pd
 
 
@@ -20,7 +18,7 @@ from main_app.blueprints.hr_system.routes.admin import hr_admin_bp
 
 
 
-@hr_admin_bp.route('/dashboard')
+@hr_admin_bp.route('/admin-dashboard')
 @admin_required
 @login_required
 def hr_dashboard():

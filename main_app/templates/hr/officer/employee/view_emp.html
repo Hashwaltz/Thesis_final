@@ -91,14 +91,14 @@
             {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}
           </td>
           <td class="px-4 py-2 flex gap-2">
-            <a href="{{ url_for('officer.view_employee', employee_id=employee.id) }}"
+            <a href="{{ url_for('hr_officer_bp.view_employee', employee_id=employee.id) }}"
                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1
                       rounded-xl text-sm flex items-center gap-1 transition">
               <i class="fa-solid fa-eye"></i>
               <span class="hidden sm:inline">View</span>
             </a>
 
-            <a href="{{ url_for('officer.edit_employee', employee_id=employee.id) }}"
+            <a href="{{ url_for('hr_officer_bp.edit_employee', employee_id=employee.id) }}"
                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1
                       rounded-xl text-sm flex items-center gap-1 transition">
               <i class="fa-solid fa-pen-to-square"></i>
@@ -120,7 +120,7 @@
   <!-- Pagination -->
   <div class="flex justify-center gap-4 text-gray-400">
     {% if employees.has_prev %}
-      <a href="{{ url_for('officer.employees',
+      <a href="{{ url_for('hr_officer_bp.employees',
                           page=employees.prev_num,
                           search=search,
                           department=selected_department) }}"
@@ -134,7 +134,7 @@
     </span>
 
     {% if employees.has_next %}
-      <a href="{{ url_for('officer.employees',
+      <a href="{{ url_for('hr_officer_bp.employees',
                           page=employees.next_num,
                           search=search,
                           department=selected_department) }}"

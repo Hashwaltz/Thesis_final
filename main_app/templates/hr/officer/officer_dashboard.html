@@ -2,136 +2,295 @@
 {% block title %}HR Officer - Dashboard{% endblock %}
 
 {% block content %}
+
 <div class="space-y-6">
 
-  <!-- Info Cards -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-    <!-- Present Today -->
-    <div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
-      <div class="text-blue-400 text-4xl">
-        <i class="fa-solid fa-circle-check"></i>
-      </div>
-      <div>
-        <h2 class="text-3xl font-bold">{{ present_count }}</h2>
-        <p class="text-slate-300">Present Today</p>
-      </div>
-    </div>
+<!-- ================================================= -->
+<!-- DASHBOARD HEADER FILTER STYLE UI -->
+<!-- ================================================= -->
 
-    <!-- Absent Today -->
-    <div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
-      <div class="text-red-400 text-4xl">
-        <i class="fa-solid fa-circle-xmark"></i>
-      </div>
-      <div>
-        <h2 class="text-3xl font-bold">{{ absent_count }}</h2>
-        <p class="text-slate-300">Absent Today</p>
-      </div>
-    </div>
+<header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-slate-800 p-4 rounded-2xl shadow">
 
-    <!-- Total Employees -->
-    <div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
-      <div class="text-yellow-400 text-4xl">
-        <i class="fa-solid fa-users"></i>
-      </div>
-      <div>
-        <h2 class="text-3xl font-bold">{{ total_users }}</h2>
-        <p class="text-slate-300">Total Employees</p>
-      </div>
-    </div>
-  </section>
+<h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+<i class="fa-solid fa-calendar-days text-3xl"></i>
+Attendance Dashboard
+</h1>
 
-  <!-- Monthly Attendance Chart -->
-  <section class="bg-slate-800 rounded-2xl shadow-lg p-6 h-96">
-    <h2 class="text-lg font-semibold text-white mb-4">
-      Monthly Attendance Overview - {{ current_month }} {{ current_year }}
-    </h2>
-    <canvas id="monthlyAttendanceChart" class="w-full h-full"></canvas>
-  </section>
+<div class="flex flex-wrap gap-3">
 
-  <!-- Daily Reminders -->
-  <section class="bg-slate-800 rounded-2xl shadow-lg p-6">
-    <h2 class="text-lg font-semibold text-white mb-4">Daily Reminders</h2>
-    {% if reminders %}
-    <ul class="list-disc list-inside space-y-2 text-slate-300">
-      {% for reminder in reminders %}
-      <li class="flex items-center gap-2">
-        <i class="fa-solid fa-bell text-blue-400"></i>
-        <span>{{ reminder }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-slate-400 text-center">No reminders for today!</p>
-    {% endif %}
-  </section>
+<select id="monthSelect"
+class="bg-slate-900 text-white px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500">
+
+{% for m in range(1,13) %}
+<option value="{{m}}">
+{{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1] }}
+</option>
+{% endfor %}
+
+</select>
+
+<select id="yearSelect"
+class="bg-slate-900 text-white px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500">
+<script>
+let y = new Date().getFullYear();
+for(let i=y-5;i<=y+5;i++){
+document.write(`<option value="${i}">${i}</option>`);
+}
+</script>
+</select>
+
+<button onclick="reloadCalendar()"
+class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl transition flex items-center gap-2">
+
+<i class="fa-solid fa-magnifying-glass"></i>
+<span>View</span>
+
+</button>
 
 </div>
 
-<!-- Chart.js Script -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const monthlyDates = {{ monthly_dates | tojson }};
-  const monthlyPresentCounts = {{ monthly_present_counts | tojson }};
-  const monthlyAbsentCounts = {{ monthly_absent_counts | tojson }};
-  const monthlyLateCounts = {{ monthly_late_counts | tojson }};
+</header>
 
-  const ctx = document.getElementById('monthlyAttendanceChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: monthlyDates,
-      datasets: [
-        {
-          label: 'Present',
-          data: monthlyPresentCounts,
-          backgroundColor: 'rgba(59, 130, 246, 0.3)', // Tailwind blue-500
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: 'Absent',
-          data: monthlyAbsentCounts,
-          backgroundColor: 'rgba(220, 38, 38, 0.3)', // Tailwind red-600
-          borderColor: 'rgba(220, 38, 38, 1)',
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
-        },
-        {
-          label: 'Late',
-          data: monthlyLateCounts,
-          backgroundColor: 'rgba(202, 138, 4, 0.3)', // Tailwind yellow-600
-          borderColor: 'rgba(202, 138, 4, 1)',
-          borderWidth: 2,
-          tension: 0.3,
-          fill: true
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          title: { display: true, text: 'Date of Month', color: '#ccc' },
-          ticks: { color: '#ccc' }
-        },
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'Number of Employees', color: '#ccc' },
-          ticks: { stepSize: 1, precision: 0, color: '#ccc' }
-        }
-      },
-      plugins: {
-        legend: { labels: { color: '#fff' } },
-        tooltip: { mode: 'index', intersect: false },
-        title: { display: false }
-      }
-    }
-  });
+<!-- ================================================= -->
+<!-- INFO CARDS -->
+<!-- ================================================= -->
+
+<section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+
+<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
+<div class="text-blue-400 text-4xl">
+<i class="fa-solid fa-circle-check"></i>
+</div>
+<div>
+<h2 class="text-3xl font-bold">{{ present_count }}</h2>
+<p class="text-slate-300">Present Today</p>
+</div>
+</div>
+
+<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
+<div class="text-red-400 text-4xl">
+<i class="fa-solid fa-circle-xmark"></i>
+</div>
+<div>
+<h2 class="text-3xl font-bold">{{ absent_count }}</h2>
+<p class="text-slate-300">Absent Today</p>
+</div>
+</div>
+
+<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
+<div class="text-yellow-400 text-4xl">
+<i class="fa-solid fa-users"></i>
+</div>
+<div>
+<h2 class="text-3xl font-bold">{{ total_users }}</h2>
+<p class="text-slate-300">Total Employees</p>
+</div>
+</div>
+
+</section>
+
+<!-- ================================================= -->
+<!-- CALENDAR -->
+<!-- ================================================= -->
+
+<section class="bg-slate-800 rounded-2xl shadow-lg p-6">
+
+<h2 class="text-lg font-semibold text-white mb-4">
+Attendance Calendar - {{ current_month_year }}
+</h2>
+
+<div id="attendanceCalendar"
+class="grid grid-cols-7 gap-3 text-center text-sm"></div>
+
+</section>
+
+<!-- ================================================= -->
+<!-- REMINDERS -->
+<!-- ================================================= -->
+
+<section class="bg-slate-800 rounded-2xl shadow-lg p-6">
+
+<h2 class="text-lg font-semibold text-white mb-4">
+Daily Reminders
+</h2>
+
+{% if reminders %}
+<ul class="space-y-2 text-slate-300">
+{% for reminder in reminders %}
+<li class="flex items-center gap-2">
+<i class="fa-solid fa-bell text-blue-400"></i>
+<span>{{ reminder }} and Services Available</span>
+</li>
+{% endfor %}
+</ul>
+
+{% else %}
+<p class="text-slate-400 text-center">No reminders for today!</p>
+{% endif %}
+
+</section>
+
+</div>
+
+<!-- ================================================= -->
+<!-- MODAL (IMPROVED UI) -->
+<!-- ================================================= -->
+
+<div id="attendanceModal"
+class="fixed inset-0 hidden bg-black/80 flex justify-center items-center z-50 p-4">
+
+<div class="bg-slate-900 rounded-2xl p-6 w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-slate-700 shadow-xl">
+
+<h2 class="text-2xl font-semibold mb-5 text-blue-400">
+Attendance Details
+</h2>
+
+<div id="modalContent" class="grid md:grid-cols-2 gap-4"></div>
+
+<button onclick="closeModal()"
+class="mt-6 w-full bg-blue-600 hover:bg-blue-700 transition py-3 rounded-xl text-white font-medium">
+Close
+</button>
+
+</div>
+</div>
+
+<!-- ================================================= -->
+<!-- SCRIPT ENGINE -->
+<!-- ================================================= -->
+
+<script>
+
+function reloadCalendar(){
+let month=document.getElementById("monthSelect").value;
+let year=document.getElementById("yearSelect").value;
+window.location.href=`?month=${month}&year=${year}`;
+}
+
+function getBorderClass(status){
+
+status=(status||"").toLowerCase();
+
+if(status.includes("present")) return "border-green-500";
+if(status.includes("late")) return "border-yellow-500";
+if(status.includes("absent")) return "border-red-500";
+
+return "border-slate-600";
+}
+
+function openModal(details){
+
+let modal=document.getElementById("attendanceModal");
+let container=document.getElementById("modalContent");
+
+container.innerHTML="";
+
+if(!details || details.length===0){
+container.innerHTML=`
+<p class="text-center text-gray-400 md:col-span-2">
+No attendance records.
+</p>
+`;
+}
+else{
+
+details.forEach(d=>{
+
+let borderClass=getBorderClass(d.status);
+
+container.innerHTML+=`
+<div class="bg-slate-800 rounded-xl p-4 border-l-4 ${borderClass} hover:scale-[1.02] transition">
+
+<p class="text-lg font-semibold text-gray-200 mb-2">
+${d.name || "Unknown"}
+</p>
+
+<div class="text-sm text-gray-300 space-y-1">
+<p><span class="text-gray-400">Status:</span> ${d.status||""}</p>
+<p><span class="text-gray-400">Time:</span> ${d.time||""}</p>
+</div>
+
+</div>
+`;
 });
+
+}
+
+modal.classList.remove("hidden");
+}
+
+function closeModal(){
+document.getElementById("attendanceModal").classList.add("hidden");
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+
+const calendarData={{ calendar_data | tojson }};
+const month={{ current_month }};
+const year={{ current_year }};
+
+document.getElementById("monthSelect").value=month;
+document.getElementById("yearSelect").value=year;
+
+const calendarContainer=document.getElementById("attendanceCalendar");
+
+const daysInMonth=new Date(year,month,0).getDate();
+
+const weekDays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+weekDays.forEach(day=>{
+let el=document.createElement("div");
+el.className="font-semibold text-slate-400";
+el.innerText=day;
+calendarContainer.appendChild(el);
+});
+
+const firstDay=new Date(year,month-1,1).getDay();
+
+for(let i=0;i<firstDay;i++){
+calendarContainer.appendChild(document.createElement("div"));
+}
+
+for(let date=1;date<=daysInMonth;date++){
+
+let cell=document.createElement("div");
+
+let summary=calendarData[date]||{
+present:0,
+late:0,
+absent:0,
+details:[]
+};
+
+cell.className=`
+bg-slate-700 rounded-xl p-2 min-h-[90px]
+flex flex-col justify-center items-center
+hover:bg-slate-600 transition cursor-pointer
+`;
+
+cell.innerHTML=`
+<div class="text-white font-bold mb-1">${date}</div>
+
+<div class="text-xs text-green-300">
+Present: ${summary.present}
+</div>
+
+<div class="text-xs text-yellow-300">
+Late: ${summary.late}
+</div>
+
+<div class="text-xs text-red-300">
+Absent: ${summary.absent}
+</div>
+`;
+
+cell.onclick=()=>openModal(summary.details||[]);
+
+calendarContainer.appendChild(cell);
+}
+
+});
+
 </script>
+
 {% endblock %}

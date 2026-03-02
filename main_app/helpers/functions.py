@@ -1,5 +1,28 @@
 from datetime import datetime
 from flask import flash
+
+
+class ServiceRegistry:
+    """
+    Central registry for HR document services
+    """
+
+    services = []
+
+    @classmethod
+    def register(cls, name, description, icon, endpoint):
+        cls.services.append({
+            "name": name,
+            "description": description,
+            "icon": icon,
+            "endpoint": endpoint
+        })
+
+    @classmethod
+    def get_services(cls):
+        return cls.services
+
+
 # --- Safely parse dates ---
 def parse_date(date_str, field_name):
     try:

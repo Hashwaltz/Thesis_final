@@ -30,7 +30,7 @@ def create_app():
     mail.init_app(app)
 
     # Login settings
-    login_manager.login_view = "hr_auth.login"
+    login_manager.login_view = "hr_auth_bp.login"
     login_manager.login_message_category = "info"
 
     # -----------------------------
@@ -43,16 +43,11 @@ def create_app():
     # -----------------------------
     # Register HR Blueprints
     # -----------------------------
-    from main_app.blueprints.hr_system.routes.auth_routes import hr_auth_bp
-    from main_app.blueprints.hr_system.routes.hr_admin_routes import hr_admin_bp
-    from main_app.blueprints.hr_system.routes.hr_officer_routes import hr_officer_bp
+
     from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
     from main_app.blueprints.hr_system.routes.dept_head_routes import dept_head_bp
     from main_app.blueprints.hr_system.routes.employee_routes import employee_bp
 
-    app.register_blueprint(hr_auth_bp, url_prefix='/hr/auth')
-    app.register_blueprint(hr_admin_bp, url_prefix='/hr/admin')
-    app.register_blueprint(hr_officer_bp, url_prefix="/hr/officer")
     app.register_blueprint(leave_officer_bp, url_prefix="/hr/leave_officer")
     app.register_blueprint(dept_head_bp, url_prefix="/hr/dept_head")
     app.register_blueprint(employee_bp, url_prefix="/hr/employee")
@@ -61,7 +56,6 @@ def create_app():
     # -----------------------------
     # Register Payroll Blueprints
     # -----------------------------
-
 
     from main_app.blueprints import register_blueprint
     register_blueprint(app)

@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import jsonify, abort
+from flask import jsonify, abort, redirect, url_for, flash
 from flask_login import current_user
 
 # ------------------------
@@ -7,12 +7,20 @@ from flask_login import current_user
 # ------------------------
 
 def admin_required(f):
-    """Decorator to require admin role"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != 'hr_admin':
-            return jsonify({'error': 'Admin access required'}), 403
+
+        if not current_user.is_authenticated:
+            return redirect(url_for('hr_auth_bp.login'))
+
+        role = current_user.role.lower()
+
+        if role not in ['hr_admin', 'admin']:
+            flash("Admin access required.", "error")
+            return redirect(url_for('hr_auth_bp.login'))
+
         return f(*args, **kwargs)
+
     return decorated_function
 
 def hr_officer_required(f):

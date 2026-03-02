@@ -17,18 +17,12 @@ payroll_auth_bp = Blueprint(
     template_folder=TEMPLATE_DIR,
     static_url_path="/payroll/static"
 )
-#======================================
-# INDEX → redirect to login
-# =========================================================
-@payroll_auth_bp.route("/")
-def index():
-    return redirect(url_for("payroll_auth.login"))
 
 
 # =========================================================
 # LOGIN
 # =========================================================
-@payroll_auth_bp.route("/login", methods=["GET", "POST"])
+@payroll_auth_bp.route("/payroll-login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
         return redirect_by_role(current_user.role)
@@ -157,10 +151,10 @@ def change_password():
 
 
 
-@payroll_auth_bp.route("/about")
+@payroll_auth_bp.route("/about-payroll")
 def about_payroll():
     return render_template("payroll_auth/about.html")
 
-@payroll_auth_bp.route("/features")
+@payroll_auth_bp.route("/features-payroll")
 def payroll_features():
     return render_template("payroll_auth/features.html")
