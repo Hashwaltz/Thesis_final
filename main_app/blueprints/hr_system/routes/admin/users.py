@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request,flash, redirect, url_for, jsonify, current_app
 from flask_login import login_required, current_user
+from datetime import datetime
 
 from main_app.helpers.decorators import admin_required
 from main_app.models.user import User
+from main_app.models.hr_models import Employee, Department
 from main_app.extensions import db
 
 
@@ -22,7 +24,7 @@ def view_users():
 
     # Base query
     query = User.query
-
+    departments = Department.query.all()
     # Apply search filter
     if search:
         query = query.filter(
@@ -53,50 +55,87 @@ def view_users():
         roles=roles,
         search=search,
         role_filter=role_filter,
-        status_filter=status_filter  
+        status_filter=status_filter,
+        departments = departments
     )
 
 
 
 
 
+# EDIT USER (AJAX)
+# ===============================
 @hr_admin_bp.route("/user/<int:user_id>/edit", methods=["GET", "POST"])
 @login_required
-@admin_required
 def edit_user(user_id):
+
     user = User.query.get_or_404(user_id)
 
-    if request.method == "POST":
-        try:
-            user.email = request.form.get("email")
-            user.first_name = request.form.get("first_name")
-            user.last_name = request.form.get("last_name")
-            user.role = request.form.get("role")
-            user.active = request.form.get("status") == "1"
+    # ===============================
+    # GET → Return JSON
+    # ===============================
+    if request.method == "GET":
+        employee = user.employee_profile
 
-            db.session.commit()
-
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return jsonify({"status": "success", "message": "User updated successfully!"})
-
-            flash("User updated successfully!", "success")
-            return redirect(url_for("hr_admin_bp.view_users"))
-
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error updating user {user_id}: {e}")
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return jsonify({"status": "error", "message": "Error updating user."}), 500
-            flash("Error updating user.", "error")
-
-    # GET → JSON for modal
-    if request.headers.get("Accept") == "application/json":
         return jsonify({
+            "status": "success",
             "email": user.email,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "role": user.role,
-            "active": user.active
+            "active": user.active,
+            "department_id": employee.department_id if employee else None
         })
 
-    return redirect(url_for("hr_admin_bp.view_users"))
+    # ===============================
+    # POST → Update
+    # ===============================
+    try:
+        role = request.form.get("role")
+        status = request.form.get("status")
+        department_id = request.form.get("department_id") or None
+
+        user.role = role
+        user.active = (status == "1")
+
+        employee = user.employee_profile
+
+        if role == "dept_head":
+
+            if not department_id:
+                return jsonify({
+                    "status": "error",
+                    "message": "Department must be assigned for Department Head role."
+                }), 400
+
+            if not employee:
+                employee = Employee(
+                    user_id=user.id,
+                    employee_id=f"EMP-{user.id}",
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    email=user.email
+                )
+                db.session.add(employee)
+
+            employee.department_id = int(department_id)
+
+        else:
+            if employee:
+                employee.department_id = None
+
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "User updated successfully."
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(str(e))
+
+        return jsonify({
+            "status": "error",
+            "message": "Update failed."
+        }), 500

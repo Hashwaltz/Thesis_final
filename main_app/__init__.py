@@ -81,5 +81,5 @@ def create_app():
     @app.route("/features")
     def features():
         return render_template("main_app/features.html")
-
+    
     return app
