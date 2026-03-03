@@ -41,7 +41,7 @@ def dashboard():
         employee=employee,
         attendance_summary=attendance_summary,
         attendance_chart=attendance_chart,
-        leave_balances=leave_balances,
+        leave_balances=leave_balances or [],
         working_duration=working_duration,
         not_assigned=False
     )

@@ -5,7 +5,6 @@ from datetime import datetime
 from main_app.helpers.decorators import employee_required
 from main_app.models.hr_models import Leave, LeaveType
 from main_app.helpers.utils import get_leave_balance, get_attendance_chart_data, get_attendance_summary
-from main_app.helpers.docs import generate_leave_print_pdf_route
 from main_app.extensions import db
 
 from main_app.blueprints.hr_system.routes.employee import hr_employee_bp
@@ -19,7 +18,7 @@ def leaves():
     employee = current_user.employee_profile
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')
-        return redirect(url_for('hr_auth.logout'))
+        return redirect(url_for('hr_auth_bp.logout'))
 
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
@@ -43,7 +42,7 @@ def leaves():
 
 
 
-@hr_employee_bp.route('/employee/print_leave_form/<int:leave_id>')
+"""@hr_employee_bp.route('/employee/print_leave_form/<int:leave_id>')
 @login_required
 @employee_required
 def print_leave_form(leave_id):
@@ -62,7 +61,7 @@ def print_leave_form(leave_id):
         employee,
         filename_prefix="CSForm6_Leave"
     )
-
+"""
 
 
 # ---------------- REQUEST LEAVE ----------------
@@ -97,7 +96,7 @@ def request_leave():
         db.session.add(leave)
         db.session.commit()
         flash("Leave request submitted successfully!", "success")
-        return redirect(url_for('employee.leaves'))
+        return redirect(url_for('hr_employee_bp.leaves'))
 
     leave_types = LeaveType.query.all()
     return render_template('hr/employee/request_leave.html', leave_types=leave_types)

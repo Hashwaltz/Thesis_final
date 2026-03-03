@@ -7,7 +7,7 @@
   <!-- Header with Request Leave Button -->
   <header class="flex justify-between items-center">
     <h1 class="text-2xl font-bold text-gray-100">Leave Records</h1>
-    <a href="{{ url_for('employee.request_leave') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 flex items-center gap-2">
+    <a href="{{ url_for('hr_employee_bp.request_leave') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 flex items-center gap-2">
       <i class="fa fa-plus"></i> Request Leave
     </a>
   </header>
@@ -56,7 +56,7 @@
           </td>
           <td class="px-4 py-2 text-gray-100">{{ leave.reason }}</td>
           <td class="px-4 py-2">
-            <a href="{{ url_for('employee.print_leave_form', leave_id=leave.id) }}"
+            <a href="#"
               class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">
               Print Form
             </a>
@@ -76,13 +76,13 @@
   <!-- Pagination -->
   <div class="flex justify-center mt-4 space-x-4 text-gray-200">
     {% if leaves.has_prev %}
-      <a href="{{ url_for('employee.leaves', page=leaves.prev_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Previous</a>
+      <a href="{{ url_for('hr_employee_bp.leaves', page=leaves.prev_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Previous</a>
     {% endif %}
 
     <span class="px-3 py-1 bg-gray-700 rounded">Page {{ leaves.page }} of {{ leaves.pages }}</span>
 
     {% if leaves.has_next %}
-      <a href="{{ url_for('employee.leaves', page=leaves.next_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Next</a>
+      <a href="{{ url_for('hr_employee_bp.leaves', page=leaves.next_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Next</a>
     {% endif %}
   </div>
 

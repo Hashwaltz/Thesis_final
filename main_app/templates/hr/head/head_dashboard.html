@@ -3,202 +3,151 @@
 
 {% block content %}
 
-{% if not_assigned %}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-Swal.fire({
-    icon: 'info',
-    title: 'Access Denied',
-    text: 'You are not assigned as a department head yet. Please wait for the admins to assign you.',
-    confirmButtonText: 'OK'
-}).then(() => {
-    window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
-});
-</script>
-{% endif %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
 <section class="p-6">
 
-  <!-- Header -->
-  <h1 class="text-2xl font-semibold text-blue-400 mb-6 flex items-center gap-2">
-    <i class="fas fa-tachometer-alt text-3xl"></i>
-    {{ department.name if department else '' }} Department Head Dashboard
-  </h1>
+{% if not_assigned %}
+<div class="bg-red-900/40 border border-red-600 text-red-400 p-6 rounded-2xl">
+    <h2 class="text-xl font-semibold">Department Not Assigned</h2>
+    <p>You are not currently assigned to any department.</p>
+</div>
+{% else %}
 
-  <!-- Stats Overview -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Total Employees -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-blue-600 bg-opacity-20 rounded-full">
-        <i class="fas fa-users text-blue-400 text-3xl"></i>
-      </div>
-      <div>
-        <p class="text-gray-400">Total Employees</p>
-        <h2 class="text-3xl font-bold text-blue-400 mt-2">{{ total_employees }}</h2>
-      </div>
+<h1 class="text-2xl font-semibold text-blue-400 mb-6">
+    {{ department.name }} Department Head Dashboard
+</h1>
+
+<!-- STAT CARDS -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+        <h2 class="text-gray-400">Total Employees</h2>
+        <p class="text-3xl text-blue-400 font-bold">{{ total_employees }}</p>
     </div>
 
-    <!-- Recent Leave Requests -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-yellow-400 bg-opacity-20 rounded-full">
-        <i class="fas fa-file-medical text-yellow-400 text-3xl"></i>
-      </div>
-      <div>
-        <p class="text-gray-400">Recent Leave Requests</p>
-        <h2 class="text-3xl font-bold text-yellow-400 mt-2">{{ recent_leaves|length }}</h2>
-      </div>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+        <h2 class="text-gray-400">Present (Month)</h2>
+        <p class="text-3xl text-green-400 font-bold">{{ attendance_summary.total_present }}</p>
     </div>
 
-    <!-- Present -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-green-600 bg-opacity-20 rounded-full">
-        <i class="fas fa-check-circle text-green-400 text-3xl"></i>
-      </div>
-      <div>
-        <p class="text-gray-400">Present This Month</p>
-        <h2 class="text-3xl font-bold text-green-400 mt-2">{{ attendance_summary.total_present }}</h2>
-      </div>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+        <h2 class="text-gray-400">Absent (Month)</h2>
+        <p class="text-3xl text-red-400 font-bold">{{ attendance_summary.total_absent }}</p>
     </div>
 
-    <!-- Absent -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-red-600 bg-opacity-20 rounded-full">
-        <i class="fas fa-times-circle text-red-400 text-3xl"></i>
-      </div>
-      <div>
-        <p class="text-gray-400">Absent This Month</p>
-        <h2 class="text-3xl font-bold text-red-400 mt-2">{{ attendance_summary.total_absent }}</h2>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top Components -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <!-- Reminders -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <i class="fas fa-bell"></i> Reminders
-      </h3>
-      <ul class="list-disc list-inside text-gray-300 space-y-2">
-        {% for reminder in reminders %} <li>{{ reminder }}</li> {% else %} <li>No reminders</li> {% endfor %}
-      </ul>
+    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
+        <h2 class="text-gray-400">Late (Month)</h2>
+        <p class="text-3xl text-yellow-400 font-bold">{{ attendance_summary.total_late }}</p>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <i class="fas fa-bolt"></i> Quick Actions
-      </h3>
-      <div class="flex flex-col gap-3">
-        <a href="#" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-center">Approve Leave</a>
-        
-      </div>
-    </div>
+</div>
 
-    <!-- Notes -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <i class="fas fa-sticky-note"></i> Notes
-      </h3>
-      <ul class="list-disc list-inside text-gray-300 space-y-2">
-        {% for note in notes %} <li>{{ note }}</li> {% else %} <li>No notes</li> {% endfor %}
-      </ul>
-    </div>
-  </div>
+<!-- ATTENDANCE CALENDAR -->
+<div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+    <h3 class="text-blue-400 mb-4 text-lg font-semibold">
+        Attendance Overview Calendar
+    </h3>
+    <div id="attendanceCalendar"></div>
+</div>
 
-  <!-- Charts Section -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Monthly Attendance Chart -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <i class="fas fa-calendar-check"></i> Monthly Attendance
-      </h3>
-      <div class="relative h-[300px]">
-        <canvas id="attendanceChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Recent Leave Chart + Table -->
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <h3 class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-        <i class="fas fa-file-alt"></i> Recent Leave Requests
-      </h3>
-      <div class="relative h-[300px] mb-4">
-        <canvas id="leaveChart"></canvas>
-      </div>
-
-      <!-- Recent Leaves Table -->
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-left text-gray-300">
-          <thead class="border-b border-gray-600">
-            <tr>
-              <th class="px-4 py-2">Employee</th>
-              <th class="px-4 py-2">Leave Type</th>
-              <th class="px-4 py-2">From</th>
-              <th class="px-4 py-2">To</th>
-              <th class="px-4 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for leave in recent_leaves %}
-            <tr class="border-b border-gray-700">
-              <td class="px-4 py-2">{{ leave.employee.name }}</td>
-              <td class="px-4 py-2">{{ leave.type }}</td>
-              <td class="px-4 py-2">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
-              <td class="px-4 py-2">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
-              <td class="px-4 py-2">{{ leave.status }}</td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="5" class="px-4 py-2 text-center text-gray-500">No recent leave requests</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
+{% endif %}
 </section>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- MODAL -->
+<div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
+    <div class="bg-gray-900 w-full max-w-3xl p-6 rounded-2xl border border-gray-700 shadow-2xl">
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modalDateTitle" class="text-xl text-blue-400 font-semibold"></h2>
+            <button onclick="closeModal()" class="text-red-400 text-xl">&times;</button>
+        </div>
+
+        <div id="modalContent" class="max-h-96 overflow-y-auto space-y-3"></div>
+
+    </div>
+</div>
+
+{% if not_assigned == False %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Attendance Chart
-  new Chart(document.getElementById('attendanceChart'), {
-    type: 'bar',
-    data: {
-      labels: {{ attendance_summary.dates|tojson }},
-      datasets: [
-        { label: 'Present', data: {{ attendance_summary.present_counts|tojson }}, backgroundColor: 'rgba(16, 185, 129, 0.7)' },
-        { label: 'Absent', data: {{ attendance_summary.absent_counts|tojson }}, backgroundColor: 'rgba(239, 68, 68, 0.7)' },
-        { label: 'Late', data: {{ attendance_summary.late_counts|tojson }}, backgroundColor: 'rgba(245, 158, 11, 0.7)' }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#d1d5db' } } },
-      scales: { x: { ticks: { color: '#9ca3af' } }, y: { ticks: { color: '#9ca3af' }, beginAtZero: true } }
-    }
-  });
 
-  // Leave Requests Chart
-  new Chart(document.getElementById('leaveChart'), {
-    type: 'bar',
-    data: {
-      labels: {{ recent_leaves|map(attribute='employee.name')|list|tojson }},
-      datasets: [{ label: 'Leave Days', data: {{ recent_leaves|map(attribute='days')|list|tojson }}, backgroundColor: 'rgba(59, 130, 246, 0.7)' }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { ticks: { color: '#9ca3af' } }, y: { ticks: { color: '#9ca3af' }, beginAtZero: true } }
-    }
-  });
+    const attendanceDetails = {{ attendance_details|default({})|tojson }};
+    const calendarEl = document.getElementById('attendanceCalendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 650,
+        events: {{ attendance_events|default([])|tojson }},
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        themeSystem: 'standard',
+
+        dateClick: function(info) {
+            openModal(info.dateStr);
+        },
+
+        eventClick: function(info) {
+            openModal(info.event.startStr);
+        }
+    });
+
+    calendar.render();
 });
+
+function openModal(dateStr) {
+
+    const modal = document.getElementById('attendanceModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalTitle = document.getElementById('modalDateTitle');
+
+    modalTitle.innerText = "Attendance Details - " + dateStr;
+    modalContent.innerHTML = "";
+
+    const attendanceDetails = {{ attendance_details|default({})|tojson }};
+
+    if (attendanceDetails[dateStr]) {
+
+        attendanceDetails[dateStr].forEach(emp => {
+
+            let color = "text-green-400";
+            if (emp.status === "Absent") color = "text-red-400";
+            if (emp.status === "Late") color = "text-yellow-400";
+
+            modalContent.innerHTML += `
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+                    <p class="font-semibold text-blue-300">${emp.name}</p>
+                    <p class="${color} font-medium">${emp.status}</p>
+                    <p class="text-sm text-gray-400">
+                        Time In: ${emp.time_in || '-'} |
+                        Time Out: ${emp.time_out || '-'}
+                    </p>
+                </div>
+            `;
+        });
+
+    } else {
+        modalContent.innerHTML = `
+            <p class="text-gray-400 text-center py-6">
+                No attendance records for this day.
+            </p>
+        `;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeModal() {
+    const modal = document.getElementById('attendanceModal');
+    modal.classList.remove('flex');
+    modal.classList.add('hidden');
+}
 </script>
+{% endif %}
 
 {% endblock %}

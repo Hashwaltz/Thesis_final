@@ -478,16 +478,16 @@ def generate_coe_pdf(employee):
 
 
 
-
+""""
 
 def generate_leave_print_pdf_route(
     leave,
     employee,
     filename_prefix="Leave_Form"
 ):
-    """
+   
     Reusable leave form PDF generator wrapper
-    """
+   
 
     pdf_buffer = io.BytesIO()
 
@@ -523,3 +523,4 @@ def generate_leave_print_pdf_route(
         download_name=filename,
         mimetype="application/pdf"
     )
+    """
