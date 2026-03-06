@@ -6,148 +6,325 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
-<section class="p-6">
+<style>
+
+/* ===============================
+   Glass Dashboard Theme
+================================ */
+
+.fc {
+    color: #e5e7eb;
+    font-size: 0.9rem;
+}
+
+.fc-toolbar-title {
+    color: #38bdf8 !important;
+    font-weight: 600;
+}
+
+.fc-button {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-radius: 12px !important;
+    border: 1px solid #374151 !important;
+    color: #e5e7eb !important;
+    transition: 0.3s;
+}
+
+.fc-button:hover {
+    background: rgba(59,130,246,0.6) !important;
+}
+
+.fc-daygrid-day {
+    background: rgba(31,41,55,0.4) !important;
+    border: 1px solid rgba(75,85,99,0.3) !important;
+}
+
+.fc-day-today {
+    background: rgba(59,130,246,0.25) !important;
+}
+
+.fc-event {
+    border-radius: 8px !important;
+    font-size: 0.75rem;
+}
+
+</style>
+
+<section class="p-6 space-y-6">
 
 {% if not_assigned %}
+
 <div class="bg-red-900/40 border border-red-600 text-red-400 p-6 rounded-2xl">
-    <h2 class="text-xl font-semibold">Department Not Assigned</h2>
-    <p>You are not currently assigned to any department.</p>
+<h2 class="text-xl font-semibold flex items-center gap-2">
+⚠ Department Not Assigned
+</h2>
+<p>You are not currently assigned to any department.</p>
 </div>
+
 {% else %}
 
-<h1 class="text-2xl font-semibold text-blue-400 mb-6">
-    {{ department.name }} Department Head Dashboard
+<!-- HEADER -->
+<h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+🏢 {{ department.name }} Department Head Dashboard
 </h1>
 
-<!-- STAT CARDS -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<!-- =============================
+STAT CARDS
+============================= -->
 
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-        <h2 class="text-gray-400">Total Employees</h2>
-        <p class="text-3xl text-blue-400 font-bold">{{ total_employees }}</p>
-    </div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-        <h2 class="text-gray-400">Present (Month)</h2>
-        <p class="text-3xl text-green-400 font-bold">{{ attendance_summary.total_present }}</p>
-    </div>
+<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+<h2 class="text-gray-400">Total Employees</h2>
+<p class="text-3xl text-blue-400 font-bold">{{ total_employees }}</p>
+</div>
 
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-        <h2 class="text-gray-400">Absent (Month)</h2>
-        <p class="text-3xl text-red-400 font-bold">{{ attendance_summary.total_absent }}</p>
-    </div>
+<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+<h2 class="text-gray-400">Present (Month)</h2>
+<p class="text-3xl text-green-400 font-bold">
+{{ attendance_summary.total_present }}
+</p>
+</div>
 
-    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg">
-        <h2 class="text-gray-400">Late (Month)</h2>
-        <p class="text-3xl text-yellow-400 font-bold">{{ attendance_summary.total_late }}</p>
-    </div>
+<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+<h2 class="text-gray-400">Absent (Month)</h2>
+<p class="text-3xl text-red-400 font-bold">
+{{ attendance_summary.total_absent }}
+</p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+<h2 class="text-gray-400">Late (Month)</h2>
+<p class="text-3xl text-yellow-400 font-bold">
+{{ attendance_summary.total_late }}
+</p>
+</div>
 
 </div>
 
-<!-- ATTENDANCE CALENDAR -->
-<div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
-    <h3 class="text-blue-400 mb-4 text-lg font-semibold">
-        Attendance Overview Calendar
-    </h3>
-    <div id="attendanceCalendar"></div>
+<!-- =============================
+RECENT LEAVES
+============================= -->
+
+<div class="bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-2xl border border-gray-700 p-6 space-y-4">
+
+<h3 class="text-blue-400 text-lg font-semibold flex items-center gap-2">
+📋 Recent Leave Requests
+</h3>
+
+{% if recent_leaves %}
+
+<div class="space-y-3 max-h-64 overflow-y-auto">
+
+{% for leave in recent_leaves %}
+
+<div class="bg-gray-900 p-4 rounded-xl border border-gray-700 flex justify-between items-center hover:bg-gray-800 transition">
+
+<div>
+<p class="text-blue-300 font-medium">
+{{ leave.employee.get_full_name() }}
+</p>
+
+<p class="text-sm text-gray-400">
+{{ leave.leave_type.name }}
+• {{ leave.start_date }} → {{ leave.end_date }}
+</p>
+</div>
+
+<span class="px-3 py-1 rounded-lg text-sm
+{% if leave.status == 'Pending' %}
+bg-yellow-900/40 text-yellow-400
+{% elif leave.status == 'Approved' %}
+bg-green-900/40 text-green-400
+{% else %}
+bg-red-900/40 text-red-400
+{% endif %}
+">
+{{ leave.status }}
+</span>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% else %}
+<p class="text-gray-400 italic text-sm">No recent leave requests.</p>
+{% endif %}
+
+</div>
+
+<!-- =============================
+CALENDAR
+============================= -->
+
+<div class="bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-gray-700">
+
+<h3 class="text-blue-400 mb-6 text-center text-lg font-semibold flex items-center justify-center gap-2">
+📅 Attendance Overview
+</h3>
+
+<div id="attendanceCalendar"></div>
+
 </div>
 
 {% endif %}
 </section>
 
-<!-- MODAL -->
-<div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
-    <div class="bg-gray-900 w-full max-w-3xl p-6 rounded-2xl border border-gray-700 shadow-2xl">
+<!-- =============================
+ATTENDANCE MODAL
+============================= -->
 
-        <div class="flex justify-between items-center mb-4">
-            <h2 id="modalDateTitle" class="text-xl text-blue-400 font-semibold"></h2>
-            <button onclick="closeModal()" class="text-red-400 text-xl">&times;</button>
-        </div>
+<div id="attendanceModal"
+class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 transition-all duration-300">
 
-        <div id="modalContent" class="max-h-96 overflow-y-auto space-y-3"></div>
+<div class="bg-gray-900 w-full max-w-3xl p-6 rounded-2xl border border-gray-700 shadow-2xl">
 
-    </div>
+<div class="flex justify-between items-center mb-4">
+<h2 id="modalDateTitle" class="text-xl text-blue-400 font-semibold"></h2>
+<button onclick="closeModal()" class="text-red-400 text-xl">&times;</button>
 </div>
 
+<div id="modalContent" class="max-h-96 overflow-y-auto space-y-3"></div>
+
+</div>
+</div>
+
+<!-- =============================
+SCRIPT
+============================= -->
+
 {% if not_assigned == False %}
+
 <script>
+
 document.addEventListener('DOMContentLoaded', function() {
 
-    const attendanceDetails = {{ attendance_details|default({})|tojson }};
-    const calendarEl = document.getElementById('attendanceCalendar');
+const calendarEl = document.getElementById('attendanceCalendar');
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        height: 650,
-        events: {{ attendance_events|default([])|tojson }},
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
-        },
-        themeSystem: 'standard',
+if (!calendarEl) return;
 
-        dateClick: function(info) {
-            openModal(info.dateStr);
-        },
+const attendanceSummary = {{ attendance_details|default({})|tojson }};
 
-        eventClick: function(info) {
-            openModal(info.event.startStr);
-        }
-    });
+const calendar = new FullCalendar.Calendar(calendarEl, {
 
-    calendar.render();
+initialView: 'dayGridMonth',
+height: 650,
+
+events: {{ attendance_events|default([])|tojson }},
+
+headerToolbar: {
+left: 'prev,next today',
+center: 'title',
+right: 'dayGridMonth,timeGridWeek'
+},
+
+dayCellContent: function(info) {
+
+let dateKey = info.date.toISOString().split('T')[0];
+
+let summary = attendanceSummary[dateKey];
+
+let html = `<div class="text-center text-xs">`;
+
+html += `<div class="font-bold text-gray-300">${info.date.getDate()}</div>`;
+
+if (summary) {
+
+html += `
+<div class="text-green-400">P:${summary.Present || 0}</div>
+<div class="text-red-400">A:${summary.Absent || 0}</div>
+<div class="text-yellow-400">L:${summary.Late || 0}</div>
+<div class="text-blue-400 text-[9px]">
+O:${summary.OnLeave || 0}
+</div>
+`;
+
+}
+
+html += `</div>`;
+
+return { html: html };
+
+},
+
+dateClick: function(info){
+openModal(info.dateStr);
+},
+
+eventClick: function(info){
+openModal(info.event.startStr);
+}
+
+});
+
+calendar.render();
+
 });
 
 function openModal(dateStr) {
 
-    const modal = document.getElementById('attendanceModal');
-    const modalContent = document.getElementById('modalContent');
-    const modalTitle = document.getElementById('modalDateTitle');
+const modal = document.getElementById('attendanceModal');
+const modalContent = document.getElementById('modalContent');
+const modalTitle = document.getElementById('modalDateTitle');
 
-    modalTitle.innerText = "Attendance Details - " + dateStr;
-    modalContent.innerHTML = "";
+if (!modal) return;
 
-    const attendanceDetails = {{ attendance_details|default({})|tojson }};
+modalTitle.innerText = "Attendance Details - " + dateStr;
+modalContent.innerHTML = "";
 
-    if (attendanceDetails[dateStr]) {
+const attendanceDetails = {{ attendance_details|default({})|tojson }};
 
-        attendanceDetails[dateStr].forEach(emp => {
+if (attendanceDetails[dateStr]) {
 
-            let color = "text-green-400";
-            if (emp.status === "Absent") color = "text-red-400";
-            if (emp.status === "Late") color = "text-yellow-400";
+attendanceDetails[dateStr].forEach(emp => {
 
-            modalContent.innerHTML += `
-                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
-                    <p class="font-semibold text-blue-300">${emp.name}</p>
-                    <p class="${color} font-medium">${emp.status}</p>
-                    <p class="text-sm text-gray-400">
-                        Time In: ${emp.time_in || '-'} |
-                        Time Out: ${emp.time_out || '-'}
-                    </p>
-                </div>
-            `;
-        });
+let color = "text-green-400";
+if (emp.status === "Absent") color = "text-red-400";
+if (emp.status === "Late") color = "text-yellow-400";
 
-    } else {
-        modalContent.innerHTML = `
-            <p class="text-gray-400 text-center py-6">
-                No attendance records for this day.
-            </p>
-        `;
-    }
+modalContent.innerHTML += `
+<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 hover:border-blue-500 transition">
+<p class="font-semibold text-blue-300">${emp.name}</p>
+<p class="${color} font-medium">${emp.status}</p>
+<p class="text-sm text-gray-400">
+Time In: ${emp.time_in || '-'} |
+Time Out: ${emp.time_out || '-'}
+</p>
+</div>
+`;
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+});
+
+} else {
+
+modalContent.innerHTML = `
+<p class="text-gray-400 text-center py-6">
+No attendance records for this day.
+</p>
+`;
+
+}
+
+modal.classList.remove('hidden');
+modal.classList.add('flex');
+
 }
 
 function closeModal() {
-    const modal = document.getElementById('attendanceModal');
-    modal.classList.remove('flex');
-    modal.classList.add('hidden');
+
+const modal = document.getElementById('attendanceModal');
+
+if (!modal) return;
+
+modal.classList.remove('flex');
+modal.classList.add('hidden');
+
 }
+
 </script>
+
 {% endif %}
 
 {% endblock %}

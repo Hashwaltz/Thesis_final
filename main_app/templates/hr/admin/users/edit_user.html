@@ -5,7 +5,7 @@ class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-cen
 
 <h2 class="text-lg font-bold text-blue-400 mb-4">Edit User</h2>
 
-<form id="editUserForm">
+<form id="editUserFormModal">
 
 <input type="hidden" name="email">
 
@@ -13,11 +13,12 @@ class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-cen
 <label class="text-gray-400 text-sm">Role</label>
 <select name="role" class="w-full bg-gray-800 p-2 rounded">
 <option value="">Select Role</option>
-<option value="hr_admin">Admin</option>
+<option value="admin">HR Admin</option>
 <option value="officer">HR Officer</option>
 <option value="leave_officer">Leave Officer</option>
-<option value="dept_head">Department Head</option>
 <option value="employee">Employee</option>
+<option value="payroll_admin">Payroll Admin</option>
+<option value="payroll_staff">Payroll Staff</option>
 </select>
 </div>
 
@@ -40,7 +41,7 @@ class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-cen
 </div>
 
 <div class="flex justify-end gap-3">
-<button type="button" id="closeModal" class="bg-gray-600 px-4 py-2 rounded">Cancel</button>
+<button type="button" id="cancelEditUserModal" class="bg-gray-600 px-4 py-2 rounded">Cancel</button>
 <button type="submit" class="bg-blue-600 px-4 py-2 rounded">Update</button>
 </div>
 

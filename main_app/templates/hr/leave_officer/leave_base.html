@@ -71,7 +71,7 @@
         </h3>
         <ul class="space-y-2">
           <li>
-            <a href="{{ url_for('leave_officer.leave_dashboard') }}"
+            <a href="{{ url_for('leave_officer_bp.leave_dashboard') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-gauge-high text-blue-400 w-5 text-center"></i>
               <span>Dashboard</span>
@@ -88,7 +88,7 @@
         <ul class="space-y-2">
 
           <li>
-            <a href="{{ url_for('leave_officer.view_leaves') }}"
+            <a href="{{ url_for('leave_officer_bp.view_leaves') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-file-invoice text-blue-400 w-5 text-center"></i>
               <span>Leave Requests</span>
@@ -96,7 +96,7 @@
           </li>
 
           <li>
-            <a href="{{ url_for('leave_officer.employees') }}"
+            <a href="{{ url_for('leave_officer_bp.employees') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-address-card text-blue-400 w-5 text-center"></i>
               <span>Leave Details</span>
@@ -104,7 +104,7 @@
           </li>
 
           <li>
-            <a href="{{ url_for('leave_officer.attendance') }}"
+            <a href="{{ url_for('leave_officer_bp.attendance') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-user-clock text-blue-400 w-5 text-center"></i>
               <span>Late / Absent / Leave</span>
@@ -112,7 +112,7 @@
           </li>
 
           <li>
-            <a href="{{ url_for('leave_officer.late_computation') }}"
+            <a href="{{ url_for('leave_officer_bp.late_computation') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-clock-rotate-left text-blue-400 w-5 text-center"></i>
               <span>Late Computation</span>
@@ -120,7 +120,7 @@
           </li>
 
           <li>
-            <a href="{{ url_for('leave_officer.leave_report') }}"
+            <a href="{{ url_for('leave_officer_bp.leave_report') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-chart-simple text-blue-400 w-5 text-center"></i>
               <span>Leave Reports</span>
@@ -137,7 +137,7 @@
         </h3>
         <ul class="space-y-2">
           <li>
-            <a href="{{ url_for('leave_officer.profile') }}"
+            <a href="{{ url_for('leave_officer_bp.profile') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-user-gear text-blue-400 w-5 text-center"></i>
               <span>Account Settings</span>
@@ -206,7 +206,7 @@
       confirmButtonText: "Yes, logout!"
     }).then((result) => {
       if (result.isConfirmed) {
-        window.location.href = "{{ url_for('hr_auth.logout') }}";
+        window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
       }
     });
   }

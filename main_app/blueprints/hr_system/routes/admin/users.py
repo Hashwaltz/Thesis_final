@@ -60,21 +60,18 @@ def view_users():
     )
 
 
-
-
-
-# EDIT USER (AJAX)
-# ===============================
 @hr_admin_bp.route("/user/<int:user_id>/edit", methods=["GET", "POST"])
+@admin_required
 @login_required
 def edit_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    # ===============================
-    # GET → Return JSON
-    # ===============================
+    # =====================================================
+    # GET → Modal Load JSON
+    # =====================================================
     if request.method == "GET":
+
         employee = user.employee_profile
 
         return jsonify({
@@ -87,55 +84,36 @@ def edit_user(user_id):
             "department_id": employee.department_id if employee else None
         })
 
-    # ===============================
-    # POST → Update
-    # ===============================
-    try:
-        role = request.form.get("role")
-        status = request.form.get("status")
-        department_id = request.form.get("department_id") or None
+    # =====================================================
+    # POST → Update Role + Status ONLY
+    # =====================================================
+    if request.method == "POST":
 
-        user.role = role
-        user.active = (status == "1")
+        try:
 
-        employee = user.employee_profile
+            role = request.form.get("role")
+            status = request.form.get("status")
 
-        if role == "dept_head":
+            # ✅ Update role only if provided
+            if role:
+                user.role = role
 
-            if not department_id:
-                return jsonify({
-                    "status": "error",
-                    "message": "Department must be assigned for Department Head role."
-                }), 400
+            # ✅ Update active/inactive status
+            user.active = True if status == "1" else False
 
-            if not employee:
-                employee = Employee(
-                    user_id=user.id,
-                    employee_id=f"EMP-{user.id}",
-                    first_name=user.first_name,
-                    last_name=user.last_name,
-                    email=user.email
-                )
-                db.session.add(employee)
+            db.session.commit()
 
-            employee.department_id = int(department_id)
+            return jsonify({
+                "status": "success",
+                "message": "User updated successfully"
+            })
 
-        else:
-            if employee:
-                employee.department_id = None
+        except Exception as e:
 
-        db.session.commit()
+            db.session.rollback()
+            current_app.logger.error(str(e))
 
-        return jsonify({
-            "status": "success",
-            "message": "User updated successfully."
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(str(e))
-
-        return jsonify({
-            "status": "error",
-            "message": "Update failed."
-        }), 500
+            return jsonify({
+                "status": "error",
+                "message": "Update failed"
+            }), 500

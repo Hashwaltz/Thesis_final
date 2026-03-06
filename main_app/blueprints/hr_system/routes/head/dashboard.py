@@ -4,11 +4,13 @@ from types import SimpleNamespace
 from collections import defaultdict
 
 from main_app.extensions import db
-from main_app.models.hr_models import Department, Employee, Attendance
+from main_app.models.hr_models import Department, Employee, Attendance, Leave
 from main_app.helpers.decorators import dept_head_required
 from main_app.helpers.utils import get_department_attendance_summary, get_current_month_range
 
 from main_app.blueprints.hr_system.routes.head import hr_head_bp
+
+
 
 @hr_head_bp.route('/head-dashboard')
 @login_required
@@ -16,38 +18,34 @@ from main_app.blueprints.hr_system.routes.head import hr_head_bp
 def dashboard():
     """Department Head Dashboard"""
 
-    # -----------------------------
-    # 1️⃣ Determine Department
-    # -----------------------------
+    # ============================================================
+    # Determine Department
+    # ============================================================
+
     department = None
 
     if current_user.department_id:
         department = Department.query.get(current_user.department_id)
     else:
-        department = Department.query.filter_by(head_id=current_user.id).first()
+        department = Department.query.filter_by(
+            head_id=current_user.id
+        ).first()
 
     if not department:
         return render_template(
-            'hr/head/head_dashboard.html',
-            not_assigned=True,
-            department=None,
-            total_employees=0,
-            attendance_events=[],
-            attendance_details={},
-            attendance_summary=SimpleNamespace(
-                total_present=0,
-                total_absent=0,
-                total_late=0
-            )
+            "hr/head/head_dashboard.html",
+            not_assigned=True
         )
 
+    # Sync department assignment
     if not current_user.department_id:
         current_user.department_id = department.id
         db.session.commit()
 
-    # -----------------------------
-    # 2️⃣ Employees
-    # -----------------------------
+    # ============================================================
+    # Load Active Department Employees
+    # ============================================================
+
     department_employees = Employee.query.filter_by(
         department_id=department.id,
         status="Active",
@@ -56,38 +54,65 @@ def dashboard():
 
     total_employees = len(department_employees)
 
-    # -----------------------------
-    # 3️⃣ Get Monthly Attendance
-    # -----------------------------
+    # ============================================================
+    # Attendance Monthly Aggregation
+    # ============================================================
+
     start_date, end_date = get_current_month_range()
 
-    attendances = (
-        Attendance.query
-        .join(Employee)
-        .filter(
-            Employee.department_id == department.id,
-            Attendance.date >= start_date,
-            Attendance.date <= end_date
-        )
-        .all()
-    )
+    attendances = Attendance.query.options(
+        db.joinedload(Attendance.employee)
+    ).join(Employee).filter(
+        Employee.department_id == department.id,
+        Attendance.date.between(start_date, end_date)
+    ).all()
 
-    attendance_details = defaultdict(list)
-    daily_summary = defaultdict(lambda: {"Present": 0, "Absent": 0, "Late": 0})
+    # ============================================================
+    # Calendar Heatmap Summary
+    # ============================================================
+
+    calendar_summary = defaultdict(lambda: {
+        "Present": 0,
+        "Absent": 0,
+        "Late": 0,
+        "OnLeave": 0
+    })
+
+    # ⭐ THIS STRUCTURE MATCHES YOUR TEMPLATE JS
+    attendance_details = defaultdict(lambda: {
+        "Present": 0,
+        "Absent": 0,
+        "Late": 0,
+        "OnLeave": 0,
+        "records": []
+    })
 
     total_present = 0
     total_absent = 0
     total_late = 0
 
-    for record in attendances:
-        date_str = record.date.strftime("%Y-%m-%d")
+    # ============================================================
+    # Aggregation Loop
+    # ============================================================
 
-        status = record.status
-        if status not in ["Present", "Absent", "Late"]:
+    VALID_STATUSES = {"Present", "Absent", "Late", "OnLeave"}
+
+    for record in attendances:
+
+        if not record.employee:
             continue
 
-        daily_summary[date_str][status] += 1
+        date_str = record.date.strftime("%Y-%m-%d")
 
+        status = (record.status or "").strip()
+
+        if status not in VALID_STATUSES:
+            continue
+
+        # Update calendar summary counts
+        calendar_summary[date_str][status] += 1
+
+        # Global counters
         if status == "Present":
             total_present += 1
         elif status == "Absent":
@@ -95,41 +120,59 @@ def dashboard():
         elif status == "Late":
             total_late += 1
 
-        attendance_details[date_str].append({
+        # Modal + mini legend structure
+        attendance_details[date_str][status] += 1
+
+        attendance_details[date_str]["records"].append({
             "name": record.employee.get_full_name(),
             "status": status,
-            "time_in": record.time_in.strftime("%I:%M %p") if record.time_in else None,
-            "time_out": record.time_out.strftime("%I:%M %p") if record.time_out else None
+            "time_in": record.time_in.strftime("%I:%M %p") if record.time_in else "-",
+            "time_out": record.time_out.strftime("%I:%M %p") if record.time_out else "-"
         })
 
-    # -----------------------------
-    # 4️⃣ Convert to Calendar Events
-    # -----------------------------
+    # ============================================================
+    # Calendar Events Heat Legend
+    # ============================================================
+
     attendance_events = []
 
-    for date_str, counts in daily_summary.items():
+    for date_str, summary in calendar_summary.items():
 
-        total_day = counts["Present"] + counts["Absent"] + counts["Late"]
-
-        # Color priority logic
-        if counts["Absent"] > 0:
+        if summary["Absent"] > 0:
             color = "#dc2626"
-        elif counts["Late"] > 0:
+        elif summary["Late"] > 0:
             color = "#f59e0b"
         else:
             color = "#16a34a"
 
         attendance_events.append({
-            "title": f"{counts['Present']}P / {counts['Absent']}A / {counts['Late']}L",
+            "title": f"P:{summary['Present']} A:{summary['Absent']} L:{summary['Late']}",
             "start": date_str,
             "color": color
         })
+
+    # ============================================================
+    # Recent Leaves
+    # ============================================================
+
+    recent_leaves = Leave.query.options(
+        db.joinedload(Leave.employee),
+        db.joinedload(Leave.leave_type)
+    ).join(Employee).filter(
+        Employee.department_id == department.id
+    ).order_by(
+        Leave.created_at.desc()
+    ).limit(10).all()
 
     attendance_summary = SimpleNamespace(
         total_present=total_present,
         total_absent=total_absent,
         total_late=total_late
     )
+
+    # ============================================================
+    # Render Template
+    # ============================================================
 
     return render_template(
         "hr/head/head_dashboard.html",
@@ -138,10 +181,9 @@ def dashboard():
         total_employees=total_employees,
         attendance_events=attendance_events,
         attendance_details=dict(attendance_details),
-        attendance_summary=attendance_summary
+        attendance_summary=attendance_summary,
+        recent_leaves=recent_leaves
     )
-
-
 
 
 
@@ -154,14 +196,14 @@ def edit_password():
         new_password = request.form.get('password', '').strip()
         if not new_password:
             flash("⚠️ Password cannot be empty.", "warning")
-            return redirect(url_for('dept_head.edit_password'))
+            return redirect(url_for('hr_head_bp.edit_password'))
 
         # Update password directly (no hashing)
         current_user.password = new_password
         db.session.commit()
 
         flash("✅ Password successfully updated.", "success")
-        return redirect(url_for('dept_head.edit_password'))
+        return redirect(url_for('hr_head_bp.edit_password'))
 
     # GET request → show the form
     return render_template('hr/head/edit_profile.html')  # create this template

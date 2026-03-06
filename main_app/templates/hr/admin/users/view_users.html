@@ -121,7 +121,6 @@
   </div>
 
 </main>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -130,29 +129,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const cancelBtn = document.getElementById("cancelEditUserModal");
     const editForm = document.getElementById("editUserFormModal");
 
-    const roleSelect = editForm.querySelector("[name='role']");
-    const deptField = document.getElementById("departmentField");
-
-    // ===============================
-    // Toggle Department Field
-    // ===============================
-    function toggleDepartmentField(roleValue) {
-
-        if (!deptField) return;
-
-        if (roleValue === "dept_head") {
-            deptField.classList.remove("hidden");
-        } else {
-            deptField.classList.add("hidden");
-
-            const deptSelect = deptField.querySelector("select");
-            if (deptSelect) deptSelect.value = "";
-        }
+    if (!editModal || !editForm) {
+        console.error("Modal or form not found");
+        return;
     }
 
-    // ===============================
-    // Load User Data Into Modal
-    // ===============================
+    const roleSelect = editForm.querySelector("[name='role']");
+
+    // =====================================================
+    // Open Edit Modal + Load User Data
+    // =====================================================
     document.querySelectorAll(".edit-user-btn").forEach(btn => {
 
         btn.addEventListener("click", async () => {
@@ -162,75 +148,67 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
 
                 const res = await fetch(url, {
-                    headers: { "Accept": "application/json" }
+                    headers: {
+                        "Accept": "application/json"
+                    },
+                    credentials: "same-origin"
                 });
 
-                if (!res.ok) throw new Error();
+                if (!res.ok) {
+                    throw new Error("Fetch failed");
+                }
 
                 const data = await res.json();
 
+                // Set form action (important)
                 editForm.action = url;
 
-                editForm.querySelector('[name="email"]').value = data.email || '';
-                editForm.querySelector('[name="first_name"]').value = data.first_name || '';
-                editForm.querySelector('[name="last_name"]').value = data.last_name || '';
-
-                editForm.querySelector('[name="role"]').value = data.role || '';
-                editForm.querySelector('[name="status"]').value =
+                // Populate form fields
+                editForm.querySelector("[name='role']").value = data.role || "";
+                editForm.querySelector("[name='status']").value =
                     data.active ? "1" : "0";
-
-                const deptSelect = editForm.querySelector('[name="department_id"]');
-                if (deptSelect && data.department_id) {
-                    deptSelect.value = data.department_id;
-                }
-
-                toggleDepartmentField(data.role);
 
                 editModal.classList.remove("hidden");
 
-            } catch {
+            } catch (err) {
+                console.error(err);
                 Swal.fire("Error", "Failed to fetch user data", "error");
             }
+
         });
+
     });
 
-    // ===============================
-    // Role Change Event
-    // ===============================
+    // =====================================================
+    // Role Dropdown Change (UI Toggle)
+    // =====================================================
     roleSelect?.addEventListener("change", () => {
-        toggleDepartmentField(roleSelect.value);
+
+        const deptField = document.getElementById("departmentField");
+
+        if (!deptField) return;
+
+        deptField.classList.toggle(
+            "hidden",
+            roleSelect.value !== "dept_head"
+        );
+
     });
 
-    // ===============================
-    // Modal Close
-    // ===============================
-    [closeBtn, cancelBtn].forEach(btn => {
-        btn?.addEventListener("click", () => {
-            editModal.classList.add("hidden");
-        });
-    });
+    // =====================================================
+    // Modal Close Events
+    // =====================================================
+    function closeModal() {
+        editModal.classList.add("hidden");
+    }
 
-    // ===============================
-    // Form Submit Validation (🔥 IMPORTANT)
-    // ===============================
-    editForm?.addEventListener("submit", e => {
+    closeBtn?.addEventListener("click", closeModal);
+    cancelBtn?.addEventListener("click", closeModal);
 
-        const role = roleSelect.value;
-        const deptSelect = editForm.querySelector('[name="department_id"]');
-
-        // ✅ If department head → department must be selected
-        if (role === "dept_head") {
-
-            if (!deptSelect || !deptSelect.value) {
-                e.preventDefault();
-                Swal.fire(
-                    "Validation Error",
-                    "Department must be assigned for Department Head role.",
-                    "error"
-                );
-                return;
-            }
-        }
+    // =====================================================
+    // Form Submit Confirmation (🔥 IMPORTANT FIX)
+    // =====================================================
+    editForm.addEventListener("submit", e => {
 
         e.preventDefault();
 
@@ -243,8 +221,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }).then(result => {
 
             if (result.isConfirmed) {
-                e.target.submit();
-            }
+
+    const formData = new FormData(editForm);
+
+    fetch(editForm.action, {
+        method: "POST",
+        body: formData,
+        headers: {
+            "Accept": "application/json"
+        },
+        credentials: "same-origin"
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.status === "success") {
+
+            Swal.fire(
+                "Success",
+                data.message,
+                "success"
+            ).then(() => {
+
+                // ⭐ Redirect back to users list
+                window.location.href = "/users"; 
+                // OR use Flask URL
+                // window.location.href = "{{ url_for('hr_admin_bp.view_users') }}";
+
+            });
+
+        } else {
+
+            Swal.fire("Error", data.message, "error");
+        }
+
+    })
+    .catch(() => {
+        Swal.fire("Error", "Update failed", "error");
+    });
+
+}
 
         });
 

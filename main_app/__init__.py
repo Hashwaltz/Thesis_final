@@ -39,16 +39,6 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
-
-    # -----------------------------
-    # Register HR Blueprints
-    # -----------------------------
-
-    from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
-
-    app.register_blueprint(leave_officer_bp, url_prefix="/hr/leave_officer")
-
-
     # -----------------------------
     # Register Payroll Blueprints
     # -----------------------------

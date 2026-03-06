@@ -54,17 +54,8 @@ def department_details(department_id):
 
     department = Department.query.get_or_404(department_id)
 
-    # ✅ Force reload to avoid ORM stale relationship cache
-    db.session.refresh(department)
-
-    # ✅ Validate head belongs to department
-    head = None
-    if department.head_id:
-        head = Employee.query.filter_by(
-            id=department.head_id,
-            department_id=department.id,
-            status="Active"
-        ).first()
+    # ✅ Use relationship (User, not Employee)
+    head = department.head
 
     # ✅ Load department employees
     employees = Employee.query.filter(
@@ -78,7 +69,6 @@ def department_details(department_id):
         employees=employees,
         head=head
     )
-
 
 
 @hr_admin_bp.route('/departments/add', methods=['GET', 'POST'])
@@ -117,7 +107,6 @@ def add_department():
 
     return render_template('hr/admin/department/add_dept.html', employees=employees)
 
-
 @hr_admin_bp.route("/department/<int:department_id>/edit", methods=["POST"])
 @login_required
 @admin_required
@@ -131,35 +120,49 @@ def edit_department(department_id):
 
         head_emp_id = request.form.get("dept_head")
 
-        # ⭐ Get previous head
+        # ⭐ Previous head (User model)
         previous_head = None
-        if department.head_id:
-            previous_head = Employee.query.get(department.head_id)
 
-        # ⭐ If new head is selected
+        if department.head_id:
+            previous_head = User.query.get(department.head_id)
+
+        # =====================================================
+        # ⭐ Assign New Head
+        # =====================================================
         if head_emp_id:
 
-            new_head = Employee.query.get(int(head_emp_id))
+            employee = Employee.query.get(int(head_emp_id))
 
-            if not new_head:
+            if not employee:
                 return jsonify(status="error", message="Employee not found.")
 
-            if new_head.department_id != department.id:
+            # Must belong to department
+            if employee.department_id != department.id:
                 return jsonify(
                     status="error",
                     message="Employee must belong to this department."
                 )
 
-            # ✅ If head is changing → downgrade previous head
-            if previous_head and previous_head.id != new_head.id:
+            user = employee.user
+
+            if not user:
+                return jsonify(
+                    status="error",
+                    message="Employee has no user account."
+                )
+
+            # ⭐ Downgrade previous head
+            if previous_head and previous_head.id != user.id:
                 previous_head.role = "employee"
 
-            # ✅ Assign new head
-            new_head.role = "dept_head"
-            department.head_id = new_head.id
+            # ⭐ Upgrade new head
+            user.role = "dept_head"
+
+            # ⭐ Assign department head
+            department.head_id = user.id
 
         else:
-            # ✅ Remove head if none selected
+
             if previous_head:
                 previous_head.role = "employee"
 
@@ -167,9 +170,18 @@ def edit_department(department_id):
 
         db.session.commit()
 
-        return jsonify(status="success", message="Department updated successfully!")
+        return jsonify(
+            status="success",
+            message="Department updated successfully!"
+        )
 
     except Exception as e:
+
         db.session.rollback()
+
         current_app.logger.error(str(e))
-        return jsonify(status="error", message="Error updating department.")
+
+        return jsonify(
+            status="error",
+            message="Update failed."
+        )

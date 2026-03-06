@@ -60,7 +60,7 @@ def redirect_by_role(role: str):
         return redirect(url_for("payroll_admin_bp.payroll_dashboard"))
     elif role in ["payroll_staff"]:
         return redirect(url_for("payroll_staff.dashboard"))
-    elif role in ["employee", "officer", "dept_head"]:
+    elif role in ["employee", "officer", "dept_head", "admin", "leave_officer"]:
         return redirect(url_for("payroll_employee.dashboard"))
     flash("Role not recognized.", "danger")
     return redirect(url_for("payroll_auth.login"))
