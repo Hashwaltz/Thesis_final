@@ -1,0 +1,35 @@
+<!-- ===================================================== -->
+<!-- EDIT MODAL -->
+<!-- ===================================================== -->
+
+<div id="editModal"
+     class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+<div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md space-y-4">
+
+<h2 class="text-xl font-semibold text-yellow-400">Edit Leave Type</h2>
+
+<form method="POST" id="editForm" class="space-y-4">
+
+<input name="name" id="editName"
+       class="w-full bg-gray-700 text-white px-3 py-2 rounded-lg">
+
+<textarea name="description" id="editDescription"
+          class="w-full bg-gray-700 text-white px-3 py-2 rounded-lg"></textarea>
+
+<div class="flex justify-end gap-3">
+
+<button type="button" onclick="closeEditModal()"
+        class="bg-gray-600 px-4 py-2 rounded-lg">
+    Cancel
+</button>
+
+<button class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg text-black">
+    Update
+</button>
+
+</div>
+
+</form>
+</div>
+</div>

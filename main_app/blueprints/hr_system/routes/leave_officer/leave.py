@@ -18,7 +18,7 @@ from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 def leave_type_list():
     leave_types = LeaveType.query.order_by(LeaveType.name).all()
     return render_template(
-        "hr/leave_officer/leave_types/leave_type_list.html",
+        "hr/leave_officer/leave_type/leave_type_list.html",
         leave_types=leave_types
     )
 
@@ -52,7 +52,7 @@ def create_leave_type():
         return redirect(url_for("leave_officer_bp.leave_type_list"))
 
     return render_template(
-        "hr/leave_officer/leave_types/create_leave_type.html"
+        "hr/leave_officer/leave_types/add_type.html"
     )
 
 
@@ -76,7 +76,7 @@ def edit_leave_type(id):
         return redirect(url_for("leave_officer_bp.leave_type_list"))
 
     return render_template(
-        "hr/leave_officer/leave_types/edit_leave_type.html",
+        "hr/leave_officer/leave_types/edit_type.html",
         leave_type=leave_type
     )
 

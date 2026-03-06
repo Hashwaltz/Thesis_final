@@ -49,7 +49,7 @@
           <td class="p-3">{{ emp.department.name if emp.department else '-' }}</td>
           <td class="p-3">{{ emp.position.name if emp.position else '-' }}</td>
           <td class="p-3">
-            <a href="{{ url_for('leave_officer.view_employee', employee_id=emp.id) }}"
+            <a href="{{ url_for('leave_officer_bp.view_employee', employee_id=emp.id) }}"
                class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg">
                <i class="fa-solid fa-eye"></i> View
             </a>
@@ -64,19 +64,26 @@
     </table>
   </div>
 
-  <!-- Pagination -->
   <div class="mt-4 flex justify-center gap-2">
     {% if employees.has_prev %}
-    <a href="{{ url_for('leave_officer.employees', page=employees.prev_num) }}"
-       class="flex items-center gap-1 px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
-       <i class="fa-solid fa-arrow-left"></i> Prev
+    <a href="{{ url_for('leave_officer_bp.employees',
+              page=employees.prev_num,
+              search=request.args.get('search',''),
+              department=request.args.get('department','')) }}"
+      class="flex items-center gap-1 px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+      <i class="fa-solid fa-arrow-left"></i> Prev
     </a>
     {% endif %}
+
     <span class="px-3 py-1 bg-gray-800 rounded">{{ employees.page }}</span>
+
     {% if employees.has_next %}
-    <a href="{{ url_for('leave_officer.employees', page=employees.next_num) }}"
-       class="flex items-center gap-1 px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
-       Next <i class="fa-solid fa-arrow-right"></i>
+    <a href="{{ url_for('leave_officer_bp.employees',
+              page=employees.next_num,
+              search=request.args.get('search',''),
+              department=request.args.get('department','')) }}"
+      class="flex items-center gap-1 px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+      Next <i class="fa-solid fa-arrow-right"></i>
     </a>
     {% endif %}
   </div>

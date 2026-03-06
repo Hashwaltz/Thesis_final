@@ -96,10 +96,18 @@
           </li>
 
           <li>
+            <a href="{{ url_for('leave_officer_bp.leave_type_list') }}"
+               class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+              <i class="fa-solid fa-file-invoice text-blue-400 w-5 text-center"></i>
+              <span>Leave Type Management</span>
+            </a>
+          </li>
+
+          <li>
             <a href="{{ url_for('leave_officer_bp.employees') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-address-card text-blue-400 w-5 text-center"></i>
-              <span>Leave Details</span>
+              <span>Employee Leave Details</span>
             </a>
           </li>
 

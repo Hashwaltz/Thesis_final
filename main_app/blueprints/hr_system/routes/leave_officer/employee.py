@@ -3,8 +3,9 @@ from flask import render_template, request
 from flask_login import login_required
 
 
-from main_app.models.hr_models import Employee, Leave, Department
+from main_app.models.hr_models import Employee, Leave, Department, LeaveCredit
 from main_app.helpers.decorators import leave_officer_required
+from main_app.helpers.functions import compute_monthly_leave_credit, convert_leave_to_points
 
 from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 
@@ -57,14 +58,14 @@ def employees():
 
 
 
-# ===============================
-# VIEW SINGLE EMPLOYEE LEAVE DETAILS
-# ===============================
 @leave_officer_bp.route("/employee/<int:employee_id>/view")
 @login_required
 @leave_officer_required
 def view_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
+
+    # ⭐ Auto compute monthly accrual
+    compute_monthly_leave_credit(employee)
 
     today = date.today()
 
@@ -75,25 +76,35 @@ def view_employee(employee_id):
         datetime.strptime(start_date_str, "%Y-%m-%d").date()
         if start_date_str else date(today.year, 1, 1)
     )
+
     end_date = (
         datetime.strptime(end_date_str, "%Y-%m-%d").date()
         if end_date_str else today
     )
 
-    # Leave policy constants
-    BASE_VACATION = 15
-    BASE_SICK = 15
+    # ===============================
+    # Leave Credits Retrieval
+    # ===============================
 
-    # Earned leave: 1 per month
-    months = max(
-        (end_date.year - start_date.year) * 12 +
-        (end_date.month - start_date.month) + 1,
-        0
-    )
-    earned_vac = months
-    earned_sick = months
+    # Vacation Leave
+    vacation_credit = LeaveCredit.query.filter_by(
+        employee_id=employee.id,
+        leave_type_id=1
+    ).first()
 
-    # Used leaves
+    # Sick Leave
+    sick_credit = LeaveCredit.query.filter_by(
+        employee_id=employee.id,
+        leave_type_id=2
+    ).first()
+
+    total_vac = vacation_credit.total_credits if vacation_credit else 0
+    total_sick = sick_credit.total_credits if sick_credit else 0
+
+    # ===============================
+    # Used Leaves Computation
+    # ===============================
+
     used_vac = sum(
         l.days_requested for l in employee.leaves
         if l.status == "Approved"
@@ -108,20 +119,48 @@ def view_employee(employee_id):
         and start_date <= l.start_date <= end_date
     )
 
-    # Totals
-    total_vac = BASE_VACATION + earned_vac
-    total_sick = BASE_SICK + earned_sick
+    # ===============================
+    # Remaining Balance
+    # ===============================
 
     balance_vac = max(total_vac - used_vac, 0)
     balance_sick = max(total_sick - used_sick, 0)
 
-    # Leave table for display
+    # ⭐ Fractional point conversion (CSC table style)
+    vacation_points = convert_leave_to_points(days=balance_vac)
+    sick_points = convert_leave_to_points(days=balance_sick)
+
+    # ===============================
+    # Table Display Data
+    # ===============================
+
     leave_table = [
-        {"particulars": "Balance Forwarded", "vacation": BASE_VACATION, "sick": BASE_SICK, "total": BASE_VACATION + BASE_SICK},
-        {"particulars": "Leave Credits Earned for the Period", "vacation": earned_vac, "sick": earned_sick, "total": earned_vac + earned_sick, "type": "earned"},
-        {"particulars": "Total", "vacation": total_vac, "sick": total_sick, "total": total_vac + total_sick},
-        {"particulars": "Less: Leaves Enjoyed", "vacation": used_vac, "sick": used_sick, "total": used_vac + used_sick},
-        {"particulars": "Balance Leave Credits", "vacation": balance_vac, "sick": balance_sick, "total": balance_vac + balance_sick, "type": "balance"},
+        {
+            "particulars": "Balance Forwarded",
+            "vacation": round(total_vac, 3),
+            "sick": round(total_sick, 3),
+            "total": round(total_vac + total_sick, 3)
+        },
+        {
+            "particulars": "Less: Leaves Enjoyed",
+            "vacation": round(used_vac, 3),
+            "sick": round(used_sick, 3),
+            "total": round(used_vac + used_sick, 3)
+        },
+        {
+            "particulars": "Balance Leave Credits",
+            "vacation": round(balance_vac, 3),
+            "sick": round(balance_sick, 3),
+            "total": round(balance_vac + balance_sick, 3),
+            "type": "balance"
+        },
+        {
+            "particulars": "Point Equivalent",
+            "vacation": vacation_points,
+            "sick": sick_points,
+            "total": round(vacation_points + sick_points, 3),
+            "type": "points"
+        }
     ]
 
     return render_template(
@@ -133,8 +172,6 @@ def view_employee(employee_id):
         today=today,
         datetime=datetime
     )
-
-
 
 
 # =========================

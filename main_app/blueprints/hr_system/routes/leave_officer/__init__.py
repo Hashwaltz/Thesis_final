@@ -12,5 +12,6 @@ from . import attenndance
 from . import dashboard
 from . import employee
 from . import late
+from . import leave
 from . import profile
 from . import report
