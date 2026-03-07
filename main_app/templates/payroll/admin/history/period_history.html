@@ -1,0 +1,129 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll History - {{ period.period_name }}{% endblock %}
+
+{% block content %}
+
+<section class="p-6 space-y-6 text-gray-200">
+
+<!-- ================= HEADER ================= -->
+
+<div class="flex flex-wrap items-center justify-between gap-4">
+
+<div>
+<h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+<i class="fa-solid fa-clock text-2xl"></i>
+Payroll Period History
+</h1>
+
+<p class="text-gray-400 mt-1">
+{{ period.period_name }}
+</p>
+</div>
+
+<a href="{{ url_for('payroll_admin_bp.payroll_history_dashboard') }}"
+class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+
+<i class="fa-solid fa-arrow-left"></i>
+Back
+
+</a>
+
+</div>
+
+
+<!-- ================= PAYROLL TABLE ================= -->
+
+<div class="overflow-hidden bg-gray-800 rounded-2xl border border-gray-700 shadow-xl">
+
+<div class="p-4 border-b border-gray-700 flex justify-between items-center">
+
+<h2 class="text-emerald-400 font-semibold">
+Payroll Records
+</h2>
+
+<span class="text-sm text-gray-400">
+Total Records: {{ payroll_records|length }}
+</span>
+
+</div>
+
+
+<div class="overflow-x-auto">
+
+<table class="w-full text-sm text-center">
+
+<thead class="bg-gray-900 text-emerald-400 uppercase text-xs tracking-wide">
+<tr>
+
+<th class="p-4">ID</th>
+<th class="p-4">Employee</th>
+<th class="p-4">Gross Pay</th>
+<th class="p-4">Net Pay</th>
+<th class="p-4">Processed At</th>
+
+</tr>
+</thead>
+
+
+<tbody class="divide-y divide-gray-700">
+
+{% if payroll_records %}
+
+{% for record in payroll_records %}
+
+<tr class="hover:bg-gray-700/40 transition">
+
+<td class="p-4 font-medium text-gray-300">
+{{ record.id }}
+</td>
+
+<td class="p-4 text-white font-medium">
+{{ record.employee.first_name if record.employee else '' }}
+{{ record.employee.last_name if record.employee else '' }}
+</td>
+
+<td class="p-4 text-emerald-400 font-semibold">
+₱ {{ "{:,.2f}".format(record.gross_pay or 0) }}
+</td>
+
+<td class="p-4 text-emerald-400 font-semibold">
+₱ {{ "{:,.2f}".format(record.net_pay or 0) }}
+</td>
+
+<td class="p-4 text-gray-400 text-sm">
+{{ record.created_at.strftime('%b %d, %Y') if record.created_at else 'N/A' }}
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% else %}
+
+<tr>
+<td colspan="5" class="p-10">
+
+<div class="flex flex-col items-center justify-center text-gray-400 space-y-2">
+
+<i class="fa-solid fa-folder-open text-4xl text-gray-600"></i>
+
+<p>No payroll records found for this period</p>
+
+</div>
+
+</td>
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+{% endblock %}

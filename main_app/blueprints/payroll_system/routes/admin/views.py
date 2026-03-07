@@ -1,20 +1,22 @@
-from main_app.models.hr_models import Employee, Leave, Department
-from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip
-from main_app.utils import payroll_admin_required
-from main_app.extensions import db
-from main_app.functions import generate_payslip
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
-from datetime import date
+from datetime import date, datetime
 from flask import render_template, request, redirect, flash, url_for
 from flask_login import login_required, current_user
 
 
-from . import payroll_admin_bp
+from main_app.models.hr_models import Employee, Leave, Department, EmploymentType
+from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction
+from main_app.utils import payroll_admin_required
+from main_app.extensions import db
+from main_app.functions import generate_payslip
 
 
-@payroll_admin_bp.route('/dashboard')
+from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
+
+
+@payroll_admin_bp.route('/payroll-dashboard')
 @payroll_admin_required
 @login_required
 def payroll_dashboard():
@@ -22,9 +24,9 @@ def payroll_dashboard():
     today = date.today()
     start_month = today.replace(day=1)
 
-    total_employees = Employee.query.count()
+    # ================= BASIC METRICS =================
 
-    # ================= METRICS =================
+    total_employees = Employee.query.count()
 
     employees_paid = (
         db.session.query(Payroll)
@@ -46,8 +48,31 @@ def payroll_dashboard():
         .count()
     )
 
+    # ================= PAYROLL TOTALS =================
+
     total_payroll_amount = (
         db.session.query(func.sum(Payroll.net_pay))
+        .join(PayrollPeriod)
+        .filter(PayrollPeriod.start_date >= start_month)
+        .scalar() or 0
+    )
+
+    total_gross = (
+        db.session.query(func.sum(Payroll.gross_pay))
+        .join(PayrollPeriod)
+        .filter(PayrollPeriod.start_date >= start_month)
+        .scalar() or 0
+    )
+
+    total_deductions = (
+        db.session.query(func.sum(Payroll.total_deductions))
+        .join(PayrollPeriod)
+        .filter(PayrollPeriod.start_date >= start_month)
+        .scalar() or 0
+    )
+
+    highest_salary = (
+        db.session.query(func.max(Payroll.net_pay))
         .join(PayrollPeriod)
         .filter(PayrollPeriod.start_date >= start_month)
         .scalar() or 0
@@ -60,6 +85,8 @@ def payroll_dashboard():
         .scalar() or 0
     )
 
+    # ================= LEAVE IMPACT =================
+
     leave_impact = (
         db.session.query(func.count(Leave.id))
         .filter(
@@ -68,6 +95,12 @@ def payroll_dashboard():
         )
         .scalar() or 0
     )
+
+    # ================= PAYROLL STATUS =================
+
+    approved_payrolls = Payroll.query.filter_by(status="Approved").count()
+
+    draft_payrolls = Payroll.query.filter_by(status="Draft").count()
 
     # ================= PAYROLL TREND =================
 
@@ -101,28 +134,66 @@ def payroll_dashboard():
     salary_labels = [m for m, _ in salary_data]
     salary_values = [float(v or 0) for _, v in salary_data]
 
-    # ================= TABLES =================
+    # ================= DEDUCTION BREAKDOWN =================
 
-    recent_payrolls = Payroll.query.order_by(Payroll.created_at.desc()).limit(8).all()
+    deduction_summary = (
+        db.session.query(
+            PayrollDeduction.deduction_name,
+            func.sum(PayrollDeduction.employee_share)
+        )
+        .group_by(PayrollDeduction.deduction_name)
+        .all()
+    )
 
-    pending_list = Payroll.query.filter(Payroll.status != 'Approved').limit(8).all()
+    ded_labels = [d for d, _ in deduction_summary]
+    ded_values = [float(v or 0) for _, v in deduction_summary]
+
+    # ================= TABLE DATA =================
+
+    recent_payrolls = (
+        Payroll.query
+        .order_by(Payroll.created_at.desc())
+        .limit(8)
+        .all()
+    )
+
+    pending_list = (
+        Payroll.query
+        .filter(Payroll.status != "Approved")
+        .limit(8)
+        .all()
+    )
 
     upcoming_period = PayrollPeriod.query.filter_by(status="Open").first()
 
+    # ================= RENDER =================
+
     return render_template(
-        'payroll/admin/navigations/admin_dashboard.html',
+        'payroll/admin/views/admin_dashboard.html',
 
         total_employees=total_employees,
         employees_paid=employees_paid,
         pending_payrolls=pending_payrolls,
+
         total_payroll_amount=total_payroll_amount,
+        total_gross=total_gross,
+        total_deductions=total_deductions,
+        highest_salary=highest_salary,
         avg_salary=avg_salary,
+
         leave_impact=leave_impact,
+
+        approved_payrolls=approved_payrolls,
+        draft_payrolls=draft_payrolls,
 
         chart_labels=chart_labels,
         chart_values=chart_values,
+
         salary_labels=salary_labels,
         salary_values=salary_values,
+
+        ded_labels=ded_labels,
+        ded_values=ded_values,
 
         recent_payrolls=recent_payrolls,
         pending_list=pending_list,
@@ -130,27 +201,29 @@ def payroll_dashboard():
     )
 
 
-
-
 @payroll_admin_bp.route('/payrolls')
 @payroll_admin_required
 @login_required
 def view_payrolls():
+
     search = request.args.get('search', '', type=str).strip()
     department_id = request.args.get('department_id', type=int)
     pay_period_id = request.args.get('pay_period_id', type=int)
     page = request.args.get('page', 1, type=int)
 
-    # ================= BASE QUERY =================
-    query = Payroll.query.join(Employee, Payroll.employee_id == Employee.id)
+    query = Payroll.query.options(
+        joinedload(Payroll.employee).joinedload(Employee.department),
+        joinedload(Payroll.period),
+        joinedload(Payroll.employee).joinedload(Employee.employee_allowances),
+        joinedload(Payroll.employee).joinedload(Employee.employee_deductions),
+        joinedload(Payroll.employee).joinedload(Employee.employment_type)
+    )
 
-    # ---------------- Department Filter ----------------
     if department_id:
-        query = query.filter(Employee.department_id == department_id)
+        query = query.join(Employee).filter(Employee.department_id == department_id)
 
-    # ---------------- Search ----------------
     if search:
-        query = query.filter(
+        query = query.join(Employee).filter(
             or_(
                 Employee.first_name.ilike(f"%{search}%"),
                 Employee.last_name.ilike(f"%{search}%"),
@@ -158,21 +231,82 @@ def view_payrolls():
             )
         )
 
-    # ---------------- Payroll Period ----------------
     if pay_period_id:
         query = query.filter(Payroll.payroll_period_id == pay_period_id)
 
-    # ---------------- Pagination ----------------
-    payrolls = query.order_by(Payroll.id.desc()).paginate(page=page, per_page=10, error_out=False)
+    payrolls = query.order_by(Payroll.id.desc()).paginate(
+        page=page,
+        per_page=10,
+        error_out=False
+    )
 
-    # Dropdown Data
+    for payroll in payrolls.items:
+
+        employee = payroll.employee
+
+        payroll.employee_type = (
+            employee.employment_type.name
+            if employee and employee.employment_type
+            else "Regular"
+        )
+
+        if employee and payroll.period:
+
+            attendances = [
+                a for a in employee.attendances
+                if payroll.period.start_date <= a.date <= payroll.period.end_date
+            ]
+
+            emp_type = payroll.employee_type
+
+            if emp_type == "Regular":
+                payroll.days_worked = sum(
+                    1 for a in attendances if a.status != "Absent"
+                )
+
+            elif emp_type == "Part-Time":
+                payroll.working_hours = round(
+                    sum(a.working_hours for a in attendances),
+                    2
+                )
+
+            elif emp_type in ["Casual", "Job Order (JO)", "Job Orders"]:
+                payroll.days_worked = sum(
+                    1 for a in attendances if a.status != "Absent"
+                )
+
+            else:
+                payroll.days_worked = 0
+                payroll.working_hours = 0
+
+        else:
+            payroll.days_worked = 0
+            payroll.working_hours = 0
+
+        payroll.hourly_rate_value = (
+            employee.salary if payroll.employee_type == "Part-Time" else 0
+        )
+
+        payroll.daily_rate_value = (
+            employee.salary
+            if payroll.employee_type in ["Casual", "Job Order (JO)", "Job Orders"]
+            else 0
+        )
+
     departments = Department.query.all()
-    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
-    selected_pay_period = PayrollPeriod.query.get(pay_period_id) if pay_period_id else None
+    payroll_periods = PayrollPeriod.query.order_by(
+        PayrollPeriod.start_date.desc()
+    ).all()
+
+    selected_pay_period = (
+        PayrollPeriod.query.get(pay_period_id)
+        if pay_period_id
+        else None
+    )
 
     return render_template(
-        "payroll/admin/navigations/view_payrolls.html",
+        "payroll/admin/views/view_payrolls.html",
         payrolls=payrolls,
         search=search,
         departments=departments,
@@ -185,33 +319,57 @@ def view_payrolls():
 
 
 
-@payroll_admin_bp.route('/process', methods=['GET'])
-@payroll_admin_required
+@payroll_admin_bp.route("/payroll-departments")
 @login_required
-def process_payroll():
-    # Get all active employees
-    employees = Employee.query.filter_by(status="Active").all()
+@payroll_admin_required
+def payroll_departments():
 
-    # Get unique departments
+    today = date.today()
+
+    period_id = request.args.get("period_id", type=int)
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+
+    # Default period = latest or closest to today
+    if period_id:
+        period = PayrollPeriod.query.get(period_id)
+    else:
+        period = PayrollPeriod.query.filter(PayrollPeriod.start_date <= today)\
+                                     .order_by(PayrollPeriod.start_date.desc()).first()
+
+    if not period and payroll_periods:
+        period = payroll_periods[0]
+
+    # Get departments and compute total payroll
     departments = Department.query.all()
+    department_rows = []
+    municipality_total = 0
 
-    # Count employees per department
-    dept_data = []
     for dept in departments:
-        count = Employee.query.filter_by(status="Active", department_id=dept.id).count()
-        dept_data.append({
+        employees = Employee.query.filter_by(department_id=dept.id).all()
+        dept_total = 0
+        for emp in employees:
+            payroll = Payroll.query.filter_by(
+                employee_id=emp.id,
+                payroll_period_id=period.id
+            ).first()
+            if payroll:
+                dept_total += payroll.net_pay or 0
+
+        department_rows.append({
             "id": dept.id,
             "name": dept.name,
-            "employee_count": count
+            "employee_count": len(employees),
+            "total": round(dept_total, 2)
         })
+        municipality_total += dept_total
 
     return render_template(
-        'payroll/admin/navigations/process_payroll.html',
-        departments=dept_data
+        "payroll/admin/views/department_payrolls.html",
+        payroll_periods=payroll_periods,
+        selected_period=period,
+        department_rows=department_rows,
+        municipality_total=round(municipality_total, 2)
     )
-
-
-
 
 
 @payroll_admin_bp.route('/employees')
@@ -246,7 +404,7 @@ def view_employees():
     departments = Department.query.order_by(Department.name).all()
 
     return render_template(
-        'payroll/admin/navigations/view_employees.html',
+        'payroll/admin/views/view_employees.html',
         employees=employees,
         search=search,
         departments=departments,
@@ -255,33 +413,63 @@ def view_employees():
 
 
 
+
 @payroll_admin_bp.route('/payroll-periods')
 @payroll_admin_required
 @login_required
 def view_payroll_periods():
-    # Get filters from query parameters
+    """
+    View Payroll Periods with optional filters:
+      - status (Open, Processing, Closed)
+      - start_date (YYYY-MM-DD)
+      - end_date (YYYY-MM-DD)
+    Pagination included.
+    """
+
+    # ===== Get filters from query parameters =====
     status_filter = request.args.get('status', '')
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
 
-    # Base query
+    # ===== Base query =====
     query = PayrollPeriod.query
 
-    # Apply filters
+    # ===== Apply filters =====
+
+    # Status filter
     if status_filter:
-        query = query.filter_by(status=status_filter)
+        query = query.filter(PayrollPeriod.status == status_filter)
+
+    # Start date filter
     if start_date:
-        query = query.filter(PayrollPeriod.start_date >= start_date)
+        try:
+            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+            query = query.filter(PayrollPeriod.start_date >= start_date_obj)
+        except ValueError:
+            pass
+
+    # End date filter
     if end_date:
-        query = query.filter(PayrollPeriod.end_date <= end_date)
+        try:
+            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+            query = query.filter(PayrollPeriod.end_date <= end_date_obj)
+        except ValueError:
+            pass
 
-    # Pagination
+    # ===== Pagination =====
     page = request.args.get('page', 1, type=int)
-    per_page = 10  # Change as needed
-    periods_paginated = query.order_by(PayrollPeriod.id.desc()).paginate(page=page, per_page=per_page)
+    per_page = 10  # You can adjust this
 
+    periods_paginated = query.order_by(
+        PayrollPeriod.id.desc()
+    ).paginate(
+        page=page,
+        per_page=per_page
+    )
+
+    # ===== Render Template =====
     return render_template(
-        'payroll/admin/navigations/view_periods.html',
+        'payroll/admin/views/view_periods.html',
         periods=periods_paginated.items,
         pagination=periods_paginated
     )
@@ -298,7 +486,7 @@ def payroll_history_dashboard():
     periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
     return render_template(
-        "payroll/admin/navigations/history_dashboard.html",
+        "payroll/admin/views/history_dashboard.html",
         employees=employees,
         periods=periods
     )
@@ -325,7 +513,7 @@ def deductions():
     deductions_paginated = query.order_by(Deduction.id.desc()).paginate(page=page, per_page=per_page)
 
     return render_template(
-        'payroll/admin/navigations/view_deductions.html',
+        'payroll/admin/views/view_deductions.html',
         deductions=deductions_paginated.items,
         pagination=deductions_paginated,
         search=search
@@ -424,7 +612,7 @@ def view_payslips():
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
     return render_template(
-        'payroll/admin/view_payslips.html',
+        'payroll/admin/views/view_payslips.html',
         payslips=payslips,
         search=search,
         departments=departments,

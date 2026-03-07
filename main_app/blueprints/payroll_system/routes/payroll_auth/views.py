@@ -1,80 +1,15 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, login_required, current_user
+
+from flask import render_template, flash, request, url_for, redirect
+from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
+
 from main_app.forms import LoginForm, RegistrationForm
 from main_app.extensions import db
-from main_app.models.user import User  # shared model
-from datetime import datetime
-import os
+from main_app.models.user import User
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))  # Thesis/
-TEMPLATE_DIR = os.path.join(BASE_DIR, "templates", "payroll_auth")
+from main_app.blueprints.payroll_system.routes.payroll_auth import payroll_auth_bp
 
 
-payroll_auth_bp = Blueprint(
-    "payroll_auth",
-    __name__,
-    template_folder=TEMPLATE_DIR,
-    static_url_path="/payroll/static"
-)
-
-
-# =========================================================
-# LOGIN
-# =========================================================
-@payroll_auth_bp.route("/payroll-login", methods=["GET", "POST"])
-def login():
-    if current_user.is_authenticated:
-        return redirect_by_role(current_user.role)
-
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data.strip()).first()
-
-        if not user:
-            flash('Invalid email or password.', 'error')
-            return render_template('payroll_login.html', form=form)
-
-        if check_password_hash(user.password, form.password.data) or user.password.strip() == form.password.data.strip():
-            if not user.active:
-                flash('Your account has been deactivated. Please contact administrator.', 'error')
-                return render_template('payroll_login.html', form=form)
-
-            login_user(user)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-
-            return redirect_by_role(user.role)
-        else:
-            flash('Invalid email or password.', 'error')
-
-    return render_template("payroll_auth/payroll_login.html", form=form)
-
-
-# =========================================================
-# ROLE REDIRECT HELPER
-# =========================================================
-def redirect_by_role(role: str):
-    role = role.lower() if role else ""
-    if role in ["payroll_admin"]:
-        return redirect(url_for("payroll_admin_bp.payroll_dashboard"))
-    elif role in ["payroll_staff"]:
-        return redirect(url_for("payroll_staff.dashboard"))
-    elif role in ["employee", "officer", "dept_head", "admin", "leave_officer"]:
-        return redirect(url_for("payroll_employee.dashboard"))
-    flash("Role not recognized.", "danger")
-    return redirect(url_for("payroll_auth.login"))
-
-
-# =========================================================
-# LOGOUT
-# =========================================================
-@payroll_auth_bp.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    flash("You have been logged out successfully.", "info")
-    return redirect(url_for("payroll_auth.login"))
 # =========================================================
 # REGISTER
 # =========================================================
@@ -102,7 +37,7 @@ def register():
             db.session.add(user)
             db.session.commit()
             flash("Registration successful! Please login.", "success")
-            return redirect(url_for("payroll_auth.login"))
+            return redirect(url_for("payroll_auth_bp.login"))
         except Exception as e:
             db.session.rollback()
             flash(f"Registration failed: {str(e)}", "danger")
@@ -145,7 +80,7 @@ def change_password():
         current_user.password = generate_password_hash(new_password)
         db.session.commit()
         flash("Password changed successfully.", "success")
-        return redirect(url_for("payroll_auth.profile"))
+        return redirect(url_for("payroll_auth_bp.profile"))
 
     return render_template("change_password.html")
 

@@ -10,7 +10,7 @@
   </div>
 
   <!-- ===== FILTERS ===== -->
-  <form method="get" action="{{ url_for('payroll_admin.view_employees') }}" id="employeeFilterForm" class="flex flex-wrap gap-4 mb-4">
+  <form method="get" action="{{ url_for('payroll_admin_bp.view_employees') }}" id="employeeFilterForm" class="flex flex-wrap gap-4 mb-4">
     <!-- Search -->
     <div class="flex flex-col">
       <label for="search" class="text-gray-300">Search</label>
@@ -44,7 +44,6 @@
           <th class="px-6 py-3 text-left text-gray-400">Email</th>
           <th class="px-6 py-3 text-left text-gray-400">Department</th>
           <th class="px-6 py-3 text-left text-gray-400">Position</th>
-          <th class="px-6 py-3 text-left text-gray-400">Actions</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-700">
@@ -56,13 +55,6 @@
             <td class="px-6 py-3">{{ employee.email }}</td>
             <td class="px-6 py-3">{{ employee.department.name if employee.department else '-' }}</td>
             <td class="px-6 py-3">{{ employee.position.name if employee.position else '-' }}</td>
-            <td class="px-6 py-3">
-              <a href="#" data-id="{{ employee.id }}" 
-                class="flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm transition">
-                  <i class="fa-solid fa-eye"></i>
-                  <span>View</span>
-              </a>
-            </td>
           </tr>
           {% endfor %}
         {% else %}
@@ -79,14 +71,14 @@
   <!-- ===== PAGINATION ===== -->
   <div class="flex justify-center items-center gap-4 mt-4">
     {% if employees.has_prev %}
-      <a href="{{ url_for('payroll_admin.view_employees', page=employees.prev_num, search=search, department_id=selected_department) }}"
+      <a href="{{ url_for('payroll_admin_bp.view_employees', page=employees.prev_num, search=search, department_id=selected_department) }}"
          class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition">Previous</a>
     {% endif %}
 
     <span class="text-gray-400">Page {{ employees.page }} of {{ employees.pages }}</span>
 
     {% if employees.has_next %}
-      <a href="{{ url_for('payroll_admin.view_employees', page=employees.next_num, search=search, department_id=selected_department) }}"
+      <a href="{{ url_for('payroll_admin_bp.view_employees', page=employees.next_num, search=search, department_id=selected_department) }}"
          class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition">Next</a>
     {% endif %}
   </div>

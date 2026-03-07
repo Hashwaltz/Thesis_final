@@ -1,0 +1,321 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+{% block title %}Payroll Admin - Payslips{% endblock %}
+
+{% block content %}
+
+<section class="p-6 space-y-8 text-gray-200 min-h-screen bg-gray-900">
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+
+<div>
+<h1 class="text-3xl font-bold text-emerald-400 tracking-wide">
+Payslip Management
+</h1>
+<p class="text-gray-400 text-sm">
+Manage employee payslips and distribution status
+</p>
+</div>
+
+</div>
+
+
+<!-- ================= FILTER + SEARCH CARD ================= -->
+
+<div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-4">
+
+<!-- Search -->
+<form method="get"
+action="{{ url_for('payroll_admin_bp.view_payslips') }}"
+class="flex flex-wrap gap-4 items-center">
+
+<input type="text"
+name="search"
+value="{{ search or '' }}"
+placeholder="Search employee or payslip number..."
+class="flex-1 min-w-[260px] px-4 py-2 rounded-xl bg-gray-900 border border-gray-700
+focus:ring-2 focus:ring-emerald-600 outline-none transition">
+
+<select name="department_id"
+onchange="this.form.submit()"
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
+
+<option value="">All Departments</option>
+{% for dept in departments %}
+<option value="{{ dept.id }}"
+{% if dept.id == selected_department %}selected{% endif %}>
+{{ dept.name }}
+</option>
+{% endfor %}
+
+</select>
+
+<select name="status"
+onchange="this.form.submit()"
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
+
+<option value="">All Status</option>
+<option value="Not Claimed" {% if selected_status=="Not Claimed" %}selected{% endif %}>Not Claimed</option>
+<option value="Claimed" {% if selected_status=="Claimed" %}selected{% endif %}>Claimed</option>
+
+</select>
+
+<select name="period_id"
+onchange="this.form.submit()"
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
+
+<option value="">All Periods</option>
+
+{% for period in payroll_periods %}
+<option value="{{ period.id }}"
+{% if period.id == selected_period %}selected{% endif %}>
+{{ period.start_date.strftime('%Y-%m-%d') }}
+→
+{{ period.end_date.strftime('%Y-%m-%d') }}
+</option>
+{% endfor %}
+
+</select>
+
+</form>
+
+</div>
+
+
+<!-- ================= ACTIONS ================= -->
+
+<div class="flex flex-wrap gap-3">
+
+<button id="generatePayslipsByPeriodBtn"
+class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700
+rounded-xl transition shadow-md">
+
+<span>📄</span>
+Generate Payslips by Period
+</button>
+
+</div>
+
+
+<!-- ================= TABLE CARD ================= -->
+
+<div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+
+<div class="p-5 border-b border-gray-700">
+<h2 class="text-lg font-semibold text-emerald-400">
+Payslip Records
+</h2>
+</div>
+
+<div class="overflow-x-auto">
+
+<table class="w-full text-sm">
+
+<thead class="bg-gray-900 text-emerald-400 uppercase text-xs tracking-wider">
+<tr>
+<th class="p-4 text-left">Payslip No</th>
+<th class="p-4 text-left">Employee</th>
+<th class="p-4 text-left">Department</th>
+<th class="p-4 text-left">Period</th>
+<th class="p-4 text-right">Net Pay</th>
+<th class="p-4 text-center">Generated</th>
+<th class="p-4 text-center">Status</th>
+<th class="p-4 text-center">Action</th>
+</tr>
+</thead>
+
+<tbody class="divide-y divide-gray-700">
+
+{% for p in payslips.items %}
+
+<tr class="hover:bg-gray-700/40 transition">
+
+<td class="p-4 font-medium">{{ p.payslip_number }}</td>
+
+<td class="p-4">
+{{ p.employee.first_name }} {{ p.employee.last_name }}
+</td>
+
+<td class="p-4">
+{{ p.employee.department.name if p.employee.department else '-' }}
+</td>
+
+<td class="p-4">
+{{ p.pay_period_start }} → {{ p.pay_period_end }}
+</td>
+
+<td class="p-4 text-right text-emerald-400 font-semibold">
+₱ {{ "{:,.2f}".format(p.net_pay) }}
+</td>
+
+<td class="p-4 text-center text-gray-400 text-xs">
+{{ p.generated_at.strftime('%Y-%m-%d') }}
+</td>
+
+<td class="p-4 text-center">
+
+{% if p.status == 'Generated' %}
+<span class="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500 text-xs">
+Not Claimed
+</span>
+
+{% elif p.status == 'Distributed' %}
+<span class="px-3 py-1 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-600 text-xs">
+Claimed
+</span>
+{% endif %}
+
+</td>
+
+<td class="p-4 text-center">
+
+{% if p.status == 'Generated' %}
+<button type="button"
+class="distribute-btn px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm transition"
+data-url="{{ url_for('payroll_admin_bp.distribute_payslip', payslip_id=p.id) }}">
+
+Mark as Claimed
+</button>
+
+{% else %}
+<button disabled
+class="px-4 py-1.5 bg-gray-600 rounded-lg text-sm opacity-60">
+Claimed
+</button>
+{% endif %}
+
+</td>
+
+</tr>
+
+{% else %}
+
+<tr>
+<td colspan="8" class="p-8 text-center text-gray-400">
+No payslips found.
+</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+</div>
+
+
+<!-- ================= PAGINATION ================= -->
+
+<div class="flex justify-center items-center gap-6 text-gray-300">
+
+{% if payslips.has_prev %}
+<a href="{{ url_for('payroll_admin_bp.view_payslips',
+page=payslips.prev_num,
+search=search,
+department_id=selected_department,
+status=selected_status,
+period_id=selected_period) }}"
+
+class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+Previous
+</a>
+{% endif %}
+
+<span class="text-gray-400">
+Page {{ payslips.page }} of {{ payslips.pages }}
+</span>
+
+{% if payslips.has_next %}
+<a href="{{ url_for('payroll_admin_bp.view_payslips',
+page=payslips.next_num,
+search=search,
+department_id=selected_department,
+status=selected_status,
+period_id=selected_period) }}"
+
+class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+Next
+</a>
+{% endif %}
+
+</div>
+
+</section>
+
+
+<!-- ================= SCRIPTS ================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+
+// Generate Payslips
+document.getElementById("generatePayslipsByPeriodBtn").addEventListener("click", function(){
+
+Swal.fire({
+title:'Generate Payslips?',
+icon:'question',
+showCancelButton:true,
+confirmButtonColor:'#10b981'
+}).then(result=>{
+if(result.isConfirmed){
+window.location.href =
+"{{ url_for('payroll_admin_bp.generate_payslips_by_period') }}";
+}
+});
+
+});
+
+// Mark as Claimed
+document.querySelectorAll('.distribute-btn').forEach(btn=>{
+
+btn.addEventListener('click', function(){
+
+const url = this.dataset.url;
+const row = this.closest('tr');
+
+Swal.fire({
+title:'Mark as Claimed?',
+icon:'warning',
+showCancelButton:true,
+confirmButtonColor:'#10b981'
+}).then(result=>{
+
+if(result.isConfirmed){
+
+fetch(url,{method:'POST'})
+.then(()=>{
+
+const badge = row.querySelector('span');
+if(badge){
+badge.innerText='Claimed';
+badge.className =
+"px-3 py-1 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-600 text-xs";
+}
+
+this.disabled=true;
+this.innerText="Claimed";
+this.classList.remove("bg-emerald-600","hover:bg-emerald-700");
+this.classList.add("bg-gray-600","opacity-60");
+
+Swal.fire({
+icon:'success',
+title:'Payslip claimed',
+timer:1500,
+showConfirmButton:false
+});
+
+});
+
+}
+
+});
+
+});
+
+});
+
+</script>
+
+{% endblock %}

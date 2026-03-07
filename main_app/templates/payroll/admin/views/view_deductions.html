@@ -10,7 +10,7 @@
       Deductions
     </h1>
     <a
-      href="{{ url_for('payroll_admin.create_deduction') }}"
+      href="{{ url_for('payroll_admin_bp.create_deduction') }}"
       class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 transition flex items-center gap-2"
     >
       <i class="fa-solid fa-plus"></i> Add Deduction
@@ -20,7 +20,7 @@
   <!-- ===== SEARCH ===== -->
   <form
     method="get"
-    action="{{ url_for('payroll_admin.deductions') }}"
+    action="{{ url_for('payroll_admin_bp.deductions') }}"
     class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex gap-2"
   >
     <input
@@ -57,7 +57,7 @@
           <td class="px-4 py-3 flex justify-center gap-2"> <!-- Center buttons -->
             <!-- Edit button -->
             <a
-              href="{{ url_for('payroll_admin.edit_deduction', deduction_id=deduction.id) }}"
+              href="{{ url_for('payroll_admin_bp.edit_deduction', deduction_id=deduction.id) }}"
               class="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700 transition flex items-center gap-1"
             >
               <i class="fa-solid fa-pen-to-square"></i> Edit
@@ -65,7 +65,7 @@
 
             <!-- Manage button -->
             <a
-              href="{{ url_for('payroll_admin.manage_deduction_employees', deduction_id=deduction.id) }}"
+              href="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id) }}"
               class="px-3 py-1 bg-yellow-600 rounded hover:bg-yellow-700 transition flex items-center gap-1"
             >
               <i class="fa-solid fa-gear"></i> Manage
@@ -73,7 +73,7 @@
 
             <!-- Delete button -->
             <form
-              action="{{ url_for('payroll_admin.delete_deduction', deduction_id=deduction.id) }}"
+              action="{{ url_for('payroll_admin_bp.delete_deduction', deduction_id=deduction.id) }}"
               method="POST"
               onsubmit="return confirm('Are you sure you want to delete this deduction?');"
             >
@@ -102,7 +102,7 @@
     {% if pagination.has_prev %}
     <a
       class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 flex items-center gap-1"
-      href="{{ url_for('payroll_admin.deductions', page=pagination.prev_num, search=search) }}"
+      href="{{ url_for('payroll_admin_bp.deductions', page=pagination.prev_num, search=search) }}"
     >
       <i class="fa-solid fa-arrow-left"></i> Previous
     </a>
@@ -111,7 +111,7 @@
     {% if pagination.has_next %}
     <a
       class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 flex items-center gap-1"
-      href="{{ url_for('payroll_admin.deductions', page=pagination.next_num, search=search) }}"
+      href="{{ url_for('payroll_admin_bp.deductions', page=pagination.next_num, search=search) }}"
     >
       Next <i class="fa-solid fa-arrow-right"></i>
     </a>

@@ -1,4 +1,4 @@
-{% extends "payroll_base.html" %}
+{% extends "payroll_auth/payroll_base.html" %}
 
 {% block title %}Login | Payroll System{% endblock %}
 
@@ -6,6 +6,7 @@
 <!-- Background Section -->
 <div class="relative w-full h-screen flex items-center justify-center bg-cover bg-center"
      style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');">
+
   <!-- Blur Overlay -->
   <div class="absolute inset-0 bg-green-900/70 backdrop-blur-sm"></div>
 
@@ -17,47 +18,71 @@
       <img src="{{ url_for('static', filename='img/logo2.avif') }}" 
            alt="Logo" 
            class="w-24 h-24 mx-auto rounded-full mb-3 shadow-md border border-green-300">
+
       <h2 class="text-2xl font-bold text-green-700 dark:text-green-400">Welcome Back</h2>
-      <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Sign in to continue</p>
+
+      <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+        Sign in to continue
+      </p>
     </div>
 
     <!-- Login Form -->
-    <form id="loginForm" method="POST" action="{{ url_for('payroll_auth.login') }}" class="space-y-5">
-      {{ form.hidden_tag() }}
+    <form method="POST" action="{{ url_for('payroll_auth_bp.login') }}" class="space-y-5">
 
       <!-- Email -->
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-        {{ form.email(class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none dark:bg-gray-800 dark:text-gray-100", id="email", autocomplete="email") }}
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Email
+        </label>
+
+        <input
+          type="email"
+          name="email"
+          required
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none dark:bg-gray-800 dark:text-gray-100"
+          autocomplete="email">
       </div>
 
       <!-- Password -->
       <div class="relative">
-        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-        {{ form.password(class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none pr-10 dark:bg-gray-800 dark:text-gray-100", id="password", autocomplete="current-password") }}
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Password
+        </label>
+
+        <input
+          type="password"
+          name="password"
+          id="password"
+          required
+          class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none pr-10 dark:bg-gray-800 dark:text-gray-100"
+          autocomplete="current-password">
       </div>
 
-      <!-- Show Password Toggle -->
+      <!-- Show Password -->
       <div class="flex justify-end items-center">
         <label class="flex items-center text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-          <input type="checkbox" id="showPassword" class="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+          <input type="checkbox" id="showPassword" class="mr-2 h-4 w-4 text-green-600 border-gray-300 rounded">
           Show Password
         </label>
       </div>
 
-      <!-- Submit Button -->
-      <button type="submit" 
+      <!-- Submit -->
+      <button type="submit"
               class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg shadow-md transition duration-200">
         Sign In
       </button>
+
     </form>
+
   </div>
 </div>
 
-<!-- SweetAlert2 -->
+<!-- SweetAlert -->
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+
   const passwordInput = document.getElementById('password');
   const showPasswordCheckbox = document.getElementById('showPassword');
 
@@ -78,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
       {% endif %}
     {% endfor %}
   {% endwith %}
+
 });
 </script>
+
 {% endblock %}

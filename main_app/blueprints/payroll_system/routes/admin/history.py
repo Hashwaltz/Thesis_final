@@ -9,9 +9,7 @@ from flask_login import login_required
 from flask import render_template, redirect, request, flash, url_for
 from datetime import datetime, timedelta
 
-from . import payroll_admin_bp
-
-
+from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
 
 
 # Employee Payroll History
@@ -31,30 +29,30 @@ def view_employee_payroll_history(employee_id):
     )
 
     return render_template(
-        "payroll/admin/payroll_employee_history.html",
+        "payroll/admin/history/employee_history.html",
         employee=employee,
         payroll_records=payroll_records
     )
+
+
+
 
 @payroll_admin_bp.route('/payroll-periods/<int:period_id>/history')
 @payroll_admin_required
 @login_required
 def payroll_period_history(period_id):
-    # Get payroll period or 404
+
     period = PayrollPeriod.query.get_or_404(period_id)
 
-    # Fetch all payrolls for this period using the correct column
     payroll_records = (
-        Payroll.query.join(Employee)
-        .filter(Payroll.pay_period_id == period.id)  # <-- corrected
-        .order_by(Employee.last_name)
+        Payroll.query
+        .filter(Payroll.payroll_period_id == period.id)
+        .order_by(Payroll.created_at.desc())
         .all()
     )
 
     return render_template(
-        "payroll/admin/payroll_periods_history.html",
+        "payroll/admin/history/period_history.html",
         period=period,
         payroll_records=payroll_records
     )
-
-

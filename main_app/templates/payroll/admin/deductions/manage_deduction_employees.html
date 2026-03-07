@@ -9,7 +9,7 @@
     <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-2">
       <i class="fa-solid fa-gear"></i> Manage Employees for {{ deduction.name }}
     </h2>
-    <a href="{{ url_for('payroll_admin.deductions') }}"
+    <a href="{{ url_for('payroll_admin_bp.deductions') }}"
        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded flex items-center gap-2">
       <i class="fa-solid fa-arrow-left"></i> Back
     </a>
@@ -20,7 +20,7 @@
     <!-- Search Form -->
     <form id="search-form"
           method="get"
-          action="{{ url_for('payroll_admin.manage_deduction_employees', deduction_id=deduction.id) }}"
+          action="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id) }}"
           class="flex gap-2 flex-wrap">
       <input type="text"
              name="search"
@@ -42,14 +42,14 @@
     <!-- Pagination -->
     <div class="flex items-center gap-3">
       {% if pagination.has_prev %}
-      <a href="{{ url_for('payroll_admin.manage_deduction_employees', deduction_id=deduction.id, page=pagination.prev_num, search=search) }}"
+      <a href="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id, page=pagination.prev_num, search=search) }}"
          class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 flex items-center gap-1">
         <i class="fa-solid fa-arrow-left"></i> Previous
       </a>
       {% endif %}
       <span class="text-gray-300">Page {{ pagination.page }} of {{ pagination.pages }}</span>
       {% if pagination.has_next %}
-      <a href="{{ url_for('payroll_admin.manage_deduction_employees', deduction_id=deduction.id, page=pagination.next_num, search=search) }}"
+      <a href="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id, page=pagination.next_num, search=search) }}"
          class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 flex items-center gap-1">
         Next <i class="fa-solid fa-arrow-right"></i>
       </a>

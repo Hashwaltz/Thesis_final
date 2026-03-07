@@ -110,6 +110,10 @@ class Payroll(db.Model):
     @property
     def overtime_pay(self):
         return round(self.hourly_rate * 1.25 * self.overtime_hours, 2)
+    
+    @property
+    def daily_rate(self):
+        return (self.employee.salary or 0) / 22 if self.employee else 0
 
     @property
     def allowance_total(self):
@@ -144,7 +148,38 @@ class Payroll(db.Model):
 
         self.basic_salary = self.employee.salary or 0
 
-        base_pay = self.hourly_rate * self.working_hours
+        emp_type = self.employee.employment_type.name if self.employee.employment_type else "Regular"
+
+        days_worked = self.compute_days_worked()
+
+        # ===============================
+        # PAYMENT LOGIC BY EMP TYPE
+        # ===============================
+
+        # Regular → Monthly Rate
+        if emp_type == "Regular":
+            period_days = (self.period.end_date - self.period.start_date).days + 1
+
+            daily_rate = (self.employee.salary or 0) / 22
+
+            base_pay = daily_rate * days_worked
+
+        # Part-Time → Hourly Rate
+        elif emp_type == "Part-Time":
+            base_pay = self.hourly_rate * (self.employee.attendance_hours or 0)
+
+        # Casual → Daily Rate + Leave Credits
+        elif emp_type == "Casual":
+            daily_rate = (self.employee.salary or 0) / 22
+            base_pay = daily_rate * days_worked
+
+        # Job Order → Daily Rate NO leave credits
+        elif emp_type == "Job Order (JO)":
+            daily_rate = (self.employee.salary or 0) / 22
+            base_pay = daily_rate * days_worked
+
+        else:
+            base_pay = self.hourly_rate * self.working_hours
 
         self.gross_pay = round(
             base_pay +

@@ -504,120 +504,12 @@ def reject_payslip(payslip_id):
 
 
 
-# ==========================
-# CREATE DEDUCTION
-# ==========================
-@payroll_admin_bp.route('/deductions/create', methods=['GET', 'POST'])
-@payroll_admin_required
-def create_deduction():
-    if request.method == 'POST':
-        name = request.form.get('name').strip()
-        if not name:
-            flash('Deduction name is required.', 'danger')
-            return redirect(url_for('payroll_admin.create_deduction'))
-
-        deduction = Deduction(name=name)
-        db.session.add(deduction)
-        db.session.commit()
-        flash('Deduction created successfully!', 'success')
-        return redirect(url_for('payroll_admin.deductions'))
-
-    return render_template('payroll/admin/deduction_form.html', action="Create", deduction=None)
 
 
-# ==========================
-# EDIT DEDUCTION
-# ==========================
-@payroll_admin_bp.route('/deductions/edit/<int:deduction_id>', methods=['GET', 'POST'])
-@payroll_admin_required
-def edit_deduction(deduction_id):
-    deduction = Deduction.query.get_or_404(deduction_id)
-
-    if request.method == 'POST':
-        name = request.form.get('name').strip()
-        if not name:
-            flash('Deduction name is required.', 'danger')
-            return redirect(url_for('payroll_admin.edit_deduction', deduction_id=deduction_id))
-
-        deduction.name = name
-        db.session.commit()
-        flash('Deduction updated successfully!', 'success')
-        return redirect(url_for('payroll_admin.deductions'))
-
-    return render_template('payroll/admin/deduction_form.html', action="Edit", deduction=deduction)
 
 
-# ==========================
-# DELETE DEDUCTION
-# ==========================
-@payroll_admin_bp.route('/deductions/delete/<int:deduction_id>', methods=['POST'])
-@payroll_admin_required
-def delete_deduction(deduction_id):
-    deduction = Deduction.query.get_or_404(deduction_id)
-    db.session.delete(deduction)
-    db.session.commit()
-    flash('Deduction deleted successfully!', 'success')
-    return redirect(url_for('payroll_admin.deductions'))
 
 
-@payroll_admin_bp.route("/deductions/manage/<int:deduction_id>", methods=["GET", "POST"])
-@payroll_admin_required
-def manage_deduction_employees(deduction_id):
-    deduction = Deduction.query.get_or_404(deduction_id)
-
-    # === SEARCH ===
-    search_query = request.args.get("search", "").strip()
-
-    # Base query for active employees
-    employees_query = Employee.query.filter_by(status="Active")
-
-    # Apply search filter if provided
-    if search_query:
-        employees_query = employees_query.filter(
-            db.or_(
-                Employee.first_name.ilike(f"%{search_query}%"),
-                Employee.last_name.ilike(f"%{search_query}%"),
-                Employee.employee_id.ilike(f"%{search_query}%")
-            )
-        )
-
-    # === PAGINATION ===
-    page = request.args.get("page", 1, type=int)
-    per_page = 10  # Change this to adjust items per page
-    pagination = employees_query.order_by(Employee.last_name, Employee.first_name).paginate(page=page, per_page=per_page, error_out=False)
-    employees = pagination.items
-
-    if request.method == "POST":
-        selected_ids = request.form.getlist("employees")  # list of employee IDs as strings
-
-        # Remove existing links not in selected_ids
-        for ed in deduction.employees:
-            if str(ed.employee_id) not in selected_ids:
-                db.session.delete(ed)
-
-        # Add new links
-        for emp_id in selected_ids:
-            emp_id = int(emp_id)
-            exists = EmployeeDeduction.query.filter_by(employee_id=emp_id, deduction_id=deduction.id).first()
-            if not exists:
-                new_link = EmployeeDeduction(employee_id=emp_id, deduction_id=deduction.id)
-                db.session.add(new_link)
-
-        db.session.commit()
-        flash("Employees updated for deduction.", "success")
-        return redirect(url_for("payroll_admin.manage_deduction_employees", deduction_id=deduction.id))
-
-    # Pre-select employees already linked
-    linked_employee_ids = [ed.employee_id for ed in deduction.employees]
-
-    return render_template(
-        "payroll/admin/manage_deduction_employees.html",
-        deduction=deduction,
-        employees=employees,
-        linked_employee_ids=linked_employee_ids,
-        pagination=pagination,
-        search=search_query
-    )
 
 # ==========================
 # ALLOWANCES

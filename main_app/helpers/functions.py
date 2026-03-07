@@ -1,9 +1,56 @@
 from datetime import datetime, date
 from flask import flash
+from sqlalchemy import func
 
-
-from main_app.models.hr_models import Employee, LeaveCredit
+from main_app.models.hr_models import Employee, LeaveCredit, Attendance
 from main_app.extensions import db
+
+
+def compute_days_worked(self):
+
+    if not self.employee or not self.period:
+        return 0
+
+    emp_type = self.employee.employment_type.name if self.employee.employment_type else "Regular"
+
+    # Attendance inside payroll period
+    attendance_query = Attendance.query.filter(
+        Attendance.employee_id == self.employee_id,
+        Attendance.date.between(
+            self.period.start_date,
+            self.period.end_date
+        ),
+        Attendance.status != "Absent"
+    )
+
+    # Count attendance days
+    total_days = attendance_query.count()
+
+    # ===============================
+    # Employment Type Rules
+    # ===============================
+
+    # Regular → Paid monthly rate → count present working days
+    if emp_type == "Regular":
+        return total_days
+
+    # Part-Time → Hourly rate → use working hours
+    elif emp_type == "Part-Time":
+        total_hours = attendance_query.with_entities(
+            func.sum(Attendance.working_hours)
+        ).scalar() or 0
+
+        return round(total_hours, 2)
+
+    # Casual → Daily rate + leave credits
+    elif emp_type == "Casual":
+        return total_days
+
+    # Job Order → Daily rate no leave credits
+    elif emp_type == "Job Order (JO)":
+        return total_days
+
+    return total_days
 
 HOUR_TO_DAY = 0.125
 MINUTE_TO_DAY = 0.002

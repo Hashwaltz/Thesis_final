@@ -71,12 +71,27 @@ def payroll_admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
 def staff_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role.lower() not in ["staff", "officer", "dept_head", "admin"]:
+        if not current_user.is_authenticated or current_user.role.lower() not in ["payroll_staff", "officer", "dept_head", "admin"]:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
 
+
+# =========================================================
+# ROLE REDIRECT HELPER
+# =========================================================
+def redirect_by_role(role: str):
+    role = role.lower() if role else ""
+    if role in ["payroll_admin"]:
+        return redirect(url_for("payroll_admin_bp.payroll_dashboard"))
+    elif role in ["payroll_staff"]:
+        return redirect(url_for("payroll_staff.dashboard"))
+    elif role in ["employee", "officer", "dept_head", "admin", "leave_officer"]:
+        return redirect(url_for("payroll_employee.dashboard"))
+    flash("Role not recognized.", "danger")
+    return redirect(url_for("payroll_auth_bp.login"))
 

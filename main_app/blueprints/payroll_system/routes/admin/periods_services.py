@@ -8,11 +8,7 @@ from flask_login import login_required
 from flask import render_template, redirect, request, flash, url_for, jsonify
 from datetime import datetime, timedelta
 
-from . import payroll_admin_bp
-
-
-
-
+from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
 
 
 @payroll_admin_bp.route('/payroll-periods/add', methods=['GET', 'POST'])
@@ -48,7 +44,7 @@ def add_payroll_period():
             print(f"Error creating payroll period: {e}")
             flash('An error occurred while creating the payroll period. Please try again.', 'danger')
 
-    return render_template('payroll/admin/add_payroll_period.html')
+    return render_template('payroll/admin/payroll_periods/add_period.html')
 
 
 
@@ -71,7 +67,7 @@ def edit_payroll_period(period_id):
         flash('Payroll period updated successfully.', 'success')
         return redirect(url_for('payroll_admin_bp.view_payroll_periods'))
 
-    return render_template('payroll/admin/edit_payroll_period.html', payroll_period=period)
+    return render_template('payroll/admin/payroll_periods/edit_period.html', payroll_period=period)
 
 
 

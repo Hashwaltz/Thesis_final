@@ -30,7 +30,7 @@ def create_app():
     mail.init_app(app)
 
     # Login settings
-    login_manager.login_view = "hr_auth_bp.login"
+    login_manager.login_view = "index"
     login_manager.login_message_category = "info"
 
     # -----------------------------
@@ -48,12 +48,10 @@ def create_app():
    
     from main_app.blueprints.payroll_system.routes.payroll_staff_routes import payroll_staff_bp
     from main_app.blueprints.payroll_system.routes.employee_routes import payroll_employee_bp
-    from main_app.blueprints.payroll_system.routes.auth_routes import payroll_auth_bp
 
 
 
     app.register_blueprint(payroll_staff_bp, url_prefix='/payroll/staff')
-    app.register_blueprint(payroll_auth_bp)
     app.register_blueprint(payroll_employee_bp, url_prefix='/payroll/employee')
 
 
