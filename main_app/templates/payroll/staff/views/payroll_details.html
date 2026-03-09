@@ -1,0 +1,247 @@
+{% extends 'payroll/staff/staff_base.html' %}
+{% block title %}Employee Payrolls{% endblock %}
+
+{% block content %}
+
+<section class="p-6 space-y-6 text-gray-200">
+
+<header class="flex justify-between items-center">
+<h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+<i class="fa-solid fa-file-invoice-dollar text-3xl"></i>
+Employee Payrolls
+</h1>
+</header>
+
+<!-- ================= FILTERS ================= -->
+
+<form method="get"
+action="{{ url_for('payroll_staff_bp.view_payrolls') }}"
+class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex flex-wrap gap-4">
+
+<input type="text"
+name="search"
+value="{{ search }}"
+placeholder="Search employee..."
+class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 outline-none"/>
+
+<select name="department_id"
+onchange="this.form.submit()"
+class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+
+<option value="">All Departments</option>
+{% for dept in departments %}
+<option value="{{ dept.id }}"
+{% if dept.id==selected_department %}selected{% endif %}>
+{{ dept.name }}
+</option>
+{% endfor %}
+</select>
+
+<select name="pay_period_id"
+onchange="this.form.submit()"
+class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+
+<option value="">All Periods</option>
+{% for period in payroll_periods %}
+<option value="{{ period.id }}"
+{% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
+{{ period.period_name }}
+({{ period.start_date.strftime('%Y-%m-%d') }} - {{ period.end_date.strftime('%Y-%m-%d') }})
+</option>
+{% endfor %}
+</select>
+
+</form>
+
+<!-- TABLE -->
+
+<div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+
+<table class="min-w-full text-sm">
+
+<thead class="bg-gray-900 text-emerald-400">
+<tr>
+<th class="p-3 text-left">Employee</th>
+<th class="p-3 text-left">Department</th>
+<th class="p-3 text-right">Salary Rate</th>
+<th class="p-3 text-right">Gross Pay</th>
+<th class="p-3 text-right">Allowance</th>
+<th class="p-3 text-right">Deductions</th>
+<th class="p-3 text-right">Net Pay</th>
+<th class="p-3 text-left">Period</th>
+</tr>
+</thead>
+
+<tbody class="divide-y divide-gray-700">
+
+{% for payroll in payrolls.items %}
+
+<tr class="hover:bg-gray-700/40 cursor-pointer transition"
+
+onclick="openPayrollModal({
+employee_name:'{{ payroll.employee.get_full_name() }}',
+employee_type:'{{ payroll.employee_type }}',
+salary:{{ payroll.employee.salary or 0 }},
+hourly_rate:{{ payroll.hourly_rate_value or 0 }},
+daily_rate:{{ payroll.daily_rate_value or 0 }},
+working_hours:{{ payroll.working_hours or 0 }},
+days_worked:{{ payroll.days_worked or 0 }},
+allowance_total:{{ payroll.allowance_total or 0 }},
+gross_pay:{{ payroll.gross_pay or 0 }},
+deductions:{{ payroll.total_deductions or 0 }},
+net_pay:{{ payroll.net_pay or 0 }},
+period_start:'{{ payroll.period.start_date if payroll.period else '' }}',
+period_end:'{{ payroll.period.end_date if payroll.period else '' }}'
+})">
+
+<td class="p-3">{{ payroll.employee.get_full_name() }}</td>
+
+<td class="p-3">
+{{ payroll.employee.department.name if payroll.employee.department else "-" }}
+</td>
+
+<td class="p-3 text-right text-emerald-400">
+₱ {{ "{:,.2f}".format(payroll.employee.salary or 0) }}
+</td>
+
+<td class="p-3 text-right">
+₱ {{ "{:,.2f}".format(payroll.gross_pay or 0) }}
+</td>
+
+<td class="p-3 text-right text-emerald-400">
+₱ {{ "{:,.2f}".format(payroll.allowance_total or 0) }}
+</td>
+
+<td class="p-3 text-right text-yellow-400">
+₱ {{ "{:,.2f}".format(payroll.total_deductions or 0) }}
+</td>
+
+<td class="p-3 text-right font-semibold text-emerald-400">
+₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}
+</td>
+
+<td class="p-3">
+{{ payroll.period.start_date }} – {{ payroll.period.end_date }}
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+</table>
+
+</div>
+
+</section>
+
+<!-- MODAL -->
+
+<div id="payrollModal"
+class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center justify-center">
+
+<div class="bg-gray-900 w-[900px] rounded-2xl border border-gray-700 shadow-xl">
+
+<div class="flex justify-between p-5 border-b border-gray-700">
+
+<h2 class="text-emerald-400 font-semibold text-lg">
+Payroll Details
+</h2>
+
+<button onclick="closePayrollModal()"
+class="text-gray-400 hover:text-white text-xl">✕</button>
+
+</div>
+
+<div id="payrollModalContent" class="p-6 space-y-4 text-sm"></div>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+
+function openPayrollModal(p){
+
+let rateLabel=""
+let rateComputation=""
+
+if(p.employee_type==="Part-Time"){
+rateLabel="Hourly Rate × Hours"
+rateComputation=`₱${p.hourly_rate} × ${p.working_hours}`
+}
+
+else if(
+p.employee_type==="Casual" ||
+p.employee_type==="Job Order (JO)" ||
+p.employee_type==="Job Orders"
+){
+rateLabel="Daily Rate × Days"
+rateComputation=`₱${p.daily_rate} × ${p.days_worked}`
+}
+
+else{
+rateLabel="Monthly Salary"
+rateComputation=`₱${p.salary}`
+}
+
+document.getElementById("payrollModalContent").innerHTML=`
+
+```js
+<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
+
+<p class="text-emerald-400 text-lg font-semibold">
+${p.employee_name}
+</p>
+
+<p>Employment Type : ${p.employee_type}</p>
+
+<p>Period : ${p.period_start || '-'} → ${p.period_end || '-'}</p>
+
+</div>
+
+<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+
+<p class="text-gray-400">${rateLabel}</p>
+
+<p class="text-xl font-semibold text-emerald-400">
+${rateComputation}
+</p>
+
+<p>Allowance :
+<span class="text-emerald-400">
+₱${Number(p.allowance_total || 0).toLocaleString()}
+</span>
+</p>
+
+<hr class="border-gray-700">
+
+<p>
+Gross Pay :
+<span class="text-emerald-400">
+₱${Number(p.gross_pay).toLocaleString()}
+</span>
+</p>
+
+<p class="text-yellow-400">
+Deductions : ₱${Number(p.deductions).toLocaleString()}
+</p>
+
+<p class="text-2xl font-bold text-emerald-400">
+Net Pay : ₱${Number(p.net_pay).toLocaleString()}
+</p>
+
+</div>
+`;
+
+document.getElementById("payrollModal").classList.remove("hidden")
+}
+
+function closePayrollModal(){
+document.getElementById("payrollModal").classList.add("hidden")
+}
+
+</script>
+
+{% endblock %}

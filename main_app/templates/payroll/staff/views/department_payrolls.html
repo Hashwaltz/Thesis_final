@@ -1,0 +1,70 @@
+{% extends 'payroll/staff/staff_base.html' %}
+
+{% block title %}Payroll Departments{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- HEADER -->
+  <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+    <i class="fa-solid fa-warehouse text-3xl"></i>
+    Payroll Departments
+  </h2>
+
+  <!-- FILTER -->
+  <form method="get" class="mt-4 flex gap-4 flex-wrap items-center">
+    <select name="period_id"
+            onchange="this.form.submit()"
+            class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2">
+
+      {% for p in payroll_periods %}
+      <option value="{{ p.id }}" {% if selected_period and p.id==selected_period.id %}selected{% endif %}>
+        {{ p.period_name }} ({{ p.start_date }} - {{ p.end_date }})
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <!-- TOTAL MUNICIPAL PAYROLL -->
+  <div class="bg-emerald-900/20 border border-emerald-700 rounded-xl p-6 mt-4">
+    <p class="text-gray-400 text-sm">Total Municipal Payroll</p>
+    <p class="text-3xl font-bold text-emerald-400">
+      ₱ {{ "{:,.2f}".format(municipality_total) }}
+    </p>
+  </div>
+
+  <!-- DEPARTMENT CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+    {% for dept in department_rows %}
+    <div onclick="goToDepartmentPayroll({{ dept.id }})"
+         class="cursor-pointer bg-gray-800 border border-gray-700 rounded-2xl p-5 flex flex-col gap-3
+                hover:bg-gray-700/50 hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+
+      <div class="flex items-center gap-4">
+        <div class="p-4 bg-emerald-600/20 rounded-full flex items-center justify-center">
+          <i class="fa-solid fa-warehouse text-emerald-400 text-3xl"></i>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white">{{ dept.name }}</h4>
+          <p class="text-sm text-gray-400">{{ dept.employee_count }} Employees</p>
+        </div>
+      </div>
+
+      <div class="mt-2 text-right">
+        <p class="text-gray-400 text-sm">Total Payroll</p>
+        <p class="text-emerald-400 font-semibold text-xl">₱ {{ "{:,.2f}".format(dept.total) }}</p>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+<script>
+function goToDepartmentPayroll(deptId) {
+  window.location.href = "{{ url_for('payroll_staff_bp.department_employees', department_id=0) }}".replace('0', deptId);
+}
+</script>
+
+{% endblock %}

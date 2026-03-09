@@ -17,6 +17,7 @@ from main_app.blueprints.payroll_system.routes.payroll_auth import payroll_auth_
 @payroll_auth_bp.route("/payroll-login", methods=["GET", "POST"])
 def login():
 
+    # If user already logged in → redirect by role
     if current_user.is_authenticated:
         return redirect_by_role(current_user.role)
 
@@ -27,27 +28,32 @@ def login():
 
         user = User.query.filter_by(email=email).first()
 
+        # Validate user existence
         if not user:
             flash("Invalid email or password.", "error")
             return redirect(url_for("payroll_auth_bp.login"))
 
-        if check_password_hash(user.password, password) or user.password.strip() == password:
-            
-            if not user.active:
-                flash("Your account has been deactivated. Please contact administrator.", "error")
-                return redirect(url_for("payroll_auth_bp.login"))
-
-            login_user(user)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-
-            return redirect_by_role(user.role)
-
-        else:
+        # ⚠ Plaintext password comparison (temporary only)
+        if user.password.strip() != password:
             flash("Invalid email or password.", "error")
+            return redirect(url_for("payroll_auth_bp.login"))
+
+        # Check account status
+        if not user.active:
+            flash("Your account has been deactivated. Please contact administrator.", "error")
+            return redirect(url_for("payroll_auth_bp.login"))
+
+        # Login user
+        login_user(user)
+
+        # Update last login timestamp
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+
+        # Redirect based on role
+        return redirect_by_role(user.role)
 
     return render_template("payroll_auth/payroll_login.html")
-
 
 
 # =========================================================

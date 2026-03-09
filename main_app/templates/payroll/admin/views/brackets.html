@@ -1,0 +1,67 @@
+{% extends 'payroll/admin/payroll_admin_base.html' %}
+
+{% block title %}Deduction Brackets{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200">
+
+  <!-- PAGE HEADER -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-2xl font-bold text-emerald-400">Deduction Brackets & Formulas</h1>
+    <p class="text-gray-400 text-sm">Manage contribution formulas & salary brackets for deductions</p>
+  </header>
+
+  <!-- FORMULAS CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
+      <strong class="text-emerald-400">PhilHealth Formula</strong>
+      <p class="text-gray-300 mt-1 text-sm">2.5% of monthly salary<br>(split 50/50 employee & employer)</p>
+    </div>
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
+      <strong class="text-emerald-400">GSIS Formula</strong>
+      <p class="text-gray-300 mt-1 text-sm">9% employee / 12% employer of monthly salary</p>
+    </div>
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
+      <strong class="text-emerald-400">Pag-IBIG Formula</strong>
+      <p class="text-gray-300 mt-1 text-sm">2% of monthly salary up to ₱5,000<br>(Employee & Employer share equal)</p>
+    </div>
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
+      <strong class="text-emerald-400">SSS Table</strong>
+      <p class="text-gray-300 mt-1 text-sm">Based on salary brackets defined by SSS</p>
+    </div>
+  </div>
+
+  <!-- BRACKETS TABLE -->
+  <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden mt-6">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-900 text-emerald-400 uppercase text-xs tracking-wider">
+        <tr>
+          <th class="p-4 text-center">Deduction</th>
+          <th class="p-4 text-center">Salary From</th>
+          <th class="p-4 text-center">Salary To</th>
+          <th class="p-4 text-center">Employee Share</th>
+          <th class="p-4 text-center">Employer Share</th>
+          <th class="p-4 text-center">EC</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for b in brackets %}
+        <tr class="hover:bg-gray-700/40">
+          <td class="p-4 text-center">{{ b.deduction.name if b.deduction else 'N/A' }}</td>
+          <td class="p-4 text-center">{{ "{:,}".format(b.salary_from) }}</td>
+          <td class="p-4 text-center">{{ "{:,}".format(b.salary_to) }}</td>
+          <td class="p-4 text-center text-emerald-400">{{ "{:,.2f}".format(b.employee_share or 0) }}</td>
+          <td class="p-4 text-center">{{ "{:,.2f}".format(b.employer_share or 0) }}</td>
+          <td class="p-4 text-center text-yellow-400">{{ "{:,.2f}".format(b.ec or 0) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="p-6 text-center text-gray-400">No brackets found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</section>
+{% endblock %}

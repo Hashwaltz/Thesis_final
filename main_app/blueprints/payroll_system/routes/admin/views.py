@@ -7,10 +7,10 @@ from flask_login import login_required, current_user
 
 
 from main_app.models.hr_models import Employee, Leave, Department, EmploymentType
-from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction
+from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction, DeductionBracket
 from main_app.utils import payroll_admin_required
 from main_app.extensions import db
-from main_app.functions import generate_payslip
+from main_app.helpers.utils import generate_payslip
 
 
 from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
@@ -318,6 +318,26 @@ def view_payrolls():
 
 
 
+# =========================================================
+# VIEW BRACKETS
+# =========================================================
+
+@payroll_admin_bp.route("/deduction/brackets")
+@login_required
+@payroll_admin_required
+def deduction_brackets():
+
+    brackets = DeductionBracket.query.order_by(
+        DeductionBracket.salary_from.asc()
+    ).all()
+
+    return render_template(
+        "payroll/admin/views/brackets.html",
+        brackets=brackets
+    )
+
+
+
 
 @payroll_admin_bp.route("/payroll-departments")
 @login_required
@@ -520,7 +540,6 @@ def deductions():
     )
 
 
-
 # =========================================================
 # GENERATE PAYSLIPS BY PAYROLL PERIOD (SELECT PERIOD)
 # =========================================================
@@ -528,40 +547,65 @@ def deductions():
 @payroll_admin_required
 @login_required
 def generate_payslips_by_period():
+
     # Get all payroll periods
-    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    payroll_periods = PayrollPeriod.query.order_by(
+        PayrollPeriod.start_date.desc()
+    ).all()
 
     if request.method == 'POST':
+
         pay_period_id = request.form.get('pay_period_id')
+
         if not pay_period_id:
             flash("Please select a payroll period.", "warning")
-            return redirect(url_for('payroll_admin.generate_payslips_by_period'))
+            return redirect(url_for('payroll_admin_bp.generate_payslips_by_period'))
+
+        # Convert to integer (safer)
+        pay_period_id = int(pay_period_id)
 
         # Fetch payrolls for selected period
-        payrolls = Payroll.query.filter_by(pay_period_id=pay_period_id).all()
+        payrolls = Payroll.query.filter_by(
+            payroll_period_id=pay_period_id
+        ).all()
+
         if not payrolls:
             flash("No payrolls found for this pay period.", "warning")
-            return redirect(url_for('payroll_admin.generate_payslips_by_period'))
+            return redirect(url_for('payroll_admin_bp.generate_payslips_by_period'))
 
         generated_by_id = current_user.id
         generated_count = 0
 
         for payroll in payrolls:
-            existing = Payslip.query.filter_by(payroll_id=payroll.id).first()
+
+            # Prevent duplicate payslips
+            existing = Payslip.query.filter_by(
+                payroll_id=payroll.id
+            ).first()
+
             if existing:
-                continue  # Skip if payslip already exists
+                continue
+
+            # Generate payslip
             payslip = generate_payslip(payroll, generated_by_id)
+
             db.session.add(payslip)
             generated_count += 1
 
         db.session.commit()
-        flash(f"{generated_count} payslips successfully generated for the selected period.", "success")
-        return redirect(url_for('payroll_admin.view_payslips'))
+
+        flash(
+            f"{generated_count} payslips successfully generated for the selected period.",
+            "success"
+        )
+
+        return redirect(url_for('payroll_admin_bp.view_payslips'))
 
     # GET: Render selection form
-    return render_template('payroll/admin/generate_payslips.html', payroll_periods=payroll_periods)
-
-
+    return render_template(
+        'payroll/admin/payslips/generate_payslips.html',
+        payroll_periods=payroll_periods
+    )
 
 
 @payroll_admin_bp.route('/payslips')

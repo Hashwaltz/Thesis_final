@@ -20,6 +20,16 @@ def parse_date(date_str, field_name):
 # HELPER FUNCTION
 # =========================================================
 def generate_payslip(payroll, generated_by_id=None):
+    """
+    Generate a payslip record for the given payroll.
+
+    Args:
+        payroll (Payroll): The payroll record to generate a payslip for.
+        generated_by_id (int): The ID of the user who generated the payslip.
+
+    Returns:
+        Payslip: The generated payslip record.
+    """
     payslip = Payslip(
         employee_id=payroll.employee_id,
         payroll_id=payroll.id,

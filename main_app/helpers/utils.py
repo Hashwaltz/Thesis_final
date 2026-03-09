@@ -1055,3 +1055,34 @@ def process_payroll_for_employee(employee_id, period_id):
         return None
 
 
+
+# =========================================================
+# HELPER FUNCTION
+# =========================================================
+def generate_payslip(payroll, generated_by_id=None):
+
+    # get period start date from payroll period
+    pay_period_start = payroll.period.start_date
+
+    # generate structured payslip number
+    payslip_number = generate_payslip_number(
+        payroll.employee_id,
+        pay_period_start
+    )
+
+    payslip = Payslip(
+        employee_id=payroll.employee_id,
+        payroll_id=payroll.id,
+        payslip_number=payslip_number,
+
+        gross_pay=payroll.gross_pay,
+        total_deductions=payroll.total_deductions,
+        net_pay=payroll.net_pay,
+
+        status="Generated",
+        generated_at=datetime.utcnow()
+    )
+
+    db.session.add(payslip)
+
+    return payslip

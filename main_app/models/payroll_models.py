@@ -71,6 +71,8 @@ class Payroll(db.Model):
 
     basic_salary = db.Column(db.Float, default=0)
     working_hours = db.Column(db.Float, default=160)
+    hours_worked = db.Column(db.Float, default=0)
+    days_worked = db.Column(db.Float, default=0)
     overtime_hours = db.Column(db.Float, default=0)
     holiday_pay = db.Column(db.Float, default=0)
     night_diff = db.Column(db.Float, default=0)
@@ -132,63 +134,135 @@ class Payroll(db.Model):
                     total += ea.allowance.amount
 
         return total
-
+    @allowance_total.setter
+    def allowance_total(self, value):
+        self._allowance_total = value
     # -----------------------------------------------------
     # CORE CALCULATION ENGINE
     # -----------------------------------------------------
+    def compute_days_worked(self):
+        from main_app.models.hr_models import Attendance
 
+        start = self.period.start_date
+        end = self.period.end_date
+
+        attendances = Attendance.query.filter(
+            Attendance.employee_id == self.employee_id,
+            Attendance.date.between(start, end)
+        ).all()
+
+        worked_days = sum(
+            1 for a in attendances if a.status in ("Present", "Late")
+        )
+
+        return worked_days
+    
+
+    def compute_attendance_hours(self):
+        from main_app.models.hr_models import Attendance, LateComputation
+        from main_app.models.payroll_models import PayrollPeriod
+
+        if self.period:
+            start = self.period.start_date
+            end = self.period.end_date
+        else:
+            period = PayrollPeriod.query.get(self.payroll_period_id)
+            if not period:
+                return 0
+            start = period.start_date
+            end = period.end_date
+
+        attendances = Attendance.query.filter(
+            Attendance.employee_id == self.employee_id,
+            Attendance.date.between(start, end)
+        ).all()
+
+        total_hours = 0
+        for att in attendances:
+            if att.status == "Present":
+                total_hours += 8
+            elif att.status == "Late":
+                late_record = LateComputation.query.filter_by(attendance_id=att.id).first()
+                late_equivalent = late_record.day_equivalent if late_record else 0
+                total_hours += 8 * (1 - late_equivalent)
+
+        return round(total_hours, 2)
+    
+    
     def calculate(self):
 
-        if not self.employee:
+        if not self.employee or not self.period:
             return 0
 
-        # Reset deduction breakdown safely
-        for b in self.deduction_breakdown.all():
-            db.session.delete(b)
+        # Ensure payroll object is session-bound
+        if db.session.object_session(self) is None:
+            db.session.add(self)
+
+        # Clear previous breakdowns safely
+        self.deduction_breakdown.delete()
 
         self.basic_salary = self.employee.salary or 0
 
-        emp_type = self.employee.employment_type.name if self.employee.employment_type else "Regular"
+        emp_type = (
+            self.employee.employment_type.name
+            if self.employee.employment_type
+            else "Regular"
+        )
 
         days_worked = self.compute_days_worked()
 
         # ===============================
-        # PAYMENT LOGIC BY EMP TYPE
+        # PAYMENT ENGINE
         # ===============================
 
-        # Regular → Monthly Rate
+        salary = self.employee.salary or 0
+
+        daily_rate = salary / 22 if salary else 0
+        hourly_rate = daily_rate / 8
+
+        base_pay = 0
+
+        # Regular
         if emp_type == "Regular":
-            period_days = (self.period.end_date - self.period.start_date).days + 1
-
-            daily_rate = (self.employee.salary or 0) / 22
-
             base_pay = daily_rate * days_worked
 
-        # Part-Time → Hourly Rate
+        # Part-Time
         elif emp_type == "Part-Time":
-            base_pay = self.hourly_rate * (self.employee.attendance_hours or 0)
+            base_pay = hourly_rate * (self.employee.attendance_hours or 0)
 
-        # Casual → Daily Rate + Leave Credits
+        # Casual
         elif emp_type == "Casual":
-            daily_rate = (self.employee.salary or 0) / 22
             base_pay = daily_rate * days_worked
 
-        # Job Order → Daily Rate NO leave credits
-        elif emp_type == "Job Order (JO)":
-            daily_rate = (self.employee.salary or 0) / 22
+        # Job Order (JO)
+        elif emp_type == "Job Order (JO)" or self.employee.employment_type_id == 5:
             base_pay = daily_rate * days_worked
 
         else:
-            base_pay = self.hourly_rate * self.working_hours
+            base_pay = hourly_rate * self.working_hours
+
+        # ===============================
+        # Allowances
+        # ===============================
+
+        allowance = self.allowance_total
+
+        # ===============================
+        # Gross Pay
+        # ===============================
 
         self.gross_pay = round(
             base_pay +
             self.overtime_pay +
             self.holiday_pay +
             self.night_diff +
-            self.allowance_total,
+            allowance,
             2
         )
+
+        # ===============================
+        # Deductions Engine
+        # ===============================
 
         total_ded = 0
 
@@ -201,21 +275,66 @@ class Payroll(db.Model):
 
             total_ded += result.get("employee_share", 0)
 
-            breakdown = PayrollDeduction(
-                payroll=self,
-                deduction_name=emp_ded.deduction.name if emp_ded.deduction else "",
-                employee_share=result.get("employee_share", 0),
-                employer_share=result.get("employer_share", 0),
-                ec=result.get("ec", 0)
+            db.session.add(
+                PayrollDeduction(
+                    payroll=self,
+                    deduction_name=emp_ded.deduction.name if emp_ded.deduction else "",
+                    employee_share=result.get("employee_share", 0),
+                    employer_share=result.get("employer_share", 0),
+                    ec=result.get("ec", 0)
+                )
             )
-
-            db.session.add(breakdown)
 
         self.total_deductions = round(total_ded, 2)
         self.net_pay = round(self.gross_pay - self.total_deductions, 2)
 
         return self.net_pay
+    def apply_leave_credit_deductions(self, worked_days):
+        from main_app.models.hr_models import LeaveCredit
 
+        leave_credits = LeaveCredit.query.filter_by(
+            employee_id=self.employee_id
+        ).all()
+
+        leave_used = sum(lc.used_credits for lc in leave_credits)
+
+        worked_days -= leave_used
+
+        return max(round(worked_days, 2), 0)
+    
+    def compute_attendance_days(self):
+        from main_app.models.hr_models import Attendance
+        from main_app.models.hr_models import LateComputation
+
+        start = self.period.start_date
+        end = self.period.end_date
+
+        attendances = Attendance.query.filter(
+            Attendance.employee_id == self.employee_id,
+            Attendance.date.between(start, end)
+        ).all()
+
+        worked_days = 0
+
+        for att in attendances:
+
+            if att.status == "Present":
+                worked_days += 1
+
+            elif att.status == "Late":
+
+                late_record = LateComputation.query.filter_by(
+                    attendance_id=att.id
+                ).first()
+
+                late_equivalent = 0
+
+                if late_record:
+                    late_equivalent = late_record.day_equivalent or 0
+
+                worked_days += (1 - late_equivalent)
+
+        return round(worked_days, 2)
 
 # ============================================================
 # PAYSLIP
@@ -245,6 +364,7 @@ class Payslip(db.Model):
     net_pay = db.Column(db.Float)
 
     generated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(30), default="Generated")
 
     employee = db.relationship("Employee", back_populates="payslips")
     payroll = db.relationship("Payroll", back_populates="payslip")

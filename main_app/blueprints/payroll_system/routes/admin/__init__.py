@@ -15,6 +15,7 @@ payroll_admin_bp = Blueprint(
 
 from . import casual_process
 from . import department
+from . import brackets
 from . import deductions
 from . import history
 from . import jo_process
