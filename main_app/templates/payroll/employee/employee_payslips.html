@@ -1,56 +1,79 @@
-{% extends 'payroll/employee/employee_base.html' %}
-{% block title %}Employee - Payslips{% endblock %}
+{% extends "payroll/employee/employee_base.html" %}
+{% block title %}Payslip | Payroll{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>My Payslips</b></h1>
-  </header>
+<div class="max-w-5xl mx-auto bg-gray-900 text-gray-200 rounded-xl shadow-2xl p-8 mt-6">
 
-  <div class="table-container">
-    <div class="centered-container">
-      <!-- Payslips Table -->
-      <table class="responsive-table" style="margin-top: 10px;">
-        <caption><b>My Payslips</b></caption>
-        <thead>
-          <tr>
-            <th>Payslip No.</th>
-            <th>Pay Period</th>
-            <th>Gross Pay</th>
-            <th>Total Deductions</th>
-            <th>Net Pay</th>
-        <tbody>
-          {% for p in payslips.items %}
-          <tr>
-            <td data-label="Payslip No.">{{ p.payslip_number }}</td>
-            <td data-label="Pay Period">{{ p.pay_period_start.strftime('%Y-%m-%d') }} - {{ p.pay_period_end.strftime('%Y-%m-%d') }}</td>
-            <td data-label="Gross Pay">₱ {{ "{:,.2f}".format(p.gross_pay or 0) }}</td>
-            <td data-label="Total Deductions">₱ {{ "{:,.2f}".format(p.total_deductions or 0) }}</td>
-            <td data-label="Net Pay"><b>₱ {{ "{:,.2f}".format(p.net_pay or 0) }}</b></td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="8" style="text-align:center;">No payslips found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- ===== Header ===== -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-gray-700 pb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-green-400 mb-2">Payslip</h1>
+            <p class="text-gray-400 text-sm">Employee: <span class="font-semibold">{{ payroll.employee.user.get_full_name() }}</span></p>
+            <p class="text-gray-400 text-sm">Position: <span class="font-semibold">{{ payroll.employee.position.name }}</span></p>
+            <p class="text-gray-400 text-sm">Department: <span class="font-semibold">{{ payroll.employee.department.name if payroll.employee.department else 'N/A' }}</span></p>
+        </div>
+        <div class="mt-4 md:mt-0 text-right">
+            <p class="text-gray-400 text-sm">Pay Period:</p>
+            <p class="text-green-300 font-semibold">{{ payroll.period.start_date.strftime('%b %d, %Y') }} - {{ payroll.period.end_date.strftime('%b %d, %Y') }}</p>
+            <p class="text-gray-400 text-sm mt-2">Pay Date:</p>
+            <p class="text-green-300 font-semibold">{{ payroll.period.pay_date.strftime('%b %d, %Y') }}</p>
+        </div>
+    </div>
 
-      <!-- Pagination -->
-      <div class="pagination" style="margin-top: 15px;">
-        {% if payslips.has_prev %}
-          <a href="{{ url_for('employee.payslips', page=payslips.prev_num, search=search, status=selected_status) }}">Previous</a>
-        {% endif %}
-        Page {{ payslips.page }} of {{ payslips.pages }}
-        {% if payslips.has_next %}
-          <a href="{{ url_for('employee.payslips', page=payslips.next_num, search=search, status=selected_status) }}">Next</a>
-        {% endif %}
-      </div>
+    <!-- ===== Earnings & Deductions ===== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+        <!-- Earnings -->
+        <div class="bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-green-400 mb-4">Earnings</h2>
+
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span>Gross Pay</span>
+                <span class="text-green-400 font-semibold text-lg">₱ {{ "{:,.2f}".format(payroll.gross_pay) }}</span>
+            </div>
+
+            {% for emp_allow in payroll.employee.employee_allowances %}
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span>{{ emp_allow.allowance.name }}</span>
+                <span class="text-green-300 font-semibold">₱ {{ "{:,.2f}".format(emp_allow.allowance.amount) }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Deductions -->
+        <div class="bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-red-400 mb-4">Deductions</h2>
+
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span>Total Deductions</span>
+                <span class="text-red-400 font-semibold text-lg">₱ {{ "{:,.2f}".format(payroll.total_deductions) }}</span>
+            </div>
+
+            {% for ded in payroll.deduction_breakdown %}
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span>{{ ded.deduction_name }}</span>
+                <span class="text-red-300 font-semibold">₱ {{ "{:,.2f}".format(ded.employee_share) }}</span>
+            </div>
+            {% endfor %}
+        </div>
 
     </div>
-  </div>
-</main>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- ===== Net Pay ===== -->
+    <div class="bg-gray-800 rounded-lg shadow p-6 text-center mb-8">
+        <p class="text-gray-400 font-semibold mb-2">Net Pay</p>
+        <p class="text-3xl font-bold text-blue-400">₱ {{ "{:,.2f}".format(payroll.net_pay) }}</p>
+    </div>
+
+    <!-- ===== Status & Actions ===== -->
+    <div class="flex justify-between items-center">
+        <span class="px-4 py-2 rounded-full text-sm font-semibold 
+            {% if payroll.status == 'Paid' %}bg-green-600 text-white
+            {% elif payroll.status == 'Pending' %}bg-yellow-500 text-gray-900
+            {% else %}bg-gray-500 text-white{% endif %}">
+            {{ payroll.status }}
+        </span>
+    </div>
+
+</div>
 {% endblock %}

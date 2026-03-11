@@ -1,176 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Payroll Employee{% endblock %}</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
-      rel="stylesheet"
-    />
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Rounded" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Two+Tone" rel="stylesheet">
+<title>{% block title %}Payroll Employee{% endblock %}</title>
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link
-      rel="stylesheet"
-      href="https://public.codepenassets.com/css/normalize-5.0.0.min.css"
-    />
-    <link rel="canonical" href="https://codepen.io/blex/pen/VBGNxq" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('payroll_staff.static', filename='css/style2.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('payroll_staff.static', filename='css/forms.css') }}"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('payroll_staff.static', filename='img/favicon.avif') }}"
-    />
-    <script>
-      window.console = window.console || function (t) {};
-    </script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link rel="icon" href="{{ url_for('static', filename='img/favicon.avif') }}">
+</head>
 
-  </head>
-  <body>
-    <div class="dashboard">
-      <aside class="search-wrap">
-        <div class="search" style="display: flex; align-items: center; gap: 10px;">
+<body class="bg-gray-900 text-gray-200">
 
-          <label>
-          <img
-              src="{{ url_for('payroll_staff.static', filename='img/logo2.avif') }}"
-              alt="Logo"
-              width="60"
-              height="60"
-              class="logo"
-              style="border-radius: 50%;" 
-          >
-          <h2 style="color:#ced4da; margin: 4px;">GovHRPay Payroll System</h2>
-          </label>
-        </div>
+<!-- ===== Layout Grid ===== -->
+<div class="grid grid-cols-[18rem,1fr] min-h-screen">
 
-        <div class="user-actions">
-          <button id="logoutBtn" title="Logout" style="background:none;border:none;cursor:pointer;">
-            <span class="material-symbols-outlined" style="font-size: 24px; color:#ced4da;">
-              logout
-            </span>
-          </button>
-        </div>
+<!-- ================= SIDEBAR ================= -->
+<aside id="sidebar" class="bg-gray-800 flex flex-col h-screen">
 
-      </aside>
+<div class="p-6 border-b border-gray-700">
+<h2 class="text-xl font-bold">GovHRPay</h2>
+<p class="text-sm text-green-400">Employee Portal</p>
+<p class="text-xs text-gray-400 mt-2">
+Welcome, <b>{{ current_user.first_name }} {{ current_user.last_name }}</b>
+</p>
+</div>
 
-      <header class="menu-wrap">
-        <figure class="user">
-          <div class="user-avatar">
-            <img
-              src="{{ url_for('payroll_staff.static', filename='user/user_logo.webp') }}"
-              alt="User Profile"
-            />
-          </div>
-          <figcaption>
-            {{ current_user.first_name }} {{current_user.last_name}}
-          </figcaption>
-        </figure>
+<!-- Navigation -->
+<nav class="flex-1 overflow-y-auto px-4 py-4">
 
-        <nav>
-          <section class="dicover">
-            <h3>Employee Payroll Navigations</h3>
+{% set menu = {
+"Dashboard": [
+("fa-solid fa-gauge-high","Dashboard","payroll_employee_bp.payroll_emp_dashboard")
+],
+"Payroll": [
+("fa-solid fa-file-invoice-dollar","My Payslip","payroll_employee_bp.payroll_history")
+]
+} %}
 
-            <ul>
-              <li>
-                <a href="{{ url_for('payroll_employee.dashboard') }}" >
-                    <span class="material-symbols-outlined">
-                    dashboard
-                    </span>
-                    Dashboard                
-                  </a>
-              </li>
+{% for section, links in menu.items() %}
+<div class="mb-6">
+<h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">{{ section }}</h3>
+<ul class="space-y-1">
+{% for icon,label,endpoint in links %}
+<li>
+<a href="{{ url_for(endpoint) if endpoint != '#' else '#' }}"
+class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-green-700/40 transition">
+<i class="{{ icon }} text-green-400 w-5"></i>
+<span>{{ label }}</span>
+</a>
+</li>
+{% endfor %}
+</ul>
+</div>
+{% endfor %}
 
-              <li>
-                <a href="{{ url_for('payroll_employee.payslips') }}" >
-                 <span class="material-symbols-outlined">
-                  credit_card_gear
-                  </span>
-                    Payslips
-                </a>
-              </li>
-              <li>
-                <a href="{{ url_for('payroll_employee.payroll_history') }}" >
-                  <span class="material-symbols-outlined">
-                  history
-                  </span>
-                  Payroll History
-                </a>
-              </li>
+</nav>
 
-              <li>
-                <a href="{{ url_for('payroll_employee.payroll_summary') }}" >
-                  <span class="material-symbols-outlined">
-                  overview
-                  </span>
-                  Payroll Summary
-                </a>
-              </li>
-            </ul>
-          </section>
-        </nav>
-      </header>
-      <main class="content-wrap">{% block content %}{% endblock %}</main>
-    </div>
+<!-- Logout -->
+<div class="p-4 border-t border-gray-700">
+<button id="logoutBtn"
+class="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 p-3 rounded-lg">
+<i class="fa-solid fa-right-from-bracket"></i>
+Logout
+</button>
+</div>
 
-    <!-- SweetAlert2 CDN -->
+</aside>
+
+<!-- ================= MAIN CONTENT ================= -->
+<main class="p-6 overflow-y-auto h-screen">
+
+<header class="bg-green-800 text-white p-4 rounded-lg shadow mb-6 flex justify-between">
+<h1 class="text-lg font-semibold">{% block page_title %}Employee Dashboard{% endblock %}</h1>
+</header>
+
+{% block content %}{% endblock %}
+
+</main>
+
+</div>
+
+<!-- ===== Scripts ===== -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const logoutBtn = document.getElementById("logoutBtn");
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", function (event) {
-      event.preventDefault(); // prevent default navigation
-
-      Swal.fire({
-        title: "Are you sure?",
-        text: "You will be logged out of your account.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, log out",
-        cancelButtonText: "Cancel"
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Redirect to logout route
-          window.location.href = "{{ url_for('payroll_auth.logout') }}";
-
-          // Optional: show confirmation briefly
-          Swal.fire({
-            icon: "success",
-            title: "Logged out!",
-            text: "You have been successfully logged out.",
-            timer: 1500,
-            showConfirmButton: false
-          });
+function confirmLogout(){
+    Swal.fire({
+        title:"Logout?",
+        text:"You will be logged out of the system.",
+        icon:"warning",
+        showCancelButton:true,
+        confirmButtonColor:"#16a34a",
+        cancelButtonColor:"#dc2626",
+        confirmButtonText:"Yes, logout"
+    }).then(result=>{
+        if(result.isConfirmed){
+            window.location.href="{{ url_for('payroll_auth_bp.logout') }}";
         }
-      });
     });
-  }
-});
+}
+document.getElementById("logoutBtn")?.addEventListener("click",confirmLogout);
 </script>
 
-  </body>
+</body>
 </html>

@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import date
 
@@ -47,6 +47,8 @@ def dashboard():
     )
 
 
+
+
 @hr_employee_bp.route("/profile")
 @login_required
 @employee_required
@@ -83,23 +85,41 @@ def employee_profile():
         leave_table=leave_table,
         today=today
     )
-# ----------------- EDIT PASSWORD ROUTE FOR EMPLOYEE -----------------
+
+
+
+
 @hr_employee_bp.route('/edit_password', methods=['GET', 'POST'])
 @login_required
 @employee_required
 def edit_password():
-    if request.method == 'POST':
-        new_password = request.form.get('password', '').strip()
-        if not new_password:
-            flash("⚠️ Password cannot be empty.", "warning")
-            return redirect(url_for('employee.edit_password'))
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+        current_password = data.get('current_password', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
 
-        # Update password directly (no hashing)
-        current_user.password = new_password
-        db.session.commit()
+        # Validate empty
+        if not current_password or not new_password or not confirm_password:
+            return jsonify({'status': 'error', 'message': 'All fields are required.'}), 400
 
-        flash("✅ Password successfully updated.", "success")
-        return redirect(url_for('employee.edit_password'))
+        # Verify current password
+        if current_password != current_user.password:
+            return jsonify({'status': 'error', 'message': 'Current password is incorrect.'}), 400
 
-    # GET request → show the form
-    return render_template('hr/employee/employee_user.html')  # create this template
+        # Check new vs confirm
+        if new_password != confirm_password:
+            return jsonify({'status': 'error', 'message': 'Passwords do not match.'}), 400
+
+        # Update password
+        try:
+            current_user.password = new_password  # plain text (for now)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Password successfully updated.'})
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating employee password: {e}")
+            return jsonify({'status': 'error', 'message': 'Failed to update password.'}), 500
+
+    # GET → show the form
+    return render_template('hr/employee/employee_user.html', employee=current_user.employee_profile)

@@ -1,147 +1,57 @@
-{% extends 'payroll/employee/employee_base.html' %}
-{% block title %}Payroll-Employee-Dashboard{% endblock %}
+{% extends "payroll/employee/employee_base.html" %}
+{% block title %}Dashboard | Payroll{% endblock %}
+
 {% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-green-400 mb-6">Payroll Overview</h1>
 
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Employee Dashboard</b></h1>
-  </header>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-  <div class="content">
-    <section class="info-boxes">
-      <div class="info-box">
-        <div class="box-icon">
-          <span class="material-symbols-outlined" style="font-size: 50px; color:#4a5568; font-weight: 200;">
-            attach_money
-          </span>
+        <!-- Total Gross Pay -->
+        <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-400 truncate">Total Gross Pay</dt>
+                <dd class="mt-1 text-2xl font-semibold text-green-400">₱ {{ total_gross | round(2) }}</dd>
+            </div>
+            <div class="bg-green-900/20 px-5 py-3">
+                <p class="text-sm text-green-300">Current Pay Period</p>
+            </div>
         </div>
-        <div class="box-content">
-          <span class="big">₱ {{ total_disbursed or 0 | round(2) }}</span>
-          Total Salary Disbursed
-        </div>
-      </div>
 
-      <div class="info-box">
-        <div class="box-icon">
-          <i class="fa-solid fa-hand-holding-dollar"></i>
+        <!-- Total Deductions -->
+        <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-400 truncate">Total Deductions</dt>
+                <dd class="mt-1 text-2xl font-semibold text-red-400">₱ {{ total_deductions | round(2) }}</dd>
+            </div>
+            <div class="bg-red-900/20 px-5 py-3">
+                <p class="text-sm text-red-300">For This Period</p>
+            </div>
         </div>
-        <div class="box-content">
-          <span class="big">₱ {{ total_deductions or 0 | round(2) }}</span>
-          Total Deductions
+
+        <!-- Net Pay -->
+        <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-400 truncate">Net Pay</dt>
+                <dd class="mt-1 text-2xl font-semibold text-blue-400">₱ {{ net_pay | round(2) }}</dd>
+            </div>
+            <div class="bg-blue-900/20 px-5 py-3">
+                <p class="text-sm text-blue-300">Take-home Pay</p>
+            </div>
         </div>
-      </div>
 
-      <div class="info-box">
-        <div class="box-icon">
-          <i class="fa-solid fa-gift"></i>
+        <!-- Last Pay Period -->
+        <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-400 truncate">Last Pay Period</dt>
+                <dd class="mt-1 text-lg font-semibold text-gray-200">{{ last_pay_period }}</dd>
+                <p class="mt-1 text-sm text-gray-400">Pay Date: {{ pay_date }}</p>
+            </div>
+            <div class="bg-gray-700/20 px-5 py-3">
+                <p class="text-sm text-gray-400">Most Recent Payroll</p>
+            </div>
         </div>
-        <div class="box-content">
-          <span class="big">₱ {{ total_allowances or 0 | round(2) }}</span>
-          Total Allowances
-        </div>
-      </div>
-    </section>
-  </div>
 
-  <div class="chart-container" style="height: 400px; margin-top: 30px;">
-    <canvas id="monthlyEarningsChart"></canvas>
-  </div>
-</main>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // ✅ Use the variables that are actually sent from Flask
-    const monthlyDates = {{ payroll_labels | tojson }};
-    const monthlyGross = {{ gross_earnings | tojson }};
-    const monthlyNet = {{ net_earnings | tojson }};
-    const monthlyDeductions = {{ deductions | tojson }};
-
-    const ctx = document.getElementById('monthlyEarningsChart').getContext('2d');
-    const monthlyEarningsChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: monthlyDates,
-        datasets: [
-          {
-            label: 'Gross Pay',
-            data: monthlyGross,
-            backgroundColor: 'rgba(54, 162, 235, 0.4)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          },
-          {
-            label: 'Net Pay',
-            data: monthlyNet,
-            backgroundColor: 'rgba(75, 192, 192, 0.4)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          },
-          {
-            label: 'Deductions',
-            data: monthlyDeductions,
-            backgroundColor: 'rgba(255, 99, 132, 0.4)',
-            borderColor: 'rgba(255, 99, 132, 1)',
-            borderWidth: 2,
-            tension: 0.3,
-            fill: true
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            title: {
-              display: true,
-              text: 'Pay Period'
-            }
-          },
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Amount (₱)'
-            },
-            ticks: {
-              callback: function(value) {
-                return '₱' + value.toLocaleString();
-              }
-            }
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Earnings Overview per Pay Period',
-            font: {
-              size: 20,
-              weight: 'bold'
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                let label = context.dataset.label || '';
-                if (label) label += ': ';
-                if (context.parsed.y !== null) {
-                  label += '₱' + context.parsed.y.toLocaleString();
-                }
-                return label;
-              }
-            }
-          },
-          legend: {
-            position: 'bottom'
-          }
-        }
-      }
-    });
-  });
-</script>
+    </div>
+</div>
 {% endblock %}

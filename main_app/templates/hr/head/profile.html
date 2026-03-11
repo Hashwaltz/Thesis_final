@@ -1,11 +1,12 @@
-{% extends 'hr/admin/admin_base.html' %}
-{% block title %}Employee Profile{% endblock %}
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Dept Head Profile{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-lg text-slate-100">
   <div class="flex items-center gap-6">
     <!-- Avatar -->
-    <div class="w-28 h-28 rounded-full bg-cover bg-center ring-4 ring-slate-700 overflow-hidden flex-shrink-0" style="background-image: url('{{ url_for('static', filename=employee.photo) if employee and employee.photo else url_for('static', filename='img/default-avatar.png') }}')"></div>
+    <div class="w-28 h-28 rounded-full bg-cover bg-center ring-4 ring-slate-700 overflow-hidden flex-shrink-0"
+         style="background-image: url('{{ url_for('static', filename=employee.photo) if employee and employee.photo else url_for('static', filename='img/default-avatar.png') }}')"></div>
 
     <!-- Name & actions -->
     <div class="flex-1">
@@ -18,7 +19,7 @@
       <div class="mt-4 flex flex-wrap gap-3">
         <button id="editProfileBtn" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md transition">
           <i class="fa-solid fa-user-pen"></i>
-          change password
+          Change Password
         </button>
       </div>
     </div>
@@ -32,7 +33,7 @@
 
   <hr class="my-6 border-slate-700">
 
-  <!-- Details grid -->
+  <!-- Display all details (Personal, Contact, Employment, Emergency) -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="space-y-4">
       <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
@@ -95,7 +96,7 @@
       </div>
       <div>
         <label class="block text-slate-300 text-sm">Email</label>
-        <input type="email" name="email" value="{{ user.email if user else '' }}" class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-600">
+        <input type="email" name="email" value="{{ user.email }}" class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-600">
       </div>
       <div>
         <label class="block text-slate-300 text-sm">New Password</label>
@@ -113,14 +114,14 @@
 </div>
 
 <script>
-  const modal = document.getElementById('editProfileModal');
-  const editBtn = document.getElementById('editProfileBtn');
-  const closeBtn = document.getElementById('closeModalBtn');
+const modal = document.getElementById('editProfileModal');
+const editBtn = document.getElementById('editProfileBtn');
+const closeBtn = document.getElementById('closeModalBtn');
 
-  editBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-  closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+editBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
-  document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
@@ -136,24 +137,24 @@
     });
 
     if (result.isConfirmed) {
-      try {
-        const response = await fetch('{{ url_for('hr_admin_bp.edit_profile') }}', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(data)
-        });
+        try {
+            const response = await fetch('{{ url_for("hr_head_bp.edit_profile") }}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
 
-        const resData = await response.json();
+            const resData = await response.json();
 
-        if(resData.status === 'success') {
-          Swal.fire('Updated!', resData.message, 'success').then(() => location.reload());
-        } else {
-          Swal.fire('Error', resData.message, 'error');
+            if(resData.status === 'success') {
+                Swal.fire('Updated!', resData.message, 'success').then(() => location.reload());
+            } else {
+                Swal.fire('Error', resData.message, 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
         }
-      } catch (err) {
-        Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
-      }
     }
-  });
+});
 </script>
 {% endblock %}

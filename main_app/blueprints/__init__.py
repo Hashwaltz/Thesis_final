@@ -15,7 +15,7 @@ def register_blueprint(app):
     from main_app.blueprints.payroll_system.routes.payroll_auth import payroll_auth_bp
     from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
     from main_app.blueprints.payroll_system.routes.staff import payroll_staff_bp
-
+    from main_app.blueprints.payroll_system.routes.employee import payroll_employee_bp
     
     app.register_blueprint(hr_auth_bp)
     app.register_blueprint(hr_admin_bp)
@@ -26,3 +26,4 @@ def register_blueprint(app):
     app.register_blueprint(payroll_auth_bp, url_prefix="/payroll/auth")
     app.register_blueprint(payroll_admin_bp, url_prefix="/payroll/admin")
     app.register_blueprint(payroll_staff_bp, url_prefix="/payroll/staff")
+    app.register_blueprint(payroll_employee_bp, url_prefix="/payroll-employee")

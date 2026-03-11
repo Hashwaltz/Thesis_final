@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from types import SimpleNamespace
 from collections import defaultdict
@@ -6,6 +6,7 @@ from datetime import date
 from calendar import monthrange, monthcalendar
 
 from main_app.extensions import db
+from main_app.models.user import User
 from main_app.models.hr_models import Department, Employee, Attendance, Leave
 from main_app.helpers.decorators import dept_head_required
 from main_app.helpers.utils import get_department_attendance_summary, get_current_month_range
@@ -157,24 +158,63 @@ def dashboard():
         recent_leaves=recent_leaves
     )
    
-
-# ----------------- EDIT PASSWORD ROUTE FOR DEPT HEAD -----------------
-@hr_head_bp.route('/edit_password', methods=['GET', 'POST'])
+# ----------------- DEPT HEAD PROFILE + EDIT PASSWORD -----------------
+@hr_head_bp.route('/profile', methods=['GET'])
 @login_required
 @dept_head_required
-def edit_password():
-    if request.method == 'POST':
-        new_password = request.form.get('password', '').strip()
-        if not new_password:
-            flash("⚠️ Password cannot be empty.", "warning")
-            return redirect(url_for('hr_head_bp.edit_password'))
+def profile():
+    user = current_user
+    employee = user.employee_profile
 
-        # Update password directly (no hashing)
-        current_user.password = new_password
-        db.session.commit()
+    # Calculate age and working duration
+    age = None
+    working_duration = None
+    if employee:
+        if employee.date_of_birth:
+            today = date.today()
+            age = today.year - employee.date_of_birth.year - ((today.month, today.day) < (employee.date_of_birth.month, employee.date_of_birth.day))
+        working_duration = employee.get_working_duration()
 
-        flash("✅ Password successfully updated.", "success")
-        return redirect(url_for('hr_head_bp.edit_password'))
+    return render_template(
+        'hr/head/profile.html',
+        user=user,
+        employee=employee,
+        age=age,
+        working_duration=working_duration
+    )
 
-    # GET request → show the form
-    return render_template('hr/head/edit_profile.html')  # create this template
+
+@hr_head_bp.route('/profile/edit', methods=['POST'])
+@login_required
+@dept_head_required
+def edit_profile():
+    user = current_user
+    employee = user.employee_profile
+
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_email = data.get('email')
+    new_password = data.get('new_password')
+    confirm_password = data.get('confirm_password')
+
+    # Verify current password
+    if current_password != user.password:
+        return jsonify({'status': 'error', 'message': 'Current password is incorrect.'}), 400
+
+    # Update email
+    if new_email and new_email != user.email:
+        existing_user = User.query.filter_by(email=new_email).first()
+        if existing_user:
+            return jsonify({'status': 'error', 'message': 'Email already in use.'}), 400
+        user.email = new_email
+        if employee:
+            employee.email = new_email
+
+    # Update password
+    if new_password:
+        if new_password != confirm_password:
+            return jsonify({'status': 'error', 'message': 'Passwords do not match.'}), 400
+        user.password = new_password  # plain text for now
+
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Profile updated successfully.'})

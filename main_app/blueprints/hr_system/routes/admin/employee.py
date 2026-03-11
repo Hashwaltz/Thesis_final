@@ -450,6 +450,7 @@ def generate_coe(employee_id):
 def archive_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
     employee.archived = True
+    employee.status = "Inactive"
     employee.archived_at = datetime.utcnow()
 
     db.session.commit()
@@ -516,6 +517,7 @@ def restore_employee(employee_id):
         return redirect(url_for('hr_admin_bp.view_archived_employees'))
 
     employee.archived = False
+    employee.status = "Active"
     db.session.commit()
 
     flash(f"Employee {employee.get_full_name()} has been restored.", "success")

@@ -1,62 +1,55 @@
-{% extends 'payroll/employee/employee_base.html' %}
-{% block title %}My Payroll History{% endblock %}
+{% extends "payroll/employee/employee_base.html" %}
+{% block title %}Payroll History | Payroll{% endblock %}
 
 {% block content %}
-<main class="content-wrap">
-  <header class="content-head">
-    <h1><b>Payroll History</b></h1>
-  </header>
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Payroll History</h1>
 
-  <div class="table-container">
-    <div class="centered-container">
-
-      <!-- Payroll History Table -->
-      <table class="responsive-table" style="margin-top: 10px;">
-        <caption><b>All Payroll Records</b></caption>
-        <thead>
-          <tr>
-            <th>Payroll Period</th>
-            <th>Basic Salary</th>
-            <th>Gross Pay</th>
-            <th>Total Deductions</th>
-            <th>Net Pay</th>
-            <th>Date Processed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for payroll in payrolls.items %}
-          <tr>
-            <td data-label="Payroll Period">
-              {{ payroll.pay_period_start.strftime('%Y-%m-%d') }} - {{ payroll.pay_period_end.strftime('%Y-%m-%d') }}
-            </td>
-            <td data-label="Basic Salary">₱ {{ "{:,.2f}".format(payroll.basic_salary or 0) }}</td>
-            <td data-label="Gross Pay">₱ {{ "{:,.2f}".format((payroll.net_pay or 0) + payroll.total_deductions_calc()) }}</td>
-            <td data-label="Total Deductions">₱ {{ "{:,.2f}".format(payroll.total_deductions_calc()) }}</td>
-            <td data-label="Net Pay"><b>₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}</b></td>
-            <td data-label="Date Processed">
-              {{ payroll.created_at.strftime('%Y-%m-%d') if payroll.created_at else '-' }}
-            </td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="6">No payroll records found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <!-- Pagination -->
-      <div class="pagination">
-        {% if payrolls.has_prev %}
-          <a href="{{ url_for('payroll_employee.payroll_history', page=payrolls.prev_num) }}">Previous</a>
-        {% endif %}
-        Page {{ payrolls.page }} of {{ payrolls.pages }}
-        {% if payrolls.has_next %}
-          <a href="{{ url_for('payroll_employee.payroll_history', page=payrolls.next_num) }}">Next</a>
-        {% endif %}
-      </div>
-
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 bg-gray-800 text-gray-200">
+            <thead class="bg-gray-700 text-gray-300">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Pay Period</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Gross Pay</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Total Deductions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Net Pay</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+                {% for payroll in payrolls %}
+                <tr class="hover:bg-gray-700/50">
+                    <td class="px-6 py-4 text-sm">
+                        {{ payroll.period.start_date.strftime('%b %d, %Y') }} -
+                        {{ payroll.period.end_date.strftime('%b %d, %Y') }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-green-400">₱ {{ "{:,.2f}".format(payroll.gross_pay) }}</td>
+                    <td class="px-6 py-4 text-sm text-red-400">₱ {{ "{:,.2f}".format(payroll.total_deductions) }}</td>
+                    <td class="px-6 py-4 text-sm text-blue-400">₱ {{ "{:,.2f}".format(payroll.net_pay) }}</td>
+                    <td class="px-6 py-4 text-sm">
+                        {% if payroll.status == "Paid" %}
+                            <span class="px-2 py-1 rounded bg-green-600 text-white text-xs">{{ payroll.status }}</span>
+                        {% elif payroll.status == "Processing" %}
+                            <span class="px-2 py-1 rounded bg-yellow-500 text-white text-xs">{{ payroll.status }}</span>
+                        {% else %}
+                            <span class="px-2 py-1 rounded bg-gray-500 text-white text-xs">{{ payroll.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm space-x-2">
+                        <a href="{{ url_for('payroll_employee_bp.view_payslip', payroll_id=payroll.id) }}"
+                           class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-400">
+                        No payroll records found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-  </div>
-</main>
+</div>
 {% endblock %}

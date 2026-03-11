@@ -1,10 +1,11 @@
-from flask import render_template, request, current_app, url_for, flash, redirect
+from flask import render_template, request, current_app, url_for, flash, redirect, jsonify
 from flask_sqlalchemy import pagination
 from flask_login import login_required, current_user
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from calendar import month_name
 
 from main_app.extensions import db
+from main_app.models.user import User
 from main_app.models.hr_models import Attendance, Employee, Leave
 from main_app.helpers.decorators import hr_officer_required
 from main_app.helpers.utils import get_current_month_range
@@ -148,33 +149,66 @@ def hr_dashboard():
         reminders=reminders
     )
 
-
-
-
-# ----------------- OFFICER EDIT PASSWORD ROUTE -----------------
-@hr_officer_bp.route("/edit_password", methods=["GET", "POST"])
+@hr_officer_bp.route('/profile', methods=['GET'])
 @login_required
 @hr_officer_required
-def edit_password():
-    if request.method == "POST":
-        new_password = request.form.get("password", "").strip()
-        if not new_password:
-            flash("⚠️ Password cannot be empty.", "warning")
-            return redirect(url_for("hr_officer_bp.edit_password"))
+def profile():
+    user = current_user
+    employee = user.employee_profile
 
-        # Update password directly (or hash it if your User model supports it)
-        current_user.password = new_password
-        try:
-            db.session.commit()
-            flash("✅ Password successfully updated.", "success")
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error updating officer password: {e}")
-            flash("❌ Error updating password. Please try again.", "danger")
+    age = None
+    working_duration = None
+    if employee:
+        if employee.date_of_birth:
+            today = date.today()
+            age = today.year - employee.date_of_birth.year - ((today.month, today.day) < (employee.date_of_birth.month, employee.date_of_birth.day))
+        working_duration = employee.get_working_duration()
 
-        return redirect(url_for("hr_officer_bp.edit_password"))
-
-    # GET request → show the form
-    return render_template("hr/officer/edit_profile.html", user=current_user)
+    return render_template(
+        "hr/officer/profile.html",
+        user=user,
+        employee=employee,
+        age=age,
+        working_duration=working_duration
+    )
 
 
+@hr_officer_bp.route('/profile/edit', methods=['POST'])
+@login_required
+@hr_officer_required
+def edit_profile():
+    user = current_user
+    employee = user.employee_profile
+
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_email = data.get('email')
+    new_password = data.get('new_password')
+    confirm_password = data.get('confirm_password')
+
+    # Verify current password
+    if current_password != user.password:
+        return jsonify({'status': 'error', 'message': 'Current password is incorrect.'}), 400
+
+    # Update email
+    if new_email and new_email != user.email:
+        existing_user = User.query.filter_by(email=new_email).first()
+        if existing_user:
+            return jsonify({'status': 'error', 'message': 'Email already in use.'}), 400
+        user.email = new_email
+        if employee:
+            employee.email = new_email
+
+    # Update password
+    if new_password:
+        if new_password != confirm_password:
+            return jsonify({'status': 'error', 'message': 'Passwords do not match.'}), 400
+        user.password = new_password  # plain text for now
+
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Profile updated successfully.'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating officer profile: {e}")
+        return jsonify({'status': 'error', 'message': 'An error occurred. Please try again.'}), 500
