@@ -79,6 +79,8 @@ def employees():
         councilors=councilors
     )
 
+
+
 @hr_head_bp.route('/employee/<int:employee_id>/edit')
 @login_required
 @dept_head_required

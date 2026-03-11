@@ -1,6 +1,6 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
 
-{% block title %}Deduction Brackets{% endblock %}
+{% block title %}Deduction Brackets & Taxes{% endblock %}
 
 {% block content %}
 <section class="p-6 space-y-6 text-gray-200">
@@ -8,27 +8,44 @@
   <!-- PAGE HEADER -->
   <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
     <h1 class="text-2xl font-bold text-emerald-400">Deduction Brackets & Formulas</h1>
-    <p class="text-gray-400 text-sm">Manage contribution formulas & salary brackets for deductions</p>
+    <p class="text-gray-400 text-sm">Manage contribution formulas & salary brackets for deductions including Philippine Income Tax</p>
   </header>
 
-  <!-- FORMULAS CARDS -->
+  <!-- CONTRIBUTION FORMULAS CARDS -->
   <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
     <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
       <strong class="text-emerald-400">PhilHealth Formula</strong>
       <p class="text-gray-300 mt-1 text-sm">2.5% of monthly salary<br>(split 50/50 employee & employer)</p>
     </div>
     <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-      <strong class="text-emerald-400">GSIS Formula</strong>
-      <p class="text-gray-300 mt-1 text-sm">9% employee / 12% employer of monthly salary</p>
+      <strong class="text-emerald-400">GSIS / SSS Formula</strong>
+      <p class="text-gray-300 mt-1 text-sm">SSS: Based on salary brackets<br>GSIS: 9% employee / 12% employer</p>
     </div>
     <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
       <strong class="text-emerald-400">Pag-IBIG Formula</strong>
       <p class="text-gray-300 mt-1 text-sm">2% of monthly salary up to ₱5,000<br>(Employee & Employer share equal)</p>
     </div>
     <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-      <strong class="text-emerald-400">SSS Table</strong>
-      <p class="text-gray-300 mt-1 text-sm">Based on salary brackets defined by SSS</p>
+      <strong class="text-emerald-400">Other Contributions</strong>
+      <p class="text-gray-300 mt-1 text-sm">EC / Employee Compensation<br>as applicable</p>
     </div>
+  </div>
+
+  <!-- INCOME TAX CARD -->
+  <div class="bg-gray-900 p-6 rounded-2xl border border-gray-700 mt-6">
+    <h2 class="text-emerald-400 font-bold text-lg mb-2">Income Tax (BIR / TRAIN Law)</h2>
+    <p class="text-gray-300 text-sm">
+      Monthly taxable income is computed after contributions.<br>
+      Tax brackets:
+    </p>
+    <ul class="text-gray-300 text-sm mt-2 list-disc list-inside">
+      <li>0 – 20,833 → 0%</li>
+      <li>20,833 – 33,332 → 20% excess over 20,833</li>
+      <li>33,333 – 66,666 → 25% excess over 33,332</li>
+      <li>66,667 – 166,666 → 30% excess over 66,666</li>
+      <li>166,667 – 666,666 → 32% excess over 166,666</li>
+      <li>666,667+ → 35% excess over 666,666</li>
+    </ul>
   </div>
 
   <!-- BRACKETS TABLE -->
@@ -42,6 +59,7 @@
           <th class="p-4 text-center">Employee Share</th>
           <th class="p-4 text-center">Employer Share</th>
           <th class="p-4 text-center">EC</th>
+          <th class="p-4 text-center">Income Tax (Example)</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-700">
@@ -53,10 +71,26 @@
           <td class="p-4 text-center text-emerald-400">{{ "{:,.2f}".format(b.employee_share or 0) }}</td>
           <td class="p-4 text-center">{{ "{:,.2f}".format(b.employer_share or 0) }}</td>
           <td class="p-4 text-center text-yellow-400">{{ "{:,.2f}".format(b.ec or 0) }}</td>
+          <td class="p-4 text-center text-red-400">
+            {% set salary = (b.salary_from + b.salary_to) / 2 %}
+            {% if salary <= 20833 %}
+              0
+            {% elif salary <= 33332 %}
+              {{ "{:,.2f}".format(0 + (salary - 20833) * 0.20) }}
+            {% elif salary <= 66666 %}
+              {{ "{:,.2f}".format(2500 + (salary - 33332) * 0.25) }}
+            {% elif salary <= 166666 %}
+              {{ "{:,.2f}".format(10833.5 + (salary - 66666) * 0.30) }}
+            {% elif salary <= 666666 %}
+              {{ "{:,.2f}".format(40833.5 + (salary - 166666) * 0.32) }}
+            {% else %}
+              {{ "{:,.2f}".format(200833.5 + (salary - 666666) * 0.35) }}
+            {% endif %}
+          </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" class="p-6 text-center text-gray-400">No brackets found.</td>
+          <td colspan="7" class="p-6 text-center text-gray-400">No brackets found.</td>
         </tr>
         {% endfor %}
       </tbody>

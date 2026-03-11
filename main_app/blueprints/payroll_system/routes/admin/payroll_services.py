@@ -1,6 +1,6 @@
-from main_app.services.docs import export_payroll_excel
+from main_app.helpers.docs import export_payroll_excel
 from main_app.models.payroll_models import Payroll
-from main_app.utils import payroll_admin_required
+from main_app.helpers.decorators import payroll_admin_required
 
 from flask import request
 from flask_login import login_required

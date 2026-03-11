@@ -1,0 +1,88 @@
+{% extends 'hr/employee/employee_base.html' %}
+
+{% block title %}My Department | GovHRPay{% endblock %}
+
+{% block content %}
+<main class="p-6 space-y-12">
+
+<header>
+<h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+  <i class="fa-solid fa-sitemap text-3xl"></i>
+  My Department - {{ department.name if department else 'No Department Assigned' }}
+</h1>
+</header>
+
+{% if not department %}
+<div class="bg-red-900/40 border border-red-600 text-red-400 p-6 rounded-2xl">
+  <p>You are not assigned to any department yet.</p>
+</div>
+{% else %}
+
+<!-- ================= DEPARTMENT HEAD ================= -->
+<section class="flex flex-col items-center space-y-8">
+
+<div class="flex flex-col items-center">
+  <div class="bg-blue-600 text-white px-8 py-5 rounded-2xl shadow-xl text-center w-72">
+    <p class="font-bold text-lg">
+      {% if department.head %}
+        {{ department.head.get_full_name() }}
+      {% else %}
+        Vacant Position
+      {% endif %}
+    </p>
+    <p class="text-xs opacity-70 mt-1">Department Head</p>
+  </div>
+  <div class="w-1 h-12 bg-gray-600"></div>
+</div>
+
+<!-- ================= EMPLOYEES GRID ================= -->
+<div class="w-full max-w-6xl bg-gray-700 bg-opacity-40 backdrop-blur-md rounded-2xl shadow-xl p-6">
+
+<div class="text-gray-300 font-semibold mb-6 text-center text-lg">
+Department Employees
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+
+{% for employee in coworkers.items %}
+<div class="bg-gray-800 bg-opacity-70 backdrop-blur-md text-white px-5 py-5 rounded-2xl shadow-lg w-64 text-center hover:scale-105 transition duration-300">
+
+<p class="font-semibold truncate">{{ employee.get_full_name() }}</p>
+<p class="text-sm text-gray-300 mt-1 truncate">{{ employee.position.name if employee.position else '-' }}</p>
+
+<p class="text-xs mt-3
+{% if employee.status == 'Active' %} text-green-400
+{% elif employee.status == 'Retired' %} text-gray-400
+{% elif employee.status == 'Resigned' %} text-yellow-400
+{% elif employee.status == 'Fired' %} text-red-500
+{% else %} text-gray-300 {% endif %}">
+{{ employee.status }}
+</p>
+
+</div>
+{% else %}
+<p class="text-gray-400 text-center col-span-full">
+No coworkers found in your department.
+</p>
+{% endfor %}
+
+</div>
+
+<!-- Pagination -->
+{% if coworkers.pages > 1 %}
+<div class="mt-6 flex justify-center gap-2 text-gray-200">
+  {% if coworkers.has_prev %}
+  <a href="?page={{ coworkers.prev_num }}" class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600 transition">Prev</a>
+  {% endif %}
+  <span class="px-3 py-1 bg-gray-800 rounded-lg">{{ coworkers.page }} / {{ coworkers.pages }}</span>
+  {% if coworkers.has_next %}
+  <a href="?page={{ coworkers.next_num }}" class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600 transition">Next</a>
+  {% endif %}
+</div>
+{% endif %}
+
+</div>
+</section>
+{% endif %}
+</main>
+{% endblock %}

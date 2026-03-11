@@ -11,4 +11,5 @@ hr_employee_bp = Blueprint(
 
 from . import dashboard
 from . import attendance
-from . import leaves    
+from . import leaves
+from . import department    

@@ -138,7 +138,7 @@
 
     if (result.isConfirmed) {
       try {
-        const response = await fetch('{{ url_for("leave_officer.edit_profile") }}', {
+        const response = await fetch('{{ url_for("leave_officer_bp.edit_profile") }}', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(data)

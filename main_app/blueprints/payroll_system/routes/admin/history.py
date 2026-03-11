@@ -1,5 +1,5 @@
 from main_app.extensions import db
-from main_app.utils import payroll_admin_required
+from main_app.helpers.decorators import payroll_admin_required
 from main_app.models.hr_models import Employee, Department, Attendance
 from main_app.models.payroll_models import Payroll, PayrollPeriod
 from main_app.extensions import db

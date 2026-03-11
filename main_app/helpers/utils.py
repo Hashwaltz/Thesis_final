@@ -16,6 +16,9 @@ from reportlab.lib.pagesizes import landscape, portrait
 from reportlab.lib.units import inch
 import io, os
 from flask import current_app
+# At the very top of your file, before pyplot
+import matplotlib
+matplotlib.use("Agg") 
 import matplotlib.pyplot as plt
 from twilio.rest import Client
 

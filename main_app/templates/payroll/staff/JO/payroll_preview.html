@@ -20,7 +20,6 @@
   <form method="POST" action="{{ url_for('payroll_staff_bp.confirm_payroll') }}">
     <input type="hidden" name="period_id" value="{{ period.id }}">
 
-    <!-- Employee Cards Grid (3 per row on large screens) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
       {% for p in payroll_rows %}
       <div class="bg-gray-800 rounded-2xl border border-gray-700 p-6 hover:border-emerald-400 transition">
@@ -40,19 +39,19 @@
             <label class="block text-gray-400 text-sm">Days Worked</label>
             <input type="number" step="0.01" name="days_{{ p.employee.id }}" 
               value="{{ "{:,.2f}".format(p.days_worked or 0) }}"
-              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none">
+              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none days">
           </div>
           <div>
             <label class="block text-gray-400 text-sm">Salary</label>
             <input type="text" readonly
-              value="₱ {{ "{:,.2f}".format(p.employee.salary or 0) }}"
-              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400 cursor-not-allowed">
+              value="{{ "{:,.2f}".format(p.employee.salary or 0) }}"
+              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400 cursor-not-allowed salary">
           </div>
           <div>
             <label class="block text-gray-400 text-sm">Salary × Days</label>
             <input type="text" readonly
-              value="₱ {{ "{:,.2f}".format((p.employee.salary or 0) * (p.days_worked or 0)) }}"
-              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400 cursor-not-allowed">
+              value="{{ "{:,.2f}".format(p.employee.salary * p.days_worked) }}"
+              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400 cursor-not-allowed salary-days">
           </div>
         </div>
 
@@ -62,39 +61,42 @@
             <label class="block text-gray-400 text-sm">Allowance</label>
             <input type="number" step="0.01" name="allowance_{{ p.employee.id }}" 
               value="{{ "{:,.2f}".format(p.allowance_total or 0) }}"
-              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none">
+              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none allowance">
           </div>
           <div>
             <label class="block text-gray-400 text-sm">Loans / Other</label>
             <input type="number" step="0.01" name="loan_{{ p.employee.id }}" value="0"
-              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-red-600 outline-none">
+              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-red-600 outline-none loan">
           </div>
           <div>
             <label class="block text-gray-400 text-sm">Total Deductions</label>
             <input type="text" readonly
-              value="₱ {{ "{:,.2f}".format(p.total_deductions or 0) }}"
-              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-red-400 cursor-not-allowed">
+              value="{{ "{:,.2f}".format(p.total_deductions or 0) }}"
+              class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-red-400 cursor-not-allowed total-deduction">
           </div>
         </div>
 
-        <!-- Row 3: Deductions Breakdown -->
-        {% if p._deduction_breakdown %}
-        <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-sm text-red-400 mb-2">
+        <!-- Row 3: Deductions Breakdown & Hidden Inputs -->
+        <div class="bg-gray-900 p-3 rounded-lg border border-gray-700 text-sm text-red-400 mb-2 deduction-breakdown">
           <strong>Deductions Breakdown:</strong>
           <ul class="list-disc list-inside mt-1 space-y-1">
             {% for d in p._deduction_breakdown %}
-              <li>{{ d.name }}: Employee: ₱ {{ "{:,.2f}".format(d.employee_share) }} | Employer: ₱ {{ "{:,.2f}".format(d.employer_share) }}</li>
+              <li>
+                {{ d.name }}: Employee: ₱ {{ "{:,.2f}".format(d.employee_share) }} | Employer: ₱ {{ "{:,.2f}".format(d.employer_share) }}
+              </li>
+
+              <input type="hidden" name="deduction_{{ p.employee.id }}_{{ d.name }}" value="{{ d.employee_share }}">
+              <input type="hidden" name="employer_{{ p.employee.id }}_{{ d.name }}" value="{{ d.employer_share }}">
             {% endfor %}
           </ul>
         </div>
-        {% endif %}
 
         <!-- Row 4: Net Pay -->
         <div>
           <label class="block text-gray-400 text-sm">Net Pay</label>
           <input type="text" readonly
-            value="₱ {{ "{:,.2f}".format(p.net_pay or 0) }}"
-            class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-emerald-400 cursor-not-allowed">
+            value="{{ "{:,.2f}".format(p.net_pay or 0) }}"
+            class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-emerald-400 cursor-not-allowed net-pay">
         </div>
 
       </div>
@@ -110,6 +112,4 @@
 
   </form>
 </section>
-
-
 {% endblock %}

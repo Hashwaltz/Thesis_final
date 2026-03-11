@@ -1,6 +1,7 @@
 import io
 import os
 from io import BytesIO
+import pandas as pd
 from datetime import date
 from docx import Document
 from docx.shared import Pt
@@ -524,3 +525,318 @@ def generate_leave_print_pdf_route(
         mimetype="application/pdf"
     )
     """
+
+
+def safe_get(obj, attr, default=0):
+    return getattr(obj, attr, default) or default
+
+
+
+
+def export_payroll_excel(query):
+
+    payrolls = query.all()
+    data = []
+
+    for p in payrolls:
+
+        total_linked_deductions = sum(
+            (ed.deduction.rate or 0)
+            for ed in getattr(p.employee, "employee_deductions", [])
+            if ed.deduction and ed.deduction.active
+        )
+
+        total_allowances = sum(
+            (ea.allowance.amount or 0)
+            for ea in getattr(p.employee, "employee_allowances", [])
+            if ea.allowance and ea.allowance.active
+        )
+
+        total_deductions = safe_get(p, "total_deductions") + total_linked_deductions
+        gross_pay_with_allowances = safe_get(p, "gross_pay") + total_allowances
+
+        data.append({
+            "Employee ID": p.employee.employee_id,
+            "Employee Name": f"{p.employee.first_name} {p.employee.last_name}",
+            "Department": p.employee.department.name if p.employee.department else "-",
+
+            "Basic Salary": safe_get(p, "basic_salary"),
+            "Overtime Pay": safe_get(p, "overtime_pay"),
+            "Holiday Pay": safe_get(p, "holiday_pay"),
+            "Night Differential": safe_get(p, "night_diff"),
+            "Allowances": total_allowances,
+
+            "Gross Pay": gross_pay_with_allowances,
+
+            "SSS": 0,
+            "PhilHealth": 0,
+            "Pag-IBIG": 0,
+            "Tax Withheld": safe_get(p, "tax_withheld"),
+            "Other Deductions": safe_get(p, "other_deductions"),
+            "Linked Deductions": total_linked_deductions,
+
+            "Total Deductions": total_deductions,
+            "Net Pay": safe_get(p, "net_pay"),
+
+            "Status": safe_get(p, "status"),
+            "Pay Period": f"{getattr(p.period,'start_date','-')} - {getattr(p.period,'end_date','-')}"
+        })
+
+    df = pd.DataFrame(data)
+
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+
+        df.to_excel(
+            writer,
+            index=False,
+            sheet_name="Payroll",
+            startrow=12
+        )
+
+        workbook = writer.book
+        worksheet = writer.sheets["Payroll"]
+
+        from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+        from openpyxl.drawing.image import Image as OpenpyxlImage
+
+        # ==========================================
+        # Logo
+        # ==========================================
+
+        logo_path = r"C:\Users\pc\Desktop\Thesis_final\main_app\static\img\garay.png"
+
+        if os.path.exists(logo_path):
+            logo = OpenpyxlImage(logo_path)
+            logo.width = 110
+            logo.height = 110
+            worksheet.add_image(logo, "A1")
+
+        # ==========================================
+        # Government Header
+        # ==========================================
+
+        worksheet.merge_cells("A2:P2")
+        worksheet["A2"] = "Republic of the Philippines"
+
+        worksheet.merge_cells("A3:P3")
+        worksheet["A3"] = "MUNICIPALITY OF NORZAGARAY"
+
+        worksheet.merge_cells("A4:P4")
+        worksheet["A4"] = "Province of Bulacan"
+
+        worksheet.merge_cells("A6:P6")
+        worksheet["A6"] = "Municipal Hall of Norzagaray"
+
+        worksheet.merge_cells("A7:P7")
+        worksheet["A7"] = "Norzagaray, Bulacan"
+
+        worksheet.merge_cells("A9:P9")
+        worksheet["A9"] = "PAYROLL SUMMARY REPORT"
+
+        header_font = Font(size=12, bold=True)
+        title_font = Font(size=16, bold=True)
+
+        for cell in ["A2","A3","A4","A6","A7"]:
+            worksheet[cell].alignment = Alignment(horizontal="center")
+            worksheet[cell].font = header_font
+
+        worksheet["A9"].alignment = Alignment(horizontal="center")
+        worksheet["A9"].font = title_font
+
+        # ==========================================
+        # Table Header Styling
+        # ==========================================
+
+        header_row = 13
+
+        fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+
+        for cell in worksheet[header_row]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
+            cell.fill = fill
+
+        # ==========================================
+        # Borders
+        # ==========================================
+
+        thin = Side(style="thin")
+        border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+        for row in worksheet.iter_rows(
+            min_row=header_row,
+            max_row=worksheet.max_row,
+            min_col=1,
+            max_col=worksheet.max_column
+        ):
+            for cell in row:
+                cell.border = border
+
+        # ==========================================
+        # Currency Format
+        # ==========================================
+
+        currency_columns = [
+            "D","E","F","G","H","I","J","K","L","M","N","O"
+        ]
+
+        for col in currency_columns:
+            for row in range(header_row+1, worksheet.max_row+1):
+                worksheet[f"{col}{row}"].number_format = '₱#,##0.00'
+
+        # ==========================================
+        # Auto Column Width
+        # ==========================================
+
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+
+            for cell in column:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+
+            worksheet.column_dimensions[column_letter].width = max_length + 3
+
+    output.seek(0)
+
+    filename = f"Payroll_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+
+# ======================================================
+# PAYROLL SUMMARY REPORT
+# ======================================================
+
+def payroll_summary_report(payrolls):
+
+    data = []
+
+    for p in payrolls:
+
+        data.append({
+            "Employee ID": p.employee.employee_id,
+            "Employee Name": f"{p.employee.first_name} {p.employee.last_name}",
+            "Department": p.employee.department.name if p.employee.department else "-",
+
+            "Basic Salary": p.basic_salary,
+            "Overtime Pay": p.overtime_pay,
+            "Holiday Pay": p.holiday_pay,
+            "Night Differential": p.night_diff,
+            "Gross Pay": p.gross_pay,
+
+            "Total Deductions": p.total_deductions,
+            "Net Pay": p.net_pay,
+
+            "Payroll Period":
+            f"{p.period.start_date} - {p.period.end_date}"
+        })
+
+    df = pd.DataFrame(data)
+
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Payroll Summary")
+
+    output.seek(0)
+
+    filename = f"Payroll_Summary_{datetime.now().strftime('%Y%m%d')}.xlsx"
+
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+# ======================================================
+# DEDUCTION SUMMARY REPORT
+# ======================================================
+
+def deduction_summary_report(payrolls):
+
+    deductions = {}
+
+    for p in payrolls:
+
+        for d in p.deduction_breakdown:
+
+            name = d.deduction_name
+
+            deductions.setdefault(name, 0)
+
+            deductions[name] += d.employee_share
+
+    data = [
+        {"Deduction": k, "Total": v}
+        for k, v in deductions.items()
+    ]
+
+    df = pd.DataFrame(data)
+
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Deduction Summary")
+
+    output.seek(0)
+
+    filename = f"Deduction_Summary_{datetime.now().strftime('%Y%m%d')}.xlsx"
+
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+# ======================================================
+# EMPLOYEE PAYROLL HISTORY
+# ======================================================
+
+def employee_payroll_history(employee):
+
+    data = []
+
+    for p in employee.payrolls:
+
+        data.append({
+            "Payroll Period": f"{p.period.start_date} - {p.period.end_date}",
+            "Gross Pay": p.gross_pay,
+            "Total Deductions": p.total_deductions,
+            "Net Pay": p.net_pay,
+            "Status": p.status
+        })
+
+    df = pd.DataFrame(data)
+
+    output = io.BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Payroll History")
+
+    output.seek(0)
+
+    filename = f"Payroll_History_{employee.employee_id}.xlsx"
+
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )

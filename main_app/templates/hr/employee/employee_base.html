@@ -68,17 +68,24 @@
             </a>
           </li>
           <li>
+            <a href="{{ url_for('hr_employee_bp.my_department') }}"
+               class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+              <i class="fas fa-users text-blue-400"></i>
+              Organizational Chart and Record
+            </a>
+          </li>
+          <li>
             <a href="{{ url_for('hr_employee_bp.attendance') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-calendar-days text-blue-400 w-5"></i>
-              View Attendance
+              My Attendance Records
             </a>
           </li>
           <li>
             <a href="{{ url_for('hr_employee_bp.leaves') }}"
                class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
               <i class="fa-solid fa-file-lines text-blue-400 w-5"></i>
-              Leaves
+              My Leave Requests
             </a>
           </li>
            <li>

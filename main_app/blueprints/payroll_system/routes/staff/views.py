@@ -212,6 +212,7 @@ def staff_dashboard():
     )
 
 
+
 @payroll_staff_bp.route('/payrolls')
 @staff_required
 @login_required
@@ -223,15 +224,31 @@ def view_payrolls():
     page = request.args.get('page', 1, type=int)
 
     query = Payroll.query.options(
-        joinedload(Payroll.employee).joinedload(Employee.department),
+
+        joinedload(Payroll.employee)
+        .joinedload(Employee.department),
+
+        joinedload(Payroll.employee)
+        .joinedload(Employee.employment_type),
+
+        joinedload(Payroll.employee)
+        .joinedload(Employee.attendances),
+
         joinedload(Payroll.period),
-        joinedload(Payroll.employee).joinedload(Employee.employee_allowances),
-        joinedload(Payroll.employee).joinedload(Employee.employee_deductions),
-        joinedload(Payroll.employee).joinedload(Employee.employment_type)
+
+        # ✅ correct relationship
+        joinedload(Payroll.deduction_breakdown)
+
     )
 
+    # -------------------------
+    # Filters
+    # -------------------------
+
     if department_id:
-        query = query.join(Employee).filter(Employee.department_id == department_id)
+        query = query.join(Employee).filter(
+            Employee.department_id == department_id
+        )
 
     if search:
         query = query.join(Employee).filter(
@@ -243,18 +260,26 @@ def view_payrolls():
         )
 
     if pay_period_id:
-        query = query.filter(Payroll.payroll_period_id == pay_period_id)
+        query = query.filter(
+            Payroll.payroll_period_id == pay_period_id
+        )
 
-    payrolls = query.order_by(Payroll.id.desc()).paginate(
+    payrolls = query.order_by(
+        Payroll.id.desc()
+    ).paginate(
         page=page,
         per_page=10,
         error_out=False
     )
 
+    # -------------------------
+    # Process rows
+    # -------------------------
+
     for payroll in payrolls.items:
+
         employee = payroll.employee
 
-        # Set employee type
         payroll.employee_type = (
             employee.employment_type.name
             if employee and employee.employment_type
@@ -262,9 +287,11 @@ def view_payrolls():
         )
 
         # -------------------------
-        # Attendance / days worked
+        # Attendance
         # -------------------------
+
         if employee and payroll.period:
+
             attendances = [
                 a for a in employee.attendances
                 if payroll.period.start_date <= a.date <= payroll.period.end_date
@@ -273,45 +300,65 @@ def view_payrolls():
             emp_type = payroll.employee_type
 
             if emp_type == "Regular":
-                payroll.days_worked = sum(1 for a in attendances if a.status != "Absent")
+
+                payroll.days_worked = sum(
+                    1 for a in attendances if a.status != "Absent"
+                )
 
             elif emp_type == "Part-Time":
-                payroll.working_hours = round(sum(a.working_hours for a in attendances), 2)
+
+                payroll.working_hours = round(
+                    sum(a.working_hours for a in attendances),
+                    2
+                )
 
             elif emp_type in ["Casual", "Job Order (JO)", "Job Orders"]:
-                payroll.days_worked = sum(1 for a in attendances if a.status != "Absent")
+
+                payroll.days_worked = sum(
+                    1 for a in attendances if a.status != "Absent"
+                )
 
             else:
+
                 payroll.days_worked = 0
                 payroll.working_hours = 0
+
         else:
+
             payroll.days_worked = 0
             payroll.working_hours = 0
 
         # -------------------------
-        # Rate values
+        # Rates
         # -------------------------
-        payroll.hourly_rate_value = employee.salary if payroll.employee_type == "Part-Time" else 0
+
+        payroll.hourly_rate_value = (
+            employee.salary if payroll.employee_type == "Part-Time" else 0
+        )
+
         payroll.daily_rate_value = (
             employee.salary
             if payroll.employee_type in ["Casual", "Job Order (JO)", "Job Orders"]
             else 0
         )
 
-        # -------------------------
-        # Calculate allowance total
-        # -------------------------
-        payroll.allowance_total = sum(
-            ea.allowance.amount for ea in employee.employee_allowances
-            if ea.allowance and ea.allowance.active
-        )
+        payroll.allowance_total = payroll.allowance_total or 0
+        payroll.gross_pay = payroll.gross_pay or 0
 
         # -------------------------
-        # Ensure gross, deductions, net are numbers
+        # FIX DEDUCTIONS
         # -------------------------
-        payroll.gross_pay = payroll.gross_pay or 0
-        payroll.total_deductions = payroll.total_deductions or 0
-        payroll.net_pay = payroll.net_pay or 0
+
+        total_deductions = sum(
+            d.employee_share for d in payroll.deduction_breakdown
+        )
+
+        payroll.total_deductions = round(total_deductions, 2)
+
+        payroll.net_pay = round(
+            payroll.gross_pay - payroll.total_deductions,
+            2
+        )
 
     departments = Department.query.all()
 
@@ -319,7 +366,10 @@ def view_payrolls():
         PayrollPeriod.start_date.desc()
     ).all()
 
-    selected_pay_period = PayrollPeriod.query.get(pay_period_id) if pay_period_id else None
+    selected_pay_period = (
+        PayrollPeriod.query.get(pay_period_id)
+        if pay_period_id else None
+    )
 
     return render_template(
         "payroll/staff/views/payroll_details.html",
@@ -330,7 +380,6 @@ def view_payrolls():
         payroll_periods=payroll_periods,
         selected_pay_period=selected_pay_period
     )
-
 
 
 @payroll_staff_bp.route("/payroll-departments")

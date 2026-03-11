@@ -1,11 +1,13 @@
 from datetime import date, datetime, timedelta
-from flask import render_template, request
+from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
 
 
 from main_app.models.hr_models import Employee, Leave, Department, LeaveCredit
 from main_app.helpers.decorators import leave_officer_required
 from main_app.helpers.functions import compute_monthly_leave_credit, convert_leave_to_points
+from main_app.extensions import db
+
 
 from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 
@@ -24,8 +26,11 @@ def employees():
     search = request.args.get("search", "")
     department = request.args.get("department", "")
 
-    # Base query (only active employees)
-    query = Employee.query.filter_by(status="Active")
+   # Only active employees with Regular or Casual type
+    query = Employee.query.filter(
+        Employee.status == "Active",
+        Employee.employment_type_id.in_([1, 3])
+    )
 
     # Search by name or employee_id
     if search:
@@ -58,16 +63,52 @@ def employees():
 
 
 
+# ===============================
+# VIEW EMPLOYEE (LEAVE OFFICER)
+# ===============================
 @leave_officer_bp.route("/employee/<int:employee_id>/view")
 @login_required
 @leave_officer_required
 def view_employee(employee_id):
+
     employee = Employee.query.get_or_404(employee_id)
 
-    # ⭐ Auto compute monthly accrual
-    compute_monthly_leave_credit(employee)
-
     today = date.today()
+
+    # ===============================
+    # Get Leave Credit Records
+    # ===============================
+
+    vacation_credit = LeaveCredit.query.filter_by(
+        employee_id=employee.id,
+        leave_type_id=1
+    ).first()
+
+    sick_credit = LeaveCredit.query.filter_by(
+        employee_id=employee.id,
+        leave_type_id=2
+    ).first()
+
+    # ⭐ Only compute if credits don't exist yet
+    if not vacation_credit or not sick_credit:
+        compute_monthly_leave_credit(employee)
+
+        vacation_credit = LeaveCredit.query.filter_by(
+            employee_id=employee.id,
+            leave_type_id=1
+        ).first()
+
+        sick_credit = LeaveCredit.query.filter_by(
+            employee_id=employee.id,
+            leave_type_id=2
+        ).first()
+
+    total_vac = vacation_credit.total_credits if vacation_credit else 0
+    total_sick = sick_credit.total_credits if sick_credit else 0
+
+    # ===============================
+    # Date Filters
+    # ===============================
 
     start_date_str = request.args.get("start_date")
     end_date_str = request.args.get("end_date")
@@ -81,25 +122,6 @@ def view_employee(employee_id):
         datetime.strptime(end_date_str, "%Y-%m-%d").date()
         if end_date_str else today
     )
-
-    # ===============================
-    # Leave Credits Retrieval
-    # ===============================
-
-    # Vacation Leave
-    vacation_credit = LeaveCredit.query.filter_by(
-        employee_id=employee.id,
-        leave_type_id=1
-    ).first()
-
-    # Sick Leave
-    sick_credit = LeaveCredit.query.filter_by(
-        employee_id=employee.id,
-        leave_type_id=2
-    ).first()
-
-    total_vac = vacation_credit.total_credits if vacation_credit else 0
-    total_sick = sick_credit.total_credits if sick_credit else 0
 
     # ===============================
     # Used Leaves Computation
@@ -126,12 +148,15 @@ def view_employee(employee_id):
     balance_vac = max(total_vac - used_vac, 0)
     balance_sick = max(total_sick - used_sick, 0)
 
-    # ⭐ Fractional point conversion (CSC table style)
+    # ===============================
+    # Point Conversion
+    # ===============================
+
     vacation_points = convert_leave_to_points(days=balance_vac)
     sick_points = convert_leave_to_points(days=balance_sick)
 
     # ===============================
-    # Table Display Data
+    # Table Data
     # ===============================
 
     leave_table = [
@@ -170,8 +195,47 @@ def view_employee(employee_id):
         start_date=start_date,
         end_date=end_date,
         today=today,
-        datetime=datetime
+        datetime=datetime,
+        vacation_credit=total_vac,
+        sick_credit=total_sick
     )
+
+
+
+@leave_officer_bp.route("/employee/<int:employee_id>/edit-leave-credit", methods=["POST"])
+@login_required
+@leave_officer_required
+def edit_leave_credit(employee_id):
+
+    employee = Employee.query.get_or_404(employee_id)
+
+    vacation = request.form.get("vacation", type=float) or 0
+    sick = request.form.get("sick", type=float) or 0
+
+    vacation_credit = LeaveCredit.query.filter_by(
+        employee_id=employee.id,
+        leave_type_id=1
+    ).first()
+
+    sick_credit = LeaveCredit.query.filter_by(
+        employee_id=employee.id,
+        leave_type_id=2
+    ).first()
+
+    if vacation_credit:
+        vacation_credit.total_credits = vacation
+
+    if sick_credit:
+        sick_credit.total_credits = sick
+
+    db.session.commit()
+
+    flash("Leave credits updated successfully.", "success")
+
+    return redirect(url_for(
+        "leave_officer_bp.view_employee",
+        employee_id=employee.id
+    ))
 
 
 # =========================
@@ -218,5 +282,4 @@ def view_leaves():
         search=search,
         departments=departments
     )
-
 

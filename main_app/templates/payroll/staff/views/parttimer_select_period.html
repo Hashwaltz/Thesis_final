@@ -4,18 +4,42 @@
 
 {% block content %}
 <section class="p-6 space-y-6 text-gray-200">
-  <h2 class="text-2xl font-semibold text-emerald-400 mb-4">Select Payroll Period</h2>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for period in periods %}
-    <a href="{{ url_for('payroll_staff_bp.preview_parttimer_payroll', period_id=period.id) }}"
-       class="block p-6 bg-gray-800 rounded-2xl border border-gray-700 hover:border-emerald-400 transition">
-      <h3 class="text-lg font-semibold text-emerald-400">
-        {{ period.start_date }} - {{ period.end_date }}
-      </h3>
-      <p class="text-gray-400 text-sm">Status: {{ period.status }}</p>
-    </a>
-    {% endfor %}
+  <h2 class="text-2xl font-semibold text-emerald-400 mb-6">Select Payroll Period</h2>
+
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 text-left">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-6 py-3 text-gray-400 uppercase text-sm font-semibold">Start Date</th>
+          <th class="px-6 py-3 text-gray-400 uppercase text-sm font-semibold">End Date</th>
+          <th class="px-6 py-3 text-gray-400 uppercase text-sm font-semibold">Status</th>
+          <th class="px-6 py-3 text-gray-400 uppercase text-sm font-semibold">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for period in periods %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-6 py-4">{{ period.start_date }}</td>
+          <td class="px-6 py-4">{{ period.end_date }}</td>
+          <td class="px-6 py-4">
+            {% if period.status == 'Locked' %}
+            <span class="px-2 py-1 rounded-full bg-red-600 text-white text-sm">{{ period.status }}</span>
+            {% else %}
+            <span class="px-2 py-1 rounded-full bg-emerald-600 text-white text-sm">{{ period.status }}</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4">
+            <a href="{{ url_for('payroll_staff_bp.preview_parttimer_payroll', period_id=period.id) }}"
+               class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition">
+               Preview
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+
 </section>
 {% endblock %}

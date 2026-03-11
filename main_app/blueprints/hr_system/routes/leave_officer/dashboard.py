@@ -14,7 +14,7 @@ from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 # =========================================================
 # LEAVE OFFICER DASHBOARD
 # =========================================================
-@leave_officer_bp.route("/dashboard")
+@leave_officer_bp.route("/leave-dashboard")
 @login_required
 @leave_officer_required
 def leave_dashboard():

@@ -2,6 +2,8 @@ from flask import render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from types import SimpleNamespace
 from collections import defaultdict
+from datetime import date
+from calendar import monthrange, monthcalendar
 
 from main_app.extensions import db
 from main_app.models.hr_models import Department, Employee, Attendance, Leave
@@ -16,176 +18,145 @@ from main_app.blueprints.hr_system.routes.head import hr_head_bp
 @login_required
 @dept_head_required
 def dashboard():
-    """Department Head Dashboard"""
+    """Department Head Dashboard with Date Picker"""
 
-    # ============================================================
+    from calendar import Calendar, monthrange
+    from datetime import date
+    from types import SimpleNamespace
+    from collections import defaultdict
+
+    # ===============================
     # Determine Department
-    # ============================================================
-
+    # ===============================
     department = None
-
     if current_user.department_id:
         department = Department.query.get(current_user.department_id)
     else:
-        department = Department.query.filter_by(
-            head_id=current_user.id
-        ).first()
+        department = Department.query.filter_by(head_id=current_user.id).first()
 
     if not department:
-        return render_template(
-            "hr/head/head_dashboard.html",
-            not_assigned=True
-        )
+        return render_template("hr/head/head_dashboard.html", not_assigned=True)
 
-    # Sync department assignment
     if not current_user.department_id:
         current_user.department_id = department.id
         db.session.commit()
 
-    # ============================================================
-    # Load Active Department Employees
-    # ============================================================
-
+    # ===============================
+    # Load Employees
+    # ===============================
     department_employees = Employee.query.filter_by(
         department_id=department.id,
         status="Active",
         archived=False
     ).all()
-
     total_employees = len(department_employees)
 
-    # ============================================================
-    # Attendance Monthly Aggregation
-    # ============================================================
+    # ===============================
+    # Date Filter
+    # ===============================
+    today = date.today()
+    year = request.args.get("year", type=int) or today.year
+    month = request.args.get("month", type=int) or today.month
 
-    start_date, end_date = get_current_month_range()
+    # Correct month overflow
+    if month > 12:
+        month = 1
+        year += 1
+    elif month < 1:
+        month = 12
+        year -= 1
 
-    attendances = Attendance.query.options(
-        db.joinedload(Attendance.employee)
-    ).join(Employee).filter(
-        Employee.department_id == department.id,
-        Attendance.date.between(start_date, end_date)
-    ).all()
+    start_date = date(year, month, 1)
+    end_date = date(year, month, monthrange(year, month)[1])
+    
+    import calendar
+    month_name = calendar.month_name[month]
 
-    # ============================================================
-    # Calendar Heatmap Summary
-    # ============================================================
+    # ===============================
+    # Attendance Query
+    # ===============================
+    attendances = (
+        Attendance.query
+        .options(db.joinedload(Attendance.employee))
+        .join(Employee)
+        .filter(
+            Employee.department_id == department.id,
+            Attendance.date >= start_date,
+            Attendance.date <= end_date
+        )
+        .all()
+    )
 
-    calendar_summary = defaultdict(lambda: {
-        "Present": 0,
-        "Absent": 0,
-        "Late": 0,
-        "OnLeave": 0
-    })
-
-    # ⭐ THIS STRUCTURE MATCHES YOUR TEMPLATE JS
-    attendance_details = defaultdict(lambda: {
-        "Present": 0,
-        "Absent": 0,
-        "Late": 0,
-        "OnLeave": 0,
-        "records": []
-    })
-
-    total_present = 0
-    total_absent = 0
-    total_late = 0
-
-    # ============================================================
-    # Aggregation Loop
-    # ============================================================
-
-    VALID_STATUSES = {"Present", "Absent", "Late", "OnLeave"}
+    # Ensure keys match actual status names
+    VALID_STATUSES = ["Present", "Absent", "Late", "On Leave"]
+    calendar_summary = defaultdict(lambda: {status: 0 for status in VALID_STATUSES})
+    attendance_details = defaultdict(list)
+    total_present = total_absent = total_late = 0
 
     for record in attendances:
-
-        if not record.employee:
-            continue
-
-        date_str = record.date.strftime("%Y-%m-%d")
-
-        status = (record.status or "").strip()
-
+        status = record.status
         if status not in VALID_STATUSES:
-            continue
-
-        # Update calendar summary counts
+            continue  # ignore unexpected statuses
+        date_str = record.date.strftime("%Y-%m-%d")
         calendar_summary[date_str][status] += 1
-
-        # Global counters
-        if status == "Present":
-            total_present += 1
-        elif status == "Absent":
-            total_absent += 1
-        elif status == "Late":
-            total_late += 1
-
-        # Modal + mini legend structure
-        attendance_details[date_str][status] += 1
-
-        attendance_details[date_str]["records"].append({
+        attendance_details[date_str].append({
             "name": record.employee.get_full_name(),
             "status": status,
             "time_in": record.time_in.strftime("%I:%M %p") if record.time_in else "-",
             "time_out": record.time_out.strftime("%I:%M %p") if record.time_out else "-"
         })
+        if status == "Present": total_present += 1
+        elif status == "Absent": total_absent += 1
+        elif status == "Late": total_late += 1
 
-    # ============================================================
-    # Calendar Events Heat Legend
-    # ============================================================
+    # ===============================
+    # Calendar Grid (Sunday first)
+    # ===============================
+    cal = Calendar(firstweekday=6)  # Sunday start
+    month_days = cal.monthdayscalendar(year, month)  # list of weeks
 
-    attendance_events = []
+    calendar_days = []
+    for week in month_days:
+        week_days = []
+        for day in week:
+            if day == 0:
+                week_days.append(None)  # empty cell
+            else:
+                d = date(year, month, day)
+                week_days.append(d.strftime("%Y-%m-%d"))
+        calendar_days.append(week_days)
 
-    for date_str, summary in calendar_summary.items():
-
-        if summary["Absent"] > 0:
-            color = "#dc2626"
-        elif summary["Late"] > 0:
-            color = "#f59e0b"
-        else:
-            color = "#16a34a"
-
-        attendance_events.append({
-            "title": f"P:{summary['Present']} A:{summary['Absent']} L:{summary['Late']}",
-            "start": date_str,
-            "color": color
-        })
-
-    # ============================================================
-    # Recent Leaves
-    # ============================================================
-
-    recent_leaves = Leave.query.options(
-        db.joinedload(Leave.employee),
-        db.joinedload(Leave.leave_type)
-    ).join(Employee).filter(
-        Employee.department_id == department.id
-    ).order_by(
-        Leave.created_at.desc()
-    ).limit(10).all()
-
-    attendance_summary = SimpleNamespace(
+    attendance_summary_obj = SimpleNamespace(
         total_present=total_present,
         total_absent=total_absent,
         total_late=total_late
     )
 
-    # ============================================================
-    # Render Template
-    # ============================================================
+    # ===============================
+    # Recent Leaves
+    # ===============================
+    recent_leaves = Leave.query.join(Employee).filter(
+        Employee.department_id == department.id
+    ).order_by(Leave.created_at.desc()).limit(10).all()
 
+    # ===============================
+    # Render Template
+    # ===============================
     return render_template(
         "hr/head/head_dashboard.html",
         not_assigned=False,
         department=department,
         total_employees=total_employees,
-        attendance_events=attendance_events,
+        attendance_summary=attendance_summary_obj,
+        calendar_days=calendar_days,
+        calendar_summary=dict(calendar_summary),
         attendance_details=dict(attendance_details),
-        attendance_summary=attendance_summary,
+        current_month=month,
+        current_year=year,
+        month_name=month_name,
         recent_leaves=recent_leaves
     )
-
-
+   
 
 # ----------------- EDIT PASSWORD ROUTE FOR DEPT HEAD -----------------
 @hr_head_bp.route('/edit_password', methods=['GET', 'POST'])

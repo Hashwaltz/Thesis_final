@@ -13,15 +13,13 @@ payroll_admin_bp = Blueprint(
     template_folder=TEMPLATE_DIR
 )
 
-from . import casual_process
+
 from . import department
 from . import brackets
 from . import deductions
 from . import history
-from . import jo_process
 from . import views
-from . import part_time_process
 from . import payroll_services
 from . import periods_services
-from . import regular_process
 from . import payslips
+from . import reports

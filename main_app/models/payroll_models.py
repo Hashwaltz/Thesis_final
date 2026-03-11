@@ -83,7 +83,7 @@ class Payroll(db.Model):
 
     status = db.Column(db.String(30), default="Draft")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    allowance_total = db.Column(db.Float, default=0)
     employee = db.relationship("Employee", back_populates="payrolls")
     period = db.relationship("PayrollPeriod", back_populates="payrolls")
 
@@ -98,7 +98,7 @@ class Payroll(db.Model):
         "PayrollDeduction",
         backref="payroll",
         cascade="all, delete-orphan",
-        lazy="dynamic"
+        lazy="selectin"
     )
 
     # -----------------------------------------------------
@@ -117,26 +117,6 @@ class Payroll(db.Model):
     def daily_rate(self):
         return (self.employee.salary or 0) / 22 if self.employee else 0
 
-    @property
-    def allowance_total(self):
-        if not self.employee:
-            return 0
-
-        total = 0
-        salary = self.employee.salary or 0
-
-        for ea in self.employee.employee_allowances:
-            if ea.allowance and ea.allowance.active:
-
-                if salary >= (ea.allowance.min_salary or 0) and \
-                   (ea.allowance.max_salary is None or salary <= ea.allowance.max_salary):
-
-                    total += ea.allowance.amount
-
-        return total
-    @allowance_total.setter
-    def allowance_total(self, value):
-        self._allowance_total = value
     # -----------------------------------------------------
     # CORE CALCULATION ENGINE
     # -----------------------------------------------------
