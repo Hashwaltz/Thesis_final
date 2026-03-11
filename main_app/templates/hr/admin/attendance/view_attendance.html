@@ -95,7 +95,6 @@
           <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Date</th>
           <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Time In</th>
           <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Time Out</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Working Hours</th>
           <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Status</th>
           <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
         </tr>
@@ -108,10 +107,6 @@
           <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ attendance.date }}</td>
           <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ attendance.time_in or '-' }}</td>
           <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ attendance.time_out or '-' }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">
-            {% if attendance.status == 'Absent' %}<span class="text-gray-400">N/A</span>
-            {% else %}{{ '%.2f'|format(attendance.working_hours) }}{% endif %}
-          </td>
           <td class="px-2 sm:px-4 py-2">
             {% if attendance.status == 'Late' %}
               <span class="px-2 py-1 text-orange-600 font-semibold text-sm">Late</span>

@@ -137,37 +137,22 @@ class Payroll(db.Model):
 
         return worked_days
     
-
     def compute_attendance_hours(self):
-        from main_app.models.hr_models import Attendance, LateComputation
-        from main_app.models.payroll_models import PayrollPeriod
+        from main_app.models.hr_models import Attendance
 
         if self.period:
             start = self.period.start_date
             end = self.period.end_date
         else:
-            period = PayrollPeriod.query.get(self.payroll_period_id)
-            if not period:
-                return 0
-            start = period.start_date
-            end = period.end_date
+            return 0
 
         attendances = Attendance.query.filter(
             Attendance.employee_id == self.employee_id,
             Attendance.date.between(start, end)
         ).all()
 
-        total_hours = 0
-        for att in attendances:
-            if att.status == "Present":
-                total_hours += 8
-            elif att.status == "Late":
-                late_record = LateComputation.query.filter_by(attendance_id=att.id).first()
-                late_equivalent = late_record.day_equivalent if late_record else 0
-                total_hours += 8 * (1 - late_equivalent)
-
+        total_hours = sum(att.working_hours or 0 for att in attendances)
         return round(total_hours, 2)
-    
     
     def calculate(self):
 
