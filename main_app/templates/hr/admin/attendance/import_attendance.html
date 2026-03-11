@@ -2,6 +2,7 @@
 {% block title %}Add Attendance | HR Admin {% endblock %}
 {% block content %}
 {% include 'hr/admin/attendance/add_attend.html' %}
+
 <main class="p-6 space-y-6">
 
   <!-- Page Header with Add Attendance Button -->
@@ -9,7 +10,7 @@
     <h1 class="text-2xl font-semibold text-blue-400">Import Attendance Records</h1>
     <button id="openAddAttendanceModal"
             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
-      <span class="material-symbols-outlined">person_add</span> Add Attendance
+      <i class="fa-solid fa-user-plus text-lg"></i> Add Attendance
     </button>
   </header>
 
@@ -23,7 +24,7 @@
       </div>
       <button type="submit"
               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 justify-center transition">
-        <span class="material-symbols-outlined">upload</span> Upload
+        <i class="fa-solid fa-file-upload text-lg"></i> Upload
       </button>
     </form>
   </div>
@@ -56,9 +57,9 @@
             <td class="px-3 py-2 whitespace-nowrap">{{ row['Time Out'] }}</td>
             <td class="px-3 py-2 text-center">
               {% if row['Matched'] %}
-                  <span class="material-symbols-outlined text-green-500">check_circle</span>
+                  <i class="fa-solid fa-circle-check text-green-500 text-lg"></i>
               {% else %}
-                  <span class="material-symbols-outlined text-red-500">cancel</span>
+                  <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
               {% endif %}
             </td>
           </tr>
@@ -69,7 +70,7 @@
       <div class="flex justify-end mt-4">
         <button type="submit"
                 class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
-          <span class="material-symbols-outlined">data_check</span> Confirm Import
+          <i class="fa-solid fa-check-to-slot text-lg"></i> Confirm Import
         </button>
       </div>
     </form>
@@ -80,9 +81,8 @@
 
 <!-- Modal Scripts -->
 <script>
-  // Manual Attendance Modal
   const openModalBtn = document.getElementById('openAddAttendanceModal');
-  const modal = document.getElementById('manualAttendanceModal'); // make sure the include has id="manualAttendanceModal"
+  const modal = document.getElementById('manualAttendanceModal');
   const closeModalBtn = document.getElementById('closeManualAttendanceModal');
   const cancelBtn = document.getElementById('cancelManualAttendance');
 
