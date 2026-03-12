@@ -18,3 +18,4 @@ from . import leaves
 from . import position
 from . import reports
 from . import users
+from . import shifts

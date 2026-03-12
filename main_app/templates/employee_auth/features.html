@@ -1,0 +1,176 @@
+{% extends "employee_auth/base.html" %}
+{% block title %}Features | Employee Portal{% endblock %}
+
+{% block content %}
+
+<section class="w-full bg-gray-950 text-gray-100">
+
+  <!-- HERO SECTION -->
+
+  <div class="relative bg-gradient-to-br from-purple-800 to-indigo-900 py-20 text-center">
+    <div class="max-w-4xl mx-auto px-6">
+      <h1 class="text-5xl font-bold mb-4 text-white">Employee Portal Features</h1>
+      <p class="text-gray-200 text-lg leading-relaxed">
+        The GovHRPay Employee Portal allows employees to conveniently access
+        their personal records, payroll information, and work-related updates
+        anytime through a secure web-based system.
+      </p>
+    </div>
+  </div>
+
+  <!-- FEATURES GRID -->
+
+  <section id="features" class="py-20 bg-gray-950">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center text-purple-400 mb-12">
+        Key Features
+      </h2>
+
+```
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+
+    <!-- Feature 1 -->
+    <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+      <i class="fas fa-user text-5xl text-purple-400 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">Personal Profile</h3>
+      <p class="text-gray-400">
+        Employees can securely view their personal information,
+        employment details, and profile records stored in the system.
+      </p>
+    </div>
+
+    <!-- Feature 2 -->
+    <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+      <i class="fas fa-calendar-check text-5xl text-green-400 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">Attendance Monitoring</h3>
+      <p class="text-gray-400">
+        Track daily time-in and time-out records, including attendance
+        summaries and work schedules.
+      </p>
+    </div>
+
+    <!-- Feature 3 -->
+    <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+      <i class="fas fa-file-invoice-dollar text-5xl text-yellow-400 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">Payslip Viewing</h3>
+      <p class="text-gray-400">
+        Access and download payroll payslips showing salary,
+        deductions, and net pay details for each payroll period.
+      </p>
+    </div>
+
+    <!-- Feature 4 -->
+    <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+      <i class="fas fa-file-alt text-5xl text-pink-400 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">Leave Records</h3>
+      <p class="text-gray-400">
+        View leave balances and previous leave applications,
+        ensuring transparency in leave management.
+      </p>
+    </div>
+
+    <!-- Feature 5 -->
+    <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+      <i class="fas fa-bell text-5xl text-cyan-400 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">Notifications</h3>
+      <p class="text-gray-400">
+        Receive important announcements, payroll release updates,
+        and HR notifications directly through the portal.
+      </p>
+    </div>
+
+    <!-- Feature 6 -->
+    <div class="bg-gray-800 rounded-2xl p-8 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2">
+      <i class="fas fa-lock text-5xl text-red-400 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">Secure Access</h3>
+      <p class="text-gray-400">
+        The portal ensures secure access to employee records
+        using authentication and role-based security.
+      </p>
+    </div>
+
+  </div>
+</div>
+```
+
+  </section>
+
+  <!-- MODULES SECTION -->
+
+  <section id="modules" class="py-20 bg-gray-900">
+    <div class="max-w-7xl mx-auto text-center px-6">
+      <h2 class="text-3xl font-bold text-purple-400 mb-12">
+        Employee Portal Modules
+      </h2>
+
+```
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+
+    <!-- Module 1 -->
+    <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+      <i class="fas fa-id-badge text-4xl text-purple-400 mb-3"></i>
+      <h4 class="text-lg font-semibold mb-2">Profile Management</h4>
+      <p class="text-gray-400 text-sm">
+        Allows employees to view and manage their personal profile information.
+      </p>
+    </div>
+
+    <!-- Module 2 -->
+    <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+      <i class="fas fa-clock text-4xl text-green-400 mb-3"></i>
+      <h4 class="text-lg font-semibold mb-2">Attendance Records</h4>
+      <p class="text-gray-400 text-sm">
+        Displays employee daily attendance and time tracking history.
+      </p>
+    </div>
+
+    <!-- Module 3 -->
+    <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+      <i class="fas fa-money-check-alt text-4xl text-yellow-400 mb-3"></i>
+      <h4 class="text-lg font-semibold mb-2">Payslip Access</h4>
+      <p class="text-gray-400 text-sm">
+        Enables employees to review their salary breakdown and payroll history.
+      </p>
+    </div>
+
+    <!-- Module 4 -->
+    <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+      <i class="fas fa-calendar-alt text-4xl text-pink-400 mb-3"></i>
+      <h4 class="text-lg font-semibold mb-2">Leave Information</h4>
+      <p class="text-gray-400 text-sm">
+        Shows leave balances and leave records from the HR system.
+      </p>
+    </div>
+
+    <!-- Module 5 -->
+    <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+      <i class="fas fa-bell text-4xl text-cyan-400 mb-3"></i>
+      <h4 class="text-lg font-semibold mb-2">Announcements</h4>
+      <p class="text-gray-400 text-sm">
+        Provides updates and announcements from HR and management.
+      </p>
+    </div>
+
+    <!-- Module 6 -->
+    <div class="bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition">
+      <i class="fas fa-shield-alt text-4xl text-red-400 mb-3"></i>
+      <h4 class="text-lg font-semibold mb-2">Secure Data Access</h4>
+      <p class="text-gray-400 text-sm">
+        Ensures employees can only access their own personal records securely.
+      </p>
+    </div>
+
+  </div>
+</div>
+```
+
+  </section>
+
+  <!-- FOOTER -->
+
+  <footer class="bg-gray-950 text-gray-400 text-center py-6">
+    <p>&copy; 2025 GovHRPay | Employee Portal. All rights reserved.</p>
+  </footer>
+
+</section>
+{% endblock %}

@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime, date
 
 from main_app.helpers.decorators import admin_required
-from main_app.models.hr_models import Employee, Department, LeaveCredit, EmploymentType, Position
+from main_app.models.hr_models import Employee, Department, LeaveCredit, EmploymentType, Position, JobHistory
 from main_app.models.user import User
 from main_app.extensions import db, mail
 from main_app.helpers.functions import parse_date
@@ -25,6 +25,7 @@ def view_employees():
     search = request.args.get('search', '')
     department_id = request.args.get('department_id', '')
     employment_type_id = request.args.get('employment_type_id', '')
+    barangay = request.args.get('barangay', '') 
     page = request.args.get('page', 1, type=int)
 
     # Base query with joins, excluding archived (archived=True will be hidden)
@@ -49,6 +50,10 @@ def view_employees():
     # Apply employment type filter
     if employment_type_id:
         query = query.filter(Employee.employment_type_id == int(employment_type_id))
+   
+    # Apply barangay filter
+    if barangay:
+        query = query.filter(Employee.barangay.ilike(f"%{barangay}%"))
 
     # Order employees alphabetically
     query = query.order_by(Employee.last_name.asc(), Employee.first_name.asc())
@@ -69,7 +74,8 @@ def view_employees():
         departments=departments,
         employment_types=employment_types,
         selected_department=department_id,
-        selected_employment_type=employment_type_id
+        selected_employment_type=employment_type_id,
+        selected_barangay=barangay
     )
 
 
@@ -167,6 +173,19 @@ def add_employee():
                 used_credits=0
             )
             db.session.add(sick_credit)
+        
+         # --- 5. Create initial JobHistory entry ---
+        job_entry = JobHistory(
+            employee_id=employee.id,
+            effective_date=date_hired,
+            position_id=employee.position_id,
+            department_id=employee.department_id,
+            employment_type_id=employee.employment_type_id,
+            salary=employee.salary,
+            status=employee.status,
+            remarks="Initial appointment"
+        )
+        db.session.add(job_entry)
 
         # --- 5. Commit everything together ---
         db.session.commit()
@@ -346,7 +365,14 @@ def edit_employee(employee_id):
 
     if request.method == 'POST':
         try:
-            # Personal info
+            # --- Store old values for JobHistory comparison ---
+            old_position_id = employee.position_id
+            old_department_id = employee.department_id
+            old_employment_type_id = employee.employment_type_id
+            old_salary = employee.salary
+            old_status = employee.status
+
+            # --- Personal info ---
             new_email = request.form.get("email")
             employee.first_name = request.form.get("first_name")
             employee.middle_name = request.form.get("middle_name")
@@ -358,21 +384,21 @@ def edit_employee(employee_id):
             employee.emergency_contact = request.form.get("emergency_contact")
             employee.emergency_phone = request.form.get("emergency_phone")
 
-            # Address fields
+            # --- Address fields ---
             employee.street_address = request.form.get("street_address")
             employee.barangay = request.form.get("barangay")
             employee.municipality = request.form.get("municipality")
             employee.province = request.form.get("province")
             employee.postal_code = request.form.get("postal_code")
 
-            # Employment info
+            # --- Employment info ---
             employee.department_id = int(request.form.get("department_id")) if request.form.get("department_id") else None
             employee.position_id = int(request.form.get("position_id")) if request.form.get("position_id") else None
             employee.employment_type_id = int(request.form.get("employment_type_id")) if request.form.get("employment_type_id") else None
             salary_val = request.form.get("salary")
             employee.salary = float(salary_val) if salary_val else None
 
-            # Dates
+            # --- Dates ---
             def parse_date(date_str):
                 if not date_str:
                     return None
@@ -384,64 +410,54 @@ def edit_employee(employee_id):
             employee.date_of_birth = parse_date(request.form.get("date_of_birth"))
             employee.date_hired = parse_date(request.form.get("date_hired"))
 
-            # Status (string)
-            employee.status = request.form.get("status")  # ✅ Updated
+            # --- Status ---
+            employee.status = request.form.get("status")
 
             # --- Update linked user email if exists ---
             if hasattr(employee, 'user') and employee.user:
                 employee.user.email = new_email
 
-            # Commit changes
+            # --- Create JobHistory if any employment field changed ---
+            if (old_position_id != employee.position_id or
+                old_department_id != employee.department_id or
+                old_employment_type_id != employee.employment_type_id or
+                old_salary != employee.salary or
+                old_status != employee.status):
+
+                remarks_list = []
+                if old_position_id != employee.position_id:
+                    remarks_list.append(f"Position: {old_position_id} → {employee.position_id}")
+                if old_department_id != employee.department_id:
+                    remarks_list.append(f"Department: {old_department_id} → {employee.department_id}")
+                if old_employment_type_id != employee.employment_type_id:
+                    remarks_list.append(f"Employment Type: {old_employment_type_id} → {employee.employment_type_id}")
+                if old_salary != employee.salary:
+                    remarks_list.append(f"Salary: {old_salary} → {employee.salary}")
+                if old_status != employee.status:
+                    remarks_list.append(f"Status: {old_status} → {employee.status}")
+
+                job_entry = JobHistory(
+                    employee_id=employee.id,
+                    effective_date=datetime.today().date(),
+                    position_id=employee.position_id,
+                    department_id=employee.department_id,
+                    employment_type_id=employee.employment_type_id,
+                    salary=employee.salary,
+                    status=employee.status,
+                    remarks="; ".join(remarks_list)
+                )
+                db.session.add(job_entry)
+
+            # --- Commit all changes ---
             db.session.commit()
+            flash("Employee updated successfully and service record logged.", "success")
             return redirect(url_for('hr_admin_bp.view_employees'))
 
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error updating employee {employee_id}: {e}")
-            return redirect(url_for('hr_admin_bp.view_employees'))
-        
-
-
-
-
-@hr_admin_bp.route('/employees/<int:employee_id>/service_record')
-@admin_required
-@login_required
-def export_service_record(employee_id):
-
-    employee = Employee.query.get_or_404(employee_id)
-
-    file_stream = generate_service_record_docx(employee)
-
-    return send_file(
-        file_stream,
-        as_attachment=True,
-        download_name=f"service_record_{employee.employee_id}.docx",
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-
-
-
-
-
-@hr_admin_bp.route("/employee/<int:employee_id>/generate-coe")
-@admin_required
-@login_required
-def generate_coe(employee_id):
-
-    employee = Employee.query.get_or_404(employee_id)
-
-    buffer = generate_coe_pdf(employee)
-
-    return send_file(
-        buffer,
-        as_attachment=True,
-        download_name=f"COE_{employee.employee_id}.pdf",
-        mimetype="application/pdf"
-    )
-
-
-
+            flash("Failed to update employee.", "danger")
+            return redirect(url_for('hr_admin_bp.view_employees'))     
 
 
 @hr_admin_bp.route("/employees/<int:employee_id>/archive", methods=["POST"])

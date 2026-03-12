@@ -1,0 +1,134 @@
+{% extends "employee_auth/base.html" %}
+
+{% block title %}Login | Employee Portal{% endblock %}
+
+{% block content %}
+
+<!-- Background Section -->
+
+<div class="relative w-full h-screen flex items-center justify-center bg-cover bg-center"
+     style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');">
+
+  <!-- Blur Overlay -->
+
+  <div class="absolute inset-0 bg-purple-900/70 backdrop-blur-sm"></div>
+
+  <!-- Login Card -->
+
+  <div class="relative z-10 bg-white/90 dark:bg-gray-900/90 shadow-xl rounded-2xl p-8 w-full max-w-md border border-purple-200 dark:border-gray-700">
+
+```
+<!-- Logo & Header -->
+<div class="text-center mb-6">
+  <img src="{{ url_for('static', filename='img/logo2.avif') }}"
+       alt="Logo"
+       class="w-24 h-24 mx-auto rounded-full mb-3 shadow-md border border-purple-300">
+
+  <h2 class="text-2xl font-bold text-purple-700 dark:text-purple-400">
+    Welcome Back
+  </h2>
+
+  <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+    Sign in to your Employee Portal
+  </p>
+</div>
+
+<!-- Login Form -->
+<form id="loginForm"
+      method="POST"
+      action="{{ url_for('employee_auth_bp.login') }}"
+      class="space-y-5">
+
+  <!-- Email -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      Email
+    </label>
+
+    <input
+      type="email"
+      name="email"
+      required
+      autocomplete="email"
+      placeholder="you@example.com"
+      class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2
+             focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none
+             dark:bg-gray-800 dark:text-gray-100">
+  </div>
+
+  <!-- Password -->
+  <div class="relative">
+    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      Password
+    </label>
+
+    <input
+      type="password"
+      id="password"
+      name="password"
+      required
+      autocomplete="current-password"
+      placeholder="••••••••"
+      class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-10
+             focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none
+             dark:bg-gray-800 dark:text-gray-100">
+  </div>
+
+  <!-- Show Password -->
+  <div class="flex justify-end items-center">
+    <label class="flex items-center text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+      <input type="checkbox"
+             id="showPassword"
+             class="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+
+      Show Password
+    </label>
+  </div>
+
+  <!-- Login Button -->
+  <button
+    type="submit"
+    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg shadow-md transition duration-200">
+
+    Sign In
+
+  </button>
+
+</form>
+```
+
+  </div>
+</div>
+
+<!-- SweetAlert -->
+
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const passwordInput = document.getElementById('password');
+  const showPasswordCheckbox = document.getElementById('showPassword');
+
+  showPasswordCheckbox.addEventListener('change', () => {
+    passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
+  });
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      {% if category == 'error' %}
+        Swal.fire({
+          icon: 'error',
+          title: 'Login Failed',
+          text: '{{ msg }}',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endwith %}
+
+});
+</script>
+
+{% endblock %}

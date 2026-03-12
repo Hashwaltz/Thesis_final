@@ -20,6 +20,8 @@ from reportlab.platypus import (
     TableStyle
 )
 
+
+from main_app.models.hr_models import Employee
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
@@ -312,72 +314,30 @@ def generate_service_record_docx(employee):
 
 
 
-def generate_coe_pdf(employee):
+
+def generate_coe_pdf(employee, fields=None):
     """
-    Reusable COE PDF generator
-    Returns BytesIO buffer
+    Generate COE PDF for a given employee.
+    `fields` is a list of fields to include. E.g. ['position', 'department', 'deductions']
     """
+    fields = fields or []
 
     buffer = io.BytesIO()
-
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=letter,
-        rightMargin=50,
-        leftMargin=50,
-        topMargin=40,
-        bottomMargin=60
-    )
-
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
+                            rightMargin=50, leftMargin=50, topMargin=40, bottomMargin=60)
     styles = getSampleStyleSheet()
+    center_style = ParagraphStyle("Center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=11)
+    title_style = ParagraphStyle("Title", parent=styles["Heading1"], alignment=TA_CENTER, spaceAfter=20)
+    right_style = ParagraphStyle("Right", parent=styles["Normal"], alignment=TA_RIGHT, fontSize=10)
+    body_style = ParagraphStyle("Body", parent=styles["Normal"], alignment=TA_CENTER, leading=18, fontSize=11)
 
-    # ---------- Styles ----------
-
-    center_style = ParagraphStyle(
-        "Center",
-        parent=styles["Normal"],
-        alignment=TA_CENTER,
-        fontSize=11
-    )
-
-    title_style = ParagraphStyle(
-        "Title",
-        parent=styles["Heading1"],
-        alignment=TA_CENTER,
-        spaceAfter=20
-    )
-
-    right_style = ParagraphStyle(
-        "Right",
-        parent=styles["Normal"],
-        alignment=TA_RIGHT,
-        fontSize=10
-    )
-
-    body_style = ParagraphStyle(
-        "Body",
-        parent=styles["Normal"],
-        alignment=TA_CENTER,
-        leading=18,
-        fontSize=11
-    )
-
-    # ---------- Logo ----------
-
-    logo_path = os.path.join(
-        current_app.root_path,
-        "static",
-        "img",
-        "garay.png"
-    )
-
+    # Logo
+    logo_path = os.path.join(current_app.root_path, "static", "img", "garay.png")
     if os.path.exists(logo_path):
         logo = Image(logo_path, width=70, height=70)
         header_table = Table([[logo]], colWidths=[450], hAlign="CENTER")
     else:
         header_table = Table([[""]], colWidths=[450])
-
-    # ---------- Header Text ----------
 
     header_text = """
     Republic of the Philippines<br/>
@@ -392,58 +352,64 @@ def generate_coe_pdf(employee):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 2)
     ]))
 
-    # ---------- Date ----------
-
     today_date = datetime.now().strftime("%B %d, %Y")
     date_paragraph = Paragraph(today_date, right_style)
 
-    # ---------- Gender Prefix ----------
-
+    # Gender title
     gender = (employee.gender or "").lower()
-
     if gender == "male":
         title_prefix = "Mr."
     elif gender == "female":
         title_prefix = "Ms."
     else:
         title_prefix = "Mr./Ms."
-
     display_name = f"{title_prefix} {employee.last_name}"
 
-    # ---------- Model Data ----------
-
-    department_name = employee.department.name if employee.department else "N/A"
+    # Model data
     position_name = employee.position.name if employee.position else "N/A"
+    department_name = employee.department.name if employee.department else "N/A"
     employment_type = employee.employment_type.name if employee.employment_type else "N/A"
-
     hire_date = employee.date_hired.strftime("%B %d, %Y") if employee.date_hired else "N/A"
-
     end_date = "Present" if employee.status == "Active" else (employee.status or "N/A")
-
     working_duration = employee.get_working_duration()
 
-    # ---------- Body Text ----------
+    # Fetch deductions from EmployeeDeductions table if requested
+    deductions_text = ""
+    if "deductions" in fields:
+        deductions = []
+        for ed in getattr(employee, "employee_deductions", []):  # relationship Employee.employee_deductions
+            deduction_name = ed.deduction.name if ed.deduction else "N/A"
+            deductions.append(f"{deduction_name}")
+        if deductions:
+            deductions_text = ", ".join(deductions)
+        else:
+            deductions_text = "No deductions linked."
 
-    body_text = f"""
-    <b>TO WHOM IT MAY CONCERN:</b><br/><br/>
+    # Build body text
+    body_lines = [f"<b>TO WHOM IT MAY CONCERN:</b><br/><br/>",
+                  f"This is to certify that <b>{display_name}</b>,"]
 
-    This is to certify that <b>{display_name}</b>,
-    a <b>{position_name}</b> under the <b>{department_name}</b>,
-    is employed as <b>{employment_type}</b> status in this office.
+    if "position" in fields:
+        body_lines.append(f"a <b>{position_name}</b>")
+    if "department" in fields:
+        body_lines.append(f"under the <b>{department_name}</b>")
+    if "employment_type" in fields:
+        body_lines.append(f"is employed as <b>{employment_type}</b> status in this office.")
 
-    <br/><br/>
+    if "hire_date" in fields or "end_date" in fields or "working_duration" in fields:
+        body_lines.append("<br/><br/>")
+        if "hire_date" in fields:
+            body_lines.append(f"Working since <b>{hire_date}</b>")
+        if "end_date" in fields:
+            body_lines.append(f"up to <b>{end_date}</b>")
+        if "working_duration" in fields:
+            body_lines.append(f"with total duration of <b>{working_duration}</b>.")
 
-    This employee has been working since <b>{hire_date}</b>
-    up to <b>{end_date}</b> with a total working duration of
-    <b>{working_duration}</b>.
+    if deductions_text:
+        body_lines.append(f"<br/><br/>Deductions: {deductions_text}")
 
-    <br/><br/>
-
-    This certification is issued upon the request of {display_name}
-    for whatever legal purpose this may serve.
-    """
-
-    # ---------- Signature ----------
+    body_lines.append(f"<br/><br/>This certification is issued upon the request of {display_name} for whatever legal purpose this may serve.")
+    body_text = " ".join(body_lines)
 
     signature_block = Paragraph("""
     <br/><br/><br/>
@@ -451,31 +417,26 @@ def generate_coe_pdf(employee):
     Acting MHRMO
     """, right_style)
 
-    # ---------- Build Story ----------
-
     story = [
         header_table,
         Paragraph(header_text, center_style),
-
         Spacer(1, 6),
         separator,
         Spacer(1, 20),
-
         date_paragraph,
         Spacer(1, 20),
-
         Paragraph("CERTIFICATION", title_style),
-
         Paragraph(body_text, body_style),
-
         signature_block
     ]
 
     doc.build(story)
-
     buffer.seek(0)
-
     return buffer
+
+
+
+
 
 
 
@@ -838,5 +799,90 @@ def employee_payroll_history(employee):
         output,
         download_name=filename,
         as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+
+
+
+
+# ======================================================
+# EMPLOYEES BY YEARS OF SERVICE REPORT
+# ======================================================
+
+def export_employees_by_year_of_service(employees):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Employees"
+
+    # --- HEADER SECTION ---
+    ws.merge_cells("A1:H1")
+    ws["A1"] = "LIST OF PERSONNEL"
+    ws["A1"].font = Font(bold=True, size=14)
+    ws["A1"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells("A2:H2")
+    ws["A2"] = f"(As of {date.today().strftime('%B %d, %Y')})"
+    ws["A2"].alignment = Alignment(horizontal="center")
+
+    ws["A4"] = "Agency name:"
+    ws["B4"] = "LGU-NORZAGARAY, BULACAN"
+
+    ws["A5"] = "Regional Office No:"
+    ws["B5"] = "3"
+
+    # --- TABLE HEADER ---
+    headers = [
+        "Full Name",
+        "Email",
+        "Phone",
+        "Department",
+        "Position",
+        "Date Hired",
+        "Years of Service",
+        "Barangay"
+    ]
+
+    ws.append([])  # blank row
+    ws.append(headers)
+
+    # Apply bold font to header row
+    header_row = ws.max_row
+    for cell in ws[header_row]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # --- EMPLOYEE DATA ---
+    for e in employees:
+        ws.append([
+            e.get_full_name(),
+            e.email,
+            e.phone or "-",
+            e.department.name if e.department else "-",
+            e.position.name if e.position else "-",
+            e.date_hired.strftime("%Y-%m-%d") if e.date_hired else "-",
+            e.get_working_duration(),
+            e.barangay or "-"
+        ])
+
+    # --- Auto-fit column widths safely ---
+    for column_cells in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(column_cells[0].column)
+        for cell in column_cells:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_length + 2
+
+    # --- Save to in-memory buffer ---
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="Employee_Report.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )

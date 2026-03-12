@@ -14,3 +14,4 @@ from . import dashboard
 from . import attendance
 from . import employee
 from . import leaves
+from . import shifts

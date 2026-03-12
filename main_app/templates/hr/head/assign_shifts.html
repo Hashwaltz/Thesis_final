@@ -1,0 +1,88 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Department Head - Assign Shifts{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center">
+        <i class="fa-solid fa-clock text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-100">Assign Shifts</h1>
+        <p class="text-sm text-gray-400">Assign shifts to employees under your department</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Assign Shift Form -->
+  <section class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow space-y-6">
+    <form method="POST" class="space-y-6">
+
+      <!-- Employee Selection -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Employee</label>
+        <select name="employee_id" required
+                class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+          <option value="">Select Employee</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}">
+              {{ emp.get_full_name() }}{% if emp.position %} - {{ emp.position.name }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Shift Selection -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Shift</label>
+        <select name="shift_id" required
+                class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+          <option value="">Select Shift</option>
+          {% for shift in shifts %}
+            <option value="{{ shift.id }}">
+              {{ shift.name }} ({{ shift.start_time.strftime('%I:%M %p') }} - {{ shift.end_time.strftime('%I:%M %p') }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Start Date -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Start Date</label>
+        <input type="date" name="start_date" required
+               class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+      </div>
+
+      <!-- Weekdays Selection -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Days to Apply Shift</label>
+        <div class="flex flex-wrap gap-3">
+          {% for day in weekdays %}
+            <label class="flex items-center gap-2 bg-gray-700/50 px-3 py-1 rounded-lg cursor-pointer hover:bg-blue-700/40 transition">
+              <input type="checkbox" name="weekdays" value="{{ day }}" class="accent-blue-500">
+              <span class="text-gray-200">{{ day }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3 mt-4">
+        <a href="{{ url_for('hr_head_bp.current_shifts') }}" 
+           class="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white transition">
+          <i class="fas fa-history text-blue-400"></i> View History
+        </a>
+        <button type="submit" 
+                class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition">
+          <i class="fas fa-calendar-check text-white"></i> Assign Shift
+        </button>
+      </div>
+
+    </form>
+  </section>
+
+</main>
+{% endblock %}

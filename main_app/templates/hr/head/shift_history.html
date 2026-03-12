@@ -1,0 +1,100 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Department Head - Shift History{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center">
+        <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-100">Shift History</h1>
+        <p class="text-sm text-gray-400">View assigned shifts for your department employees</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Form -->
+  <section class="bg-gray-800 border border-gray-700 rounded-2xl p-4 shadow">
+    <form method="get" class="flex flex-col sm:flex-row gap-4 items-end">
+
+      <!-- Employee Filter -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-1">Employee</label>
+        <select name="employee_id" class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+          <option value="">All Employees</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}" {% if selected_employee == emp.id %}selected{% endif %}>
+              {{ emp.get_full_name() }}{% if emp.position %} - {{ emp.position.name }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-1">Status</label>
+        <select name="status" class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+          <option value="all" {% if selected_status == "all" %}selected{% endif %}>All</option>
+          <option value="active" {% if selected_status == "active" %}selected{% endif %}>Active</option>
+          <option value="inactive" {% if selected_status == "inactive" %}selected{% endif %}>Inactive</option>
+        </select>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="flex items-center">
+        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">
+          <i class="fas fa-filter text-white"></i> Filter
+        </button>
+      </div>
+
+    </form>
+  </section>
+
+  <!-- Shift Table -->
+  <section class="overflow-x-auto bg-gray-800 border border-gray-700 rounded-2xl shadow">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-4 py-3 text-left text-gray-400">Employee</th>
+          <th class="px-4 py-3 text-left text-gray-400">Position</th>
+          <th class="px-4 py-3 text-left text-gray-400">Shift</th>
+          <th class="px-4 py-3 text-left text-gray-400">Date</th>
+          <th class="px-4 py-3 text-left text-gray-400">Start</th>
+          <th class="px-4 py-3 text-left text-gray-400">End</th>
+          <th class="px-4 py-3 text-left text-gray-400">Status</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for es in shifts %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-2 text-gray-200">{{ es.employee.get_full_name() }}</td>
+          <td class="px-4 py-2 text-gray-200">{% if es.employee.position %}{{ es.employee.position.name }}{% else %}-{% endif %}</td>
+          <td class="px-4 py-2 text-gray-200">{{ es.shift.name }}</td>
+          <td class="px-4 py-2 text-gray-200">{{ es.date.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-2 text-gray-200">{{ es.shift.start_time.strftime('%I:%M %p') }}</td>
+          <td class="px-4 py-2 text-gray-200">{{ es.shift.end_time.strftime('%I:%M %p') }}</td>
+          <td class="px-4 py-2">
+            <span class="px-2 py-1 rounded-full text-sm font-medium
+              {% if es.status == 'active' %}bg-green-600/20 text-green-400
+              {% elif es.status == 'inactive' %}bg-red-600/20 text-red-400
+              {% else %}bg-gray-600/20 text-gray-400{% endif %}">
+              {{ es.status | capitalize }}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-gray-400 py-6">No shift records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+</main>
+{% endblock %}

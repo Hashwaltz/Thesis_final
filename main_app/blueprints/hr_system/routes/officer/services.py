@@ -18,11 +18,12 @@ from main_app.blueprints.hr_system.routes.officer import hr_officer_bp
 @hr_officer_required
 @login_required
 def view_services():
-    employment_types = EmploymentType.query.all()
-    employees = Employee.query.all()
+    employment_types = EmploymentType.query.order_by(EmploymentType.name).all()
+    employees = Employee.query.order_by(Employee.last_name.asc()).all()
     return render_template("hr/officer/officer_services.html",
                            employment_types=employment_types,
                            employees=employees)
+
 
     
 @hr_officer_bp.route("/generate_moa_all/<int:employment_type_id>")
@@ -78,22 +79,16 @@ def export_service_record(employee_id):
     )
 
 
-
-
-
 @hr_officer_bp.route("/employee/<int:employee_id>/generate-coe")
 @hr_officer_required
 @login_required
 def generate_coe(employee_id):
-
     employee = Employee.query.get_or_404(employee_id)
-
-    buffer = generate_coe_pdf(employee)
-
+    fields = request.args.getlist("fields")  # List of selected fields from query params
+    buffer = generate_coe_pdf(employee, fields=fields)
     return send_file(
         buffer,
         as_attachment=True,
         download_name=f"COE_{employee.employee_id}.pdf",
         mimetype="application/pdf"
     )
-

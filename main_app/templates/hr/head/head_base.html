@@ -82,12 +82,30 @@
 
           <!-- Group: Attendance -->
           <div class="mb-6">
-            <h3 class="text-sm uppercase tracking-wider text-gray-500 mb-2">Attendance</h3>
+            <h3 class="text-sm uppercase tracking-wider text-gray-500 mb-2">Attendance and Shifts</h3>
             <ul class="space-y-2">
               <li>
                 <a href="{{ url_for('hr_head_bp.attendance') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
                   <i class="fas fa-calendar-check text-blue-400"></i>
                   Attendance Records
+                </a>
+              </li>
+              <li>
+                <a href="{{ url_for('hr_head_bp.assign_shifts') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                  <i class="fas fa-calendar-check text-blue-400"></i>
+                  Assign Shifts
+                </a>
+              </li>
+              <li>
+                <a href="{{ url_for('hr_head_bp.current_shifts') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                  <i class="fas fa-clock text-blue-400"></i>
+                  Current Shifts
+                </a>
+              </li>
+               <li>
+                <a href="{{ url_for('hr_head_bp.shift_history') }}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition">
+                  <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+                  Shift History
                 </a>
               </li>
             </ul>

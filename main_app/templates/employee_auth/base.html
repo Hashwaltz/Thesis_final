@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}GovHRPay | Employee Portal{% endblock %}</title>
+
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='img/favicon.avif') }}"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              employee: {
+                DEFAULT: "#9333ea",
+                dark: "#7e22ce",
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+
+  <body
+    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-purple-600 selection:text-white"
+  >
+
+    <!-- Navbar -->
+    <header class="bg-gray-900 shadow-md sticky top-0 z-50">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16"
+      >
+
+        <!-- Logo -->
+        <a href="/" class="flex items-center space-x-2 text-white">
+          <img
+            src="{{ url_for('static', filename='img/logo2.avif') }}"
+            alt="Logo"
+            class="w-10 h-10 rounded-full object-cover"
+          />
+
+          <span class="text-xl font-semibold">
+            GovHRPay Employee Portal
+          </span>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex space-x-8 text-gray-300 font-medium">
+
+          <a
+            href="{{ url_for('index') }}"
+            class="hover:text-purple-400 transition-colors"
+          >
+            Home
+          </a>
+
+          <a
+            href="{{ url_for('employee_auth_bp.login') }}"
+            class="hover:text-purple-400 transition-colors"
+          >
+            Login
+          </a>
+
+          <a
+            href="{{ url_for('employee_auth_bp.about_employee') }}"
+            class="hover:text-purple-400 transition-colors"
+          >
+            About
+          </a>
+
+          <a
+            href="{{ url_for('employee_auth_bp.features_employee') }}"
+            class="hover:text-purple-400 transition-colors"
+          >
+            Features
+          </a>
+
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <button
+          id="menu-toggle"
+          class="md:hidden text-gray-300 hover:text-white focus:outline-none"
+        >
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+
+      </div>
+
+      <!-- Mobile Menu -->
+      <div
+        id="mobile-menu"
+        class="hidden md:hidden bg-gray-800 border-t border-gray-700"
+      >
+
+        <nav class="flex flex-col items-center py-3 space-y-3">
+
+          <a
+            href="{{ url_for('index') }}"
+            class="text-gray-300 hover:text-purple-400 transition-colors"
+          >
+            Home
+          </a>
+
+          <a
+            href="{{ url_for('employee_auth_bp.login') }}"
+            class="text-gray-300 hover:text-purple-400 transition-colors"
+          >
+            Login
+          </a>
+
+          <a
+            href="{{ url_for('employee_auth_bp.about_employee') }}"
+            class="text-gray-300 hover:text-purple-400 transition-colors"
+          >
+            About
+          </a>
+
+          <a
+            href="{{ url_for('employee_auth_bp.features_employee') }}"
+            class="text-gray-300 hover:text-purple-400 transition-colors"
+          >
+            Features
+          </a>
+
+        </nav>
+
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="flex-1 flex justify-center items-center py-10 px-4">
+      {% block content %}
+      <!-- Employee Portal Content -->
+      {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer
+      class="bg-gray-900 text-gray-400 py-6 text-center text-sm border-t border-gray-800"
+    >
+      &copy; {{ current_year or '2025' }} GovHRPay | Employee Portal. All rights
+      reserved.
+    </footer>
+
+    <!-- Scripts -->
+    {% block scripts %}
+
+    <script>
+      const menuToggle = document.getElementById("menu-toggle");
+      const mobileMenu = document.getElementById("mobile-menu");
+
+      menuToggle.addEventListener("click", () => {
+        mobileMenu.classList.toggle("hidden");
+      });
+    </script>
+
+    {% endblock %}
+  </body>
+</html>

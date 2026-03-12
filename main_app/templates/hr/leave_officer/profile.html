@@ -1,5 +1,5 @@
 {% extends 'hr/leave_officer/leave_base.html' %}
-{% block title %}Employee Profile{% endblock %}
+{% block title %}Leave-Officer Employee Profile{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-lg text-slate-100">
@@ -43,7 +43,7 @@
           <div><span class="text-slate-400">Age</span><div class="font-medium">{{ age if age else '-' }}</div></div>
           <div><span class="text-slate-400">Gender</span><div class="font-medium">{{ employee.gender if employee else '-' }}</div></div>
           <div><span class="text-slate-400">Civil Status</span><div class="font-medium">{{ employee.marital_status if employee else '-' }}</div></div>
-          <div><span class="text-slate-400">Working Years</span><div class="font-medium">{{ working_duration if working_duration else '-' }} years</div></div>
+          <div><span class="text-slate-400">Working Years</span><div class="font-medium">{{ working_duration if working_duration else '-' }}</div></div>
         </div>
       </div>
 

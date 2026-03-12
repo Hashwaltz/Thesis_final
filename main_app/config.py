@@ -16,6 +16,9 @@ class Config:
     # Payroll System Configuration
     PAYROLL_SYSTEM_URL = 'http://localhost:5000'
 
+    #Employee System Configuration
+    EMPLOYEE_SYSTEM_URL = 'http://localhost:5000'
+
     # API Configuration
     API_TIMEOUT = 30
 

@@ -1,0 +1,76 @@
+{% extends 'hr/head/head_base.html' %}
+{% block title %}Department Head - Current Shifts{% endblock %}
+
+{% block content %}
+<main class="p-4 md:p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center">
+        <i class="fa-solid fa-clock text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-100">Current Shifts</h1>
+        <p class="text-sm text-gray-400">View assigned shifts for employees under your department</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Table -->
+  <div class="overflow-x-auto bg-gray-800 border border-gray-700 rounded-2xl shadow">
+    <table class="min-w-full divide-y divide-gray-700 text-sm">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-4 py-3 text-left text-gray-400">Employee</th>
+          <th class="px-4 py-3 text-left text-gray-400">Position</th>
+          <th class="px-4 py-3 text-left text-gray-400">Shift Name</th>
+          <th class="px-4 py-3 text-left text-gray-400">Start Time</th>
+          <th class="px-4 py-3 text-left text-gray-400">End Time</th>
+          <th class="px-4 py-3 text-left text-gray-400">Days Assigned</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-gray-700">
+        {% for emp in employees %}
+        {% set shifts = current_shifts.get(emp.id) %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-4 py-2 text-gray-200">{{ emp.get_full_name() }}</td>
+          <td class="px-4 py-2 text-gray-200">{% if emp.position %}{{ emp.position.name }}{% else %}-{% endif %}</td>
+
+          {% if shifts %}
+            <!-- Show shift info based on first shift (assuming same shift for all days) -->
+            <td class="px-4 py-2 text-gray-200">{{ shifts[0].shift.name }}</td>
+            <td class="px-4 py-2 text-gray-200">{{ shifts[0].shift.start_time.strftime('%I:%M %p') }}</td>
+            <td class="px-4 py-2 text-gray-200">{{ shifts[0].shift.end_time.strftime('%I:%M %p') }}</td>
+
+            <!-- Days assigned -->
+            <td class="px-4 py-2 flex gap-1 flex-wrap">
+              {% for s in shifts %}
+                <span class="px-2 py-1 rounded-full text-sm font-medium
+                             {% if s.day_of_week == today %}
+                               bg-green-600/20 text-green-400
+                             {% else %}
+                               bg-gray-600/20 text-gray-400
+                             {% endif %}">
+                  {{ s.day_of_week }}
+                </span>
+              {% endfor %}
+            </td>
+
+          {% else %}
+            <td colspan="4" class="px-4 py-2 text-gray-500 text-center">No shift assigned</td>
+            <td class="px-4 py-2 text-gray-500 text-center">-</td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-gray-400 py-6">No employees found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</main>
+{% endblock %}

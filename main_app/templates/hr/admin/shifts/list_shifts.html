@@ -1,0 +1,133 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Manage Shifts | GovHRPay{% endblock %}
+
+{% block content %}
+
+<main class="p-4 md:p-6 space-y-6">
+  <!-- Page Header -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+      <i class="fa-solid fa-calendar-day text-3xl"></i>
+      Shift Management
+    </h1>
+    <!-- Add Shift Button -->
+    <a href="{{ url_for('hr_admin_bp.create_shift') }}"
+    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+    <i class="fa-solid fa-plus"></i>
+    Add Shift
+    </a>
+  </header>
+
+  <!-- Shifts Table -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
+    <table class="min-w-full divide-y divide-gray-700 table-auto">
+      <thead class="bg-gray-900">
+        <tr>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Name</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Start Time</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">End Time</th>
+          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        {% for shift in shifts %}
+        <tr class="hover:bg-gray-700 transition">
+          <td class="px-2 sm:px-4 py-2 text-gray-200">{{ shift.name }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200">{{ shift.start_time.strftime('%I:%M %p') }}</td>
+          <td class="px-2 sm:px-4 py-2 text-gray-200">{{ shift.end_time.strftime('%I:%M %p') }}</td>
+          <td class="px-2 sm:px-4 py-2 flex gap-2">
+            <!-- Edit Button -->
+            <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') }}', '{{ shift.end_time.strftime('%H:%M') }}')"
+                    class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 rounded text-white text-sm flex items-center gap-1 transition">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span class="hidden sm:inline">Edit</span>
+            </button>
+
+            <!-- Delete -->
+            <form action="{{ url_for('hr_admin_bp.delete_shift', shift_id=shift.id) }}" method="POST" onsubmit="return confirm('Are you sure?');">
+              <button type="submit" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-white text-sm flex items-center gap-1 transition">
+                <i class="fa-solid fa-trash"></i>
+                <span class="hidden sm:inline">Delete</span>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="px-4 py-3 text-center text-gray-400">No shifts found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
+    {% if shifts.has_prev %}
+      <a href="{{ url_for('hr_admin_bp.list_shifts', page=shifts.prev_num) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Previous</a>
+    {% endif %}
+
+    <span class="px-4 py-2">Page {{ shifts.page }} of {{ shifts.pages }}</span>
+
+    {% if shifts.has_next %}
+      <a href="{{ url_for('hr_admin_bp.list_shifts', page=shifts.next_num) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Next</a>
+    {% endif %}
+  </div>
+</main>
+
+<!-- Edit Shift Modal -->
+<div id="editShiftModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden z-50">
+  <div class="bg-gray-900 rounded-lg shadow-lg p-6 w-full max-w-md">
+    <h3 class="text-lg font-semibold mb-4">Edit Shift</h3>
+    <form id="editShiftForm" method="POST">
+      <input type="hidden" name="shift_id" id="editShiftId">
+      <div class="mb-3">
+        <label class="block mb-1">Name</label>
+        <input type="text" name="name" id="editShiftName" class="w-full rounded p-2 bg-gray-800 border border-gray-700 text-white" required>
+      </div>
+      <div class="mb-3">
+        <label class="block mb-1">Start Time</label>
+        <input type="time" name="start_time" id="editShiftStart" class="w-full rounded p-2 bg-gray-800 border border-gray-700 text-white" required>
+      </div>
+      <div class="mb-3">
+        <label class="block mb-1">End Time</label>
+        <input type="time" name="end_time" id="editShiftEnd" class="w-full rounded p-2 bg-gray-800 border border-gray-700 text-white" required>
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded text-white">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Add Shift Modal
+  const addModal = document.getElementById("addShiftModal");
+  document.getElementById("openAddShiftModal")?.addEventListener("click", () => addModal.classList.remove("hidden"));
+
+  document.getElementById("closeAddShiftModal")?.addEventListener("click", () => addModal.classList.add("hidden"));
+  document.getElementById("cancelAddShift")?.addEventListener("click", () => addModal.classList.add("hidden"));
+
+  // Edit Shift Modal
+  const editModal = document.getElementById("editShiftModal");
+  const editForm = document.getElementById("editShiftForm");
+
+  window.openEditModal = (id, name, start, end) => {
+    document.getElementById('editShiftId').value = id;
+    document.getElementById('editShiftName').value = name;
+    document.getElementById('editShiftStart').value = start;
+    document.getElementById('editShiftEnd').value = end;
+
+    editForm.action = `/edit/${id}`;
+    editModal.classList.remove("hidden");
+  };
+
+  window.closeEditModal = () => editModal.classList.add("hidden");
+});
+</script>
+{% endblock %}

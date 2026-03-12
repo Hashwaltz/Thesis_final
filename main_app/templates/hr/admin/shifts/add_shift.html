@@ -1,0 +1,83 @@
+{% extends 'hr/admin/admin_base.html' %}
+{% block title %}Add Shift | GovHRPay{% endblock %}
+
+{% block content %}
+<main class="p-6 md:p-10 space-y-6 text-white">
+
+  <!-- Page Header -->
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold flex items-center gap-2">
+      <i class="fa-solid fa-clock"></i>
+      <i class="fa-solid fa-plus text-blue-400"></i>
+      Add Shift
+    </h1>
+  </header>
+
+  <!-- Add Shift Form -->
+  <section class="bg-gray-800 rounded-2xl p-6 shadow-lg max-w-md mx-auto">
+    <h2 class="text-xl font-semibold mb-4">Shift Details</h2>
+    <form method="POST" class="space-y-6">
+
+      <!-- Shift Name -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Shift Name <span class="text-red-500">*</span></label>
+        <input type="text" name="name" placeholder="Enter shift name" required
+               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+      </div>
+
+      <!-- Start Time -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">Start Time <span class="text-red-500">*</span></label>
+        <input type="time" name="start_time" required
+               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+      </div>
+
+      <!-- End Time -->
+      <div class="flex flex-col">
+        <label class="text-gray-300 mb-2 font-medium">End Time <span class="text-red-500">*</span></label>
+        <input type="time" name="end_time" required
+               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex justify-end gap-2 mt-4">
+        <a href="{{ url_for('hr_admin_bp.list_shifts') }}"
+           class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded text-white">Cancel</a>
+        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">Add Shift</button>
+      </div>
+
+    </form>
+  </section>
+</main>
+
+<!-- SweetAlert -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        {% if category == 'success' %}
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '{{ message }}',
+            showConfirmButton: false,
+            timer: 1000,
+            timerProgressBar: true,
+            willClose: () => { window.location.href = "{{ url_for('hr_admin_bp.list_shifts') }}"; }
+          });
+        {% elif category == 'error' %}
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '{{ message }}',
+            confirmButtonColor: '#e74a3b'
+          });
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+});
+</script>
+{% endblock %}

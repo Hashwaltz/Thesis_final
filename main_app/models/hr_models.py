@@ -1,4 +1,5 @@
 from main_app.extensions import db
+from calendar import monthrange
 from datetime import datetime, date, time
 from sqlalchemy import event
 # =========================================================
@@ -77,41 +78,92 @@ class Employee(db.Model):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"
 
     def get_full_name(self):
-        return f"{self.first_name} {self.middle_name or ''} {self.last_name}".strip()
+        return f"{self.last_name}, {self.first_name} {self.middle_name or ''}".strip()
     
     def get_full_address(self):
         """Conveniently returns formatted full address."""
         parts = [self.street_address, self.barangay, self.municipality, self.province, self.postal_code]
         return ', '.join([p for p in parts if p])
 
+    
     def get_working_duration(self):
-        """Returns the working duration as years, months, and days from date_hired to today."""
+        """Return working duration from date_hired to today."""
         if not self.date_hired:
-            return "0 years, 0 months, 0 days"
-        
+            return "-"
+
         today = date.today()
         start = self.date_hired
 
-        # Initial difference
         years = today.year - start.year
         months = today.month - start.month
         days = today.day - start.day
 
-        # Adjust days and months
         if days < 0:
             months -= 1
-            # get number of days in previous month
-            from calendar import monthrange
-            prev_month = (today.month - 1) or 12
+            prev_month = today.month - 1 or 12
             prev_year = today.year if today.month != 1 else today.year - 1
-            days_in_prev_month = monthrange(prev_year, prev_month)[1]
-            days += days_in_prev_month
+            days += monthrange(prev_year, prev_month)[1]
 
         if months < 0:
             years -= 1
             months += 12
 
-        return f"{years} years, {months} months, {days} days"
+        parts = []
+        if years:
+            parts.append(f"{years} year{'s' if years > 1 else ''}")
+        if months:
+            parts.append(f"{months} month{'s' if months > 1 else ''}")
+        if days:
+            parts.append(f"{days} day{'s' if days > 1 else ''}")
+
+        return ", ".join(parts) if parts else "0 days"
+
+    @property
+    def years_of_service(self):
+        """Returns total years of service."""
+        if not self.date_hired:
+            return 0
+
+        today = date.today()
+
+        years = today.year - self.date_hired.year - (
+            (today.month, today.day) < (self.date_hired.month, self.date_hired.day)
+        )
+
+        return years
+    
+    def get_working_duration(self):
+        if not self.date_hired:
+            return "-"
+
+        today = date.today()
+
+        years = today.year - self.date_hired.year
+        months = today.month - self.date_hired.month
+        days = today.day - self.date_hired.day
+
+        # Adjust negatives
+        if days < 0:
+            months -= 1
+            days += 30
+
+        if months < 0:
+            years -= 1
+            months += 12
+
+        parts = []
+
+        if years:
+            parts.append(f"{years} year{'s' if years != 1 else ''}")
+
+        if months:
+            parts.append(f"{months} month{'s' if months != 1 else ''}")
+
+        if days:
+            parts.append(f"{days} day{'s' if days != 1 else ''}")
+
+        return " and ".join(parts) if parts else "0 days"
+    
 
 # =========================================================
 # ATTENDANCE
@@ -133,58 +185,44 @@ class Attendance(db.Model):
 
     def __repr__(self):
         return f"<Attendance {self.employee_id} - {self.date}>"
+    
+    def get_shift(self):
+            """Return the employee's shift for this attendance date."""
+            daily_shift = EmployeeShift.query.filter_by(employee_id=self.employee_id, date=self.date).first()
+            if daily_shift:
+                return daily_shift.shift
+            return getattr(self.employee, "shift", None)  # fallback to default shift
 
     def check_late(self):
-        """Automatically mark as late if time_in is after 8:00 AM."""
-        if self.time_in and self.time_in > time(8, 0):  # 8:00 AM cutoff
+        shift = self.get_shift()
+        if not shift or not self.time_in:
+            return
+        if self.time_in > shift.start_time:
             self.status = "Late"
             self.remarks = f"Late - Time In: {self.time_in.strftime('%I:%M %p')}"
         else:
             self.status = "Present"
+
     def calculate_working_hours(self):
-        """
-        Compute total working hours between 8:00 AM and 5:00 PM only,
-        minus 1 hour for lunch if applicable.
-        """
-        if self.status == "Absent" or not self.time_in or not self.time_out:
+        shift = self.get_shift()
+        if not shift or not self.time_in or not self.time_out:
             self.working_hours = 0.0
             return
 
-        # Convert strings to datetime.time if needed
-        if isinstance(self.time_in, str):
-            h, m = map(int, self.time_in.split(":"))
-            actual_time_in = time(hour=h, minute=m)
-        else:
-            actual_time_in = self.time_in
+        work_start = datetime.combine(self.date, shift.start_time)
+        work_end = datetime.combine(self.date, shift.end_time)
+        actual_in = datetime.combine(self.date, self.time_in)
+        actual_out = datetime.combine(self.date, self.time_out)
 
-        if isinstance(self.time_out, str):
-            h, m = map(int, self.time_out.split(":"))
-            actual_time_out = time(hour=h, minute=m)
-        else:
-            actual_time_out = self.time_out
-
-        # Official working hours
-        work_start = datetime.combine(self.date, time(8, 0))
-        work_end = datetime.combine(self.date, time(17, 0))
-
-        # Combine date + actual time_in/out
-        actual_in = datetime.combine(self.date, actual_time_in)
-        actual_out = datetime.combine(self.date, actual_time_out)
-
-        # Clamp the time within the 8AM–5PM range
         start = max(actual_in, work_start)
         end = min(actual_out, work_end)
 
-        # Ensure no negative duration
         if end <= start:
             self.working_hours = 0.0
             return
 
         total_hours = (end - start).total_seconds() / 3600
-
-        # Subtract 1 hour for lunch if total > 4 hours
         self.working_hours = round(total_hours - 1, 2) if total_hours > 4 else round(total_hours, 2)
-
 # =========================================================
 # EVENT LISTENERS: Auto calculate hours before save
 # =========================================================
@@ -434,3 +472,72 @@ def generate_late_computation(mapper, connection, target):
         db.session.add(record)
 
     db.session.commit()
+
+
+
+
+class JobHistory(db.Model):
+    __tablename__ = "job_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
+
+    effective_date = db.Column(db.Date, nullable=False)  # Start of appointment
+    end_date = db.Column(db.Date, nullable=True)         # End date (if separated)
+
+    position_id = db.Column(db.Integer, db.ForeignKey("position.id"), nullable=True)
+    employment_type_id = db.Column(db.Integer, db.ForeignKey("employment_type.id"), nullable=True)
+    department_id = db.Column(db.Integer, db.ForeignKey("department.id"), nullable=True)
+
+    salary = db.Column(db.Float, nullable=True)
+    status = db.Column(db.String(50), nullable=True)  # Active / Resigned / Terminated / LWOP
+    remarks = db.Column(db.Text)                      # Promotions, transfers, cause of separation
+
+    # Relationships
+    employee = db.relationship("Employee", backref="job_history", lazy=True)
+    position = db.relationship("Position", lazy=True)
+    employment_type = db.relationship("EmploymentType", lazy=True)
+    department = db.relationship("Department", lazy=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<JobHistory {self.employee.get_full_name()} {self.effective_date} - {self.end_date or 'Present'}>"
+
+
+
+
+class Shift(db.Model):
+    __tablename__ = "shift"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)  # e.g., Morning, Afternoon
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+
+    def __repr__(self):
+        return f"<Shift {self.name} ({self.start_time} - {self.end_time})>"
+    
+
+
+
+class EmployeeShift(db.Model):
+    __tablename__ = "employee_shift"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
+    shift_id = db.Column(db.Integer, db.ForeignKey("shift.id"), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    day_of_week = db.Column(db.String(15), nullable=False)
+    status = db.Column(db.String(15), nullable=False, default="active")  
+
+    employee = db.relationship("Employee", backref="daily_shifts", lazy=True)
+    shift = db.relationship("Shift", lazy=True)
+
+    __table_args__ = (
+        db.UniqueConstraint("employee_id", "date", name="uq_employee_date_shift"),
+    )
+
+    def __repr__(self):
+        return f"<EmployeeShift {self.employee.get_full_name()} {self.date} -> {self.shift.name}>"

@@ -4,9 +4,12 @@ from datetime import datetime, date
 
 from main_app.extensions import db
 from main_app.models.hr_models import Employee, Department, Position
-from main_app.helpers.decorators import hr_officer_required 
+from main_app.helpers.decorators import hr_officer_required
+from main_app.helpers.docs import export_employees_by_year_of_service 
 
 from main_app.blueprints.hr_system.routes.officer import hr_officer_bp
+
+
 
 
 
@@ -17,9 +20,10 @@ def employees():
     page = request.args.get("page", 1, type=int)
     search = request.args.get("search", "")
     department = request.args.get("department", "")
-
-    # Base query (only active employees)
-    query = Employee.query.filter_by(status="Active")
+    years_service = request.args.get("years_service", "")
+    barangay = request.args.get("barangay", "")
+    # Sort by name ascending (Explicit)
+    query = Employee.query.filter_by(status="Active").order_by(Employee.last_name.asc())
 
     # Search by name or employee_id
     if search:
@@ -29,11 +33,22 @@ def employees():
             | (Employee.employee_id.ilike(f"%{search}%"))
         )
 
-    # Filter by department if selected
+    # Filter by department
     if department:
         query = query.filter_by(department_id=department)
 
-    # ✅ Sort employees in ascending order by last name, then first name
+    # Filter by years of service
+    if years_service:
+        today = date.today()
+        min_date = date(today.year - (int(years_service) + 4), today.month, today.day)
+        max_date = date(today.year - int(years_service), today.month, today.day)
+        query = query.filter(Employee.date_hired.between(min_date, max_date))
+
+    # Filter by barangay
+    if barangay:
+        query = query.filter(Employee.barangay.ilike(f"%{barangay}%"))
+
+    # Sort
     query = query.order_by(Employee.last_name.asc(), Employee.first_name.asc())
 
     # Pagination
@@ -47,8 +62,13 @@ def employees():
         employees=employees,
         search=search,
         selected_department=department,
-        departments=departments,
+        years_service=years_service,
+        barangay=barangay,
+        departments=departments
     )
+
+
+
 
 
 @hr_officer_bp.route("/employee/<int:employee_id>/view")
@@ -168,51 +188,46 @@ def view_employee(employee_id):
 
 
 
-@hr_officer_bp.route("/employees/<int:employee_id>/edit", methods=["GET", "POST"])
+
+
+# ---------------- EXPORT EMPLOYEES BY YEARS OF SERVICE ----------------
+@hr_officer_bp.route("/employees/export-years-of-service")
 @login_required
 @hr_officer_required
-def edit_employee(employee_id):
-    """HR Officer can edit limited employee info"""
-    employee = Employee.query.get_or_404(employee_id)
-    departments = Department.query.all()
-    positions = Position.query.all()
+def export_employees_years_of_service():
+    # Get filters from query params
+    search = request.args.get("search", "")
+    department = request.args.get("department", "")
+    years_service = request.args.get("years_service", type=int)
+    barangay = request.args.get("barangay", "")
 
-    if request.method == "POST":
-        try:
-            # ✅ Update editable fields
-            employee.phone = request.form.get("phone")
-            employee.address = request.form.get("address")
-            employee.marital_status = request.form.get("marital_status")
-            employee.emergency_contact = request.form.get("emergency_contact")
-            employee.emergency_phone = request.form.get("emergency_phone")
+    # Base query
+    query = Employee.query.filter_by(status="Active")
 
-            employee.updated_at = datetime.utcnow()
-            db.session.commit()
+    # Apply search filter
+    if search:
+        query = query.filter(
+            (Employee.first_name.ilike(f"%{search}%")) |
+            (Employee.last_name.ilike(f"%{search}%")) |
+            (Employee.employee_id.ilike(f"%{search}%"))
+        )
 
-            # ✅ Return SweetAlert-friendly JSON response
-            return jsonify(
-                {
-                    "status": "success",
-                    "message": "Employee contact details updated successfully!",
-                }
-            )
+    # Apply department filter
+    if department:
+        query = query.filter_by(department_id=department)
 
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error updating employee {employee_id}: {e}")
-            return (
-                jsonify(
-                    {
-                        "status": "error",
-                        "message": "Error updating employee. Please try again.",
-                    }
-                ),
-                500,
-            )
+    # Apply barangay filter
+    if barangay:
+        query = query.filter(Employee.barangay.ilike(f"%{barangay}%"))
 
-    return render_template(
-        "hr/officer/employee/employee/edit.html",
-        employee=employee,
-        departments=departments,
-        positions=positions,
-    )
+    # Apply years of service filter
+    if years_service:
+        today = date.today()
+        # min_date: hired more than (years_service + 4) years ago
+        min_date = date(today.year - (years_service + 4), today.month, today.day)
+        # max_date: hired exactly years_service years ago
+        max_date = date(today.year - years_service, today.month, today.day)
+        query = query.filter(Employee.date_hired.between(min_date, max_date))
+
+    return export_employees_by_year_of_service(query.all())
+

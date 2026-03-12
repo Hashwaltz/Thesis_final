@@ -4,8 +4,6 @@ from main_app.extensions import db, login_manager, migrate, mail
 
 # Import shared models
 from main_app.models.user import User
-
-# Import all HR and Payroll models so Flask-Migrate can detect them
 from main_app.models.hr_models import *
 from main_app.models.payroll_models import *
 
@@ -13,11 +11,12 @@ def create_app():
     # Use shared templates and static folders
     app = Flask(
         __name__,
-        template_folder="main_app/templates",
+        template_folder="templates",
         static_folder="static"
     )
 
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['DEBUG'] = True  
 
     # Load global config (for both HR and Payroll)
     from main_app.config import Config
@@ -45,11 +44,6 @@ def create_app():
 
     from main_app.blueprints import register_blueprint
     register_blueprint(app)
-
-    from main_app.blueprints.payroll_system.routes.employee_routes import payroll_employee_bp
-
-    app.register_blueprint(payroll_employee_bp, url_prefix='/payroll/employee')
-
 
     # -----------------------------
     # Root route

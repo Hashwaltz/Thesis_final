@@ -101,7 +101,7 @@ def hr_dashboard():
 
 
 
-@hr_admin_bp.route('/profile', methods=['GET'])
+@hr_admin_bp.route('/hr-profile', methods=['GET'])
 @login_required
 @admin_required
 def profile():

@@ -6,45 +6,89 @@
 
   <!-- Page Header -->
   <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+
     <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
       <i class="fa-solid fa-id-badge text-3xl"></i>
       Employee Records
     </h1>
+
+    <!-- Export Button -->
+    <a href="{{ url_for('hr_officer_bp.export_employees_years_of_service',
+                         search=search,
+                         department=selected_department,
+                         years_service=years_service,
+                         barangay=barangay) }}"
+       class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl
+              flex items-center gap-2 transition shadow">
+
+      <i class="fa-solid fa-file-excel"></i>
+      Export Employees Excel
+    </a>
+
   </header>
+<!-- Search + Filters -->
+<form method="get"
+      class="flex flex-col md:flex-row gap-4 items-start md:items-end
+             bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
 
-  <!-- Search + Filters -->
-  <form method="get"
-        class="flex flex-col md:flex-row gap-4 items-start md:items-end
-               bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
+  <!-- Search -->
+  <div class="flex flex-col gap-2 w-full md:flex-1">
+    <label class="text-gray-400">Search</label>
+    <input type="text"
+           name="search"
+           value="{{ search }}"
+           placeholder="Search employees..."
+           class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                  focus:outline-none focus:ring-2 focus:ring-blue-400">
+  </div>
 
-    <!-- Search -->
-    <div class="flex flex-col gap-2 w-full md:flex-1">
-      <label class="text-gray-400">Search</label>
-      <input type="text"
-             name="search"
-             value="{{ search }}"
-             placeholder="Search employees..."
-             class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                    focus:outline-none focus:ring-2 focus:ring-blue-400">
-    </div>
+  <!-- Department -->
+  <div class="flex flex-col gap-2 w-full md:w-64">
+    <label class="text-gray-400">Department</label>
+    <select name="department"
+            class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                   focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+        <option value="{{ dept.id }}"
+                {% if dept.id|string == selected_department %}selected{% endif %}>
+          {{ dept.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
 
-    <!-- Department -->
-    <div class="flex flex-col gap-2 w-full md:w-64">
-      <label class="text-gray-400">Department</label>
-      <select name="department"
-              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                     focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <option value="">All Departments</option>
-        {% for dept in departments %}
-          <option value="{{ dept.id }}"
-                  {% if dept.id|string == selected_department %}selected{% endif %}>
-            {{ dept.name }}
-          </option>
-        {% endfor %}
-      </select>
-    </div>
+  <!-- Barangay -->
+  <div class="flex flex-col gap-2 w-full md:w-64">
+    <label class="text-gray-400">Barangay</label>
+    <input type="text"
+           name="barangay"
+           value="{{ barangay }}"
+           placeholder="Enter barangay..."
+           class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                  focus:outline-none focus:ring-2 focus:ring-blue-400">
+  </div>
 
-    <!-- Button -->
+  <!-- Years of Service -->
+  <div class="flex flex-col gap-2 w-full md:w-64">
+    <label class="text-gray-400">Years of Service</label>
+    <select name="years_service"
+            class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
+                   focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <option value="">All</option>
+      <option value="5"  {% if years_service == '5' %}selected{% endif %}>5 Years</option>
+      <option value="10" {% if years_service == '10' %}selected{% endif %}>10 Years</option>
+      <option value="15" {% if years_service == '15' %}selected{% endif %}>15 Years</option>
+      <option value="20" {% if years_service == '20' %}selected{% endif %}>20 Years</option>
+      <option value="25" {% if years_service == '25' %}selected{% endif %}>25 Years</option>
+      <option value="30" {% if years_service == '30' %}selected{% endif %}>30 Years</option>
+    </select>
+  </div>
+
+  <!-- Buttons -->
+  <div class="flex gap-2 mt-2 md:mt-0">
+
+    <!-- Search Button -->
     <button type="submit"
             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2
                    rounded-xl flex items-center gap-2 transition">
@@ -52,8 +96,17 @@
       <span class="hidden sm:inline">Search</span>
     </button>
 
-  </form>
+    <!-- Clear Filters Button -->
+    <a href="{{ url_for('hr_officer_bp.employees') }}"
+       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2
+              rounded-xl flex items-center gap-2 transition">
+      <i class="fa-solid fa-eraser"></i>
+      <span class="hidden sm:inline">Clear Filters</span>
+    </a>
 
+  </div>
+
+</form>
   <!-- Employee Table -->
   <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
     <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
@@ -61,38 +114,28 @@
         <tr>
           <th class="px-4 py-3 text-left">Full Name</th>
           <th class="px-4 py-3 text-left">Email</th>
-          <th class="px-4 py-3 text-left">Phone</th>
           <th class="px-4 py-3 text-left">Department</th>
           <th class="px-4 py-3 text-left">Position</th>
           <th class="px-4 py-3 text-left">Date Hired</th>
+          <th class="px-4 py-3 text-left">Years of Service</th>
+          <th class="px-4 py-3 text-left">Barangay</th>
         </tr>
       </thead>
 
       <tbody class="divide-y divide-gray-700 text-gray-200">
         {% for employee in employees.items %}
         <tr class="hover:bg-gray-700 transition">
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ employee.get_full_name() }}
-          </td>
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ employee.email }}
-          </td>
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ employee.phone or '-' }}
-          </td>
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ employee.department.name if employee.department else '-' }}
-          </td>
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ employee.position.name if employee.position else '-' }}
-          </td>
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}
-          </td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.get_full_name() }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.email }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.department.name if employee.department else '-' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.position.name if employee.position else '-' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.get_working_duration() }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ employee.barangay or '-' }}</td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="7" class="px-4 py-3 text-center text-gray-400">
+          <td colspan="8" class="px-4 py-3 text-center text-gray-400">
             No employees found.
           </td>
         </tr>
@@ -107,24 +150,22 @@
       <a href="{{ url_for('hr_officer_bp.employees',
                           page=employees.prev_num,
                           search=search,
-                          department=selected_department) }}"
-         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
-        Previous
-      </a>
+                          department=selected_department,
+                          years_service=years_service,
+                          barangay=barangay) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Previous</a>
     {% endif %}
 
-    <span class="px-4 py-2">
-      Page {{ employees.page }} of {{ employees.pages }}
-    </span>
+    <span class="px-4 py-2">Page {{ employees.page }} of {{ employees.pages }}</span>
 
     {% if employees.has_next %}
       <a href="{{ url_for('hr_officer_bp.employees',
                           page=employees.next_num,
                           search=search,
-                          department=selected_department) }}"
-         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
-        Next
-      </a>
+                          department=selected_department,
+                          years_service=years_service,
+                          barangay=barangay) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Next</a>
     {% endif %}
   </div>
 
