@@ -4,6 +4,8 @@ venv/
 env/
 
 
+instance/
+
 
 # Python cache
 __pycache__/
