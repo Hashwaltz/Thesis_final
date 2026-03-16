@@ -85,38 +85,6 @@ class Employee(db.Model):
         parts = [self.street_address, self.barangay, self.municipality, self.province, self.postal_code]
         return ', '.join([p for p in parts if p])
 
-    
-    def get_working_duration(self):
-        """Return working duration from date_hired to today."""
-        if not self.date_hired:
-            return "-"
-
-        today = date.today()
-        start = self.date_hired
-
-        years = today.year - start.year
-        months = today.month - start.month
-        days = today.day - start.day
-
-        if days < 0:
-            months -= 1
-            prev_month = today.month - 1 or 12
-            prev_year = today.year if today.month != 1 else today.year - 1
-            days += monthrange(prev_year, prev_month)[1]
-
-        if months < 0:
-            years -= 1
-            months += 12
-
-        parts = []
-        if years:
-            parts.append(f"{years} year{'s' if years > 1 else ''}")
-        if months:
-            parts.append(f"{months} month{'s' if months > 1 else ''}")
-        if days:
-            parts.append(f"{days} day{'s' if days > 1 else ''}")
-
-        return ", ".join(parts) if parts else "0 days"
 
     @property
     def years_of_service(self):
@@ -165,6 +133,30 @@ class Employee(db.Model):
         return " and ".join(parts) if parts else "0 days"
     
 
+    def use_leave(self, leave_type_name: str, days_used: float, month: int, year: int):
+        """
+        Deduct leave usage from total credits and create history.
+        """
+        leave_type = LeaveType.query.filter_by(name=leave_type_name).first()
+        if not leave_type:
+            raise ValueError("Invalid leave type")
+
+        leave_credit = LeaveCredit.query.filter_by(employee_id=self.id, leave_type_id=leave_type.id).first()
+        if not leave_credit:
+            raise ValueError("Employee has no leave credit for this type")
+
+        leave_credit.used_credits += days_used
+
+        # Record history
+        history = LeaveCreditHistory(
+            employee_id=self.id,
+            leave_type_id=leave_type.id,
+            earned=0,
+            used=days_used,
+            month=f"{month}-{year}"
+        )
+        db.session.add(history)
+        db.session.commit()
 # =========================================================
 # ATTENDANCE
 # =========================================================
@@ -235,6 +227,7 @@ def calculate_hours_before_save(mapper, connection, target):
     """
     target.calculate_working_hours()
 
+
 # =========================================================
 # LEAVE
 # =========================================================
@@ -254,6 +247,9 @@ class Leave(db.Model):
     comments = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    paid_days = db.Column(db.Integer, default=0)
+    unpaid_days = db.Column(db.Integer, default=0)
+
 
     employee = db.relationship("Employee", back_populates="leaves")
     leave_type = db.relationship("LeaveType", back_populates="leaves", foreign_keys=[leave_type_id])
@@ -261,6 +257,21 @@ class Leave(db.Model):
     
     def __repr__(self):
         return f"<Leave {self.employee_id} - {self.leave_type_id}>"
+    
+    def compute_paid_leave(leave):
+        leave_type = leave.leave_type
+
+        if not leave_type.max_paid_days:
+            leave.paid_days = 0
+            leave.unpaid_days = leave.days_requested
+            return
+
+        if leave.days_requested <= leave_type.max_paid_days:
+            leave.paid_days = leave.days_requested
+            leave.unpaid_days = 0
+        else:
+            leave.paid_days = leave_type.max_paid_days
+            leave.unpaid_days = leave.days_requested - leave_type.max_paid_days
 
 
 # =========================================================
@@ -305,7 +316,8 @@ class LeaveType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
-
+    max_paid_days = db.Column(db.Integer)   # e.g. 105 for maternity
+    max_duration_days = db.Column(db.Integer)  # total allowed leave
     leaves = db.relationship('Leave', back_populates='leave_type', lazy=True)
         
     # LeaveType model
@@ -541,3 +553,24 @@ class EmployeeShift(db.Model):
 
     def __repr__(self):
         return f"<EmployeeShift {self.employee.get_full_name()} {self.date} -> {self.shift.name}>"
+    
+
+
+class LeaveCreditHistory(db.Model):
+    __tablename__ = "leave_credit_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey("employee.id"), nullable=False)
+    leave_type_id = db.Column(db.Integer, db.ForeignKey("leave_type.id"), nullable=False)
+    
+    earned = db.Column(db.Float, default=0.0)    # positive when earned
+    used = db.Column(db.Float, default=0.0)      # positive when leave is taken
+    month = db.Column(db.String(20))             # e.g., "Nov 2026"
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    employee = db.relationship("Employee", backref="leave_credit_history", lazy=True)
+    leave_type = db.relationship("LeaveType", lazy=True)
+
+    def __repr__(self):
+        return f"<LeaveCreditHistory Emp:{self.employee_id} Leave:{self.leave_type_id} Earned:{self.earned} Used:{self.used}>"
+    

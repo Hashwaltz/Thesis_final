@@ -119,3 +119,4 @@ def generate_attendance_jan_to_nov():
 
 if __name__ == "__main__":
     generate_attendance_jan_to_nov()
+

@@ -96,12 +96,12 @@ def employee_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
-            return redirect(url_for("payroll_auth_bp.login"))
+            return redirect(url_for("employee_auth_bp.login"))
 
         role = getattr(current_user, "role", "").lower()
         if role not in ['hr_admin', 'officer', 'leave_officer', 'dept_head', 'employee', 'payroll_staff', 'payroll_admin']:
             flash("Employee access required.", "error")
-            return redirect(url_for("hr_auth_bp.login"))
+            return redirect(url_for("employee_auth_bp.login"))
 
         return f(*args, **kwargs)
     return decorated_function
@@ -140,22 +140,6 @@ def staff_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
-
-def payroll_employee_required(f):
-    """Decorator to require employee or staff role"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            return redirect(url_for("payroll_auth_bp.login"))
-
-        role = getattr(current_user, "role", "").lower()
-        if role not in ['payroll_admin', 'payroll_staff', 'employee', 'officer', 'dept_head', 'hr_admin', 'leave_officer']:
-            flash("Employee access required.", "error")
-            return redirect(url_for("payroll_auth_bp.login"))
-
-        return f(*args, **kwargs)
-    return decorated_function
 
 
 

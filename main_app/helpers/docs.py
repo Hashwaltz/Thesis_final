@@ -6,6 +6,7 @@ from datetime import date
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
@@ -210,110 +211,140 @@ def generate_excel_employees(
 
     return file_stream
 
-
-
 def generate_service_record_docx(employee):
     doc = Document()
 
     # ================= HEADER =================
+    p1 = doc.add_paragraph("Republic of the Philippines")
+    p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    p2 = doc.add_paragraph("NORZAGARAY, REGION 3")
+    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p2.runs[0].bold = True
+
     title = doc.add_paragraph("S E R V I C E   R E C O R D")
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title.runs[0].bold = True
-    title.runs[0].font.size = Pt(14)
-
-    para1 = doc.add_paragraph("Republic of the Philippines")
-    para1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    para1.runs[0].font.size = Pt(11)
-
-    para2 = doc.add_paragraph("NORZAGARAY, REGION 3")
-    para2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    para2.runs[0].bold = True
-    para2.runs[0].font.size = Pt(11)
 
     doc.add_paragraph("")
 
-    # ================= EMPLOYEE INFO =================
-    doc.add_paragraph(
-        f"Name : {employee.last_name.upper()}, "
-        f"{employee.first_name.upper()} "
-        f"{employee.middle_name or ''}"
-    )
+    # ================= NAME SECTION =================
+    doc.add_paragraph("Name :")
+    table_name = doc.add_table(rows=1, cols=3)
+    table_name.style = "Table Grid"
+    table_name.rows[0].cells[0].text = "First Name"
+    table_name.rows[0].cells[1].text = "Middle Name"
+    table_name.rows[0].cells[2].text = "Last Name"
 
-    birth_date = employee.date_of_birth.strftime('%B %d, %Y') if employee.date_of_birth else ''
-    doc.add_paragraph(f"Date and place of birth : {birth_date}")
+    row = table_name.add_row().cells
+    row[0].text = employee.first_name or ""
+    row[1].text = employee.middle_name or ""
+    row[2].text = employee.last_name or ""
 
     doc.add_paragraph("(If married woman, give full maiden name)")
-    doc.add_paragraph("(Date herein should be checked from birth or baptismal certificate)")
-    doc.add_paragraph("B.P. Number: __________     TIN #: __________")
+
+    birth = employee.date_of_birth.strftime("%B %d, %Y") if employee.date_of_birth else ""
+    doc.add_paragraph(f"Date and place of birth : {birth}")
+    doc.add_paragraph("(Date herein should be checked from birth or baptismal certificate or some other reliable documents)")
+    doc.add_paragraph("B.P. Number: __________________")
+    doc.add_paragraph("TIN # : __________________")
     doc.add_paragraph("")
 
     # ================= CERTIFICATION =================
-    cert_text = (
-        "This is to certify that the employee named hereunder actually rendered services "
-        "in this Office as shown by the service record below."
+    cert = doc.add_paragraph(
+        "This is to certify that the employee named hereunder actually rendered services in this Office as shown by the "
+        "service record below, each line of which is supported by appointment and other papers actually issued by this "
+        "Office and approved by the authorities concerned."
     )
-
-    cert_para = doc.add_paragraph(cert_text)
-    cert_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-
+    cert.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     doc.add_paragraph("")
 
-    # ================= SERVICE TABLE =================
-    headers = [
-        "From", "To", "Designation Status",
-        "Annual Salary", "Station / Assignment",
-        "Branch", "Leave(s) w/out Pay", "Cause"
-    ]
-
-    table = doc.add_table(rows=1, cols=len(headers))
+    # ================= SERVICE RECORD TABLE =================
+    table = doc.add_table(rows=2, cols=10)
     table.style = "Table Grid"
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
-    for i, text in enumerate(headers):
-        table.rows[0].cells[i].text = text
+    # ---- TOP HEADER ----
+    top = table.rows[0].cells
+    top[0].text = "SERVICE (Inclusive Dates)"
+    top[1].text = ""  # merged later
+    top[2].text = "RECORD OF APPOINTMENT"
+    top[3].text = "OFFICE / ENTITY / DIVISION"
+    top[4].text = "Leave(s)"
+    top[5].text = ""
+    top[6].text = "SEPARATION"
+    top[7].text = ""
+    top[8].text = "Remarks"
+    top[9].text = ""
 
-    # Add current employment record
-    row = table.add_row().cells
+    # Merge top row cells as per format
+    top[0].merge(top[1])
+    top[4].merge(top[5])
+    top[6].merge(top[7])
 
-    row[0].text = employee.date_hired.strftime('%b %d, %Y') if employee.date_hired else ''
-    row[1].text = "Present"
-    row[2].text = employee.position.name if employee.position else ''
-    row[3].text = str(employee.salary or '')
-    row[4].text = employee.department.name if employee.department else ''
-    row[5].text = ""
-    row[6].text = ""
-    row[7].text = ""
+    # ---- SECOND HEADER ----
+    second = table.rows[1].cells
+    second[0].text = "From"
+    second[1].text = "To"
+    second[2].text = "Designation / Status (1)"
+    second[3].text = "Station / Place of Assignment"
+    second[4].text = "With Pay"
+    second[5].text = "Without Pay"
+    second[6].text = "Date"
+    second[7].text = "Cause"
+    second[8].text = ""
+    second[9].text = ""
+
+    # ================= JOB HISTORY DATA =================
+    histories = sorted(employee.job_history, key=lambda x: x.effective_date)
+
+    for h in histories:
+        row = table.add_row().cells
+        row[0].text = h.effective_date.strftime("%b %d, %Y") if h.effective_date else ""
+        row[1].text = h.end_date.strftime("%b %d, %Y") if h.end_date else "Present"
+
+        designation = h.position.name if h.position else ""
+        if h.employment_type:
+            designation += f" ({h.employment_type.name})"
+        row[2].text = designation
+
+        row[3].text = h.department.name if h.department else ""
+        row[4].text = ""
+        row[5].text = ""
+        row[6].text = ""
+        row[7].text = ""
+        row[8].text = h.remarks or ""
+        row[9].text = ""
 
     doc.add_paragraph("")
 
-    # ================= FOOTER =================
-    footer = (
-        "Issued in compliance with official civil service service record standards."
+    # ================= ISSUED STATEMENT =================
+    issue = doc.add_paragraph(
+        "Issued on compliance with Executive Order No. 54 dated August 10, 1954, and in accordance with Circular No. 68 dated August 10, 1954 of the System."
     )
+    issue.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    doc.add_paragraph("")
 
-    footer_para = doc.add_paragraph(footer)
-    footer_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-
+    # ================= SIGNATURE =================
     doc.add_paragraph("CERTIFIED CORRECT:")
+    doc.add_paragraph("")
     doc.add_paragraph("FERNANDO DG. CRUZ")
     doc.add_paragraph("Acting MHRMO")
+    doc.add_paragraph("")
 
-    doc.add_paragraph(f"Date Generated: {date.today().strftime('%B %d, %Y')}")
+    # ================= DATE + PAGE =================
+    doc.add_paragraph(date.today().strftime("%A, %B %d, %Y"))
+    doc.add_paragraph("Page 1 of 1")
 
-    # Normalize font size
+    # ================= FONT STANDARD =================
     for paragraph in doc.paragraphs:
         for run in paragraph.runs:
             run.font.size = Pt(11)
 
-    # Save to buffer
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
-
-    return buffer    
-
-
-
-
+    return buffer
 
 def generate_coe_pdf(employee, fields=None):
     """

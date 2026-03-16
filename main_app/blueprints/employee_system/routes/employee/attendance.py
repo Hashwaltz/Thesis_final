@@ -1,16 +1,19 @@
-from flask import render_template, redirect, url_for, flash, request
+
+from flask import Blueprint, render_template, flash, url_for, redirect, request
 from flask_login import login_required, current_user
+from main_app.models.hr_models import Employee, Attendance, LeaveCredit
+from main_app.models.payroll_models import Payslip
+from main_app.helpers.decorators import employee_required
 from datetime import datetime
 
-from main_app.helpers.decorators import employee_required
-from main_app.models.hr_models import Attendance
-from main_app.helpers.utils import get_leave_balance, get_attendance_chart_data, get_attendance_summary
 
-from main_app.blueprints.hr_system.routes.employee import hr_employee_bp
+from main_app.blueprints.employee_system.routes.employee import employee_bp 
 
 
+
+# =======================
 # ---------------- ATTENDANCE ----------------
-@hr_employee_bp.route('/attendance')
+@employee_bp.route('/attendance')
 @login_required
 @employee_required
 def attendance():
@@ -18,7 +21,7 @@ def attendance():
     employee = current_user.employee_profile
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')
-        return redirect(url_for('hr_auth.logout'))
+        return redirect(url_for('employee_auth_bp.logout'))
 
     page = request.args.get('page', 1, type=int)
     start_date_str = request.args.get('start_date', '')
@@ -53,7 +56,7 @@ def attendance():
     }
 
     return render_template(
-        'hr/employee/employee_attendance.html',
+        'employee/attendance.html',
         attendances=attendances,
         employee=employee,
         start_date_filter=start_date_str,

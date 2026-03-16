@@ -1,0 +1,92 @@
+{% extends 'hr/leave_officer/leave_base.html' %}
+
+{% block title %}Employees | Leave Officer{% endblock %}
+
+{% block content %}
+<div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+  <h2 class="text-2xl font-semibold mb-6 text-gray-100">Employee Leave Credit History</h2>
+
+  <!-- Filters -->
+  <form method="GET" class="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+    <!-- Search by Name / ID -->
+    <div class="flex items-center gap-2 w-full md:w-auto">
+      <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search by name or ID"
+             class="p-2 rounded-lg bg-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64">
+    </div>
+
+    <!-- Filter by Department -->
+    <div class="flex items-center gap-2 w-full md:w-auto">
+      <i class="fa-solid fa-building text-gray-400"></i>
+      <select name="department" class="p-2 rounded-lg bg-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-48">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{ dept.id }}" {% if selected_department|int == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button type="submit" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+      <i class="fa-solid fa-filter"></i> Filter
+    </button>
+  </form>
+
+  <!-- Employee Table -->
+  <div class="overflow-x-auto rounded-lg">
+    <table class="min-w-full bg-gray-900 text-gray-100 rounded-lg overflow-hidden">
+      <thead class="bg-gray-700">
+        <tr>
+          <th class="p-3 text-left">Employee ID</th>
+          <th class="p-3 text-left">Name</th>
+          <th class="p-3 text-left">Department</th>
+          <th class="p-3 text-left">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees.items %}
+        <tr class="border-b border-gray-700 hover:bg-gray-800">
+          <td class="p-3">{{ emp.employee_id }}</td>
+          <td class="p-3">{{ emp.get_full_name() }}</td>
+          <td class="p-3">{{ emp.department.name if emp.department else '-' }}</td>
+          <td class="p-3">
+            <a href="{{ url_for('leave_officer_bp.view_leave_history', employee_id=emp.id) }}"
+               class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg">
+               <i class="fa-solid fa-user-clock"></i> View
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="p-3 text-center text-gray-400">No employees found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="mt-4 flex justify-center gap-2">
+    {% if employees.has_prev %}
+    <a href="{{ url_for('leave_officer_bp.employees',
+              page=employees.prev_num,
+              search=request.args.get('search',''),
+              department=request.args.get('department','')) }}"
+       class="flex items-center gap-1 px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+      <i class="fa-solid fa-arrow-left"></i> Prev
+    </a>
+    {% endif %}
+
+    <span class="px-3 py-1 bg-gray-800 rounded text-gray-200">{{ employees.page }}</span>
+
+    {% if employees.has_next %}
+    <a href="{{ url_for('leave_officer_bp.employees',
+              page=employees.next_num,
+              search=request.args.get('search',''),
+              department=request.args.get('department','')) }}"
+       class="flex items-center gap-1 px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+      Next <i class="fa-solid fa-arrow-right"></i>
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

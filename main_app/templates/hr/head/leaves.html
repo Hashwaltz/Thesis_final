@@ -57,6 +57,7 @@ class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
 <th class="px-4 py-3 text-left text-gray-400">Start</th>
 <th class="px-4 py-3 text-left text-gray-400">End</th>
 <th class="px-4 py-3 text-left text-gray-400">Status</th>
+<th class="px-4 py-3 text-left text-gray-400">Reason</th>
 <th class="px-4 py-3 text-left text-gray-400">Action</th>
 </tr>
 </thead>
@@ -95,6 +96,9 @@ bg-red-600/20 text-red-400
 {{ leave.status }}
 </span>
 </td>
+<td class="px-4 py-2 text-gray-200">
+{{ leave.reason }}
+</td>
 
 <td class="px-4 py-2">
 
@@ -110,7 +114,7 @@ Review
 </button>
 
 {% else %}
-<span class="text-gray-500 text-sm">No actions</span>
+<span class="text-gray-500 text-sm">Action taken</span>
 {% endif %}
 
 </td>

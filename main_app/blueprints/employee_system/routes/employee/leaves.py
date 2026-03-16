@@ -7,18 +7,19 @@ from main_app.models.hr_models import Leave, LeaveType
 from main_app.helpers.utils import get_leave_balance, get_attendance_chart_data, get_attendance_summary
 from main_app.extensions import db
 
-from main_app.blueprints.hr_system.routes.employee import hr_employee_bp
+from main_app.blueprints.employee_system.routes.employee import employee_bp
 
 
 # ---------------- LEAVES ----------------
-@hr_employee_bp.route('/leaves')
+@employee_bp.route('/leaves')
 @login_required
 @employee_required
 def leaves():
+    
     employee = current_user.employee_profile
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')
-        return redirect(url_for('hr_auth_bp.logout'))
+        return redirect(url_for('employee_auth_bp.logout'))
 
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
@@ -33,7 +34,7 @@ def leaves():
                       ['Sick', 'Vacation', 'Personal', 'Emergency', 'Maternity', 'Paternity']}
 
     return render_template(
-        'hr/employee/employee_leaves.html',
+        'employee/leaves.html',
         leaves=leaves,
         employee=employee,
         leave_balances=leave_balances,
@@ -42,37 +43,16 @@ def leaves():
 
 
 
-"""@hr_employee_bp.route('/employee/print_leave_form/<int:leave_id>')
-@login_required
-@employee_required
-def print_leave_form(leave_id):
-
-    leave = Leave.query.get_or_404(leave_id)
-
-    # Security check
-    if leave.employee_id != current_user.employee_profile.id and not current_user.is_admin:
-        flash("You are not authorized to print this form.", "error")
-        return redirect(url_for("employee.leaves"))
-
-    employee = leave.employee
-
-    return generate_leave_print_pdf_route(
-        leave,
-        employee,
-        filename_prefix="CSForm6_Leave"
-    )
-"""
-
 
 # ---------------- REQUEST LEAVE ----------------
-@hr_employee_bp.route('/employee/request_leave', methods=['GET', 'POST'])
+@employee_bp.route('/employee/request_leave', methods=['GET', 'POST'])
 @login_required
 @employee_required
 def request_leave():
     employee = current_user.employee_profile
     if not employee:
         flash('Employee record not found. Please contact HR.', 'error')
-        return redirect(url_for('hr_auth.logout'))
+        return redirect(url_for('employee_auth_bp.logout'))
 
     if request.method == 'POST':
         leave_type_id = request.form.get('leave_type')
@@ -96,7 +76,7 @@ def request_leave():
         db.session.add(leave)
         db.session.commit()
         flash("Leave request submitted successfully!", "success")
-        return redirect(url_for('hr_employee_bp.leaves'))
+        return redirect(url_for('employee_bp.leaves'))
 
     leave_types = LeaveType.query.all()
-    return render_template('hr/employee/request_leave.html', leave_types=leave_types)
+    return render_template('employee/request_leave.html', leave_types=leave_types)

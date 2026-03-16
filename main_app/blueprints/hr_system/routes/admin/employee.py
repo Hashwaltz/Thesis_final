@@ -154,25 +154,7 @@ def add_employee():
         db.session.add(employee)
         db.session.flush()  # get employee.id for leave credits
 
-        # --- 4. Initialize Leave Credits ONLY for Regular (1) & Casual (3) ---
-        if employment_type_id in [1, 3]:
-            # Vacation Leave (leave_type_id = 1)
-            vacation_credit = LeaveCredit(
-                employee_id=employee.id,
-                leave_type_id=1,
-                total_credits=15.0,
-                used_credits=0
-            )
-            db.session.add(vacation_credit)
 
-            # Sick Leave (leave_type_id = 2)
-            sick_credit = LeaveCredit(
-                employee_id=employee.id,
-                leave_type_id=2,
-                total_credits=15.0,
-                used_credits=0
-            )
-            db.session.add(sick_credit)
         
          # --- 5. Create initial JobHistory entry ---
         job_entry = JobHistory(
@@ -267,66 +249,6 @@ def generate_moa_all(employment_type_id):
         download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-
-
-
-
-@hr_admin_bp.route('/employees/export')
-@login_required
-@admin_required
-def export_employees_excel():
-    employees = Employee.query.order_by(Employee.last_name).all()
-
-    if not employees:
-        flash("No employees found.", "warning")
-        return redirect(url_for("hr_admin.view_employees"))
-
-    # ===== BUILD DATA =====
-    data = [
-        [
-            idx,
-            emp.employee_id or "",
-            emp.last_name or "",
-            emp.first_name or "",
-            emp.email or "",
-            emp.department.name if emp.department else "",
-            emp.status or "",
-            emp.employment_type.name if emp.employment_type else ""
-        ]
-        for idx, emp in enumerate(employees, start=1)
-    ]
-
-    # ===== HEADERS =====
-    headers = [
-        "NO.",
-        "EMPLOYEE ID",
-        "LAST NAME",
-        "FIRST NAME",
-        "EMAIL",
-        "DEPARTMENT",
-        "STATUS",
-        "EMPLOYMENT TYPE"
-    ]
-
-    # ===== CALL REUSABLE EXPORT ENGINE =====
-    file_stream = generate_excel_employees(
-        data=data,
-        headers=headers,
-        title="MASTERLIST OF EMPLOYEES",
-        agency_name="LGU-NORZAGARAY, BULACAN",
-        regional_office="3"
-    )
-
-    filename = f"Employees_Report_{date.today().strftime('%Y%m%d')}.xlsx"
-
-    return send_file(
-        file_stream,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
 
 
 

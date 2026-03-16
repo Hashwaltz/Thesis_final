@@ -29,7 +29,7 @@ def login():
         if role not in roles:
             return redirect(url_for('employee_auth_bp.login'))
         else:
-            return redirect(url_for('employee_auth_bp.employee_dashboard'))
+            return redirect(url_for('employee_bp.dashboard'))
     
 
     if request.method == 'POST':
@@ -50,7 +50,7 @@ def login():
         db.session.commit()
         db.session.flush()
 
-        return redirect(url_for('employee_auth_bp.employee_dashboard'))
+        return redirect(url_for('employee_bp.dashboard'))
 
     return render_template('employee_auth/login.html')
 

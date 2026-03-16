@@ -15,3 +15,4 @@ from . import late
 from . import leave
 from . import profile
 from . import report
+from . import leave_credit_history

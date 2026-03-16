@@ -1,7 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
 
-
 from main_app.extensions import db
 from main_app.models.hr_models import LeaveType
 from main_app.helpers.decorators import leave_officer_required
@@ -16,7 +15,9 @@ from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 @leave_officer_required
 @login_required
 def leave_type_list():
+
     leave_types = LeaveType.query.order_by(LeaveType.name).all()
+
     return render_template(
         "hr/leave_officer/leave_type/leave_type_list.html",
         leave_types=leave_types
@@ -32,8 +33,12 @@ def leave_type_list():
 def create_leave_type():
 
     if request.method == "POST":
+
         name = request.form.get("name")
         description = request.form.get("description")
+
+        max_paid_days = request.form.get("max_paid_days")
+        max_duration_days = request.form.get("max_duration_days")
 
         existing = LeaveType.query.filter_by(name=name).first()
         if existing:
@@ -42,7 +47,9 @@ def create_leave_type():
 
         leave_type = LeaveType(
             name=name,
-            description=description
+            description=description,
+            max_paid_days=int(max_paid_days) if max_paid_days else None,
+            max_duration_days=int(max_duration_days) if max_duration_days else None
         )
 
         db.session.add(leave_type)
@@ -67,8 +74,15 @@ def edit_leave_type(id):
     leave_type = LeaveType.query.get_or_404(id)
 
     if request.method == "POST":
+
         leave_type.name = request.form.get("name")
         leave_type.description = request.form.get("description")
+
+        max_paid_days = request.form.get("max_paid_days")
+        max_duration_days = request.form.get("max_duration_days")
+
+        leave_type.max_paid_days = int(max_paid_days) if max_paid_days else None
+        leave_type.max_duration_days = int(max_duration_days) if max_duration_days else None
 
         db.session.commit()
 
@@ -96,4 +110,4 @@ def delete_leave_type(id):
 
     flash("Leave type deleted successfully.", "success")
 
-    return redirect(url_for("leave_officer_bp.leave_type_list")) 
+    return redirect(url_for("leave_officer_bp.leave_type_list"))

@@ -1,0 +1,94 @@
+{% extends "employee/employee_base.html" %}
+{% block title %}Employee Dashboard{% endblock %}
+
+{% block content %}
+<div class="p-6 bg-gray-900 min-h-screen space-y-6">
+
+  <!-- Greeting -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-100">Welcome, {{ employee.get_full_name() }}!</h1>
+    <p class="text-gray-400">{{ employee.position.name if employee.position else 'Employee' }} - {{ employee.department.name if employee.department else '' }}</p>
+  </div>
+
+  <!-- Dashboard Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- Attendance Summary -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+      <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-calendar-check text-purple-400 text-2xl"></i>
+        <h2 class="text-xl font-semibold text-gray-100">Attendance Summary</h2>
+      </div>
+      <p class="text-gray-400 mb-2">({{ today.strftime('%b %Y') }})</p>
+      <ul class="space-y-2 text-gray-200">
+        <li><strong>Total Days Recorded:</strong> {{ total_days }}</li>
+        <li><strong>Present:</strong> {{ present_days }}</li>
+        <li><strong>Late:</strong> {{ late_days }}</li>
+      </ul>
+    </div>
+
+    <!-- Leave Summary -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+      <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-plane-departure text-purple-400 text-2xl"></i>
+        <h2 class="text-xl font-semibold text-gray-100">Leave Balances</h2>
+      </div>
+      <ul class="space-y-2 text-gray-200">
+        {% for leave_name, balance in leave_summary.items() %}
+          <li>
+            <i class="fa-solid fa-circle-check text-purple-400 mr-2"></i>
+            <strong>{{ leave_name }}:</strong> {{ balance | round(2) }} days
+          </li>
+        {% else %}
+          <li>No leave records found.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Latest Payslip -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+      <div class="flex items-center gap-3 mb-4">
+        <i class="fa-solid fa-file-invoice text-purple-400 text-2xl"></i>
+        <h2 class="text-xl font-semibold text-gray-100">Latest Payslip</h2>
+      </div>
+      {% if latest_payslip %}
+        <ul class="space-y-2 text-gray-200">
+          <li><i class="fa-solid fa-calendar-days text-purple-400 mr-2"></i><strong>Pay Date:</strong> {{ latest_payslip.generated_at.strftime('%b %d, %Y') }}</li>
+          <li><i class="fa-solid fa-money-bill-wave text-purple-400 mr-2"></i><strong>Gross Pay:</strong> ₱{{ latest_payslip.gross_pay or 0 }}</li>
+          <li><i class="fa-solid fa-scale-balanced text-purple-400 mr-2"></i><strong>Total Deductions:</strong> ₱{{ latest_payslip.total_deductions or 0 }}</li>
+          <li><i class="fa-solid fa-hand-holding-dollar text-purple-400 mr-2"></i><strong>Net Pay:</strong> ₱{{ latest_payslip.net_pay or 0 }}</li>
+        </ul>
+        <a href="#"
+           class="mt-4 inline-flex items-center gap-2 text-white bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded transition">
+          <i class="fa-solid fa-eye"></i> View Payslip
+        </a>
+      {% else %}
+        <p class="text-gray-400">No payslip generated yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+    <h2 class="text-xl font-semibold mb-4 text-gray-100 flex items-center gap-2">
+      <i class="fa-solid fa-bolt text-purple-400"></i> Quick Actions
+    </h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <a href="{{url_for('employee_bp.request_leave')}}" class="flex items-center justify-center gap-2 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition">
+        <i class="fa-solid fa-plane-departure"></i> Request Leave
+      </a>
+      <a href="{{url_for('employee_bp.attendance')}}" class="flex items-center justify-center gap-2 bg-purple-400 text-white px-4 py-2 rounded hover:bg-purple-500 transition">
+        <i class="fa-solid fa-calendar-check"></i> View Attendance
+      </a>
+      <a href="#" class="flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition">
+        <i class="fa-solid fa-file-invoice"></i> View Payslips
+      </a>
+      <a href="{{url_for('employee_bp.profile')}}" class="flex items-center justify-center gap-2 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
+        <i class="fa-solid fa-user-pen"></i> Update Profile
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

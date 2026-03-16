@@ -326,7 +326,7 @@ def edit_attendance(attendance_id):
         # Commit changes
         db.session.commit()
         flash('Attendance updated!', 'success')
-        return redirect(url_for('hr_admin_bp.attendance'))
+        return redirect(url_for('hr_admin_bp.view_attendance'))
 
     # GET request for modal JSON
     if request.headers.get('Accept') == 'application/json':

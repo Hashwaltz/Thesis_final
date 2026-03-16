@@ -63,18 +63,26 @@ def generate_moa_all(employment_type_id):
 
 
 @hr_officer_bp.route('/employees/<int:employee_id>/service_record')
-@hr_officer_required
 @login_required
+@hr_officer_required
 def export_service_record(employee_id):
 
+    # Get employee
     employee = Employee.query.get_or_404(employee_id)
 
+    # Generate the document
     file_stream = generate_service_record_docx(employee)
+
+    # Important: reset pointer
+    file_stream.seek(0)
+
+    # Create cleaner filename
+    filename = f"Service_Record_{employee.last_name}_{employee.first_name}.docx"
 
     return send_file(
         file_stream,
         as_attachment=True,
-        download_name=f"service_record_{employee.employee_id}.docx",
+        download_name=filename,
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 

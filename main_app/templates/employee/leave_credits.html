@@ -1,0 +1,129 @@
+{% extends "employee/employee_base.html" %}
+{% block title %}{{ employee.get_full_name() }} - Leave History{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8 p-6">
+
+  <!-- ================= SUMMARY CARDS ================= -->
+  {% set total_earned = {"Sick Leave":0, "Vacation Leave":0} %}
+  {% set total_used = {"Sick Leave":0, "Vacation Leave":0} %}
+  {% for month in history_data %}
+    {% for ld in month.leave_data %}
+      {% set total_earned = total_earned.update({ld.leave_type: total_earned[ld.leave_type] + ld.earned}) or total_earned %}
+      {% set total_used = total_used.update({ld.leave_type: total_used[ld.leave_type] + ld.used}) or total_used %}
+    {% endfor %}
+  {% endfor %}
+  {% set total_remaining = {
+      "Sick Leave": total_earned["Sick Leave"] - total_used["Sick Leave"],
+      "Vacation Leave": total_earned["Vacation Leave"] - total_used["Vacation Leave"]
+  } %}
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Sick Leave -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+      <div class="flex items-center gap-3 mb-3">
+        <i class="fa-solid fa-heart-pulse text-green-400 text-2xl"></i>
+        <h3 class="text-lg font-semibold text-gray-100">Sick Leave</h3>
+      </div>
+      <ul class="text-gray-200 space-y-1">
+        <li>Earned: <span class="font-semibold">{{ total_earned["Sick Leave"] | round(3) }}</span></li>
+        <li>Used: <span class="font-semibold">{{ total_used["Sick Leave"] | round(3) }}</span></li>
+        <li>Remaining: <span class="font-semibold text-green-400">{{ total_remaining["Sick Leave"] | round(3) }}</span></li>
+      </ul>
+    </div>
+
+    <!-- Vacation Leave -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+      <div class="flex items-center gap-3 mb-3">
+        <i class="fa-solid fa-plane-departure text-blue-400 text-2xl"></i>
+        <h3 class="text-lg font-semibold text-gray-100">Vacation Leave</h3>
+      </div>
+      <ul class="text-gray-200 space-y-1">
+        <li>Earned: <span class="font-semibold">{{ total_earned["Vacation Leave"] | round(3) }}</span></li>
+        <li>Used: <span class="font-semibold">{{ total_used["Vacation Leave"] | round(3) }}</span></li>
+        <li>Remaining: <span class="font-semibold text-blue-400">{{ total_remaining["Vacation Leave"] | round(3) }}</span></li>
+      </ul>
+    </div>
+
+    <!-- Overall -->
+    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+      <div class="flex items-center gap-3 mb-3">
+        <i class="fa-solid fa-calendar-days text-purple-400 text-2xl"></i>
+        <h3 class="text-lg font-semibold text-gray-100">Overall</h3>
+      </div>
+      <ul class="text-gray-200 space-y-1">
+        <li>Total Earned: <span class="font-semibold">{{ (total_earned["Sick Leave"] + total_earned["Vacation Leave"]) | round(3) }}</span></li>
+        <li>Total Used: <span class="font-semibold">{{ (total_used["Sick Leave"] + total_used["Vacation Leave"]) | round(3) }}</span></li>
+        <li>Total Remaining: <span class="font-semibold text-purple-400">{{ (total_remaining["Sick Leave"] + total_remaining["Vacation Leave"]) | round(3) }}</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ================= MONTHLY HISTORY ================= -->
+  {% set balances = {"Sick Leave":0, "Vacation Leave":0} %}
+  {% set processed_months = [] %}
+  {% for month in history_data %}
+      {% set month_balances = {} %}
+      {% for ld in month.leave_data %}
+          {% set new_balance = balances[ld.leave_type] + ld.earned - ld.used %}
+          {% set balances = balances.update({ld.leave_type:new_balance}) or balances %}
+          {% set month_balances = month_balances.update({ld.leave_type:new_balance}) or month_balances %}
+      {% endfor %}
+      {% set _ = processed_months.append({
+          "month":month.month,
+          "worked_days": month.worked_days,
+          "total_days": month.total_days,
+          "leave_data": month.leave_data,
+          "balances": month_balances
+      }) %}
+  {% endfor %}
+
+  {% for month in processed_months | reverse %}
+      {% set filtered_leaves = month.leave_data | selectattr("earned","gt",0) | list %}
+      {% set filtered_leaves = filtered_leaves + (month.leave_data | selectattr("used","gt",0) | list) %}
+
+      {% if filtered_leaves %}
+      <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 hover:shadow-2xl transition">
+
+        <!-- Month Header -->
+        <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+          <div>
+            📅 {{ month.month }}
+            <span class="text-gray-400 text-sm">({{ month.worked_days }}/{{ month.total_days }} worked days)</span>
+          </div>
+          <div class="flex gap-4 text-sm">
+            <span class="bg-green-600/20 text-green-400 px-3 py-1 rounded-full">Sick: {{ month.balances["Sick Leave"] | round(3) }}</span>
+            <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full">Vacation: {{ month.balances["Vacation Leave"] | round(3) }}</span>
+          </div>
+        </div>
+
+        <!-- Leave Cards -->
+        <div class="p-6 grid md:grid-cols-2 gap-6">
+          {% for ld in filtered_leaves %}
+          <div class="bg-gray-700 rounded-lg p-5 shadow-inner border border-gray-600">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-semibold text-blue-400">{{ ld.leave_type }}</span>
+              <span class="text-xs text-gray-400">Balance: {{ month.balances[ld.leave_type] | round(3) }}</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs">Earned: {{ ld.earned }}</span>
+              {% if ld.used > 0 %}
+              <span class="bg-red-600 text-white px-3 py-1 rounded-full text-xs">Used: {{ ld.used }}</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Monthly Total -->
+        <div class="bg-gray-900 px-6 py-3 flex gap-6 text-sm text-gray-300">
+          <span>Sick Leave Remaining: <span class="text-green-400 font-semibold">{{ month.balances["Sick Leave"] | round(3) }}</span></span>
+          <span>Vacation Leave Remaining: <span class="text-blue-400 font-semibold">{{ month.balances["Vacation Leave"] | round(3) }}</span></span>
+        </div>
+
+      </div>
+      {% endif %}
+  {% endfor %}
+
+</div>
+{% endblock %}  

@@ -60,10 +60,12 @@
         <!-- Navigation -->
         <nav class="mt-4 px-4 text-gray-300 space-y-6">
           {% for section, links in {
-            "Employee & User Management": [
+            "Employee Records Management & Services ": [
               ("fa-gauge-high", "Dashboard", "hr_officer_bp.hr_dashboard"),
               ("fa-users", "Employees Records", "hr_officer_bp.employees"),
-              ("fa-file-lines", "Services", "hr_officer_bp.view_services")
+              ("fa-file-lines", "Services", "hr_officer_bp.view_services"),
+              ("fas fa-clock-rotate-left", "Job History", "hr_officer_bp.job_history_list"),
+
             ],
             "Settings": [
               ("fa-user-gear", "Account Settings", "hr_officer_bp.profile")

@@ -1,13 +1,13 @@
-{% extends 'hr/employee/employee_base.html' %} 
-{% block title %}Employee - Attendance Records{% endblock %}
+{% extends 'employee/employee_base.html' %} 
+{% block title %}Attendance Records{% endblock %}
 
 {% block content %}
-<main class="p-6 space-y-8">
+<main class="p-6 space-y-8 bg-gray-900 min-h-screen">
 
   <!-- Header / Summary -->
   <header class="mb-6">
     <h1 class="text-3xl font-bold text-gray-100 mb-2 flex items-center gap-2">
-      <i class="fa-solid fa-calendar-days text-blue-400"></i>
+      <i class="fa-solid fa-calendar-days text-purple-400"></i>
       Attendance Records
     </h1>
     <p class="text-gray-400">
@@ -20,9 +20,9 @@
   </header>
 
   <!-- Filter Form -->
-  <div class="bg-gray-800 p-4 rounded-2xl shadow-md mb-6">
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-md mb-6">
     <form method="get" id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-      
+
       <!-- Start Date -->
       <div class="flex flex-col">
         <label class="text-gray-400 mb-1">Start Date</label>
@@ -46,13 +46,14 @@
           <option value="Present" {% if status_filter=='Present' %}selected{% endif %}>Present</option>
           <option value="Absent" {% if status_filter=='Absent' %}selected{% endif %}>Absent</option>
           <option value="Late" {% if status_filter=='Late' %}selected{% endif %}>Late</option>
+          <option value="Half Day" {% if status_filter=='Half Day' %}selected{% endif %}>Half Day</option>
         </select>
       </div>
 
       <!-- Filter Button -->
       <div class="flex items-end gap-2">
         <button type="submit" 
-                class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                class="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition">
           <i class="fa-solid fa-magnifying-glass"></i> Filter
         </button>
       </div>
@@ -78,11 +79,19 @@
           <td class="px-4 py-2">{{ att.date.strftime('%Y-%m-%d') }}</td>
           <td class="px-4 py-2">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
           <td class="px-4 py-2">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
-          <td class="px-4 py-2 font-semibold" style="color: 
-              {% if att.status == 'Present' %}#22c55e
-              {% elif att.status == 'Late' %}#facc15
-              {% else %}#ef4444{% endif %};">
-            {{ att.status }}
+          <td class="px-4 py-2 font-semibold">
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full 
+                         {% if att.status == 'Present' %}bg-green-700 text-green-400
+                         {% elif att.status == 'Late' %}bg-yellow-700 text-yellow-400
+                         {% elif att.status == 'Half Day' %}bg-purple-700 text-purple-400
+                         {% else %}bg-red-700 text-red-400{% endif %}">
+              <i class="fa-solid 
+                        {% if att.status == 'Present' %}fa-check
+                        {% elif att.status == 'Late' %}fa-clock
+                        {% elif att.status == 'Half Day' %}fa-adjust
+                        {% else %}fa-xmark{% endif %}"></i>
+              {{ att.status }}
+            </span>
           </td>
         </tr>
         {% else %}
@@ -96,14 +105,14 @@
     <!-- Pagination -->
     <div class="flex justify-center mt-4 text-gray-400 space-x-4">
       {% if attendances.has_prev %}
-        <a href="{{ url_for('hr_employee_bp.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}" 
+        <a href="{{ url_for('employee_bp.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}" 
           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">Previous</a>
       {% endif %}
 
       <span class="px-3 py-1">{{ attendances.page }} of {{ attendances.pages }}</span>
 
       {% if attendances.has_next %}
-        <a href="{{ url_for('hr_employee_bp.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}" 
+        <a href="{{ url_for('employee_bp.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}" 
           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">Next</a>
       {% endif %}
     </div>

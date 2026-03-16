@@ -3,14 +3,14 @@ from flask_login import login_required, current_user
 
 from main_app.models.hr_models import Employee, Attendance
 from main_app.models.payroll_models import Payslip, Payroll, PayrollPeriod
-from main_app.helpers.decorators import payroll_employee_required
+from main_app.helpers.decorators import employee_required
 from main_app.blueprints.payroll_system.routes.employee import payroll_employee_bp
 
 
 
 @payroll_employee_bp.route("/payroll-emp-dashboard")
 @login_required
-@payroll_employee_required
+@employee_required
 def payroll_emp_dashboard():
 # Get current logged-in employee
     employee = Employee.query.filter_by(user_id=current_user.id).first()
@@ -45,7 +45,7 @@ def payroll_emp_dashboard():
 
 @payroll_employee_bp.route("/payroll-history")
 @login_required
-@payroll_employee_required
+@employee_required
 def payroll_history():
     # Get employee profile
     employee = Employee.query.filter_by(user_id=current_user.id).first()
@@ -65,7 +65,7 @@ def payroll_history():
 # View payslip (HTML / PDF preview)
 @payroll_employee_bp.route("/payroll/<int:payroll_id>/view")
 @login_required
-@payroll_employee_required
+@employee_required
 def view_payslip(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
     if payroll.employee.user_id != current_user.id:
@@ -78,7 +78,7 @@ def view_payslip(payroll_id):
 # Download payslip (PDF)
 @payroll_employee_bp.route("/payroll/<int:payroll_id>/download")
 @login_required
-@payroll_employee_required
+@employee_required
 def download_payslip(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
     if payroll.employee.user_id != current_user.id:

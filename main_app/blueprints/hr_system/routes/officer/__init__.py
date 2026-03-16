@@ -11,4 +11,5 @@ hr_officer_bp = Blueprint(
 
 from . import dashboard
 from . import employees
+from . import job_history
 from . import services

@@ -53,6 +53,10 @@ def late_computation():
                 current_date = date(year, month, d)
                 weekday_name = weekdays[current_date.weekday()]
 
+                # Default strings
+                time_in_str = "-"
+                time_out_str = "-"
+
                 if att:
                     # Late calculation (after 8:00 AM)
                     if att.time_in and att.time_in > time(8, 0):
@@ -60,19 +64,25 @@ def late_computation():
                             (datetime.combine(att.date, att.time_in) -
                              datetime.combine(att.date, time(8,0))).total_seconds() / 60
                         )
+                    if att.time_in:
+                        time_in_str = att.time_in.strftime("%H:%M:%S")
+
                     # Undertime calculation (before 5:00 PM)
                     if att.time_out and att.time_out < time(17, 0):
                         undertime_minutes = int(
                             (datetime.combine(att.date, time(17,0)) -
                              datetime.combine(att.date, att.time_out)).total_seconds() / 60
                         )
+                    if att.time_out:
+                        time_out_str = att.time_out.strftime("%H:%M:%S")
+
                     total_late_minutes += late_minutes
                     total_undertime_minutes += undertime_minutes
 
                 row_days[d] = {
-                    "time_in": att.time_in.strftime("%H:%M") if att and att.time_in else "-",
+                    "time_in": time_in_str,
                     "late": late_minutes,
-                    "time_out": att.time_out.strftime("%H:%M") if att and att.time_out else "-",
+                    "time_out": time_out_str,
                     "undertime": undertime_minutes,
                     "weekday": weekday_name
                 }

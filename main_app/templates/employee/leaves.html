@@ -1,22 +1,26 @@
-{% extends 'hr/employee/employee_base.html' %}
+{% extends 'employee/employee_base.html' %}
 {% block title %}Employee - Leave Records{% endblock %}
 
 {% block content %}
-<main class="p-6 space-y-6">
+<main class="p-6 space-y-6 bg-gray-900 min-h-screen">
 
   <!-- Header with Request Leave Button -->
-  <header class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-100">Leave Records</h1>
-    <a href="{{ url_for('hr_employee_bp.request_leave') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 flex items-center gap-2">
+  <header class="flex flex-col md:flex-row justify-between items-center gap-4">
+    <h1 class="text-2xl font-bold text-gray-100 flex items-center gap-2">
+      <i class="fa-solid fa-plane-departure text-purple-400"></i> Leave Records
+    </h1>
+    <a href="{{ url_for('employee_bp.request_leave') }}" class="px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 flex items-center gap-2 transition">
       <i class="fa fa-plus"></i> Request Leave
     </a>
   </header>
 
   <!-- Filter by Status -->
-  <div class="bg-gray-800 p-4 rounded-xl shadow flex flex-wrap gap-4">
+  <div class="bg-gray-800 p-6 rounded-2xl shadow flex flex-wrap gap-4">
     <form method="get" id="filterForm" class="flex items-center gap-4">
-      <label for="statusFilter" class="text-gray-200 font-medium">Status</label>
-      <select name="status" id="statusFilter" class="bg-gray-700 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+      <label for="statusFilter" class="text-gray-200 font-medium flex items-center gap-1">
+        <i class="fa-solid fa-filter text-purple-400"></i> Status
+      </label>
+      <select name="status" id="statusFilter" class="bg-gray-700 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
         <option value="" {% if not status_filter %}selected{% endif %}>All</option>
         <option value="Pending" {% if status_filter=='Pending' %}selected{% endif %}>Pending</option>
         <option value="Approved" {% if status_filter=='Approved' %}selected{% endif %}>Approved</option>
@@ -26,7 +30,7 @@
   </div>
 
   <!-- Leave Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-xl shadow p-4">
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow p-4">
     <table class="min-w-full divide-y divide-gray-700">
       <caption class="text-lg font-semibold text-gray-100 mb-2 text-left">Leave List</caption>
       <thead>
@@ -37,27 +41,32 @@
           <th class="px-4 py-2">Days</th>
           <th class="px-4 py-2">Status</th>
           <th class="px-4 py-2">Reason</th>
-
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-700">
         {% for leave in leaves.items %}
-        <tr class="hover:bg-gray-700">
+        <tr class="hover:bg-gray-700 transition">
           <td class="px-4 py-2 text-gray-100">{{ leave.leave_type.name }}</td>
           <td class="px-4 py-2 text-gray-100">{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
           <td class="px-4 py-2 text-gray-100">{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
           <td class="px-4 py-2 text-gray-100">{{ leave.days_requested }}</td>
-          <td class="px-4 py-2 font-semibold" style="color:
-              {% if leave.status == 'Approved' %}#22c55e
-              {% elif leave.status == 'Pending' %}#facc15
-              {% else %}#ef4444{% endif %};">
-            {{ leave.status }}
+          <td class="px-4 py-2 font-semibold">
+            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full
+                         {% if leave.status == 'Approved' %}bg-green-700 text-green-400
+                         {% elif leave.status == 'Pending' %}bg-yellow-700 text-yellow-400
+                         {% else %}bg-red-700 text-red-400{% endif %}">
+              <i class="fa-solid
+                        {% if leave.status == 'Approved' %}fa-check
+                        {% elif leave.status == 'Pending' %}fa-clock
+                        {% else %}fa-xmark{% endif %}"></i>
+              {{ leave.status }}
+            </span>
           </td>
           <td class="px-4 py-2 text-gray-100">{{ leave.reason }}</td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" class="px-4 py-2 text-gray-400 text-center">No leave records found.</td>
+          <td colspan="6" class="px-4 py-2 text-center text-gray-400">No leave records found.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -67,13 +76,13 @@
   <!-- Pagination -->
   <div class="flex justify-center mt-4 space-x-4 text-gray-200">
     {% if leaves.has_prev %}
-      <a href="{{ url_for('hr_employee_bp.leaves', page=leaves.prev_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Previous</a>
+      <a href="{{ url_for('employee_bp.leaves', page=leaves.prev_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition">Previous</a>
     {% endif %}
 
     <span class="px-3 py-1 bg-gray-700 rounded">Page {{ leaves.page }} of {{ leaves.pages }}</span>
 
     {% if leaves.has_next %}
-      <a href="{{ url_for('hr_employee_bp.leaves', page=leaves.next_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">Next</a>
+      <a href="{{ url_for('employee_bp.leaves', page=leaves.next_num, status=status_filter) }}" class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 transition">Next</a>
     {% endif %}
   </div>
 
