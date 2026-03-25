@@ -26,7 +26,7 @@ def login():
         elif role == 'dept_head':
             return redirect(url_for('hr_head_bp.dashboard'))
         elif role in ['employee', 'payroll_staff','payroll_admin']:
-            return redirect(url_for('hr_employee_bp.dashboard'))
+            return redirect(url_for('hr_auth_bp.logout'))
 
     if request.method == 'POST':
 
@@ -60,7 +60,7 @@ def login():
         elif role == 'dept_head':
             return redirect(url_for('hr_head_bp.dashboard'))
         elif role in ['employee', 'staff']:
-            return redirect(url_for('hr_employee_bp.dashboard'))
+            return redirect(url_for('hr_auth_bp.logout'))
 
         return redirect(url_for('hr_auth_bp.login'))
 

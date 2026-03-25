@@ -87,26 +87,18 @@
           ("fa-solid fa-calendar-days", "Payroll Periods","payroll_admin_bp.view_payroll_periods"),
           ("fa-solid fa-clock-rotate-left","Payroll History", "payroll_admin_bp.payroll_history_dashboard"),
           ("fa-solid fa-calculator", "Deduction Management","payroll_admin_bp.deductions"),
-          ("fa-solid fa-table", "Deduction Brackets and Formulas","payroll_admin_bp.deduction_brackets")
+          ("fa-solid fa-table", "Deduction Brackets and Formulas","payroll_admin_bp.deduction_brackets"),
+          ("fa-solid fa-hand-holding-dollar", "Loans", "payroll_admin_bp.loans")
         ], 
 
         "Payslips": 
         [ 
           ("fa-solid fa-file-invoice-dollar", "Generate Payslips", "payroll_admin_bp.generate_payslips_by_period"),
           ("fa-solid fa-paper-plane", "Distribute/View Payslips", "payroll_admin_bp.view_payslips") 
-        ],
-
-        "Reports": 
-        [
-          ("fa-solid fa-chart-line", "Earnings Report", "payroll_admin_bp.payroll_dashboard"),
-          ("fa-solid fa-file-invoice-dollar", "Gross Pay Summary", "payroll_admin_bp.payroll_dashboard"),
-          ("fa-solid fa-receipt", "Deductions Report", "payroll_admin_bp.payroll_dashboard"),
-          ("fa-solid fa-money-bill-transfer", "Net Pay Report", "payroll_admin_bp.payroll_dashboard")
-        ]
+        ] 
         } %}
          {% for section, links in
         menu.items() %}
-        <!-- To-do Reports -->
         <div class="mb-6">
           <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">
             {{ section }}

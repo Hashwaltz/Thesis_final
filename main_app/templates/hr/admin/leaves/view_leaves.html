@@ -59,23 +59,12 @@
       </select>
     </div>
 
-  <!-- Buttons -->
-    <div class="flex w-full sm:w-auto md:self-end gap-2">
-
-      <!-- Filter Button -->
+    <!-- Submit Button -->
+    <div class="flex w-full sm:w-auto md:self-end">
       <button type="submit"
               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 w-full sm:w-auto justify-center transition">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        Filter
+        <i class="fa-solid fa-magnifying-glass"></i> Filter
       </button>
-
-      <!-- Clear Button -->
-      <a href="{{ url_for('hr_admin_bp.view_leaves') }}"
-        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 w-full sm:w-auto justify-center transition">
-        <i class="fa-solid fa-rotate-left"></i>
-        Clear
-      </a>
-
     </div>
   </form>
 

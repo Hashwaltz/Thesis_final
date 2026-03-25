@@ -1,107 +1,115 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
 
-{% block title %}Department Report | Payroll Admin{% endblock %}
+{% block title %}
+Department Payroll Report
+{% endblock %}
 
 {% block content %}
 
-<section class="p-4 sm:p-6 space-y-6 text-gray-200">
+<section class="p-6 space-y-6 text-gray-200">
 
 <!-- HEADER -->
-<div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 space-y-4">
+<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-4">
 
-  <div class="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
+<div class="flex justify-between items-center flex-wrap gap-4">
 
-    <div>
-      <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 break-words">
-        {{ department.name }}
-      </h1>
+<div>
+<h1 class="text-2xl font-bold text-emerald-400">
+{{ department.name }}
+</h1>
 
-      <p class="text-gray-400 text-xs sm:text-sm">
-        Department Payroll Summary Report
-      </p>
-    </div>
+<p class="text-gray-400 text-sm">
+Department Payroll Summary Report
+</p>
+</div>
 
-    <a href="{{ url_for('payroll_admin_bp.payroll_departments') }}"
-       class="w-full sm:w-auto text-center bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-xl transition">
-      ← Back
-    </a>
-
-  </div>
-
-  <!-- PERIOD FILTER -->
-  <form method="get" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-
-    <select name="period_id"
-            onchange="this.form.submit()"
-            class="w-full sm:w-auto bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-sm sm:text-base">
-
-      {% for p in payroll_periods %}
-      <option value="{{ p.id }}"
-        {% if selected_period and p.id==selected_period.id %}selected{% endif %}>
-        {{ p.period_name }} ({{ p.start_date }} - {{ p.end_date }})
-      </option>
-      {% endfor %}
-
-    </select>
-
-  </form>
-
-  <!-- DEPARTMENT TOTAL -->
-  <div class="bg-emerald-900/20 border border-emerald-700 p-4 sm:p-6 rounded-xl">
-
-    <p class="text-gray-400 text-xs sm:text-sm">Department Payroll Total</p>
-
-    <p class="text-2xl sm:text-3xl font-bold text-emerald-400 break-words">
-      ₱ {{ "{:,.2f}".format(department_total) }}
-    </p>
-
-  </div>
+<a href="{{ url_for('payroll_admin_bp.payroll_departments') }}"
+class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-xl">
+← Back
+</a>
 
 </div>
 
+
+<!-- PERIOD FILTER -->
+<form method="get" class="flex gap-4 flex-wrap">
+
+<select name="period_id"
+onchange="this.form.submit()"
+class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2">
+
+{% for p in payroll_periods %}
+<option value="{{ p.id }}"
+{% if selected_period and p.id==selected_period.id %}selected{% endif %}>
+
+{{ p.period_name }}
+({{ p.start_date }} - {{ p.end_date }})
+
+</option>
+{% endfor %}
+
+</select>
+
+</form>
+
+
+<!-- DEPARTMENT TOTAL -->
+<div class="bg-emerald-900/20 border border-emerald-700 p-6 rounded-xl">
+
+<p class="text-gray-400 text-sm">Department Payroll Total</p>
+
+<p class="text-3xl font-bold text-emerald-400">
+₱ {{ "{:,.2f}".format(department_total) }}
+</p>
+
+</div>
+
+</div>
+
+
 <!-- EMPLOYEE TABLE -->
-<div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-x-auto">
+<div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
 
-<table class="min-w-[700px] w-full text-xs sm:text-sm">
+<table class="w-full text-sm">
 
-  <thead class="bg-gray-900 text-emerald-400">
-    <tr>
-      <th class="p-3 sm:p-4 text-left whitespace-nowrap">Employee</th>
-      <th class="p-3 sm:p-4 text-left whitespace-nowrap">Position</th>
-      <th class="p-3 sm:p-4 text-left whitespace-nowrap">Employment Type</th>
-      <th class="p-3 sm:p-4 text-right whitespace-nowrap">Gross</th>
-      <th class="p-3 sm:p-4 text-right whitespace-nowrap">Deductions</th>
-      <th class="p-3 sm:p-4 text-right whitespace-nowrap">Net Pay</th>
-    </tr>
-  </thead>
+<thead class="bg-gray-900 text-emerald-400">
+<tr>
+<th class="p-4 text-left">Employee</th>
+<th class="p-4 text-left">Position</th>
+<th class="p-4 text-left">Employment Type</th>
+<th class="p-4 text-right">Gross</th>
+<th class="p-4 text-right">Deductions</th>
+<th class="p-4 text-right">Net Pay</th>
+</tr>
+</thead>
 
-  <tbody class="divide-y divide-gray-700">
+<tbody class="divide-y divide-gray-700">
 
-    {% for row in employee_rows %}
+{% for row in employee_rows %}
 
-    <tr class="hover:bg-gray-700/40 transition">
+<tr class="hover:bg-gray-700/40 transition">
 
-      <td class="p-3 sm:p-4 whitespace-nowrap">{{ row.name }}</td>
-      <td class="p-3 sm:p-4 whitespace-nowrap">{{ row.position }}</td>
-      <td class="p-3 sm:p-4 whitespace-nowrap">{{ row.employment_type }}</td>
+<td class="p-4">{{ row.name }}</td>
+<td class="p-4">{{ row.position }}</td>
+<td class="p-4">{{ row.employment_type }}</td>
 
-      <td class="p-3 sm:p-4 text-right whitespace-nowrap">
-        ₱ {{ "{:,.2f}".format(row.gross) }}
-      </td>
+<td class="p-4 text-right">
+₱ {{ "{:,.2f}".format(row.gross) }}
+</td>
 
-      <td class="p-3 sm:p-4 text-right text-yellow-400 whitespace-nowrap">
-        ₱ {{ "{:,.2f}".format(row.deductions) }}
-      </td>
+<td class="p-4 text-right text-yellow-400">
+₱ {{ "{:,.2f}".format(row.deductions) }}
+</td>
 
-      <td class="p-3 sm:p-4 text-right text-emerald-400 font-semibold whitespace-nowrap">
-        ₱ {{ "{:,.2f}".format(row.net) }}
-      </td>
+<td class="p-4 text-right text-emerald-400 font-semibold">
+₱ {{ "{:,.2f}".format(row.net) }}
+</td>
 
-    </tr>
+</tr>
 
-    {% endfor %}
+{% endfor %}
 
-  </tbody>
+</tbody>
 </table>
 
 </div>

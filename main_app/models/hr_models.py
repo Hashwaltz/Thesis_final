@@ -73,6 +73,11 @@ class Employee(db.Model):
         viewonly=True,
         lazy="joined"
     )
+    loans = db.relationship(
+        "Loan",
+        back_populates="employee",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Employee {self.employee_id}: {self.first_name} {self.last_name}>"

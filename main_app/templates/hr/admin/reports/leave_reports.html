@@ -63,93 +63,19 @@
     </table>
   </div>
 
-<!-- Insights -->
-<div class="mt-8 space-y-6">
+  <!-- Insights -->
+  <div class="mt-6 p-4 bg-[#0f172a] rounded-xl shadow-md">
+    <h2 class="text-xl font-bold text-blue-400 mb-2"><i class="fa-solid fa-chart-simple"></i> Overall Insights</h2>
+    <p>Total Leave Requests: {{ total_leaves }}</p>
+    <p>Average Days per Leave: {{ avg_days_per_leave }}</p>
+    <p>Most Common Leave Type: {{ most_common_leave_type }}</p>
 
-  <!-- TITLE -->
-  <div>
-    <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-chart-line"></i>
-      Leave Insights Dashboard
-    </h2>
-    <p class="text-gray-400 text-sm">Summary of leave trends and department performance</p>
-  </div>
-
-  <!-- KPI CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-    <!-- Total Leaves -->
-    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5 shadow-lg hover:scale-[1.02] transition">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-400 text-sm">Total Leave Requests</p>
-          <h3 class="text-3xl font-bold text-blue-400">{{ total_leaves }}</h3>
-        </div>
-        <i class="fa-solid fa-calendar-check text-3xl text-blue-500"></i>
-      </div>
-    </div>
-
-    <!-- Avg Days -->
-    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5 shadow-lg hover:scale-[1.02] transition">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-400 text-sm">Average Days / Leave</p>
-          <h3 class="text-3xl font-bold text-green-400">{{ avg_days_per_leave }}</h3>
-        </div>
-        <i class="fa-solid fa-clock text-3xl text-green-500"></i>
-      </div>
-    </div>
-
-    <!-- Most Common -->
-    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5 shadow-lg hover:scale-[1.02] transition">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-400 text-sm">Most Common Leave</p>
-          <h3 class="text-lg font-bold text-yellow-400">
-            {{ most_common_leave_type }}
-          </h3>
-        </div>
-        <i class="fa-solid fa-star text-3xl text-yellow-400"></i>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- DEPARTMENT BREAKDOWN -->
-  <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-6 shadow-lg">
-
-    <h3 class="text-xl font-bold text-blue-400 flex items-center gap-2 mb-4">
-      <i class="fa-solid fa-building"></i>
-      Department Breakdown
-    </h3>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
+    <h2 class="text-xl font-bold text-blue-400 mt-4 mb-2"><i class="fa-solid fa-building"></i> Department-wise Summary</h2>
+    <ul class="list-disc list-inside">
       {% for dept, data in dept_summary.items() %}
-      <div class="bg-[#0f172a] border border-gray-700 rounded-xl p-4 hover:bg-[#111c33] transition">
-
-        <div class="flex justify-between items-center mb-2">
-          <h4 class="font-semibold text-blue-300">{{ dept }}</h4>
-          <i class="fa-solid fa-sitemap text-gray-400"></i>
-        </div>
-
-        <p class="text-sm text-gray-400">
-          Total Leaves:
-          <span class="text-white font-semibold">{{ data.total }}</span>
-        </p>
-
-        <p class="text-sm text-gray-400">
-          Avg Days:
-          <span class="text-white font-semibold">{{ data.avg_days }}</span>
-        </p>
-
-      </div>
+        <li><span class="font-semibold text-blue-300">{{ dept }}</span>: Total Leaves: {{ data.total }}, Avg Days: {{ data.avg_days }}</li>
       {% endfor %}
-
-    </div>
+    </ul>
   </div>
-
-</div>
-
 </main>
 {% endblock %}

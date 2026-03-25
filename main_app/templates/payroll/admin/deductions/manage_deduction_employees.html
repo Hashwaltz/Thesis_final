@@ -2,164 +2,130 @@
 {% block title %}Manage Employees – {{ deduction.name }}{% endblock %}
 
 {% block content %}
+<section class="p-6 text-gray-200">
 
-<section class="p-4 sm:p-6 text-gray-200 space-y-6">
+  <!-- ===== HEADER & BACK BUTTON ===== -->
+  <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+    <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-2">
+      <i class="fa-solid fa-gear"></i> Manage Employees for {{ deduction.name }}
+    </h2>
+    <a href="{{ url_for('payroll_admin_bp.deductions') }}"
+       class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded flex items-center gap-2">
+      <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+  </div>
 
-<!-- ===== HEADER ===== -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <!-- ===== SEARCH & PAGINATION ===== -->
+  <div class="flex flex-col md:flex-row justify-between items-center gap-3 mb-4 flex-wrap">
+    <!-- Search Form -->
+    <form id="search-form"
+          method="get"
+          action="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id) }}"
+          class="flex gap-2 flex-wrap">
+      <input type="text"
+             name="search"
+             id="search-input"
+             value="{{ search or '' }}"
+             placeholder="Search employees..."
+             class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-gray-200 outline-none focus:ring-emerald-500"/>
+      <button type="submit"
+              class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass"></i> Search
+      </button>
+      <button type="button"
+              id="clear-btn"
+              class="px-4 py-2 bg-gray-500 hover:bg-gray-600 rounded flex items-center gap-2">
+        <i class="fa-solid fa-xmark"></i> Clear
+      </button>
+    </form>
 
-<h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-2">
-<i class="fa-solid fa-gear"></i>
-Manage Employees – {{ deduction.name }}
-</h2>
+    <!-- Pagination -->
+    <div class="flex items-center gap-3">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id, page=pagination.prev_num, search=search) }}"
+         class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 flex items-center gap-1">
+        <i class="fa-solid fa-arrow-left"></i> Previous
+      </a>
+      {% endif %}
+      <span class="text-gray-300">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+      {% if pagination.has_next %}
+      <a href="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id, page=pagination.next_num, search=search) }}"
+         class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600 flex items-center gap-1">
+        Next <i class="fa-solid fa-arrow-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
 
-<a href="{{ url_for('payroll_admin_bp.deductions') }}"
-   class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg
-          flex items-center justify-center gap-2 w-full sm:w-auto">
+  <!-- ===== EMPLOYEES TABLE ===== -->
+  <form method="POST" id="manage-employees-form" class="bg-gray-800 p-5 rounded-2xl border border-gray-700">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm text-center text-gray-200">
+        <thead class="bg-gray-900 text-emerald-400">
+          <tr>
+            <th class="px-4 py-3 w-12">#</th>
+            <th class="px-4 py-3">Employee Name</th>
+            <th class="px-4 py-3">Employee ID</th>
+            <th class="px-4 py-3 w-24">Assign</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+          {% for employee in employees %}
+          <tr class="hover:bg-gray-700/40 transition">
+            <td class="px-4 py-2">{{ loop.index }}</td>
+            <td class="px-4 py-2">{{ employee.get_full_name() }}</td>
+            <td class="px-4 py-2">{{ employee.employee_id }}</td>
+            <td class="px-4 py-2">
+              <input type="checkbox" name="employees" value="{{ employee.id }}"
+                     {% if employee.id in linked_employee_ids %}checked{% endif %}
+                     class="mx-auto w-5 h-5 rounded border border-gray-600 bg-gray-800 
+                            checked:bg-emerald-400 checked:border-emerald-400
+                            checked:before:content-['✔'] checked:before:text-white checked:before:opacity-70
+                            checked:before:flex checked:before:justify-center 
+                            checked:before:items-center appearance-none cursor-pointer transition"/>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="text-center py-6 text-gray-400">
+              No employees found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
 
-<i class="fa-solid fa-arrow-left"></i>
-Back
-
-</a>
-
-</div>
-
-<!-- ===== FILTER BAR ===== -->
-<div class="bg-gray-800 p-4 rounded-2xl border border-gray-700 space-y-3">
-
-<form id="search-form"
-      method="get"
-      action="{{ url_for('payroll_admin_bp.manage_deduction_employees', deduction_id=deduction.id) }}"
-      class="flex flex-col sm:flex-row gap-3">
-
-<input type="text"
-       name="search"
-       id="search-input"
-       value="{{ search or '' }}"
-       placeholder="Search employees..."
-       class="flex-1 px-4 py-2 rounded-lg bg-gray-900 border border-gray-700
-              text-gray-100 focus:ring-2 focus:ring-emerald-500 outline-none">
-
-<div class="flex gap-2 w-full sm:w-auto">
-
-<button type="submit"
-        class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500
-               rounded-lg flex items-center justify-center gap-2">
-
-<i class="fa-solid fa-magnifying-glass"></i>
-Search
-
-</button>
-
-<button type="button"
-        id="clear-btn"
-        class="flex-1 sm:flex-none px-4 py-2 bg-gray-600 hover:bg-gray-500
-               rounded-lg flex items-center justify-center gap-2">
-
-<i class="fa-solid fa-xmark"></i>
-Clear
-
-</button>
-
-</div>
-
-</form>
-
-</div>
-
-<!-- ===== TABLE CARD ===== -->
-<form method="POST" id="manage-employees-form"
-      class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-
-<div class="overflow-x-auto">
-
-<table class="min-w-full text-sm">
-
-<thead class="bg-gray-900 text-emerald-400">
-<tr>
-<th class="p-3 text-left">#</th>
-<th class="p-3 text-left">Employee</th>
-<th class="p-3 text-left">Employee ID</th>
-<th class="p-3 text-center">Assign</th>
-</tr>
-</thead>
-
-<tbody class="divide-y divide-gray-700">
-
-{% for employee in employees %}
-<tr class="hover:bg-gray-700/40 transition">
-
-<td class="p-3">{{ loop.index }}</td>
-
-<td class="p-3 font-medium">
-{{ employee.get_full_name() }}
-</td>
-
-<td class="p-3 text-gray-400">
-{{ employee.employee_id }}
-</td>
-
-<td class="p-3 text-center">
-
-<input type="checkbox"
-       name="employees"
-       value="{{ employee.id }}"
-       {% if employee.id in linked_employee_ids %}checked{% endif %}
-       class="w-5 h-5 accent-emerald-500 cursor-pointer">
-
-</td>
-
-</tr>
-{% else %}
-<tr>
-<td colspan="4" class="text-center py-6 text-gray-400">
-No employees found.
-</td>
-</tr>
-{% endfor %}
-
-</tbody>
-</table>
-
-</div>
-
-<!-- ===== SAVE BUTTON ===== -->
-<div class="p-4 border-t border-gray-700 flex justify-end">
-
-<button type="submit"
-        class="w-full sm:w-auto px-6 py-2 bg-green-600 hover:bg-green-500
-               rounded-lg flex items-center justify-center gap-2">
-
-<i class="fa-solid fa-save"></i>
-Save Selection
-
-</button>
-
-</div>
-
-</form>
+  <!-- ===== ACTION BUTTONS ===== -->
+  <div class="flex justify-end mt-4 gap-3 flex-wrap">
+    <button type="submit" form="manage-employees-form"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded flex items-center gap-2">
+      <i class="fa-solid fa-save"></i> Save Selection
+    </button>
+  </div>
 
 </section>
 
-<!-- ===== SCRIPTS ===== -->
 <script>
-const searchInput = document.getElementById('search-input');
-const searchForm = document.getElementById('search-form');
-const clearBtn = document.getElementById('clear-btn');
+  // Auto-submit search on typing
+  const searchInput = document.getElementById('search-input');
+  const searchForm = document.getElementById('search-form');
+  let typingTimer;
+  const typingDelay = 500; // 0.5s delay
 
-let timer;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+      searchForm.submit();
+    }, typingDelay);
+  });
 
-searchInput.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-        searchForm.submit();
-    }, 400);
-});
-
-clearBtn.addEventListener('click', () => {
+  // Clear search input
+  const clearBtn = document.getElementById('clear-btn');
+  clearBtn.addEventListener('click', () => {
     searchInput.value = '';
     searchForm.submit();
-});
+  });
 </script>
-
 {% endblock %}

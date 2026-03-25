@@ -15,12 +15,6 @@ def job_history_list():
 
     page = request.args.get("page", 1, type=int)
 
-    # copy filters safely
-    args = request.args.to_dict()
-
-    # remove page so it won’t duplicate
-    args.pop("page", None)
-
     employee = request.args.get("employee")
     department = request.args.get("department")
     status = request.args.get("status")
@@ -49,6 +43,5 @@ def job_history_list():
         "hr/officer/job_history_list.html",
         job_history=job_history,
         employees=employees,
-        departments=departments,
-        args=args
+        departments=departments
     )

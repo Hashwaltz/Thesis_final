@@ -523,6 +523,8 @@ def safe_get(obj, attr, default=0):
     return getattr(obj, attr, default) or default
 
 
+
+
 def export_payroll_excel(query):
 
     payrolls = query.all()
@@ -530,95 +532,49 @@ def export_payroll_excel(query):
 
     for p in payrolls:
 
-        emp = p.employee
+        total_linked_deductions = sum(
+            (ed.deduction.rate or 0)
+            for ed in getattr(p.employee, "employee_deductions", [])
+            if ed.deduction and ed.deduction.active
+        )
 
-        # ===============================
-        # DEDUCTION BREAKDOWN (REAL DATA)
-        # ===============================
-        sss = philhealth = pagibig = other = 0
+        total_allowances = sum(
+            (ea.allowance.amount or 0)
+            for ea in getattr(p.employee, "employee_allowances", [])
+            if ea.allowance and ea.allowance.active
+        )
 
-        for d in getattr(p, "deduction_breakdown", []):
-            name = (d.deduction_name or "").lower()
+        total_deductions = safe_get(p, "total_deductions") + total_linked_deductions
+        gross_pay_with_allowances = safe_get(p, "gross_pay") + total_allowances
 
-            if "sss" in name:
-                sss += d.employee_share or 0
-            elif "philhealth" in name:
-                philhealth += d.employee_share or 0
-            elif "pag" in name:
-                pagibig += d.employee_share or 0
-            else:
-                other += d.employee_share or 0
-
-        # ===============================
-        # ALLOWANCES
-        # ===============================
-        total_allowances = p.allowance_total or 0
-
-        # ===============================
-        # ATTENDANCE (SAFE)
-        # ===============================
-        try:
-            days_worked = p.compute_attendance_days()
-        except:
-            days_worked = 0
-
-        try:
-            hours_worked = p.compute_attendance_hours()
-        except:
-            hours_worked = 0
-
-        # ===============================
-        # DATA ROW
-        # ===============================
         data.append({
+            "Employee ID": p.employee.employee_id,
+            "Employee Name": f"{p.employee.first_name} {p.employee.last_name}",
+            "Department": p.employee.department.name if p.employee.department else "-",
 
-            "Employee ID": emp.employee_id,
-            "Employee Name": emp.get_full_name(),
-            "Department": emp.department.name if emp.department else "-",
-            "Employment Type": emp.employment_type.name if emp.employment_type else "-",
-
-            # Attendance
-            "Days Worked": days_worked,
-            "Hours Worked": hours_worked,
-
-            # Earnings
-            "Basic Salary": p.basic_salary or 0,
-            "Overtime Pay": p.overtime_pay or 0,
-            "Holiday Pay": p.holiday_pay or 0,
-            "Night Differential": p.night_diff or 0,
+            "Basic Salary": safe_get(p, "basic_salary"),
+            "Overtime Pay": safe_get(p, "overtime_pay"),
+            "Holiday Pay": safe_get(p, "holiday_pay"),
+            "Night Differential": safe_get(p, "night_diff"),
             "Allowances": total_allowances,
 
-            "Gross Pay": p.gross_pay or 0,
+            "Gross Pay": gross_pay_with_allowances,
 
-            # Deductions
-            "SSS": sss,
-            "PhilHealth": philhealth,
-            "Pag-IBIG": pagibig,
-            "Tax Withheld": getattr(p, "tax_withheld", 0),
-            "Other Deductions": other,
+            "SSS": 0,
+            "PhilHealth": 0,
+            "Pag-IBIG": 0,
+            "Tax Withheld": safe_get(p, "tax_withheld"),
+            "Other Deductions": safe_get(p, "other_deductions"),
+            "Linked Deductions": total_linked_deductions,
 
-            "Total Deductions": p.total_deductions or 0,
+            "Total Deductions": total_deductions,
+            "Net Pay": safe_get(p, "net_pay"),
 
-            # Net
-            "Net Pay": p.net_pay or 0,
-
-            # Payroll Info
-            "Status": p.status or "-",
-            "Payslip No": p.payslip.payslip_number if p.payslip else "-",
-            "Pay Date": p.period.pay_date if p.period else "-",
-            "Pay Period": f"{p.period.start_date} - {p.period.end_date}" if p.period else "-",
-
-            # HR Insight
-            "Years of Service": emp.years_of_service
+            "Status": safe_get(p, "status"),
+            "Pay Period": f"{getattr(p.period,'start_date','-')} - {getattr(p.period,'end_date','-')}"
         })
 
-    # ===============================
-    # DATAFRAME
-    # ===============================
     df = pd.DataFrame(data)
-
-    # Sort for better readability
-    df = df.sort_values(by=["Department", "Employee Name"])
 
     output = io.BytesIO()
 
@@ -638,8 +594,9 @@ def export_payroll_excel(query):
         from openpyxl.drawing.image import Image as OpenpyxlImage
 
         # ==========================================
-        # LOGO
+        # Logo
         # ==========================================
+
         logo_path = r"C:\Users\pc\Desktop\Thesis_final\main_app\static\img\garay.png"
 
         if os.path.exists(logo_path):
@@ -649,24 +606,25 @@ def export_payroll_excel(query):
             worksheet.add_image(logo, "A1")
 
         # ==========================================
-        # HEADER
+        # Government Header
         # ==========================================
-        worksheet.merge_cells("A2:R2")
+
+        worksheet.merge_cells("A2:P2")
         worksheet["A2"] = "Republic of the Philippines"
 
-        worksheet.merge_cells("A3:R3")
+        worksheet.merge_cells("A3:P3")
         worksheet["A3"] = "MUNICIPALITY OF NORZAGARAY"
 
-        worksheet.merge_cells("A4:R4")
+        worksheet.merge_cells("A4:P4")
         worksheet["A4"] = "Province of Bulacan"
 
-        worksheet.merge_cells("A6:R6")
+        worksheet.merge_cells("A6:P6")
         worksheet["A6"] = "Municipal Hall of Norzagaray"
 
-        worksheet.merge_cells("A7:R7")
+        worksheet.merge_cells("A7:P7")
         worksheet["A7"] = "Norzagaray, Bulacan"
 
-        worksheet.merge_cells("A9:R9")
+        worksheet.merge_cells("A9:P9")
         worksheet["A9"] = "PAYROLL SUMMARY REPORT"
 
         header_font = Font(size=12, bold=True)
@@ -680,14 +638,9 @@ def export_payroll_excel(query):
         worksheet["A9"].font = title_font
 
         # ==========================================
-        # SUMMARY (NEW 🔥)
+        # Table Header Styling
         # ==========================================
-        worksheet["A10"] = f"Total Employees: {len(payrolls)}"
-        worksheet["A11"] = f"Total Payroll: ₱{df['Net Pay'].sum():,.2f}"
 
-        # ==========================================
-        # HEADER STYLE
-        # ==========================================
         header_row = 13
 
         fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
@@ -698,14 +651,9 @@ def export_payroll_excel(query):
             cell.fill = fill
 
         # ==========================================
-        # FREEZE + FILTER 🔥
+        # Borders
         # ==========================================
-        worksheet.freeze_panes = "A14"
-        worksheet.auto_filter.ref = f"A13:R{worksheet.max_row}"
 
-        # ==========================================
-        # BORDERS
-        # ==========================================
         thin = Side(style="thin")
         border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
@@ -719,10 +667,11 @@ def export_payroll_excel(query):
                 cell.border = border
 
         # ==========================================
-        # CURRENCY FORMAT
+        # Currency Format
         # ==========================================
+
         currency_columns = [
-            "G","H","I","J","K","L","M","N","O","P"
+            "D","E","F","G","H","I","J","K","L","M","N","O"
         ]
 
         for col in currency_columns:
@@ -730,8 +679,9 @@ def export_payroll_excel(query):
                 worksheet[f"{col}{row}"].number_format = '₱#,##0.00'
 
         # ==========================================
-        # AUTO WIDTH
+        # Auto Column Width
         # ==========================================
+
         for column in worksheet.columns:
             max_length = 0
             column_letter = column[0].column_letter
@@ -755,6 +705,7 @@ def export_payroll_excel(query):
         as_attachment=True,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 
 
 # ======================================================

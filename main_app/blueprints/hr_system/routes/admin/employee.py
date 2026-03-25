@@ -10,7 +10,7 @@ from main_app.helpers.decorators import admin_required
 from main_app.models.hr_models import Employee, Department, LeaveCredit, EmploymentType, Position, JobHistory
 from main_app.models.user import User
 from main_app.extensions import db, mail
-from main_app.helpers.functions import parse_date, generate_password
+from main_app.helpers.functions import parse_date
 from main_app.helpers.utils import generate_employee_id
 from main_app.helpers.docs import generate_moa_excel, generate_excel_employees, generate_service_record_docx, generate_coe_pdf
 
@@ -114,7 +114,7 @@ def add_employee():
         postal_code = request.form.get('postal_code', '').strip()
 
         # --- 2. Create User ---
-        default_password = generate_password(12)
+        default_password = "password123"
         user = User(
             email=request.form['email'],
             first_name=request.form['first_name'],
@@ -449,6 +449,7 @@ def view_archived_employees():
 @admin_required
 def restore_employee(employee_id):
     employee = Employee.query.get_or_404(employee_id)
+
     if not employee.archived:
         flash("Employee is not archived.", "warning")
         return redirect(url_for('hr_admin_bp.view_archived_employees'))

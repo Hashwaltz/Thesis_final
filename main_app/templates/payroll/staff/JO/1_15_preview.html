@@ -1,0 +1,215 @@
+{% extends 'payroll/staff/staff_base.html' %}
+
+{% block title %}JO Payroll Preview - 1–15{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6 space-y-8 bg-gray-900 text-gray-100">
+
+    <!-- HEADER -->
+    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-lg">
+
+        <div class="flex justify-between items-center">
+            <div>
+                <a href="{{ url_for('payroll_staff_bp.jo_select_department', period_id=period.id) }}"
+                   class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm">
+                    ← Back
+                </a>
+            </div>
+
+            <div class="text-center">
+                <h3 class="text-xs text-gray-400 tracking-wider">
+                    LGU MUNICIPALITY OF NORZAGARAY
+                </h3>
+                <h1 class="text-2xl font-bold text-blue-300">
+                    {{ department.name }}
+                </h1>
+            </div>
+
+            <div class="text-right">
+                <p class="text-xs text-gray-400">Payroll No.</p>
+                <p class="text-lg font-semibold text-blue-300">
+                    {{ period.start_date.month }}-{{ period.start_date.strftime('%y') }}-JO
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center border-y border-gray-700 py-3 my-4">
+            <h2 class="text-xl font-bold text-blue-400">
+                JOB ORDER PAYROLL (1ST HALF - 1–15)
+            </h2>
+        </div>
+
+        <div class="text-center">
+            <p class="text-lg font-medium">
+                {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
+            </p>
+        </div>
+
+    </div>
+
+    <!-- FORM -->
+    <form method="POST"
+          action="{{ url_for('payroll_staff_bp.process_jo_payroll', period_id=period.id, department_id=department.id) }}"
+          class="space-y-8">
+
+        {% for data in payroll_data %}
+        {% set payroll = data.payroll %}
+        {% set rate = (data.employee.salary or 0) | float %}
+
+        <div class="employee-card bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-6"
+             data-rate="{{ rate }}">
+
+            <!-- EMPLOYEE -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-300">
+                    ({{ data.employee.employee_id }}) {{ data.employee.get_full_name() }}
+                </h3>
+                <p class="text-sm text-gray-400">
+                    {{ data.employee.position.name }}
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+
+                <!-- EARNINGS -->
+                <div class="bg-gray-900 p-4 rounded-xl space-y-3">
+                    <h4 class="text-blue-300 font-semibold">Earnings</h4>
+
+                    <div>
+                        <label class="text-xs text-gray-400">Days Worked</label>
+                        <input type="number"
+                               name="days_worked_{{ data.employee.id }}"
+                               value="{{ payroll.days_worked or 0 }}"
+                               class="days w-full p-2 bg-gray-800 text-right rounded">
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-gray-400">Rate</label>
+                        <input type="text"
+                               value="₱ {{ '{:,.2f}'.format(rate) }}"
+                               readonly
+                               class="w-full p-2 bg-gray-800 text-right rounded">
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-gray-400">Basic Pay</label>
+                        <input type="text"
+                               readonly
+                               class="basic w-full p-2 bg-gray-800 text-right rounded">
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-gray-400">Gross Pay</label>
+                        <input type="text"
+                               readonly
+                               class="gross w-full p-2 bg-gray-800 text-right rounded font-semibold text-green-300">
+                    </div>
+                </div>
+
+                <!-- DEDUCTIONS -->
+                <div class="bg-gray-900 p-4 rounded-xl space-y-3">
+                    <h4 class="text-red-300 font-semibold">Deductions</h4>
+
+                    {% for ded in data.deductions %}
+
+                        {% if ded.name == "SSS" %}
+                        <div>
+                            <label class="text-xs text-gray-400">SSS</label>
+                            <input type="number"
+                                   name="sss_{{ data.employee.id }}"
+                                   value="{{ ded.employee_share or 0 }}"
+                                   class="employee-share w-full p-2 bg-gray-800 text-right rounded">
+                        </div>
+
+                        {% else %}
+                        <div>
+                            <label class="text-xs text-gray-400">
+                                {{ ded.name }}
+                            </label>
+
+                            <input type="number"
+                                   name="loan_{{ ded.loan_id }}"
+                                   value="{{ ded.employee_share or 0 }}"
+                                   class="employee-share w-full p-2 bg-gray-800 text-right rounded">
+                        </div>
+                        {% endif %}
+
+                    {% endfor %}
+
+                    <div class="pt-3 border-t border-gray-700">
+                        <label class="text-sm text-gray-400">Total Deduction</label>
+                        <input type="text"
+                               readonly
+                               class="total-deduction w-full p-2 bg-gray-800 text-right rounded text-red-300 font-semibold">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- NET PAY -->
+            <div class="bg-gray-900 p-4 rounded-xl">
+                <label class="text-sm text-gray-400">Net Pay</label>
+                <input type="text"
+                       readonly
+                       class="net-pay w-full p-3 bg-gray-800 text-right rounded font-bold text-green-400 text-lg">
+            </div>
+
+        </div>
+        {% endfor %}
+
+        <div class="text-right mt-6">
+            <button class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl font-semibold">
+                Process JO Payroll
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- SCRIPT -->
+<script>
+document.querySelectorAll('.employee-card').forEach(card => {
+
+    const rate = parseFloat(card.dataset.rate) || 0;
+
+    const days = card.querySelector('.days');
+
+    const basicEl = card.querySelector('.basic');
+    const grossEl = card.querySelector('.gross');
+    const totalDedEl = card.querySelector('.total-deduction');
+    const netEl = card.querySelector('.net-pay');
+
+    const deductions = card.querySelectorAll('.employee-share');
+
+    function format(n){
+        return "₱ " + (n || 0).toLocaleString(undefined,{
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+        });
+    }
+
+    function compute(){
+        let d = parseFloat(days.value) || 0;
+
+        let basic = d * rate;
+        let gross = basic; // JO = NO allowance
+
+        basicEl.value = format(basic);
+        grossEl.value = format(gross);
+
+        let totalDed = 0;
+        deductions.forEach(x => totalDed += parseFloat(x.value) || 0);
+
+        totalDedEl.value = format(totalDed);
+        netEl.value = format(gross - totalDed);
+    }
+
+    card.querySelectorAll('input').forEach(i =>
+        i.addEventListener('input', compute)
+    );
+
+    compute();
+});
+</script>
+
+{% endblock %}

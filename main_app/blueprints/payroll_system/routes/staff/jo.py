@@ -1,230 +1,415 @@
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
+from sqlalchemy import extract
 
 from main_app.extensions import db
-from main_app.models.hr_models import Employee, Attendance, LateComputation, LeaveCredit
-from main_app.models.payroll_models import Payroll, PayrollPeriod, PayrollDeduction
+from main_app.models.hr_models import Employee, Attendance, LeaveCredit, Department
+from main_app.models.payroll_models import Payroll, PayrollPeriod, Loan, PayrollDeduction, LoanPayment
 
 from main_app.helpers.decorators import staff_required
 from main_app.blueprints.payroll_system.routes.staff import payroll_staff_bp
 
 JOB_ORDER_ID = 5
 
-# ==========================================
-# Philippine TRAIN Income Tax (Monthly)
-# ==========================================
-def compute_income_tax(monthly_salary):
-    if monthly_salary <= 20833:
-        return 0
-    elif monthly_salary <= 33332:
-        return (monthly_salary - 20833) * 0.20
-    elif monthly_salary <= 66666:
-        return 2500 + (monthly_salary - 33332) * 0.25
-    elif monthly_salary <= 166666:
-        return 10833.33 + (monthly_salary - 66666) * 0.30
-    elif monthly_salary <= 666666:
-        return 40833.33 + (monthly_salary - 166666) * 0.32
-    else:
-        return 200833.33 + (monthly_salary - 666666) * 0.35
+# ========================= CONSTANTS =========================
+ALLOWED_LOAN_1_15 = {"Pag-IBIG", "MENPC"}
+ALLOWED_LOAN_16_END = {"Pag-IBIG", "MENPC", "SSS"}
 
-# ==========================================
-# PREVIEW PAYROLL
-# ==========================================
-@payroll_staff_bp.route("/preview/<int:period_id>")
+# ========================= HELPERS =========================
+
+def safe_float(value):
+    try:
+        return float(value)
+    except:
+        return 0.0
+
+
+def is_second_half(period):
+    return period.start_date.day >= 16
+
+
+def compute_philhealth(gross):
+    if gross <= 10000:
+        return 250, 250
+    total = round(gross * 0.05, 2)
+    return total / 2, total / 2
+
+
+def compute_withholding_tax(gross):
+    return round(gross * 0.02, 2)
+
+
+# ========================= SELECT DEPARTMENT =========================
+
+@payroll_staff_bp.route("/jo/select-department/<int:period_id>")
 @login_required
 @staff_required
-def preview_payroll(period_id):
+def jo_select_department(period_id):
     period = PayrollPeriod.query.get_or_404(period_id)
+    departments = Department.query.order_by(Department.name).all()
+
+    department_status = {}
+
+    for dept in departments:
+        has_payroll = Payroll.query.join(Employee).filter(
+            Payroll.payroll_period_id == period.id,
+            Employee.department_id == dept.id,
+            Employee.employment_type_id == 5  # assuming JO ≠ CASUAL_ID
+        ).first()
+
+        department_status[dept.id] = bool(has_payroll)
+
+    return render_template(
+        "payroll/staff/jo/select_department.html",
+        period=period,
+        departments=departments,
+        department_status=department_status
+    )
+
+# ========================= PREVIEW =========================
+
+@payroll_staff_bp.route("/jo/preview/<int:period_id>/<int:department_id>")
+@login_required
+@staff_required
+def preview_jo_payroll(period_id, department_id):
+
+    period = PayrollPeriod.query.get_or_404(period_id)
+    department = Department.query.get_or_404(department_id)
 
     if period.status == "Locked":
         flash("Payroll already processed.", "warning")
-        return redirect(url_for("payroll_staff_bp.select_period"))
+        return redirect(url_for("payroll_staff_bp.jo_select_department", period_id=period.id))
 
     employees = Employee.query.filter(
         Employee.status == "Active",
+        Employee.department_id == department.id,
         Employee.employment_type_id == JOB_ORDER_ID
     ).all()
 
-    payroll_rows = []
+    second_half = is_second_half(period)
+    payroll_data = []
 
     for emp in employees:
-        # -----------------------------
-        # WORKED DAYS
-        # -----------------------------
+
         attendances = Attendance.query.filter(
             Attendance.employee_id == emp.id,
             Attendance.date.between(period.start_date, period.end_date)
         ).all()
 
-        worked_days = 0
-        for att in attendances:
-            if att.status in ("Present", "Late"):
-                late_record = LateComputation.query.filter_by(attendance_id=att.id).first()
-                late_equiv = late_record.day_equivalent if late_record else 0
-                worked_days += 1 - late_equiv
-
-        # Deduct leaves
-        leave_credits = LeaveCredit.query.filter_by(employee_id=emp.id).all()
-        leave_days = sum(l.used_credits for l in leave_credits)
-        worked_days -= leave_days
+        worked_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
         worked_days = max(worked_days, 0)
 
-        # -----------------------------
-        # ALLOWANCE
-        # -----------------------------
-        allowance_total = sum(
-            ea.allowance.amount
-            for ea in emp.employee_allowances
-            if ea.allowance and ea.allowance.active
-        )
+        daily_rate = emp.salary or 0
+        basic_pay = worked_days * daily_rate
+        gross_pay = basic_pay  # NO allowance for JO
 
-        # -----------------------------
-        # SALARY-BASED GROSS PAY
-        # (for deduction computation)
-        # -----------------------------
-        salary_based_gross = emp.salary * worked_days
-
-        # -----------------------------
-        # DEDUCTIONS
-        # -----------------------------
+        deductions = []
         total_deductions = 0
-        deductions_list = []
 
-        for emp_ded in emp.employee_deductions:
-            if not emp_ded.active or not emp_ded.deduction:
-                continue
+        # ======================================================
+        # 1–15 HALF
+        # ======================================================
+        if not second_half:
 
-            name = emp_ded.deduction.name.lower()
-            employee_share = 0
-            employer_share = 0
+            sss = getattr(emp, "sss_rss", 0) or 0
+            phic = getattr(emp, "philhealth_share", 0) or 0
 
-            if "sss" in name:
-                for b in emp_ded.deduction.brackets:
-                    if b.salary_from <= salary_based_gross <= b.salary_to:
-                        employee_share = b.employee_share or 0
-                        employer_share = b.employer_share or 0
-                        break
-            elif "philhealth" in name:
-                rate = emp_ded.deduction.rate or 0.025
-                floor = emp_ded.deduction.floor or 10000
-                ceiling = emp_ded.deduction.ceiling or 100000
-                base = min(max(salary_based_gross, floor), ceiling)
-                employee_share = round(base * rate / 2, 2)
-                employer_share = round(base * rate / 2, 2)
-            elif "gsis" in name:
-                employee_share = round(salary_based_gross * 0.09, 2)
-                employer_share = round(salary_based_gross * 0.12, 2)
-            elif "pag-ibig" in name or "hdmf" in name:
-                base = min(salary_based_gross, 5000)
-                employee_share = round(base * 0.02, 2)
-                employer_share = employee_share
-            elif "tax" in name:
-                employee_share = round(compute_income_tax(salary_based_gross), 2)
-            else:
-                result = emp_ded.calculate()
-                employee_share = result.get("employee_share", 0)
-                employer_share = result.get("employer_share", 0)
-
-            total_deductions += employee_share
-            deductions_list.append({
-                "name": emp_ded.deduction.name,
-                "employee_share": employee_share,
-                "employer_share": employer_share
+            deductions.append({
+                "key": "sss",
+                "name": "SSS",
+                "employee_share": sss,
+                "employer_share": 0,
+                "editable": True
             })
 
-        # -----------------------------
-        # NET PAY
-        # -----------------------------
-        net_pay = round(salary_based_gross + allowance_total - total_deductions, 2)
-        display_gross = salary_based_gross + allowance_total
+            deductions.append({
+                "key": "philhealth",
+                "name": "PhilHealth",
+                "employee_share": phic,
+                "employer_share": 0,
+                "editable": True
+            })
 
-        payroll = Payroll(
-            employee=emp,
-            period=period,
-            days_worked=worked_days,
-            gross_pay=display_gross,   # for showing in template
-            total_deductions=total_deductions,
-            net_pay=net_pay
-        )
-        payroll.allowance_total = allowance_total
-        payroll._deduction_breakdown = deductions_list
+            total_deductions += (sss + phic)
 
-        payroll_rows.append(payroll)
+            allowed_loans = ALLOWED_LOAN_1_15
 
-    return render_template(
-        "payroll/staff/jo/payroll_preview.html",
-        payroll_rows=payroll_rows,
-        period=period
+        # ======================================================
+        # 16–END HALF
+        # ======================================================
+        else:
+            sss = safe_float(request.form.get(f"sss_{emp.id}"))
+            phic_emp, phic_gov = compute_philhealth(gross_pay)
+            # GET 1–15 PERIOD (same month/year)
+            first_half_period = PayrollPeriod.query.filter(
+                extract('month', PayrollPeriod.start_date) == period.start_date.month,
+                extract('year', PayrollPeriod.start_date) == period.start_date.year,
+                extract('day', PayrollPeriod.start_date) == 1,
+                extract('day', PayrollPeriod.end_date) == 15
+            ).first()
+
+            previous_payroll = None
+            if first_half_period:
+                previous_payroll = Payroll.query.filter_by(
+                    employee_id=emp.id,
+                    payroll_period_id=first_half_period.id
+                ).first()
+
+            # COMPUTE TAXES
+            current_tax = compute_withholding_tax(gross_pay)
+
+            previous_gross = previous_payroll.gross_pay if previous_payroll else 0
+            previous_tax = compute_withholding_tax(previous_gross)
+            # SSS
+            if sss > 0:
+                deductions.append({
+                    "key": "sss",
+                    "name": "SSS",
+                    "employee_share": sss,
+                    "employer_share": 0,
+                    "editable": True
+                })
+                total_deductions += sss
+
+            # PHILHEALTH
+            if phic_emp > 0:
+                deductions.append({
+                    "key": "philhealth",
+                    "name": "PhilHealth",
+                    "employee_share": phic_emp,
+                    "employer_share": phic_gov,
+                    "editable": False
+                })
+                total_deductions += phic_emp
+
+           # PREVIOUS TAX (1–15)
+            if previous_tax > 0:
+                deductions.append({
+                    "key": "tax_prev",
+                    "name": "Withholding Tax (1–15)",
+                    "employee_share": previous_tax,
+                    "employer_share": 0,
+                    "editable": False
+                })
+                total_deductions += previous_tax
+
+            # CURRENT TAX (16–END)
+            if current_tax > 0:
+                deductions.append({
+                    "key": "tax_curr",
+                    "name": "Withholding Tax (16–End)",
+                    "employee_share": current_tax,
+                    "employer_share": 0,
+                    "editable": False
+                })
+                total_deductions += current_tax
+
+            allowed_loans = ALLOWED_LOAN_16_END
+
+        # ================= LOANS =================
+        loans = Loan.query.filter_by(employee_id=emp.id, active=True).all()
+
+        for loan in loans:
+            if loan.provider not in allowed_loans:
+                continue
+
+            deductions.append({
+                "key": f"loan_{loan.id}",
+                "name": f"{loan.provider} - {loan.loan_type}",
+                "employee_share": loan.monthly_payment or 0,
+                "employer_share": 0,
+                "loan_id": loan.id,
+                "editable": True
+            })
+
+            total_deductions += loan.monthly_payment or 0
+
+        payroll = Payroll()
+        payroll.days_worked = worked_days
+        payroll.basic_salary = basic_pay
+        payroll.gross_pay = gross_pay
+
+        payroll_data.append({
+            "employee": emp,
+            "payroll": payroll,
+            "deductions": deductions
+        })
+
+    template = (
+        "payroll/staff/jo/16_end_preview.html"
+        if second_half else
+        "payroll/staff/jo/1_15_preview.html"
     )
 
-# ==========================================
-# CONFIRM PAYROLL - INSERT EXACTLY AS PREVIEWED
-# ==========================================
-@payroll_staff_bp.route("/confirm", methods=["POST"])
+    return render_template(
+        template,
+        period=period,
+        department=department,
+        payroll_data=payroll_data
+    )
+
+
+# ========================= PROCESS =========================
+@payroll_staff_bp.route("/jo/process/<int:period_id>/<int:department_id>", methods=["POST"])
 @login_required
 @staff_required
-def confirm_payroll():
-    period_id = request.form.get("period_id")
-    period = PayrollPeriod.query.get_or_404(period_id)
+def process_jo_payroll(period_id, department_id):
 
-    # Delete existing payrolls to prevent duplicates
-    Payroll.query.filter_by(payroll_period_id=period.id).delete()
-    db.session.flush()
+    period = PayrollPeriod.query.get_or_404(period_id)
+    department = Department.query.get_or_404(department_id)
 
     employees = Employee.query.filter(
         Employee.status == "Active",
+        Employee.department_id == department.id,
         Employee.employment_type_id == JOB_ORDER_ID
     ).all()
 
+    second_half = is_second_half(period)
+
     for emp in employees:
-        days_worked = float(request.form.get(f"days_{emp.id}", 0))
-        allowance = float(request.form.get(f"allowance_{emp.id}", 0))
-        loan = float(request.form.get(f"loan_{emp.id}", 0))
-        gross_pay = float(request.form.get(f"gross_{emp.id}", emp.salary * days_worked + allowance))
+
+        days_worked = safe_float(request.form.get(f"days_worked_{emp.id}"))
+
+        daily_rate = emp.salary or 0
+        gross_pay = days_worked * daily_rate
 
         payroll = Payroll(
             employee_id=emp.id,
             payroll_period_id=period.id,
-            status="Confirmed",
             days_worked=days_worked,
             hours_worked=days_worked * 8,
-            basic_salary=emp.salary,
-            allowance_total=allowance,
-            gross_pay=gross_pay
+            basic_salary=gross_pay,
+            allowance_total=0,
+            gross_pay=gross_pay,
+            total_deductions=0,
+            net_pay=0,
+            status="Processed"
         )
+
         db.session.add(payroll)
         db.session.flush()
 
         total_deductions = 0
 
-        # Loop over deductions sent from form
-        for key, value in request.form.items():
-            if key.startswith(f"deduction_{emp.id}_"):
-                name = key.split(f"deduction_{emp.id}_")[1]
-                employee_share = float(value)
-                employer_share = float(request.form.get(f"employer_{emp.id}_{name}", 0))
-                total_deductions += employee_share
+        # ================= 1–15 =================
+        if not second_half:
 
+            sss = safe_float(request.form.get(f"sss_{emp.id}"))
+
+            if sss > 0:
+                total_deductions += sss
                 db.session.add(PayrollDeduction(
                     payroll_id=payroll.id,
-                    deduction_name=name,
-                    employee_share=employee_share,
-                    employer_share=employer_share
+                    deduction_name="SSS",
+                    employee_share=sss
                 ))
 
-        # Include loan if any
-        if loan > 0:
-            total_deductions += loan
-            db.session.add(PayrollDeduction(
-                payroll_id=payroll.id,
-                deduction_name="Loan / Other",
-                employee_share=loan,
-                employer_share=0
-            ))
+            phic_emp, phic_gov = compute_philhealth(gross_pay)
 
-        payroll.total_deductions = round(total_deductions, 2)
-        payroll.net_pay = round(gross_pay - total_deductions, 2)
+            if phic_emp > 0:
+                total_deductions += phic_emp
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="PhilHealth",
+                    employee_share=phic_emp
+                ))
+
+            allowed_loans = ALLOWED_LOAN_1_15
+
+        # ================= 16–END =================
+        else:
+
+            sss = safe_float(request.form.get(f"sss_{emp.id}"))
+            phic_emp, phic_gov = compute_philhealth(gross_pay)
+
+            # 🔍 GET 1–15 PERIOD (same month/year)
+            first_half_period = PayrollPeriod.query.filter(
+                extract('month', PayrollPeriod.start_date) == period.start_date.month,
+                extract('year', PayrollPeriod.start_date) == period.start_date.year,
+                extract('day', PayrollPeriod.start_date) == 1,
+                extract('day', PayrollPeriod.end_date) == 15
+            ).first()
+
+            previous_payroll = None
+            if first_half_period:
+                previous_payroll = Payroll.query.filter_by(
+                    employee_id=emp.id,
+                    payroll_period_id=first_half_period.id
+                ).first()
+
+            # 🧠 TAX COMPUTATION
+            current_tax = compute_withholding_tax(gross_pay)
+
+            previous_gross = previous_payroll.gross_pay if previous_payroll else 0
+            previous_tax = compute_withholding_tax(previous_gross)
+
+            # ================= ADD DEDUCTIONS =================
+
+            # SSS
+            if sss > 0:
+                total_deductions += sss
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="SSS",
+                    employee_share=sss
+                ))
+
+            # PHILHEALTH
+            if phic_emp > 0:
+                total_deductions += phic_emp
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="PhilHealth",
+                    employee_share=phic_emp
+                ))
+
+            # TAX (1–15)
+            if previous_tax > 0:
+                total_deductions += previous_tax
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="Withholding Tax (1–15)",
+                    employee_share=previous_tax
+                ))
+
+            # TAX (16–END)
+            if current_tax > 0:
+                total_deductions += current_tax
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="Withholding Tax (16–End)",
+                    employee_share=current_tax
+                ))
+
+            allowed_loans = ALLOWED_LOAN_16_END
+
+        # ================= LOANS =================
+        loans = Loan.query.filter_by(employee_id=emp.id, active=True).all()
+
+        for loan in loans:
+            if loan.provider not in allowed_loans:
+                continue
+
+            val = safe_float(request.form.get(f"loan_{loan.id}"))
+
+            if val > 0:
+                total_deductions += val
+
+                remaining = (loan.remaining_balance or 0) - val
+                remaining = max(remaining, 0)
+                loan.remaining_balance = remaining  
+
+                db.session.add(LoanPayment(
+                    loan_id=loan.id,
+                    payroll_id=payroll.id,
+                    amount_paid=val
+                ))
+
+        # ================= FINAL COMPUTE =================
+        payroll.total_deductions = total_deductions
+        payroll.net_pay = gross_pay - total_deductions
 
     db.session.commit()
+
     flash("JO Payroll processed successfully!", "success")
-    return redirect(url_for("payroll_staff_bp.view_payrolls"))
+    return redirect(url_for("payroll_staff_bp.jo_select_department", period_id=period.id))

@@ -1,0 +1,99 @@
+{% extends 'payroll/staff/staff_base.html' %}
+
+{% block title %}Select Department{% endblock %}
+
+{% block content %}
+<section class="p-6 space-y-6 text-gray-200 max-w-7xl mx-auto">
+
+  <!-- HEADER -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+    <h2 class="text-3xl font-bold text-emerald-500 flex items-center gap-3">
+      <i class="fa-solid fa-building text-3xl"></i>
+      Select Department
+    </h2>
+    <p class="mt-2 md:mt-0 text-gray-400">
+      Payroll Period: <span class="text-gray-300">{{ period.start_date }} – {{ period.end_date }}</span>
+    </p>
+  </div>
+
+  <!-- DEPARTMENT CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for dept in departments %}
+
+    {% set is_processed = department_status.get(dept.id, False) %}
+
+    <div
+         class="bg-gray-800 border border-gray-700 rounded-2xl p-6 flex flex-col justify-between
+                transition-all duration-300 relative overflow-hidden text-center
+                {% if not is_processed %}cursor-pointer hover:scale-105 hover:shadow-2xl{% else %}opacity-70{% endif %}"
+         {% if not is_processed %}
+         onclick="goToPayroll({{ dept.id }})"
+         {% endif %}
+    >
+
+      <!-- Accent overlay -->
+      <div class="absolute inset-0 opacity-0 hover:opacity-15 transition-opacity rounded-2xl"
+           style="background: {% if dept.name == 'HR' %}#34D399{% elif dept.name == 'Finance' %}#FBBF24{% elif dept.name == 'IT' %}#60A5FA{% elif dept.name == 'Marketing' %}#F472B6{% else %}#22D3EE{% endif %};"></div>
+
+      <!-- STATUS BADGE -->
+      <div class="absolute top-3 right-3 z-20">
+        {% if is_processed %}
+          <span class="px-3 py-1 text-xs rounded-full bg-green-600 text-white shadow">
+            ✔ Processed
+          </span>
+        {% else %}
+          <span class="px-3 py-1 text-xs rounded-full bg-yellow-500 text-black shadow">
+            ⏳ Not Processed
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- Icon -->
+      <div class="text-6xl mb-4 relative z-10"
+           style="color: {% if dept.name == 'HR' %}#34D399{% elif dept.name == 'Finance' %}#FBBF24{% elif dept.name == 'IT' %}#60A5FA{% elif dept.name == 'Marketing' %}#F472B6{% else %}#22D3EE{% endif %};">
+        {% if dept.name == 'HR' %}
+          <i class="fa-solid fa-users"></i>
+        {% elif dept.name == 'Finance' %}
+          <i class="fa-solid fa-money-bill-wave"></i>
+        {% elif dept.name == 'IT' %}
+          <i class="fa-solid fa-laptop-code"></i>
+        {% elif dept.name == 'Marketing' %}
+          <i class="fa-solid fa-bullhorn"></i>
+        {% else %}
+          <i class="fa-solid fa-building"></i>
+        {% endif %}
+      </div>
+
+      <!-- Department Name -->
+      <h3 class="text-xl font-semibold text-white mb-3 relative z-10">{{ dept.name }}</h3>
+
+      <!-- Action Button -->
+      {% if is_processed %}
+        <button
+          class="px-6 py-2 font-medium rounded-lg bg-gray-600 text-gray-300 cursor-not-allowed relative z-10">
+          Locked
+        </button>
+      {% else %}
+        <a href="{{ url_for('payroll_staff_bp.preview_department_payroll', period_id=period.id, department_id=dept.id) }}"
+           class="px-6 py-2 font-medium rounded-lg transition relative z-10
+                  bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600
+                  hover:from-emerald-500 hover:via-emerald-600 hover:to-emerald-700
+                  hover:shadow-lg hover:scale-105 text-white">
+           Process Payroll
+        </a>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+<script>
+function goToPayroll(deptId) {
+  const url = "{{ url_for('payroll_staff_bp.preview_department_payroll', period_id=period.id, department_id=0) }}";
+  window.location.href = url.replace('0', deptId);
+}
+</script>
+
+{% endblock %}

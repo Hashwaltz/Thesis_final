@@ -67,6 +67,7 @@ class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
 <th class="p-3 text-right">Gross Pay</th>
 <th class="p-3 text-right">Allowance</th>
 <th class="p-3 text-right">Deductions</th>
+<th class="p-3 text-right">Loans</th>
 <th class="p-3 text-right">Net Pay</th>
 <th class="p-3 text-left">Period</th>
 </tr>
@@ -89,9 +90,29 @@ days_worked:{{ payroll.days_worked or 0 }},
 allowance_total:{{ payroll.allowance_total or 0 }},
 gross_pay:{{ payroll.gross_pay or 0 }},
 deductions:{{ payroll.total_deductions or 0 }},
+loan_total:{{ payroll.loan_total or 0 }},
 net_pay:{{ payroll.net_pay or 0 }},
 period_start:'{{ payroll.period.start_date if payroll.period else '' }}',
-period_end:'{{ payroll.period.end_date if payroll.period else '' }}'
+period_end:'{{ payroll.period.end_date if payroll.period else '' }}',
+
+deduction_list: [
+{% for d in payroll.deduction_breakdown %}
+{
+name: "{{ d.deduction_name }}",
+amount: {{ d.employee_share or 0 }}
+},
+{% endfor %}
+],
+
+loan_list: [
+{% for lp in payroll.loan_payments %}
+{
+name: "{{ lp.loan.provider }} ({{ lp.loan.loan_type }})",
+amount: {{ lp.amount_paid or 0 }}
+},
+{% endfor %}
+]
+
 })">
 
 <td class="p-3">{{ payroll.employee.get_full_name() }}</td>
@@ -116,8 +137,14 @@ period_end:'{{ payroll.period.end_date if payroll.period else '' }}'
 ₱ {{ "{:,.2f}".format(payroll.total_deductions or 0) }}
 </td>
 
+<td class="p-3 text-right text-red-400">
+₱ {{ "{:,.2f}".format(payroll.loan_total or 0) }}
+</td>
+
 <td class="p-3 text-right font-semibold text-emerald-400">
-₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}
+₱ {{ "{:,.2f}".format(
+    (payroll.net_pay or 0)
+) }}
 </td>
 
 <td class="p-3">
@@ -143,22 +170,14 @@ class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center 
 <div class="bg-gray-900 w-[900px] rounded-2xl border border-gray-700 shadow-xl">
 
 <div class="flex justify-between p-5 border-b border-gray-700">
-
-<h2 class="text-emerald-400 font-semibold text-lg">
-Payroll Details
-</h2>
-
-<button onclick="closePayrollModal()"
-class="text-gray-400 hover:text-white text-xl">✕</button>
-
+<h2 class="text-emerald-400 font-semibold text-lg">Payroll Details</h2>
+<button onclick="closePayrollModal()" class="text-gray-400 hover:text-white text-xl">✕</button>
 </div>
 
 <div id="payrollModalContent" class="p-6 space-y-4 text-sm"></div>
 
 </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 
@@ -171,7 +190,6 @@ if(p.employee_type==="Part-Time"){
 rateLabel="Hourly Rate × Hours"
 rateComputation=`₱${p.hourly_rate} × ${p.working_hours}`
 }
-
 else if(
 p.employee_type==="Casual" ||
 p.employee_type==="Job Order (JO)" ||
@@ -180,34 +198,55 @@ p.employee_type==="Job Orders"
 rateLabel="Daily Rate × Days"
 rateComputation=`₱${p.daily_rate} × ${p.days_worked}`
 }
-
 else{
 rateLabel="Monthly Salary"
 rateComputation=`₱${p.salary}`
 }
 
-document.getElementById("payrollModalContent").innerHTML=`
+// ----------------------
+// DEDUCTIONS
+// ----------------------
+let deductionHTML = ""
+if(p.deduction_list.length > 0){
+p.deduction_list.forEach(d => {
+deductionHTML += `
+<p class="flex justify-between">
+<span>${d.name}</span>
+<span class="text-yellow-400">₱${Number(d.amount).toLocaleString()}</span>
+</p>`
+})
+}else{
+deductionHTML = "<p>No deductions</p>"
+}
 
-```js
+// ----------------------
+// LOANS
+// ----------------------
+let loanHTML = ""
+if(p.loan_list && p.loan_list.length > 0){
+p.loan_list.forEach(l => {
+loanHTML += `
+<p class="flex justify-between">
+<span>${l.name}</span>
+<span class="text-red-400">₱${Number(l.amount).toLocaleString()}</span>
+</p>`
+})
+}else{
+loanHTML = "<p>No loans</p>"
+}
+
+document.getElementById("payrollModalContent").innerHTML = `
+
 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
-
-<p class="text-emerald-400 text-lg font-semibold">
-${p.employee_name}
-</p>
-
+<p class="text-emerald-400 text-lg font-semibold">${p.employee_name}</p>
 <p>Employment Type : ${p.employee_type}</p>
-
 <p>Period : ${p.period_start || '-'} → ${p.period_end || '-'}</p>
-
 </div>
 
 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
 
 <p class="text-gray-400">${rateLabel}</p>
-
-<p class="text-xl font-semibold text-emerald-400">
-${rateComputation}
-</p>
+<p class="text-xl font-semibold text-emerald-400">${rateComputation}</p>
 
 <p>Allowance :
 <span class="text-emerald-400">
@@ -224,8 +263,22 @@ Gross Pay :
 </span>
 </p>
 
-<p class="text-yellow-400">
-Deductions : ₱${Number(p.deductions).toLocaleString()}
+<div class="pt-2 border-t border-gray-700">
+<p class="text-yellow-400 font-semibold mb-2">Deduction Breakdown</p>
+${deductionHTML}
+</div>
+
+<div class="pt-2 border-t border-gray-700 mt-2">
+<p class="text-red-400 font-semibold mb-2">Loan Deductions</p>
+${loanHTML}
+</div>
+
+<p class="text-yellow-400 mt-2">
+Total Deductions : ₱${Number(p.deductions).toLocaleString()}
+</p>
+
+<p class="text-red-400 mt-1">
+Total Loans : ₱${Number(p.loan_total || 0).toLocaleString()}
 </p>
 
 <p class="text-2xl font-bold text-emerald-400">

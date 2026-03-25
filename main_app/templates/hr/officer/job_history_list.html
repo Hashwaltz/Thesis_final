@@ -1,5 +1,5 @@
 {% extends "hr/officer/officer_base.html" %}
-{% block title %}Job History | HR Officer - {% endblock %}
+{% block title %}HR Officer - Job History{% endblock %}
 
 {% block content %}
 <main class="p-4 md:p-6 space-y-6">
@@ -191,12 +191,12 @@
   <div class="flex justify-center gap-4 text-gray-400">
 
     {% if job_history.has_prev %}
-     <a href="{{ url_for('hr_officer_bp.job_history_list',
-        page=job_history.prev_num,
-        **args) }}"
-      class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
-      Previous
-    </a>
+      <a href="{{ url_for('hr_officer_bp.job_history_list',
+                          page=job_history.prev_num,
+                          **request.args) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
+         Previous
+      </a>
     {% endif %}
 
     <span class="px-4 py-2">
@@ -205,10 +205,10 @@
 
     {% if job_history.has_next %}
       <a href="{{ url_for('hr_officer_bp.job_history_list',
-          page=job_history.next_num,
-          **args) }}"
-        class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
-        Next
+                          page=job_history.next_num,
+                          **request.args) }}"
+         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
+         Next
       </a>
     {% endif %}
 

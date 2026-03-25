@@ -44,24 +44,13 @@
         </select>
       </div>
 
-    <!-- Submit + Clear Buttons -->
-    <div class="flex items-center gap-3">
+      <!-- Submit Button -->
+      <div class="flex items-center">
+        <button type="submit" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">
+          <i class="fas fa-filter text-white"></i> Filter
+        </button>
+      </div>
 
-      <!-- Filter Button -->
-      <button type="submit"
-              class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">
-        <i class="fas fa-filter"></i>
-        Filter
-      </button>
-
-      <!-- Clear Button -->
-      <a href="{{ url_for('hr_head_bp.shift_history') }}"
-        class="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded text-white">
-        <i class="fa-solid fa-xmark"></i>
-        Clear
-      </a>
-
-    </div>
     </form>
   </section>
 

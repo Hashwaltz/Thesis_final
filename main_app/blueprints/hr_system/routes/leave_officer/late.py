@@ -3,9 +3,8 @@ from flask_login import login_required
 from datetime import datetime, time, date
 import calendar
 
-
 from main_app.extensions import db
-from main_app.models.hr_models import Employee
+from main_app.models.hr_models import Employee, Attendance
 from main_app.helpers.decorators import leave_officer_required
 from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 

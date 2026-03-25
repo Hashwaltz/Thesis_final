@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 
 
 from main_app.models.hr_models import Employee, Leave, Department, EmploymentType
-from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction, DeductionBracket
+from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, LoanPayment, PayrollDeduction, DeductionBracket
 from main_app.helpers.decorators import payroll_admin_required
 from main_app.extensions import db
 from main_app.helpers.utils import generate_payslip
@@ -212,15 +212,36 @@ def view_payrolls():
     page = request.args.get('page', 1, type=int)
 
     query = Payroll.query.options(
-        joinedload(Payroll.employee).joinedload(Employee.department),
+
+        # Employee + relations
+        joinedload(Payroll.employee)
+        .joinedload(Employee.department),
+
+        joinedload(Payroll.employee)
+        .joinedload(Employee.employment_type),
+
+        joinedload(Payroll.employee)
+        .joinedload(Employee.attendances),
+
+        # Period
         joinedload(Payroll.period),
-        joinedload(Payroll.employee).joinedload(Employee.employee_allowances),
-        joinedload(Payroll.employee).joinedload(Employee.employee_deductions),
-        joinedload(Payroll.employee).joinedload(Employee.employment_type)
+
+        # Deductions
+        joinedload(Payroll.deduction_breakdown),
+
+        # ✅ Loans (ADDED)
+        joinedload(Payroll.loan_payments)
+        .joinedload(LoanPayment.loan)
     )
 
+    # -------------------------
+    # FILTERS
+    # -------------------------
+
     if department_id:
-        query = query.join(Employee).filter(Employee.department_id == department_id)
+        query = query.join(Employee).filter(
+            Employee.department_id == department_id
+        )
 
     if search:
         query = query.join(Employee).filter(
@@ -232,23 +253,39 @@ def view_payrolls():
         )
 
     if pay_period_id:
-        query = query.filter(Payroll.payroll_period_id == pay_period_id)
+        query = query.filter(
+            Payroll.payroll_period_id == pay_period_id
+        )
 
-    payrolls = query.order_by(Payroll.id.desc()).paginate(
+    payrolls = query.order_by(
+        Payroll.id.desc()
+    ).paginate(
         page=page,
         per_page=10,
         error_out=False
     )
 
+    # -------------------------
+    # PROCESSING
+    # -------------------------
+
     for payroll in payrolls.items:
 
         employee = payroll.employee
+
+        # -------------------------
+        # EMPLOYEE TYPE
+        # -------------------------
 
         payroll.employee_type = (
             employee.employment_type.name
             if employee and employee.employment_type
             else "Regular"
         )
+
+        # -------------------------
+        # ATTENDANCE
+        # -------------------------
 
         if employee and payroll.period:
 
@@ -283,6 +320,10 @@ def view_payrolls():
             payroll.days_worked = 0
             payroll.working_hours = 0
 
+        # -------------------------
+        # RATES
+        # -------------------------
+
         payroll.hourly_rate_value = (
             employee.salary if payroll.employee_type == "Part-Time" else 0
         )
@@ -293,6 +334,52 @@ def view_payrolls():
             else 0
         )
 
+        payroll.allowance_total = payroll.allowance_total or 0
+        payroll.gross_pay = payroll.gross_pay or 0
+
+        # -------------------------
+        # DEDUCTIONS
+        # -------------------------
+
+        total_deductions = sum(
+            d.employee_share for d in payroll.deduction_breakdown
+        )
+
+        payroll.total_deductions = round(total_deductions, 2)
+
+        # -------------------------
+        # LOAN DEDUCTIONS
+        # -------------------------
+
+        loan_breakdown = []
+        loan_total = 0
+
+        for lp in payroll.loan_payments:
+
+            amount = lp.amount_paid or 0
+            loan_total += amount
+
+            loan_breakdown.append({
+                "name": f"{lp.loan.provider} ({lp.loan.loan_type})",
+                "amount": amount
+            })
+
+        payroll.loan_total = round(loan_total, 2)
+        payroll.loan_breakdown = loan_breakdown
+
+        # -------------------------
+        # NET PAY
+        # -------------------------
+
+        payroll.net_pay = round(
+            payroll.gross_pay - payroll.total_deductions - payroll.loan_total,
+            2
+        )
+
+    # -------------------------
+    # DROPDOWNS
+    # -------------------------
+
     departments = Department.query.all()
 
     payroll_periods = PayrollPeriod.query.order_by(
@@ -301,8 +388,7 @@ def view_payrolls():
 
     selected_pay_period = (
         PayrollPeriod.query.get(pay_period_id)
-        if pay_period_id
-        else None
+        if pay_period_id else None
     )
 
     return render_template(
@@ -314,8 +400,6 @@ def view_payrolls():
         payroll_periods=payroll_periods,
         selected_pay_period=selected_pay_period
     )
-
-
 
 
 # =========================================================
@@ -541,14 +625,13 @@ def deductions():
 
 
 # =========================================================
-# GENERATE PAYSLIPS BY PAYROLL PERIOD (SELECT PERIOD)
+# GENERATE PAYSLIPS BY PAYROLL PERIOD (IMPROVED)
 # =========================================================
 @payroll_admin_bp.route('/payslips/generate', methods=['GET', 'POST'])
 @payroll_admin_required
 @login_required
 def generate_payslips_by_period():
 
-    # Get all payroll periods
     payroll_periods = PayrollPeriod.query.order_by(
         PayrollPeriod.start_date.desc()
     ).all()
@@ -561,11 +644,25 @@ def generate_payslips_by_period():
             flash("Please select a payroll period.", "warning")
             return redirect(url_for('payroll_admin_bp.generate_payslips_by_period'))
 
-        # Convert to integer (safer)
         pay_period_id = int(pay_period_id)
 
-        # Fetch payrolls for selected period
-        payrolls = Payroll.query.filter_by(
+        payrolls = Payroll.query.options(
+            joinedload(Payroll.employee)
+                .joinedload(Employee.department),
+
+            joinedload(Payroll.employee)
+                .joinedload(Employee.position),
+
+            joinedload(Payroll.employee)
+                .joinedload(Employee.employment_type),
+
+            joinedload(Payroll.period),
+
+            joinedload(Payroll.deduction_breakdown),
+
+            joinedload(Payroll.loan_payments)
+                .joinedload(LoanPayment.loan)
+        ).filter_by(
             payroll_period_id=pay_period_id
         ).all()
 
@@ -578,7 +675,7 @@ def generate_payslips_by_period():
 
         for payroll in payrolls:
 
-            # Prevent duplicate payslips
+            # جلوگیری duplicate
             existing = Payslip.query.filter_by(
                 payroll_id=payroll.id
             ).first()
@@ -586,8 +683,96 @@ def generate_payslips_by_period():
             if existing:
                 continue
 
-            # Generate payslip
-            payslip = generate_payslip(payroll, generated_by_id)
+            employee = payroll.employee
+            period = payroll.period
+
+            # =========================
+            # BASIC INFO
+            # =========================
+            monthly_rate = employee.salary or 0
+            semi_monthly = monthly_rate / 2
+
+            allowance = payroll.allowance_total or 0
+            overtime = payroll.overtime_pay or 0
+
+            gross_pay = payroll.gross_pay or 0
+
+            # =========================
+            # DEDUCTIONS
+            # =========================
+            deduction_dict = {}
+            total_deductions = 0
+
+            for d in payroll.deduction_breakdown:
+                name = (d.deduction_name or "").upper()
+                amount = d.employee_share or 0
+
+                deduction_dict[name] = amount
+                total_deductions += amount
+
+            # =========================
+            # LOANS
+            # =========================
+            loan_dict = {}
+
+            for lp in payroll.loan_payments:
+                loan_name = f"{lp.loan.provider} ({lp.loan.loan_type})".upper()
+                amount = lp.amount_paid or 0
+
+                loan_dict[loan_name] = amount
+                total_deductions += amount
+
+            # =========================
+            # NET PAY
+            # =========================
+            net_pay = round(gross_pay - total_deductions, 2)
+
+            # =========================
+            # PAYSLIP NUMBER
+            # =========================
+            import uuid
+            payslip_number = f"PS-{uuid.uuid4().hex[:8].upper()}"
+
+            # =========================
+            # CREATE PAYSLIP
+            # =========================
+            payslip = Payslip(
+                employee_id=employee.id,
+                payroll_id=payroll.id,
+                payslip_number=payslip_number,
+                gross_pay=gross_pay,
+                total_deductions=round(total_deductions, 2),
+                net_pay=net_pay,
+                status="Generated"
+            )
+
+            # =========================
+            # OPTIONAL: SAVE BREAKDOWN (RECOMMENDED)
+            # =========================
+            if hasattr(Payslip, "breakdown"):
+                payslip.breakdown = {
+                    "employee_name": employee.get_full_name(),
+                    "position": employee.position.name if employee.position else "-",
+                    "department": employee.department.name if employee.department else "-",
+                    "employment_type": employee.employment_type.name if employee.employment_type else "Regular",
+
+                    "pay_date": period.pay_date.strftime("%m/%d/%y"),
+                    "period_start": period.start_date.strftime("%m/%d/%y"),
+                    "period_end": period.end_date.strftime("%m/%d/%y"),
+                    "period_name": period.period_name,
+
+                    "monthly_rate": monthly_rate,
+                    "semi_monthly": semi_monthly,
+
+                    "allowance": allowance,
+                    "overtime": overtime,
+
+                    "gross_pay": gross_pay,
+                    "deductions": deduction_dict,
+                    "loans": loan_dict,
+                    "total_deductions": total_deductions,
+                    "net_pay": net_pay
+                }
 
             db.session.add(payslip)
             generated_count += 1
@@ -601,28 +786,28 @@ def generate_payslips_by_period():
 
         return redirect(url_for('payroll_admin_bp.view_payslips'))
 
-    # GET: Render selection form
     return render_template(
         'payroll/admin/payslips/generate_payslips.html',
         payroll_periods=payroll_periods
     )
+
+
+
+
 @payroll_admin_bp.route('/payslips')
 @payroll_admin_required
 @login_required
 def view_payslips():
-
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     department_id = request.args.get('department_id', '', type=str)
     status = request.args.get('status', '', type=str)
     period_id = request.args.get('period_id', '', type=str)
 
-    # Base query
+    # Base query with joins
     query = Payslip.query.join(Employee).join(Department, isouter=True)
 
-    # ========================
-    # SEARCH FILTER
-    # ========================
+    # 🔍 Search filter
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
@@ -633,48 +818,29 @@ def view_payslips():
             )
         )
 
-    # ========================
-    # DEPARTMENT FILTER
-    # ========================
+    # 🏢 Department filter
     if department_id:
         query = query.filter(Employee.department_id == department_id)
 
-    # ========================
-    # STATUS FILTER (FIXED)
-    # ========================
+    # 🧾 Status filter (map UI → DB)
     if status:
-        if status == "0":  # Not Claimed
-            query = query.filter(Payslip.status != "CLAIMED")
+        if status == "Not Claimed":
+            query = query.filter(Payslip.status == "Generated")
+        elif status == "Claimed":
+            query = query.filter(Payslip.status == "Distributed")
+        # else: if empty, show all
 
-        elif status == "1":  # Claimed
-            query = query.filter(Payslip.status == "CLAIMED")
-
-    # ========================
-    # PERIOD FILTER (FIXED)
-    # ========================
+    # 📅 Payroll Period filter
     if period_id:
-        query = query.filter(Payslip.payroll_period_id == period_id)
+        query = query.filter(Payslip.payroll_id == period_id)
 
-    # ========================
-    # ORDER + PAGINATION
-    # ========================
-    payslips = query.order_by(Payslip.generated_at.desc())\
-        .paginate(page=page, per_page=20, error_out=False)
+    # Sort newest first
+    payslips = query.order_by(Payslip.generated_at.desc()).paginate(page=page, per_page=20, error_out=False)
 
-    # ========================
-    # DROPDOWN DATA
-    # ========================
+    # Dropdown data
     departments = Department.query.order_by(Department.name.asc()).all()
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
-    # ========================
-    # SUMMARY COUNTS (FIXED)
-    # ========================
-    base_query = Payslip.query
-
-    not_claimed_count = base_query.filter(Payslip.status != "CLAIMED").count()
-    claimed_count = base_query.filter(Payslip.status == "CLAIMED").count()
-    period_map = {p.id: p for p in payroll_periods}
     return render_template(
         'payroll/admin/views/view_payslips.html',
         payslips=payslips,
@@ -683,8 +849,6 @@ def view_payslips():
         selected_department=department_id,
         selected_status=status,
         payroll_periods=payroll_periods,
-        selected_period=period_id,
-        not_claimed_count=not_claimed_count,
-        claimed_count=claimed_count,
-        period_map=period_map
+        selected_period=period_id
     )
+
