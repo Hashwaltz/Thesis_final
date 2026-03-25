@@ -1,211 +1,202 @@
 {% extends "payroll/admin/payroll_admin_base.html" %}
-{% block title %}Payroll Dashboard{% endblock %}
+{% block title %}Dashboard | Payroll Admin{% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-8">
+<section class="p-4 md:p-6 space-y-8">
 
 <!-- ===== HEADER ===== -->
-<h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-<i class="fa-solid fa-money-check-dollar text-3xl"></i>
-Payroll Dashboard
+<h1 class="text-xl md:text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+  <i class="fa-solid fa-money-check-dollar text-2xl md:text-3xl"></i>
+  Payroll Dashboard
 </h1>
 
 <!-- ================= KPI METRICS ================= -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-<div class="p-3 bg-emerald-600/20 rounded-full">
-<i class="fa-solid fa-users text-emerald-400 text-3xl"></i>
-</div>
-<div>
-<p class="text-gray-400">Total Employees</p>
-<h2 class="text-3xl font-bold text-emerald-400">
-{{ total_employees }}
-</h2>
-</div>
-</div>
+  <!-- Card -->
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+    <div class="p-3 bg-emerald-600/20 rounded-full">
+      <i class="fa-solid fa-users text-emerald-400 text-2xl md:text-3xl"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-sm">Total Employees</p>
+      <h2 class="text-2xl md:text-3xl font-bold text-emerald-400">
+        {{ total_employees }}
+      </h2>
+    </div>
+  </div>
 
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-<div class="p-3 bg-green-600/20 rounded-full">
-<i class="fa-solid fa-circle-check text-green-400 text-3xl"></i>
-</div>
-<div>
-<p class="text-gray-400">Paid This Month</p>
-<h2 class="text-3xl font-bold text-green-400">
-{{ employees_paid }}
-</h2>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+    <div class="p-3 bg-green-600/20 rounded-full">
+      <i class="fa-solid fa-circle-check text-green-400 text-2xl md:text-3xl"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-sm">Paid This Month</p>
+      <h2 class="text-2xl md:text-3xl font-bold text-green-400">
+        {{ employees_paid }}
+      </h2>
+    </div>
+  </div>
 
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-<div class="p-3 bg-yellow-500/20 rounded-full">
-<i class="fa-solid fa-clock text-yellow-400 text-3xl"></i>
-</div>
-<div>
-<p class="text-gray-400">Pending Payrolls</p>
-<h2 class="text-3xl font-bold text-yellow-400">
-{{ pending_payrolls }}
-</h2>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+    <div class="p-3 bg-yellow-500/20 rounded-full">
+      <i class="fa-solid fa-clock text-yellow-400 text-2xl md:text-3xl"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-sm">Pending Payrolls</p>
+      <h2 class="text-2xl md:text-3xl font-bold text-yellow-400">
+        {{ pending_payrolls }}
+      </h2>
+    </div>
+  </div>
 
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-<div class="p-3 bg-emerald-500/20 rounded-full">
-<i class="fa-solid fa-coins text-emerald-400 text-3xl"></i>
-</div>
-<div>
-<p class="text-gray-400">Total Payroll</p>
-<h2 class="text-2xl font-bold text-emerald-400">
-₱{{ "{:,.2f}".format(total_payroll_amount) }}
-</h2>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
+    <div class="p-3 bg-emerald-500/20 rounded-full">
+      <i class="fa-solid fa-coins text-emerald-400 text-2xl md:text-3xl"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-sm">Total Payroll</p>
+      <h2 class="text-xl md:text-2xl font-bold text-emerald-400">
+        ₱{{ "{:,.2f}".format(total_payroll_amount) }}
+      </h2>
+    </div>
+  </div>
 
 </div>
 
 <!-- ================= FINANCIAL SUMMARY ================= -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-<div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-<p class="text-gray-400">Total Gross Payroll</p>
-<h2 class="text-2xl font-bold text-blue-400">
-₱{{ "{:,.2f}".format(total_gross) }}
-</h2>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-xl border border-gray-700">
+    <p class="text-gray-400 text-sm">Total Gross Payroll</p>
+    <h2 class="text-xl md:text-2xl font-bold text-blue-400">
+      ₱{{ "{:,.2f}".format(total_gross) }}
+    </h2>
+  </div>
 
-<div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-<p class="text-gray-400">Total Deductions</p>
-<h2 class="text-2xl font-bold text-red-400">
-₱{{ "{:,.2f}".format(total_deductions) }}
-</h2>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-xl border border-gray-700">
+    <p class="text-gray-400 text-sm">Total Deductions</p>
+    <h2 class="text-xl md:text-2xl font-bold text-red-400">
+      ₱{{ "{:,.2f}".format(total_deductions) }}
+    </h2>
+  </div>
 
-<div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-<p class="text-gray-400">Highest Net Pay</p>
-<h2 class="text-2xl font-bold text-green-400">
-₱{{ "{:,.2f}".format(highest_salary) }}
-</h2>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-xl border border-gray-700">
+    <p class="text-gray-400 text-sm">Highest Net Pay</p>
+    <h2 class="text-xl md:text-2xl font-bold text-green-400">
+      ₱{{ "{:,.2f}".format(highest_salary) }}
+    </h2>
+  </div>
 
 </div>
 
 <!-- ================= CHARTS ================= -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<!-- Payroll Trend -->
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-<h3 class="text-sm font-semibold text-emerald-400 mb-4">
-<i class="fa-solid fa-chart-line"></i>
-Monthly Payroll Trend
-</h3>
-<div class="h-[300px]">
-<canvas id="payrollChart"></canvas>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
+    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+      <i class="fa-solid fa-chart-line"></i>
+      Monthly Payroll Trend
+    </h3>
+    <div class="h-[250px] md:h-[300px]">
+      <canvas id="payrollChart"></canvas>
+    </div>
+  </div>
 
-<!-- Salary Trend -->
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-<h3 class="text-sm font-semibold text-emerald-400 mb-4">
-<i class="fa-solid fa-chart-area"></i>
-Average Salary Trend
-</h3>
-<div class="h-[300px]">
-<canvas id="salaryChart"></canvas>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
+    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+      <i class="fa-solid fa-chart-area"></i>
+      Average Salary Trend
+    </h3>
+    <div class="h-[250px] md:h-[300px]">
+      <canvas id="salaryChart"></canvas>
+    </div>
+  </div>
 
 </div>
 
 <!-- ================= DEDUCTION + STATUS ================= -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-<!-- Deduction Breakdown -->
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-<h3 class="text-sm font-semibold text-emerald-400 mb-4">
-<i class="fa-solid fa-chart-pie"></i>
-Deduction Breakdown
-</h3>
-<div class="h-[300px]">
-<canvas id="deductionChart"></canvas>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
+    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+      <i class="fa-solid fa-chart-pie"></i>
+      Deduction Breakdown
+    </h3>
+    <div class="h-[250px] md:h-[300px]">
+      <canvas id="deductionChart"></canvas>
+    </div>
+  </div>
 
-<!-- Payroll Status -->
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-<h3 class="text-sm font-semibold text-emerald-400 mb-4">
-<i class="fa-solid fa-chart-simple"></i>
-Payroll Status
-</h3>
-<div class="h-[300px]">
-<canvas id="statusChart"></canvas>
-</div>
-</div>
+  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
+    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+      <i class="fa-solid fa-chart-simple"></i>
+      Payroll Status
+    </h3>
+    <div class="h-[250px] md:h-[300px]">
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
 
 </div>
 
 <!-- ================= RECENT PAYROLL ================= -->
-<div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+<div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
 
-<h3 class="text-sm font-semibold text-emerald-400 mb-4">
-<i class="fa-solid fa-clock"></i>
-Recent Payroll Activity
-</h3>
+  <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+    <i class="fa-solid fa-clock"></i>
+    Recent Payroll Activity
+  </h3>
 
-<table class="w-full text-sm">
+  <!-- RESPONSIVE TABLE -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm min-w-[700px]">
 
-<thead class="text-gray-400 border-b border-gray-700">
-<tr class="h-10">
+      <!-- Sticky header -->
+      <thead class="sticky top-0 bg-gray-800 text-gray-400 border-b border-gray-700">
+        <tr class="h-10">
+          <th class="text-left px-2 md:px-4">Employee</th>
+          <th class="text-center px-2 md:px-4">Period</th>
+          <th class="text-center px-2 md:px-4">Status</th>
+          <th class="text-center px-2 md:px-4">Net Pay</th>
+        </tr>
+      </thead>
 
-<th class="text-left px-4">Employee</th>
-<th class="text-center px-4">Period</th>
-<th class="text-center px-4">Status</th>
-<th class="text-center px-4">Net Pay</th>
+      <tbody class="text-gray-300">
 
-</tr>
-</thead>
+        {% for p in recent_payrolls %}
+        <tr class="border-t border-gray-700 hover:bg-gray-700/20 transition h-12">
 
-<tbody class="text-gray-300">
+          <td class="px-2 md:px-4 text-left whitespace-nowrap">
+            {{ p.employee.first_name }} {{ p.employee.last_name }}
+          </td>
 
-{% for p in recent_payrolls %}
+          <td class="px-2 md:px-4 text-center whitespace-nowrap">
+            {{ p.period.period_name }}
+          </td>
 
-<tr class="border-t border-gray-700 hover:bg-gray-700/20 transition h-12">
+          <td class="px-2 md:px-4 text-center">
+            <span class="inline-block px-2 md:px-3 py-1 rounded text-xs
+            {% if p.status == 'Approved' %}
+            bg-green-500/20 text-green-400
+            {% else %}
+            bg-yellow-500/20 text-yellow-400
+            {% endif %}">
+              {{ p.status }}
+            </span>
+          </td>
 
-<!-- Employee -->
-<td class="px-4 text-left">
-{{ p.employee.first_name }} {{ p.employee.last_name }}
-</td>
+          <td class="px-2 md:px-4 text-center text-emerald-400 font-semibold whitespace-nowrap">
+            ₱{{ "{:,.2f}".format(p.net_pay) }}
+          </td>
 
-<!-- Period -->
-<td class="px-4 text-center">
-{{ p.period.period_name }}
-</td>
+        </tr>
+        {% endfor %}
 
-<!-- Status -->
-<td class="px-4 text-center">
+      </tbody>
+    </table>
+  </div>
 
-<span class="inline-block px-3 py-1 rounded text-xs
-{% if p.status == 'Approved' %}
-bg-green-500/20 text-green-400
-{% else %}
-bg-yellow-500/20 text-yellow-400
-{% endif %}
-">
-{{ p.status }}
-</span>
-
-</td>
-
-<!-- Net Pay -->
-<td class="px-4 text-center text-emerald-400 font-semibold">
-₱{{ "{:,.2f}".format(p.net_pay) }}
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-</table>
 </div>
 
 </section>
@@ -220,71 +211,27 @@ const salaryCtx = document.getElementById('salaryChart');
 const deductionCtx = document.getElementById('deductionChart');
 const statusCtx = document.getElementById('statusChart');
 
-/* PAYROLL TREND */
-
 new Chart(payrollCtx,{
 type:'line',
-data:{
-labels:{{ chart_labels | tojson }},
-datasets:[{
-data:{{ chart_values | tojson }},
-borderColor:'#10b981',
-backgroundColor:'#10b98133',
-fill:true,
-tension:.4
-}]
-},
+data:{labels:{{ chart_labels | tojson }},datasets:[{data:{{ chart_values | tojson }},borderColor:'#10b981',backgroundColor:'#10b98133',fill:true,tension:.4}]},
 options:{responsive:true,maintainAspectRatio:false}
 });
-
-/* SALARY TREND */
 
 new Chart(salaryCtx,{
 type:'line',
-data:{
-labels:{{ salary_labels | tojson }},
-datasets:[{
-data:{{ salary_values | tojson }},
-borderColor:'#22c55e',
-backgroundColor:'#22c55e33',
-fill:true,
-tension:.4
-}]
-},
+data:{labels:{{ salary_labels | tojson }},datasets:[{data:{{ salary_values | tojson }},borderColor:'#22c55e',backgroundColor:'#22c55e33',fill:true,tension:.4}]},
 options:{responsive:true,maintainAspectRatio:false}
 });
 
-/* DEDUCTIONS */
-
 new Chart(deductionCtx,{
 type:'doughnut',
-data:{
-labels:{{ ded_labels | tojson }},
-datasets:[{
-data:{{ ded_values | tojson }},
-backgroundColor:[
-'#ef4444',
-'#f59e0b',
-'#3b82f6',
-'#22c55e',
-'#a855f7'
-]
-}]
-},
+data:{labels:{{ ded_labels | tojson }},datasets:[{data:{{ ded_values | tojson }},backgroundColor:['#ef4444','#f59e0b','#3b82f6','#22c55e','#a855f7']}]},
 options:{responsive:true,maintainAspectRatio:false,cutout:'70%'}
 });
 
-/* STATUS */
-
 new Chart(statusCtx,{
 type:'bar',
-data:{
-labels:["Approved","Draft"],
-datasets:[{
-data:[{{approved_payrolls}},{{draft_payrolls}}],
-backgroundColor:['#22c55e','#f59e0b']
-}]
-},
+data:{labels:["Approved","Draft"],datasets:[{data:[{{approved_payrolls}},{{draft_payrolls}}],backgroundColor:['#22c55e','#f59e0b']}]},
 options:{responsive:true,maintainAspectRatio:false}
 });
 

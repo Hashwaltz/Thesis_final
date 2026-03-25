@@ -2,6 +2,7 @@ from flask import render_template, request
 from flask_login import login_required
 from datetime import date, timedelta
 import calendar
+from collections import defaultdict
 
 from main_app.models.hr_models import (
     Employee,
@@ -92,10 +93,6 @@ CREDITS_TABLE = {
     26: 1.083, 27: 1.125, 28: 1.167, 29: 1.208, 30: 1.250
 }
 
-
-# =========================================================
-# VIEW LEAVE HISTORY (USING HELPER)
-# =========================================================
 @leave_officer_bp.route("/history/<int:employee_id>")
 @login_required
 @leave_officer_required
@@ -105,11 +102,18 @@ def view_leave_history(employee_id):
     # Ensure all leave history is generated
     generate_leave_history(employee)
 
-    # Prepare data for template
-    leave_types = LeaveType.query.filter(LeaveType.name.in_(["Sick Leave", "Vacation Leave"])).all()
+    leave_types = LeaveType.query.filter(
+        LeaveType.name.in_(["Sick Leave", "Vacation Leave"])
+    ).all()
+
     history_data = []
 
-    # Loop through months from hire date to today
+    # ✅ ANNUAL SUMMARY (NEW)
+    annual_summary = defaultdict(lambda: {
+        "Sick Leave": 0,
+        "Vacation Leave": 0
+    })
+
     current = employee.date_hired.replace(day=1)
     today = date.today()
 
@@ -117,9 +121,9 @@ def view_leave_history(employee_id):
         month_label = current.strftime("%b %Y")
         year, month = current.year, current.month
 
-        # Count worked days & total days
-        worked_days = count_work_days(employee, year, month)
-        total_days = (date(year, month, calendar.monthrange(year, month)[1])).day
+        # FIXED: unpack tuple correctly
+        worked_days, total_days = count_work_days(employee, year, month)
+
         earned_credit = CREDITS_TABLE.get(worked_days, 0)
 
         month_record = {
@@ -130,12 +134,17 @@ def view_leave_history(employee_id):
         }
 
         for leave_type in leave_types:
-            history = employee.leave_credit_histories.filter_by(
-                leave_type_id=leave_type.id,
-                month=month_label
-            ).first()
+
+            history = next(
+                (
+                    h for h in employee.leave_credit_history
+                    if h.leave_type_id == leave_type.id and h.month == month_label
+                ),
+                None
+            )
 
             if history:
+                # monthly data
                 month_record["leave_data"].append({
                     "leave_type": leave_type.name,
                     "earned": history.earned,
@@ -143,9 +152,12 @@ def view_leave_history(employee_id):
                     "remaining": history.earned - history.used
                 })
 
+                # ✅ ANNUAL ACCUMULATION
+                annual_summary[current.year][leave_type.name] += history.earned
+
         history_data.append(month_record)
 
-        # Move to next month
+        # next month
         if current.month == 12:
             current = current.replace(year=current.year + 1, month=1)
         else:
@@ -154,5 +166,6 @@ def view_leave_history(employee_id):
     return render_template(
         "hr/leave_officer/history/leave_history.html",
         employee=employee,
-        history_data=history_data
+        history_data=history_data,
+        annual_summary=annual_summary  
     )

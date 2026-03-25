@@ -1,22 +1,23 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Payroll Admin - Add Payroll Period{% endblock %}
+{% block title %}Create Payroll Period | Payroll Admin{% endblock %}
 
 {% block content %}
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<div class="min-h-screen p-6 flex justify-center items-start">
+<div class="min-h-screen p-6 flex justify-center bg-gray-900">
 
 <div class="w-full max-w-4xl">
 
 <!-- CARD -->
-<div class="bg-gray-900/80 backdrop-blur-xl border border-gray-800
-            rounded-2xl shadow-2xl overflow-hidden transition">
+<div class="bg-gray-800/70 backdrop-blur-xl border border-gray-700
+            rounded-2xl shadow-2xl overflow-hidden">
 
 <!-- HEADER -->
-<div class="p-6 border-b border-gray-800 space-y-2">
+<div class="p-6 border-b border-gray-700 space-y-2">
 
-<h1 class="text-2xl font-bold text-emerald-400 tracking-wide">
+<h1 class="text-2xl font-bold text-emerald-400 flex items-center gap-2">
+<i class="fa-solid fa-calendar-plus"></i>
 Add Payroll Period
 </h1>
 
@@ -24,7 +25,7 @@ Add Payroll Period
 Define payroll cycle for employee compensation processing
 </p>
 
-<div class="h-1 w-24 bg-emerald-600 rounded"></div>
+<div class="h-1 w-24 bg-emerald-500 rounded"></div>
 
 </div>
 
@@ -36,7 +37,8 @@ Define payroll cycle for employee compensation processing
 
 <!-- PERIOD NAME -->
 <div class="space-y-2">
-<label class="text-sm text-gray-300 font-medium">
+<label class="text-sm text-gray-300 flex items-center gap-2">
+<i class="fa-solid fa-tag text-emerald-400"></i>
 Payroll Period Name
 </label>
 
@@ -45,57 +47,74 @@ Payroll Period Name
        required
        placeholder="Example: October 1 – 15, 2025"
        class="w-full px-4 py-3 rounded-xl
-              bg-gray-950 border border-gray-800
-              text-gray-100 placeholder-gray-600
-              focus:ring-2 focus:ring-emerald-600
-              focus:border-emerald-600 outline-none
-              transition">
+              bg-gray-900 border border-gray-700
+              text-gray-100 placeholder-gray-500
+              focus:ring-2 focus:ring-emerald-500
+              outline-none transition">
+
+<p class="text-xs text-gray-500">
+Use a clear range format (e.g. 1–15 or 16–End of month)
+</p>
 </div>
 
 <!-- DATE GRID -->
-<div class="grid md:grid-cols-3 gap-5">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
+<!-- START -->
 <div class="space-y-2">
-<label class="text-sm text-gray-300">Start Date</label>
+<label class="text-sm text-gray-300 flex items-center gap-2">
+<i class="fa-solid fa-play text-blue-400"></i>
+Start Date
+</label>
 <input type="date" name="start_date" required
-class="w-full px-4 py-3 rounded-xl bg-gray-950 border border-gray-800
-text-gray-100 focus:ring-2 focus:ring-emerald-600 outline-none transition">
+class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700
+text-gray-100 focus:ring-2 focus:ring-emerald-500 outline-none transition">
 </div>
 
+<!-- END -->
 <div class="space-y-2">
-<label class="text-sm text-gray-300">End Date</label>
+<label class="text-sm text-gray-300 flex items-center gap-2">
+<i class="fa-solid fa-stop text-red-400"></i>
+End Date
+</label>
 <input type="date" name="end_date" required
-class="w-full px-4 py-3 rounded-xl bg-gray-950 border border-gray-800
-text-gray-100 focus:ring-2 focus:ring-emerald-600 outline-none transition">
+class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700
+text-gray-100 focus:ring-2 focus:ring-emerald-500 outline-none transition">
 </div>
 
+<!-- PAY DATE -->
 <div class="space-y-2">
-<label class="text-sm text-gray-300">Pay Date</label>
+<label class="text-sm text-gray-300 flex items-center gap-2">
+<i class="fa-solid fa-money-check-dollar text-yellow-400"></i>
+Pay Date
+</label>
 <input type="date" name="pay_date" required
-class="w-full px-4 py-3 rounded-xl bg-gray-950 border border-gray-800
-text-gray-100 focus:ring-2 focus:ring-emerald-600 outline-none transition">
+class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-700
+text-gray-100 focus:ring-2 focus:ring-emerald-500 outline-none transition">
 </div>
 
 </div>
 
-<!-- HIDDEN STATUS -->
+<!-- STATUS -->
 <input type="hidden" name="status" value="Open">
 
 <!-- ACTIONS -->
-<div class="flex flex-col sm:flex-row gap-4 pt-4">
+<div class="flex flex-col sm:flex-row gap-3 pt-4">
 
 <button type="button" id="savePayrollBtn"
-class="flex-1 py-3 rounded-xl font-semibold
+class="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2
 bg-emerald-600 hover:bg-emerald-500
-text-white transition shadow-lg hover:shadow-emerald-500/30">
+text-white transition shadow-lg">
 
+<i class="fa-solid fa-circle-check"></i>
 Create Payroll Period
 </button>
 
 <a href="{{ url_for('payroll_admin_bp.view_payroll_periods') }}"
-class="flex-1 py-3 text-center rounded-xl border border-gray-800
-hover:bg-gray-800 text-gray-300 transition">
+class="flex-1 py-3 text-center rounded-xl border border-gray-700
+hover:bg-gray-700 text-gray-300 transition flex items-center justify-center gap-2">
 
+<i class="fa-solid fa-arrow-left"></i>
 Cancel
 
 </a>
@@ -108,31 +127,51 @@ Cancel
 </div>
 </div>
 
-<!-- SWEET ALERT CONFIRMATION -->
+<!-- SCRIPT -->
 <script>
-
 const form = document.getElementById("payrollForm");
 const saveBtn = document.getElementById("savePayrollBtn");
 
 saveBtn.addEventListener("click", (e) => {
-e.preventDefault();
+    e.preventDefault();
 
-Swal.fire({
-title: "Create Payroll Period?",
-text: "This payroll cycle will be opened for processing.",
-icon: "question",
-showCancelButton: true,
-confirmButtonColor: "#10b981",
-cancelButtonColor: "#ef4444",
-confirmButtonText: "Yes, create it"
-}).then((result) => {
-if (result.isConfirmed) {
-form.submit();
-}
+    const periodName = form.period_name.value.trim();
+    const startDate = form.start_date.value;
+    const endDate = form.end_date.value;
+    const payDate = form.pay_date.value;
+
+    if (!periodName || !startDate || !endDate || !payDate) {
+        Swal.fire({
+            icon: "warning",
+            title: "Missing Fields",
+            text: "Please complete all required fields."
+        });
+        return;
+    }
+
+    if (startDate > endDate) {
+        Swal.fire({
+            icon: "error",
+            title: "Invalid Date Range",
+            text: "Start Date cannot be later than End Date."
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: "Create Payroll Period?",
+        text: "This will open a new payroll cycle for processing.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#10b981",
+        cancelButtonColor: "#ef4444",
+        confirmButtonText: "Yes, create it"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
 });
-
-});
-
 </script>
 
 {% endblock %}

@@ -606,22 +606,23 @@ def generate_payslips_by_period():
         'payroll/admin/payslips/generate_payslips.html',
         payroll_periods=payroll_periods
     )
-
-
 @payroll_admin_bp.route('/payslips')
 @payroll_admin_required
 @login_required
 def view_payslips():
+
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     department_id = request.args.get('department_id', '', type=str)
     status = request.args.get('status', '', type=str)
     period_id = request.args.get('period_id', '', type=str)
 
-    # Base query with joins
+    # Base query
     query = Payslip.query.join(Employee).join(Department, isouter=True)
 
-    # 🔍 Search filter
+    # ========================
+    # SEARCH FILTER
+    # ========================
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
@@ -632,29 +633,48 @@ def view_payslips():
             )
         )
 
-    # 🏢 Department filter
+    # ========================
+    # DEPARTMENT FILTER
+    # ========================
     if department_id:
         query = query.filter(Employee.department_id == department_id)
 
-    # 🧾 Status filter (map UI → DB)
+    # ========================
+    # STATUS FILTER (FIXED)
+    # ========================
     if status:
-        if status == "Not Claimed":
-            query = query.filter(Payslip.status == "Generated")
-        elif status == "Claimed":
-            query = query.filter(Payslip.status == "Distributed")
-        # else: if empty, show all
+        if status == "0":  # Not Claimed
+            query = query.filter(Payslip.status != "CLAIMED")
 
-    # 📅 Payroll Period filter
+        elif status == "1":  # Claimed
+            query = query.filter(Payslip.status == "CLAIMED")
+
+    # ========================
+    # PERIOD FILTER (FIXED)
+    # ========================
     if period_id:
-        query = query.filter(Payslip.payroll_id == period_id)
+        query = query.filter(Payslip.payroll_period_id == period_id)
 
-    # Sort newest first
-    payslips = query.order_by(Payslip.generated_at.desc()).paginate(page=page, per_page=20, error_out=False)
+    # ========================
+    # ORDER + PAGINATION
+    # ========================
+    payslips = query.order_by(Payslip.generated_at.desc())\
+        .paginate(page=page, per_page=20, error_out=False)
 
-    # Dropdown data
+    # ========================
+    # DROPDOWN DATA
+    # ========================
     departments = Department.query.order_by(Department.name.asc()).all()
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
+    # ========================
+    # SUMMARY COUNTS (FIXED)
+    # ========================
+    base_query = Payslip.query
+
+    not_claimed_count = base_query.filter(Payslip.status != "CLAIMED").count()
+    claimed_count = base_query.filter(Payslip.status == "CLAIMED").count()
+    period_map = {p.id: p for p in payroll_periods}
     return render_template(
         'payroll/admin/views/view_payslips.html',
         payslips=payslips,
@@ -663,6 +683,8 @@ def view_payslips():
         selected_department=department_id,
         selected_status=status,
         payroll_periods=payroll_periods,
-        selected_period=period_id
+        selected_period=period_id,
+        not_claimed_count=not_claimed_count,
+        claimed_count=claimed_count,
+        period_map=period_map
     )
-

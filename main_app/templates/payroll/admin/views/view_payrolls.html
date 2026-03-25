@@ -1,68 +1,70 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Employee Payrolls{% endblock %}
+{% block title %}Payrolls | Payroll Admin{% endblock %}
 
 {% block content %}
 
-<section class="p-6 space-y-6 text-gray-200">
+<section class="p-4 md:p-6 space-y-6 text-gray-200">
 
-<header class="flex justify-between items-center">
-<h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-<i class="fa-solid fa-file-invoice-dollar text-3xl"></i>
-Employee Payrolls
-</h1>
+<!-- ===== HEADER ===== -->
+<header class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+  <h1 class="text-xl md:text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+    <i class="fa-solid fa-file-invoice-dollar text-2xl md:text-3xl"></i>
+    Employee Payrolls
+  </h1>
 </header>
 
-
 <!-- ================= FILTERS ================= -->
-
 <form method="get"
 action="{{ url_for('payroll_admin_bp.view_payrolls') }}"
-class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex flex-wrap gap-4">
+class="bg-gray-800 p-5 rounded-2xl border border-gray-700 grid grid-cols-1 md:grid-cols-4 gap-4">
 
-<input type="text"
-name="search"
-value="{{ search }}"
-placeholder="Search employee..."
-class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 outline-none"/>
+  <!-- Search -->
+  <input type="text"
+    name="search"
+    value="{{ search }}"
+    placeholder="Search employee..."
+    class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 outline-none w-full"/>
 
-<select name="department_id"
-onchange="this.form.submit()"
-class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+  <!-- Department -->
+  <select name="department_id"
+    onchange="this.form.submit()"
+    class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 w-full">
+    <option value="">All Departments</option>
+    {% for dept in departments %}
+    <option value="{{ dept.id }}"
+      {% if dept.id==selected_department %}selected{% endif %}>
+      {{ dept.name }}
+    </option>
+    {% endfor %}
+  </select>
 
-<option value="">All Departments</option>
-{% for dept in departments %}
-<option value="{{ dept.id }}"
-{% if dept.id==selected_department %}selected{% endif %}>
-{{ dept.name }}
-</option>
-{% endfor %}
-</select>
+  <!-- Period -->
+  <select name="pay_period_id"
+    onchange="this.form.submit()"
+    class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 w-full">
 
+    <option value="">All Periods</option>
 
-<select name="pay_period_id"
-onchange="this.form.submit()"
-class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+    {% for period in payroll_periods %}
+    <option value="{{ period.id }}"
+      {% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
+      {{ period.period_name }}
+    </option>
+    {% endfor %}
 
-<option value="">All Periods</option>
+  </select>
 
-{% for period in payroll_periods %}
-<option value="{{ period.id }}"
-{% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
-{{ period.period_name }}
-({{ period.start_date.strftime('%Y-%m-%d') }}
--
-{{ period.end_date.strftime('%Y-%m-%d') }})
-</option>
-{% endfor %}
-
-</select>
+  <!-- Clear Button -->
+  <a href="{{ url_for('payroll_admin_bp.view_payrolls') }}"
+     class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">
+     <i class="fa-solid fa-rotate-left"></i>
+     Clear Filters
+  </a>
 
 </form>
 
-
-<!-- ACTIONS -->
-
-<div class="flex gap-3 flex-wrap">
+<!-- ================= ACTIONS ================= -->
+<div class="flex flex-wrap gap-3">
 
 <form id="generateAllPayslipsForm"
 action="{{ url_for('payroll_admin_bp.generate_payslips_by_period',
@@ -71,7 +73,7 @@ method="POST">
 
 <button type="button"
 id="generateAllPayslipsBtn"
-class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg">
+class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm">
 
 <i class="fa-solid fa-receipt"></i>
 Generate All Payslips
@@ -79,12 +81,11 @@ Generate All Payslips
 
 </form>
 
-
 <a href="{{ url_for('payroll_admin_bp.export_payroll_excel_route',
 search=search,
 department_id=selected_department,
 pay_period_id=selected_pay_period.id if selected_pay_period else '') }}"
-class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
+class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
 
 <i class="fa-solid fa-file-excel"></i>
 Export Excel
@@ -92,22 +93,20 @@ Export Excel
 
 </div>
 
-
-<!-- TABLE -->
-
+<!-- ================= TABLE ================= -->
 <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
 
-<table class="min-w-full text-sm">
+<table class="min-w-[900px] w-full text-sm">
 
-<thead class="bg-gray-900 text-emerald-400">
+<thead class="bg-gray-900 text-emerald-400 sticky top-0">
 <tr>
-<th class="p-3 text-left">Employee</th>
-<th class="p-3 text-left">Department</th>
-<th class="p-3 text-right">Salary Rate</th>
-<th class="p-3 text-right">Gross Pay</th>
-<th class="p-3 text-right">Deductions</th>
-<th class="p-3 text-right">Net Pay</th>
-<th class="p-3 text-left">Period</th>
+<th class="p-2 md:p-3 text-left">Employee</th>
+<th class="p-2 md:p-3 text-left">Department</th>
+<th class="p-2 md:p-3 text-right">Salary</th>
+<th class="p-2 md:p-3 text-right">Gross</th>
+<th class="p-2 md:p-3 text-right">Deductions</th>
+<th class="p-2 md:p-3 text-right">Net</th>
+<th class="p-2 md:p-3 text-left">Period</th>
 </tr>
 </thead>
 
@@ -133,29 +132,31 @@ period_start:'{{ payroll.period.start_date if payroll.period else '' }}',
 period_end:'{{ payroll.period.end_date if payroll.period else '' }}'
 })">
 
-<td class="p-3">{{ payroll.employee.get_full_name() }}</td>
+<td class="p-2 md:p-3 whitespace-nowrap">
+{{ payroll.employee.get_full_name() }}
+</td>
 
-<td class="p-3">
+<td class="p-2 md:p-3">
 {{ payroll.employee.department.name if payroll.employee.department else "-" }}
 </td>
 
-<td class="p-3 text-right text-emerald-400">
-₱ {{ "{:,.2f}".format(payroll.employee.salary or 0) }}
+<td class="p-2 md:p-3 text-right text-emerald-400">
+₱{{ "{:,.2f}".format(payroll.employee.salary or 0) }}
 </td>
 
-<td class="p-3 text-right">
-₱ {{ "{:,.2f}".format(payroll.gross_pay or 0) }}
+<td class="p-2 md:p-3 text-right">
+₱{{ "{:,.2f}".format(payroll.gross_pay or 0) }}
 </td>
 
-<td class="p-3 text-right text-yellow-400">
-₱ {{ "{:,.2f}".format(payroll.total_deductions or 0) }}
+<td class="p-2 md:p-3 text-right text-yellow-400">
+₱{{ "{:,.2f}".format(payroll.total_deductions or 0) }}
 </td>
 
-<td class="p-3 text-right font-semibold text-emerald-400">
-₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}
+<td class="p-2 md:p-3 text-right font-semibold text-emerald-400">
+₱{{ "{:,.2f}".format(payroll.net_pay or 0) }}
 </td>
 
-<td class="p-3">
+<td class="p-2 md:p-3 whitespace-nowrap">
 {{ payroll.period.start_date }} – {{ payroll.period.end_date }}
 </td>
 
@@ -170,23 +171,15 @@ period_end:'{{ payroll.period.end_date if payroll.period else '' }}'
 
 </section>
 
-
-<!-- MODAL -->
-
+<!-- ================= MODAL ================= -->
 <div id="payrollModal"
-class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center justify-center">
+class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
 
-<div class="bg-gray-900 w-[900px] rounded-2xl border border-gray-700 shadow-xl">
+<div class="bg-gray-900 w-full max-w-2xl md:max-w-3xl rounded-2xl border border-gray-700 shadow-xl">
 
 <div class="flex justify-between p-5 border-b border-gray-700">
-
-<h2 class="text-emerald-400 font-semibold text-lg">
-Payroll Details
-</h2>
-
-<button onclick="closePayrollModal()"
-class="text-gray-400 hover:text-white text-xl">✕</button>
-
+<h2 class="text-emerald-400 font-semibold text-lg">Payroll Details</h2>
+<button onclick="closePayrollModal()" class="text-gray-400 hover:text-white text-xl">✕</button>
 </div>
 
 <div id="payrollModalContent" class="p-6 space-y-4 text-sm"></div>
@@ -194,13 +187,10 @@ class="text-gray-400 hover:text-white text-xl">✕</button>
 </div>
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-
 document.getElementById("generateAllPayslipsBtn").addEventListener("click",()=>{
-
 Swal.fire({
 title:'Generate All Payslips?',
 icon:'warning',
@@ -211,94 +201,7 @@ if(result.isConfirmed){
 document.getElementById("generateAllPayslipsForm").submit();
 }
 })
-
 })
-
-
-function openPayrollModal(p){
-
-let rateLabel=""
-let rateComputation=""
-
-if(p.employee_type==="Part-Time"){
-rateLabel="Hourly Rate × Hours"
-rateComputation=`₱${p.hourly_rate} × ${p.working_hours}`
-}
-
-else if(
-p.employee_type==="Casual" ||
-p.employee_type==="Job Order (JO)" ||
-p.employee_type==="Job Orders"
-){
-rateLabel="Daily Rate × Days"
-rateComputation=`₱${p.daily_rate} × ${p.days_worked}`
-}
-
-else{
-rateLabel="Monthly Salary"
-rateComputation=`₱${p.salary}`
-}
-
-document.getElementById("payrollModalContent").innerHTML=`
-
-<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
-
-<p class="text-emerald-400 text-lg font-semibold">
-${p.employee_name}
-</p>
-
-<p>Employment Type : ${p.employee_type}</p>
-
-<p>Period : ${p.period_start || '-'} → ${p.period_end || '-'}</p>
-
-</div>
-
-
-<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
-
-<p class="text-gray-400">${rateLabel}</p>
-
-<p class="text-xl font-semibold text-emerald-400">
-${rateComputation}
-</p>
-
-<p>
-Allowance :
-<span class="text-emerald-400">
-₱${Number(p.allowance || 0).toLocaleString()}
-</span>
-</p>
-
-<hr class="border-gray-700">
-
-<p>
-Gross Pay :
-<span class="text-emerald-400">
-₱${Number(p.gross_pay).toLocaleString()}
-</span>
-</p>
-
-<p class="text-yellow-400">
-Deductions : ₱${Number(p.deductions).toLocaleString()}
-</p>
-
-<p class="text-2xl font-bold text-emerald-400">
-Net Pay : ₱${Number(p.net_pay).toLocaleString()}
-</p>
-
-</div>
-
-`
-
-document.getElementById("payrollModal").classList.remove("hidden")
-
-}
-
-
-function closePayrollModal(){
-document.getElementById("payrollModal").classList.add("hidden")
-}
-
 </script>
 
 {% endblock %}

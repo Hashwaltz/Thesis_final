@@ -1,6 +1,8 @@
 from datetime import datetime, date
 from flask import flash
 from sqlalchemy import func
+import random
+import string
 
 from main_app.models.hr_models import Employee, LeaveCredit, Attendance
 from main_app.extensions import db
@@ -167,3 +169,32 @@ UPLOAD_FOLDER = "uploads/attendance"
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+def generate_password(length=12):
+    if length < 12:
+        raise ValueError("Password length must be at least 12 characters")
+
+    # Character sets
+    lowercase = string.ascii_lowercase
+    uppercase = string.ascii_uppercase
+    digits = string.digits
+    symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+    # Ensure at least one of each
+    password = [
+        random.choice(lowercase),
+        random.choice(uppercase),
+        random.choice(digits),
+        random.choice(symbols)
+    ]
+
+    # Fill the rest
+    all_chars = lowercase + uppercase + digits + symbols
+    password += random.choices(all_chars, k=length - 4)
+
+    # Shuffle for randomness
+    random.shuffle(password)
+
+    return ''.join(password)
