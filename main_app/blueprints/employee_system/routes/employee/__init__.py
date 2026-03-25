@@ -14,3 +14,4 @@ from . import leave_credit
 from . import department
 from . import job_history
 from . import profile
+from . import payslip

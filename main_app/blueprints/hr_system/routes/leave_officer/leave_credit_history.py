@@ -130,11 +130,11 @@ def view_leave_history(employee_id):
         }
 
         for leave_type in leave_types:
-            history = employee.leave_credit_histories.filter_by(
-                leave_type_id=leave_type.id,
-                month=month_label
-            ).first()
-
+            history = next(
+                (h for h in employee.leave_credit_history
+                if h.leave_type_id == leave_type.id and h.month == month_label),
+                None
+            )
             if history:
                 month_record["leave_data"].append({
                     "leave_type": leave_type.name,

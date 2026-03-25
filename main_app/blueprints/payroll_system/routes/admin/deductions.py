@@ -7,9 +7,9 @@ from main_app.models.payroll_models import Payroll, PayrollPeriod, Deduction, Em
 from main_app.extensions import db
 from main_app.helpers.decorators import payroll_admin_required
 
-
-
 from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
+
+
 
 @payroll_admin_bp.route('/deductions/create', methods=['GET', 'POST'])
 @login_required
