@@ -1,368 +1,255 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
+from datetime import datetime, timedelta
 
 from main_app.extensions import db
-from main_app.models.hr_models import Employee, Attendance, LeaveCredit, Department
-from main_app.models.payroll_models import Payroll, PayrollPeriod, Loan, PayrollDeduction, LoanPayment
+from main_app.models.hr_models import Employee, Attendance, LateComputation, LeaveCredit
+from main_app.models.payroll_models import Payroll, PayrollPeriod, Deduction, PayrollDeduction, DeductionBracket
 
 from main_app.helpers.decorators import staff_required
 from main_app.blueprints.payroll_system.routes.staff import payroll_staff_bp
 
-CASUAL_ID = 3
+CASUAL_ID = 3  # employment_type_id for casual employees
 
-ALLOWED_LOAN_PROVIDERS_1_15 = {"GSIS", "MENPC"}
-ALLOWED_LOAN_PROVIDERS_16_31 = {"MENPC", "Pag-IBIG", "SSS"}
-
-
-# ========================= HELPERS =========================
-
-def safe_float(value):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def is_second_half(period):
-    return period.start_date.day >= 16
-
-
-def compute_philhealth(gross_pay):
-    if gross_pay <= 10000:
-        return 250, 250
-    total = round(gross_pay * 0.05, 2)
-    return round(total / 2, 2), round(total / 2, 2)
-
-
-def compute_sss_monthly(emp, monthly_salary):
-    # SIMPLE LOGIC (you can replace with bracket later)
-    total = monthly_salary * 0.045
-    return round(total / 2, 2), round(total / 2, 2)
-
-
-def compute_pagibig(monthly_salary):
-    if monthly_salary <= 1500:
-        rate = 0.01
-    else:
-        rate = 0.02
-
-    employee = monthly_salary * rate
-    employer = monthly_salary * rate
-
-    # CAP RULE
-    employee = min(employee, 200)
-    employer = min(employer, 200)
-
-    return round(employee, 2), round(employer, 2)
-
-
-def resolve_pagibig(monthly_salary, form_value):
-    computed_emp, _ = compute_pagibig(monthly_salary)
-
-    if form_value is None:
-        return computed_emp
-
-    value_str = str(form_value).strip()
-
-    # IMPORTANT: allow explicit 0
-    if value_str == "":
-        return computed_emp
-
-    value = safe_float(value_str)
-
-    # if user explicitly enters 0 → keep it 0
-    if value == 0:
+# ==========================================
+# Philippine TRAIN Income Tax (Monthly)
+# ==========================================
+def compute_income_tax(monthly_salary):
+    if monthly_salary <= 20833:
         return 0
+    elif monthly_salary <= 33332:
+        return (monthly_salary - 20833) * 0.20
+    elif monthly_salary <= 66666:
+        return 2500 + (monthly_salary - 33332) * 0.25
+    elif monthly_salary <= 166666:
+        return 10833.33 + (monthly_salary - 66666) * 0.30
+    elif monthly_salary <= 666666:
+        return 40833.33 + (monthly_salary - 166666) * 0.32
+    else:
+        return 200833.33 + (monthly_salary - 666666) * 0.35
 
-    # safety cap
-    return min(value, computed_emp * 1.5)
-
-@payroll_staff_bp.route("/select-department/<int:period_id>") 
-@login_required 
-@staff_required 
-def select_department(period_id): 
-    period = PayrollPeriod.query.get_or_404(period_id)
-    departments = Department.query.order_by(Department.name).all()
-
-    department_status = {}
-
-    for dept in departments:
-        has_payroll = Payroll.query.join(Employee).filter(
-            Payroll.payroll_period_id == period.id,
-            Employee.department_id == dept.id
-        ).first()
-
-        department_status[dept.id] = bool(has_payroll)
-
-    return render_template(
-        "payroll/staff/casual/select_department.html",
-        period=period,
-        departments=departments,
-        department_status=department_status
-    )
-
-# ========================= PREVIEW =========================
-
-@payroll_staff_bp.route("/preview/<int:period_id>/<int:department_id>")
+# ==========================================
+# PREVIEW CASUAL PAYROLL
+# ==========================================
+@payroll_staff_bp.route("/preview-casual/<int:period_id>")
 @login_required
 @staff_required
-def preview_department_payroll(period_id, department_id):
-
+def preview_casual_payroll(period_id):
     period = PayrollPeriod.query.get_or_404(period_id)
-    department = Department.query.get_or_404(department_id)
 
     if period.status == "Locked":
         flash("Payroll already processed for this period.", "warning")
-        return redirect(url_for("payroll_staff_bp.select_department", period_id=period.id))
+        return redirect(url_for("payroll_staff_bp.casual_select_period"))
 
     employees = Employee.query.filter(
         Employee.status == "Active",
-        Employee.department_id == department.id,
         Employee.employment_type_id == CASUAL_ID
     ).all()
 
-    payroll_data = []
-    second_half = is_second_half(period)
+    payroll_rows = []
 
     for emp in employees:
+        payroll = Payroll(
+            employee=emp,
+            employee_id=emp.id,
+            period=period,
+            payroll_period_id=period.id
+        )
 
-        payroll = Payroll()
-        deduction_total = 0
-        # ATTENDANCE
-        attendances = Attendance.query.filter(
-            Attendance.employee_id == emp.id,
-            Attendance.date.between(period.start_date, period.end_date)
-        ).all()
+        # -----------------------------
+        # Attendance computation
+        # -----------------------------
+        worked_days = payroll.compute_attendance_days()
+        worked_days = payroll.apply_leave_credit_deductions(worked_days)
+        payroll.days_worked = worked_days
+        payroll.hours_worked = worked_days * 8
 
-        days_worked = sum(1 for a in attendances if a.status in ("Present", "Late"))
-
-        leave_credits = LeaveCredit.query.filter_by(employee_id=emp.id).all()
-        leave_used = sum(lc.used_credits for lc in leave_credits)
-
-        days_worked = max(days_worked - leave_used, 0)
-
-        # PAY
+        # -----------------------------
+        # Salary × Days + Allowances
+        # -----------------------------
         daily_rate = emp.salary or 0
-        basic_pay = days_worked * daily_rate
-        allowance_total = sum(a.amount for a in (getattr(emp, "allowances", []) or []))
-        gross_pay = basic_pay + allowance_total
-
-        deductions = []
-
-        # ================= FIRST HALF =================
-        if not second_half:
-
-            # SSS
-            deductions.append({
-                "key": "sss",
-                "name": "SSS",
-                "employee_share": safe_float(getattr(emp, "sss_rss", 0)),
-                "employer_share": 0,
-                "editable": True
-            })
-
-            # PHILHEALTH
-            phic_emp, phic_gov = compute_philhealth(gross_pay)
-
-            deductions.append({
-                "key": "philhealth",
-                "name": "PhilHealth",
-                "employee_share": phic_emp,
-                "employer_share": phic_gov,
-                "editable": True,
-                "gov_visible": True
-            })
-
-            allowed = ALLOWED_LOAN_PROVIDERS_1_15
-
-        # ================= SECOND HALF =================
-        else:
-            computed_sss = safe_float(getattr(emp, "sss_rss", 0))
-
-            deductions.append({
-                "key": "sss",
-                "name": "SSS",
-                "employee_share": computed_sss,
-                "employer_share": 0,
-                "editable": True
-            })
-
-            deduction_total += computed_sss
-                    
-
-            # OPTIONAL SAFETY: recompute server-side (recommended)
-            computed_pagibig_emp, _ = compute_pagibig(gross_pay*2)
-
-            # clamp to avoid abuse
-            deductions.append({
-                "key": "pagibig",
-                "name": "Pag-IBIG",
-                "employee_share": computed_pagibig_emp,  # default shown in input
-                "employer_share": 0,
-                "editable": True
-            })
-
-            deduction_total+= computed_pagibig_emp
-
-            allowed = ALLOWED_LOAN_PROVIDERS_16_31
-
-        # LOANS
-        loans = Loan.query.filter_by(employee_id=emp.id, active=True).all()
-
-        for loan in loans:
-            if loan.provider not in allowed:
-                continue
-
-            deductions.append({
-                "key": f"loan_{loan.id}",
-                "name": f"{loan.provider} - {loan.loan_type}",
-                "employee_share": loan.monthly_payment or 0,
-                "employer_share": 0,
-                "loan_id": loan.id,
-                "editable": True
-            })
-
-        payroll.days_worked = days_worked
-        payroll.basic_salary = basic_pay
-        payroll.allowance_total = allowance_total
+        salary_by_days = daily_rate * worked_days
+        allowance_total = payroll.allowance_total or 0
+        gross_pay = salary_by_days + allowance_total
         payroll.gross_pay = gross_pay
 
-        payroll_data.append({
-            "employee": emp,
-            "payroll": payroll,
-            "deductions": deductions
-        })
+        # -----------------------------
+        # Deductions including Tax
+        # -----------------------------
+        total_deductions = 0
+        deductions_list = []
 
-    # TEMPLATE SWITCH
-    template = "payroll/staff/casual/16-31_preview.html" if second_half else "payroll/staff/casual/1-15_preview.html"
+        for emp_ded in emp.employee_deductions:
+            if not emp_ded.active or not emp_ded.deduction:
+                continue
+
+            name = emp_ded.deduction.name.lower()
+            employee_share = employer_share = 0
+
+            if "sss" in name and emp_ded.deduction.brackets:
+                for b in emp_ded.deduction.brackets:
+                    if b.salary_from <= gross_pay <= b.salary_to:
+                        employee_share = b.employee_share or 0
+                        employer_share = b.employer_share or 0
+                        break
+            elif "philhealth" in name:
+                rate = emp_ded.deduction.rate or 0.025
+                floor = emp_ded.deduction.floor or 10000
+                ceiling = emp_ded.deduction.ceiling or 100000
+                base = min(max(gross_pay, floor), ceiling)
+                employee_share = round(base * rate / 2, 2)
+                employer_share = round(base * rate / 2, 2)
+            elif "gsis" in name:
+                if emp_ded.deduction.brackets:
+                    for b in emp_ded.deduction.brackets:
+                        if b.salary_from <= gross_pay <= b.salary_to:
+                            employee_share = b.employee_share or 0
+                            employer_share = b.employer_share or 0
+                            break
+                else:
+                    employee_share = round(gross_pay * 0.09, 2)
+                    employer_share = round(gross_pay * 0.12, 2)
+            elif "pag-ibig" in name or "hdmf" in name:
+                base = min(gross_pay, 5000)
+                employee_share = round(base * 0.02, 2)
+                employer_share = employee_share
+            elif "tax" in name:
+                employee_share = round(compute_income_tax(gross_pay), 2)
+            else:
+                result = emp_ded.calculate()
+                employee_share = result.get("employee_share", 0)
+                employer_share = result.get("employer_share", 0)
+
+            total_deductions += employee_share
+            deductions_list.append({
+                "name": emp_ded.deduction.name,
+                "employee_share": employee_share,
+                "employer_share": employer_share
+            })
+
+        payroll.total_deductions = total_deductions
+        payroll.net_pay = gross_pay - total_deductions
+        payroll._deduction_breakdown = deductions_list
+        payroll.daily_rate_value = daily_rate
+
+        payroll_rows.append(payroll)
 
     return render_template(
-        template,
-        period=period,
-        department=department,
-        payroll_data=payroll_data
+        "payroll/staff/casual/payroll_preview.html",
+        payroll_rows=payroll_rows,
+        period=period
     )
 
-
-
-
-
-# ========================= PROCESS =========================
-
-@payroll_staff_bp.route("/process/<int:period_id>/<int:department_id>", methods=["POST"])
+# ==========================================
+# CONFIRM CASUAL PAYROLL
+# ==========================================
+@payroll_staff_bp.route("/confirm-casual", methods=["POST"])
 @login_required
 @staff_required
-def process_department_payroll(period_id, department_id):
-
+def confirm_casual_payroll():
+    period_id = request.form.get("period_id")
     period = PayrollPeriod.query.get_or_404(period_id)
-    department = Department.query.get_or_404(department_id)
+
+    if period.status == "Locked":
+        flash("Payroll for this period is already processed.", "warning")
+        return redirect(url_for("payroll_staff_bp.casual_select_period"))
+
+    # Delete existing payrolls
+    Payroll.query.filter_by(payroll_period_id=period.id).delete()
+    db.session.flush()
 
     employees = Employee.query.filter(
         Employee.status == "Active",
-        Employee.department_id == department.id,
         Employee.employment_type_id == CASUAL_ID
     ).all()
 
-    second_half = is_second_half(period)
-
     for emp in employees:
-
-        days_worked = safe_float(request.form.get(f"days_worked_{emp.id}"))
-        allowance_total = safe_float(request.form.get(f"allowance_total_{emp.id}"))
-
-        daily_rate = emp.salary or 0
-        basic_pay = days_worked * daily_rate
-        gross_pay = basic_pay + allowance_total
-
         payroll = Payroll(
             employee_id=emp.id,
             payroll_period_id=period.id,
-            days_worked=days_worked,
-            hours_worked=days_worked * 8,
-            basic_salary=basic_pay,
-            allowance_total=allowance_total,
-            gross_pay=gross_pay,
-            total_deductions=0,
-            net_pay=0,
-            status="Processed"
+            status="Confirmed"
         )
-
         db.session.add(payroll)
         db.session.flush()
 
-        deduction_total = 0
+        worked_days = payroll.compute_attendance_days()
+        worked_days = payroll.apply_leave_credit_deductions(worked_days)
+        payroll.days_worked = worked_days
+        payroll.hours_worked = worked_days * 8
 
-        # ================= FIRST HALF =================
-        if not second_half:
+        allowance = float(request.form.get(f"allowance_{emp.id}", 0))
+        loan = float(request.form.get(f"loan_{emp.id}", 0))
+        basic_salary = emp.salary or 0
+        gross_pay = round(basic_salary * worked_days + allowance, 2)
+        payroll.basic_salary = basic_salary
+        payroll.allowance_total = allowance
+        payroll.gross_pay = gross_pay
 
-            sss = safe_float(request.form.get(f"sss_{emp.id}"))
-            deduction_total += sss
+        total_deductions = 0
 
-            db.session.add(PayrollDeduction(
-                payroll_id=payroll.id,
-                deduction_name="SSS",
-                employee_share=sss
-            ))
-
-            phic = safe_float(request.form.get(f"philhealth_{emp.id}"))
-            deduction_total += phic
-
-            db.session.add(PayrollDeduction(
-                payroll_id=payroll.id,
-                deduction_name="PhilHealth",
-                employee_share=phic
-            ))
-
-            allowed = ALLOWED_LOAN_PROVIDERS_1_15
-
-        # ================= SECOND HALF =================
-        else:
-
-            sss = safe_float(request.form.get(f"sss_{emp.id}"))
-            deduction_total += sss
-
-            db.session.add(PayrollDeduction(
-                payroll_id=payroll.id,
-                deduction_name="SSS",
-                employee_share=sss
-            ))
-
-            pagibig_input = request.form.get(f"pagibig_{emp.id}")
-
-            pagibig = resolve_pagibig(gross_pay*2, pagibig_input)
-
-            deduction_total += pagibig
-
-            db.session.add(PayrollDeduction(
-                payroll_id=payroll.id,
-                deduction_name="Pag-IBIG",
-                employee_share=pagibig
-            ))
-
-            allowed = ALLOWED_LOAN_PROVIDERS_16_31
-
-        # LOANS
-        loans = Loan.query.filter_by(employee_id=emp.id, active=True).all()
-
-        for loan in loans:
-            if loan.provider not in allowed:
+        for emp_ded in emp.employee_deductions:
+            if not emp_ded.active or not emp_ded.deduction:
                 continue
 
-            val = safe_float(request.form.get(f"loan_{loan.id}"))
+            name = emp_ded.deduction.name.lower()
+            employee_share = employer_share = 0
 
-            deduction_total += val
+            if "sss" in name and emp_ded.deduction.brackets:
+                for b in emp_ded.deduction.brackets:
+                    if b.salary_from <= gross_pay <= b.salary_to:
+                        employee_share = b.employee_share or 0
+                        employer_share = b.employer_share or 0
+                        break
+            elif "philhealth" in name:
+                rate = emp_ded.deduction.rate or 0.025
+                floor = emp_ded.deduction.floor or 10000
+                ceiling = emp_ded.deduction.ceiling or 100000
+                base = min(max(gross_pay, floor), ceiling)
+                employee_share = round(base * rate / 2, 2)
+                employer_share = round(base * rate / 2, 2)
+            elif "gsis" in name:
+                if emp_ded.deduction.brackets:
+                    for b in emp_ded.deduction.brackets:
+                        if b.salary_from <= gross_pay <= b.salary_to:
+                            employee_share = b.employee_share or 0
+                            employer_share = b.employer_share or 0
+                            break
+                else:
+                    employee_share = round(gross_pay * 0.09, 2)
+                    employer_share = round(gross_pay * 0.12, 2)
+            elif "pag-ibig" in name or "hdmf" in name:
+                base = min(gross_pay, 5000)
+                employee_share = round(base * 0.02, 2)
+                employer_share = employee_share
+            elif "tax" in name:
+                employee_share = round(compute_income_tax(gross_pay), 2)
+            else:
+                result = emp_ded.calculate()
+                employee_share = result.get("employee_share", 0)
+                employer_share = result.get("employer_share", 0)
 
-            db.session.add(LoanPayment(
-                loan_id=loan.id,
-                payroll_id=payroll.id,
-                amount_paid=val,
-                remaining_balance=(loan.remaining_balance or 0) - val
+            total_deductions += employee_share
+
+            db.session.add(PayrollDeduction(
+                payroll=payroll,
+                deduction_name=emp_ded.deduction.name,
+                employee_share=employee_share,
+                employer_share=employer_share
             ))
 
-        payroll.total_deductions = deduction_total
-        payroll.net_pay = gross_pay - deduction_total
+        # Loan / Other
+        if loan > 0:
+            total_deductions += loan
+            db.session.add(PayrollDeduction(
+                payroll=payroll,
+                deduction_name="Loan / Other",
+                employee_share=loan,
+                employer_share=0
+            ))
+
+        payroll.total_deductions = round(total_deductions, 2)
+        payroll.net_pay = round(gross_pay - total_deductions, 2)
 
     db.session.commit()
-
-    flash(f"Payroll processed for {department.name} successfully.", "success")
-    return redirect(url_for("payroll_staff_bp.select_department", period_id=period.id))
+    flash("Casual Payroll processed successfully!", "success")
+    return redirect(url_for("payroll_staff_bp.view_payrolls"))

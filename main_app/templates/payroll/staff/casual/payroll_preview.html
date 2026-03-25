@@ -1,36 +1,37 @@
 {% extends 'payroll/staff/staff_base.html' %}
 
-{% block title %}Regular Payroll Preview{% endblock %}
+{% block title %}Casual Payroll Preview{% endblock %}
 
 {% block content %}
 <section class="p-6 space-y-6 text-gray-200 max-w-7xl mx-auto">
 
 <!-- HEADER -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-  <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-    <i class="fa-solid fa-calendar-check text-3xl"></i>
-    Regular Payroll Preview
-  </h2>
 
-  <p class="text-gray-400 text-sm">
-    Period: {{ period.start_date }} - {{ period.end_date }}
-  </p>
+<h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
+<i class="fa-solid fa-calendar-check text-3xl"></i>
+Casual Payroll Preview
+</h2>
+
+<p class="text-gray-400 text-sm">
+Period: {{ period.start_date }} - {{ period.end_date }}
+</p>
+
 </div>
 
 
-<form method="POST" action="{{ url_for('payroll_staff_bp.confirm_regular_payroll') }}">
+<form method="POST" action="{{ url_for('payroll_staff_bp.confirm_casual_payroll') }}">
 <input type="hidden" name="period_id" value="{{ period.id }}">
 
 
-<!-- EMPLOYEE PAYROLL CARDS -->
 <div class="space-y-6">
 
 {% for p in payroll_rows %}
 
-<div class="bg-gray-800 rounded-2xl border border-gray-700 p-6 hover:border-emerald-500 transition shadow-md">
+<div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-emerald-500 transition shadow-md">
 
 <!-- EMPLOYEE HEADER -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-6">
+<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
 
 <div>
 <h3 class="text-xl font-semibold text-emerald-400">
@@ -43,7 +44,7 @@
 </div>
 
 <div class="text-right">
-<p class="text-gray-400 text-sm">Monthly Salary</p>
+<p class="text-gray-400 text-sm">Daily Rate</p>
 <p class="text-lg font-semibold text-yellow-400">
 ₱ {{ "{:,.2f}".format(p.employee.salary or 0) }}
 </p>
@@ -52,34 +53,40 @@
 </div>
 
 
-<!-- SALARY COMPUTATION -->
+<!-- PAY COMPUTATION -->
 <div class="grid md:grid-cols-3 gap-4 mb-4">
 
 <div>
-<label class="block text-gray-400 text-sm">Monthly Salary</label>
+<label class="block text-gray-400 text-sm">Daily Rate</label>
+
 <input type="text" readonly
-value="₱ {{ "{:,.2f}".format(p.employee.salary or 0) }}"
+value="₱ {{ '{:,.2f}'.format(p.employee.salary or 0) }}"
 class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400">
 </div>
 
-<div>
-<label class="block text-gray-400 text-sm">Leave Deduction</label>
-<input type="text" readonly
-value="₱ {{ "{:,.2f}".format((p.employee.salary or 0)/22 * (22 - p.days_worked or 0)) }}"
-class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-red-400">
-</div>
 
 <div>
-<label class="block text-gray-400 text-sm">Adjusted Salary</label>
+<label class="block text-gray-400 text-sm">Days Worked</label>
+
 <input type="text" readonly
-value="₱ {{ "{:,.2f}".format(p.gross_pay) }}"
+value="{{ '{:.2f}'.format(p.days_worked or 0) }}"
+class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-emerald-400">
+</div>
+
+
+<div>
+<label class="block text-gray-400 text-sm">Salary × Days</label>
+
+<input type="text" readonly
+value="₱ {{ '{:,.2f}'.format((p.employee.salary or 0) * (p.days_worked or 0)) }}"
 class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400">
 </div>
 
 </div>
 
 
-<!-- ALLOWANCE & LOANS -->
+
+<!-- ALLOWANCES AND LOANS -->
 <div class="grid md:grid-cols-3 gap-4 mb-4">
 
 <div>
@@ -88,10 +95,10 @@ class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yello
 <input type="number"
 step="0.01"
 name="allowance_{{ p.employee.id }}"
-value="{{ "{:,.2f}".format(p.allowance_total or 0) }}"
+value="{{ '{:.2f}'.format(p.allowance_total or 0) }}"
 class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none">
-
 </div>
+
 
 <div>
 <label class="block text-gray-400 text-sm">Loans / Other</label>
@@ -101,22 +108,23 @@ step="0.01"
 name="loan_{{ p.employee.id }}"
 value="0"
 class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-red-600 outline-none">
-
 </div>
+
 
 <div>
 <label class="block text-gray-400 text-sm">Total Deductions</label>
 
-<input type="text" readonly
-value="₱ {{ "{:,.2f}".format(p.total_deductions or 0) }}"
+<input type="text"
+readonly
+value="₱ {{ '{:,.2f}'.format(p.total_deductions or 0) }}"
 class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-red-400">
-
 </div>
 
 </div>
 
 
-<!-- DEDUCTIONS BREAKDOWN -->
+
+<!-- DEDUCTION BREAKDOWN -->
 {% if p._deduction_breakdown %}
 
 <div class="bg-gray-900 border border-gray-700 rounded-xl p-4 mb-4">
@@ -150,11 +158,11 @@ Er: ₱ {{ "{:,.2f}".format(d.employer_share) }}
 {% endif %}
 
 
+
 <!-- NET PAY -->
 <div class="grid md:grid-cols-3 gap-4 items-end">
 
 <div></div>
-
 <div></div>
 
 <div>
@@ -165,7 +173,7 @@ Net Pay
 
 <input type="text"
 readonly
-value="₱ {{ "{:,.2f}".format(p.net_pay or 0) }}"
+value="₱ {{ '{:,.2f}'.format(p.net_pay or 0) }}"
 class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-emerald-400 text-lg font-semibold">
 
 </div>
@@ -180,6 +188,7 @@ class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-emera
 </div>
 
 
+
 <!-- CONFIRM BUTTON -->
 <div class="pt-6 flex justify-end">
 
@@ -187,11 +196,12 @@ class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-emera
 class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg transition flex items-center gap-2">
 
 <i class="fa-solid fa-check"></i>
-Confirm Regular Payroll
+Confirm Casual Payroll
 
 </button>
 
 </div>
+
 
 </form>
 

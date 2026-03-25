@@ -7,21 +7,18 @@
 
   <!-- HEADER -->
   <div class="flex items-center justify-between">
-    <h2 class="text-2xl font-semibold text-purple-400 flex items-center gap-3">
+    <h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
       <i class="fa-solid fa-calendar-check text-3xl"></i>
       Regular Payroll
     </h2>
-    <p class="text-sm text-gray-400">
-      Select a payroll period then choose a department for processing
-    </p>
+    <p class="text-sm text-gray-400">Select a payroll period to view your regular monthly payroll</p>
   </div>
 
   <!-- TABLE CARD -->
   <div class="bg-gray-800 border border-gray-700 rounded-2xl overflow-x-auto mt-4">
-
     <table class="min-w-full divide-y divide-gray-700">
-
-      <!-- HEADER -->
+      
+      <!-- Table Header -->
       <thead class="bg-gray-900 text-gray-400 uppercase text-xs tracking-wider">
         <tr>
           <th class="px-6 py-3 text-left font-semibold">Period</th>
@@ -32,58 +29,39 @@
         </tr>
       </thead>
 
-      <!-- BODY -->
+      <!-- Table Body -->
       <tbody class="divide-y divide-gray-700">
-
         {% for p in periods %}
         <tr class="hover:bg-gray-700/40 transition">
-
-          <td class="px-6 py-4 text-gray-200 font-medium">
-            {{ p.period_name }}
-          </td>
-
-          <td class="px-6 py-4 text-gray-400">
-            {{ p.start_date }}
-          </td>
-
-          <td class="px-6 py-4 text-gray-400">
-            {{ p.end_date }}
-          </td>
-
+          <td class="px-6 py-4 text-gray-200 font-medium">{{ p.period_name }}</td>
+          <td class="px-6 py-4 text-gray-400">{{ p.start_date }}</td>
+          <td class="px-6 py-4 text-gray-400">{{ p.end_date }}</td>
           <td class="px-6 py-4">
-            {% if p.status == "Closed" %}
+            {% if p.status == "Locked" %}
               <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-700/20 text-red-400">
-                Closed
+                Locked
               </span>
             {% else %}
-              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-600/20 text-purple-400">
+              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-600/20 text-emerald-400">
                 Open
               </span>
             {% endif %}
           </td>
-
           <td class="px-6 py-4 text-right">
-
-            {% if p.status == "Closed" %}
-              <span class="text-gray-400 text-sm">Payroll Closed</span>
-
+            {% if p.status == "Locked" %}
+              <span class="text-gray-400 text-sm">Payroll Locked</span>
             {% else %}
-              <!-- 🔥 CHANGE HERE: go to department selection -->
-              <a href="{{ url_for('payroll_staff_bp.regular_select_department', period_id=p.id) }}"
-                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition">
-                 Select Department
+              <a href="{{ url_for('payroll_staff_bp.preview_regular_payroll', period_id=p.id) }}"
+                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition">
+                 Process Payroll
               </a>
             {% endif %}
-
           </td>
-
         </tr>
         {% endfor %}
-
       </tbody>
 
     </table>
-
   </div>
 
 </section>

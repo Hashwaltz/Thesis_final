@@ -52,41 +52,72 @@ href="{{ url_for('static', filename='img/favicon.avif') }}"/>
 <body class="bg-gray-900 text-gray-100">
 
 <!-- HEADER -->
+<header class="absolute inset-x-0 top-0 z-50">
 
-<header class="absolute inset-x-0 top-0 z-50 animate-fade-up delay-100">
+  <nav class="flex items-center justify-between p-6 lg:px-8">
 
-<nav class="flex items-center justify-between p-6 lg:px-8">
+    <!-- LOGO -->
+    <div class="flex items-center">
+      <a href="#" class="flex items-center space-x-2">
+        <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
+             class="h-8 w-auto"/>
+        <span class="text-white font-semibold text-lg">
+          GovHRPay
+        </span>
+      </a>
+    </div>
 
-<div class="flex lg:flex-1 items-center animate-fade-left delay-200">
-<a href="#" class="-m-1.5 p-1.5 flex items-center space-x-2">
+    <!-- DESKTOP NAV -->
+    <div class="hidden lg:flex lg:gap-x-10">
+      <a href="{{url_for('index')}}" class="text-sm font-semibold text-white hover:text-indigo-400">Home</a>
+      <a href="{{url_for('about')}}" class="text-sm font-semibold text-white hover:text-indigo-400">About</a>
+      <a href="{{url_for('features')}}" class="text-sm font-semibold text-white hover:text-indigo-400">System Features</a>
+    </div>
 
-<img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-class="h-8 w-auto"/>
+    <!-- HAMBURGER BUTTON -->
+    <div class="lg:hidden">
+      <button onclick="toggleMenu()" class="text-white text-2xl focus:outline-none">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
 
-<span class="text-white font-semibold text-lg">
-GovHRPay
-</span>
+  </nav>
 
-</a>
-</div>
+  <!-- MOBILE MENU -->
+  <div id="mobileMenu" class="hidden bg-gray-900 px-6 pb-6 space-y-4 lg:hidden">
 
-<div class="hidden lg:flex lg:gap-x-10 animate-fade-up delay-300">
-<a href="{{url_for('index')}}" class="text-sm font-semibold text-white hover:text-indigo-400 transition">
-Home
-</a>
+    <a href="{{url_for('index')}}" class="block text-white font-semibold hover:text-indigo-400">
+      Home
+    </a>
 
-<a href="{{url_for('about')}}" class="text-sm font-semibold text-white hover:text-indigo-400 transition">
-About
-</a>
+    <a href="{{url_for('about')}}" class="block text-white font-semibold hover:text-indigo-400">
+      About
+    </a>
 
-<a href="{{url_for('features')}}" class="text-sm font-semibold text-white hover:text-indigo-400 transition">
-System Features
-</a>
-</div>
+    <a href="{{url_for('features')}}" class="block text-white font-semibold hover:text-indigo-400">
+      System Features
+    </a>
 
-</nav>
+    <hr class="border-gray-700">
+
+    <a href="{{ url_for('hr_auth_bp.login') }}"
+       class="block bg-indigo-500 text-center py-2 rounded-md text-white font-semibold">
+      HR System
+    </a>
+
+    <a href="{{ url_for('payroll_auth_bp.login') }}"
+       class="block bg-green-600 text-center py-2 rounded-md text-white font-semibold">
+      Payroll System
+    </a>
+
+    <a href="{{url_for('employee_auth_bp.login')}}"
+       class="block bg-blue-600 text-center py-2 rounded-md text-white font-semibold">
+      Employee Portal
+    </a>
+
+  </div>
+
 </header>
-
 <!-- HERO -->
 
 <section class="relative isolate px-6 pt-32 lg:px-8 bg-gradient-to-br from-indigo-500 to-purple-700">
@@ -195,7 +226,7 @@ Allow employees to view their profile, attendance, leave status, and payslips.
 class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition">
 
 <i class="fas fa-sign-in-alt mr-2"></i>
-Access Gov Employee Portal
+Access Employee Portal
 
 </a>
 
@@ -214,6 +245,11 @@ Access Gov Employee Portal
 </p>
 
 </footer>
-
+<script>
+function toggleMenu() {
+  const menu = document.getElementById('mobileMenu');
+  menu.classList.toggle('hidden');
+}
+</script>
 </body>
 </html>

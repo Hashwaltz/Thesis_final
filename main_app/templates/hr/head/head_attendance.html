@@ -1,5 +1,5 @@
 {% extends 'hr/head/head_base.html' %}
-{% block title %}Department Head - Attendance Records{% endblock %}
+{% block title %}Attendance | HR Head{% endblock %}
 
 {% block content %}
 <main class="p-6 space-y-6">
@@ -34,16 +34,23 @@
         {% endfor %}
       </select>
     </div>
+    <!-- Submit + Clear Buttons -->
+    <div class="flex items-end gap-3">
 
-    <!-- Submit Button -->
-    <div class="flex items-end">
+      <!-- Filter Button -->
       <button type="submit"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-
         <i class="fa-solid fa-filter"></i>
         <span>Filter</span>
-
       </button>
+
+      <!-- Clear Button -->
+      <a href="{{ url_for('hr_head_bp.attendance') }}"
+        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2">
+        <i class="fa-solid fa-xmark"></i>
+        <span>Clear</span>
+      </a>
+
     </div>
   </form>
 

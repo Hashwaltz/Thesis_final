@@ -8,7 +8,7 @@ import calendar
 
 from main_app.helpers.decorators import staff_required
 from main_app.extensions import db
-from main_app.models.payroll_models import PayrollPeriod, Payroll, Payslip, LoanPayment
+from main_app.models.payroll_models import PayrollPeriod, Payroll, Payslip
 from main_app.models.hr_models import Employee, Department, Attendance
 from main_app.models.user import User
 from main_app.blueprints.payroll_system.routes.staff import payroll_staff_bp
@@ -236,16 +236,13 @@ def view_payrolls():
 
         joinedload(Payroll.period),
 
-        joinedload(Payroll.deduction_breakdown),
-
-        # ✅ ADD LOANS
-        joinedload(Payroll.loan_payments)
-        .joinedload(LoanPayment.loan)
+        # ✅ correct relationship
+        joinedload(Payroll.deduction_breakdown)
 
     )
 
     # -------------------------
-    # FILTERS
+    # Filters
     # -------------------------
 
     if department_id:
@@ -276,7 +273,7 @@ def view_payrolls():
     )
 
     # -------------------------
-    # PROCESSING
+    # Process rows
     # -------------------------
 
     for payroll in payrolls.items:
@@ -290,7 +287,7 @@ def view_payrolls():
         )
 
         # -------------------------
-        # ATTENDANCE
+        # Attendance
         # -------------------------
 
         if employee and payroll.period:
@@ -303,31 +300,36 @@ def view_payrolls():
             emp_type = payroll.employee_type
 
             if emp_type == "Regular":
+
                 payroll.days_worked = sum(
                     1 for a in attendances if a.status != "Absent"
                 )
 
             elif emp_type == "Part-Time":
+
                 payroll.working_hours = round(
                     sum(a.working_hours for a in attendances),
                     2
                 )
 
             elif emp_type in ["Casual", "Job Order (JO)", "Job Orders"]:
+
                 payroll.days_worked = sum(
                     1 for a in attendances if a.status != "Absent"
                 )
 
             else:
+
                 payroll.days_worked = 0
                 payroll.working_hours = 0
 
         else:
+
             payroll.days_worked = 0
             payroll.working_hours = 0
 
         # -------------------------
-        # RATES
+        # Rates
         # -------------------------
 
         payroll.hourly_rate_value = (
@@ -344,7 +346,7 @@ def view_payrolls():
         payroll.gross_pay = payroll.gross_pay or 0
 
         # -------------------------
-        # DEDUCTIONS
+        # FIX DEDUCTIONS
         # -------------------------
 
         total_deductions = sum(
@@ -353,32 +355,8 @@ def view_payrolls():
 
         payroll.total_deductions = round(total_deductions, 2)
 
-        # -------------------------
-        # 💥 LOAN DEDUCTIONS (NEW)
-        # -------------------------
-
-        loan_breakdown = []
-        loan_total = 0
-
-        for lp in payroll.loan_payments:
-
-            amount = lp.amount_paid or 0
-            loan_total += amount
-
-            loan_breakdown.append({
-                "name": f"{lp.loan.provider} ({lp.loan.loan_type})",
-                "amount": amount
-            })
-
-        payroll.loan_total = round(loan_total, 2)
-        payroll.loan_breakdown = loan_breakdown
-
-        # -------------------------
-        # NET PAY
-        # -------------------------
-
         payroll.net_pay = round(
-            payroll.gross_pay - payroll.total_deductions - payroll.loan_total,
+            payroll.gross_pay - payroll.total_deductions,
             2
         )
 
@@ -458,6 +436,21 @@ def payroll_departments():
     )
 
 
+
+@payroll_staff_bp.route("/jo-select-periods")
+@login_required
+@staff_required
+def jo_select_period():
+
+    periods = PayrollPeriod.query.order_by(
+        PayrollPeriod.start_date.desc()
+    ).all()
+
+    return render_template(
+        "payroll/staff/views/jo_select_period.html",
+        periods=periods
+    )
+
   
 @payroll_staff_bp.route("/regular-select-periods")
 @login_required
@@ -500,45 +493,9 @@ def casual_select_period():
         PayrollPeriod.start_date.desc()
     ).all()
 
-    filtered_periods = []
-    for p in periods:
-        start_day = p.start_date.day
-        end_day = p.end_date.day
-        last_day = monthrange(p.start_date.year, p.start_date.month)[1]
-
-        # Keep only bi-monthly periods
-        if (start_day == 1 and end_day == 15) or (start_day == 16 and end_day in (30,31,last_day)):
-            filtered_periods.append(p)
-
     return render_template(
         "payroll/staff/views/casual_select_period.html",
-        filtered_periods=filtered_periods
-    )
-
-
-@payroll_staff_bp.route("/jo-select-periods")
-@login_required
-@staff_required
-def jo_select_period():
-
-    periods = PayrollPeriod.query.order_by(
-        PayrollPeriod.start_date.desc()
-    ).all()
-
-    filtered_periods = []
-
-    for p in periods:
-        start_day = p.start_date.day
-        end_day = p.end_date.day
-        last_day = monthrange(p.start_date.year, p.start_date.month)[1]
-
-        # JO BI-MONTHLY FILTER (same structure as casual, but separated for clarity)
-        if (start_day == 1 and end_day == 15) or (start_day == 16 and end_day in (30, 31, last_day)):
-            filtered_periods.append(p)
-
-    return render_template(
-        "payroll/staff/views/jo_select_period.html",
-        periods=filtered_periods
+        periods=periods
     )
 
 

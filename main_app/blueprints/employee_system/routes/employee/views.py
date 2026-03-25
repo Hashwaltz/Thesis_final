@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 from main_app.models.hr_models import Employee, Attendance, LeaveCredit
 from main_app.models.payroll_models import Payslip
@@ -17,11 +17,10 @@ from main_app.blueprints.employee_system.routes.employee import employee_bp
 @login_required
 @employee_required
 def dashboard():
-
     employee = Employee.query.filter_by(user_id=current_user.id).first()
     if not employee:
+        flash("Employee not found")
         return redirect(url_for("employee_auth_bp.logout"))
-    
     # Attendance summary for current month
     today = date.today()
     attendances = Attendance.query.filter(

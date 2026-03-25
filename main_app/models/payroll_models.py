@@ -101,13 +101,6 @@ class Payroll(db.Model):
         lazy="selectin"
     )
 
-
-    loan_payments = db.relationship(
-        "LoanPayment",
-        back_populates="payroll",
-        cascade="all, delete-orphan"
-    )
-
     # -----------------------------------------------------
     # COMPUTED VALUES
     # -----------------------------------------------------
@@ -118,10 +111,7 @@ class Payroll(db.Model):
 
     @property
     def overtime_pay(self):
-        # treat None as 0
-        hours = self.overtime_hours or 0
-        rate = self.hourly_rate or 0
-        return round(rate * 1.25 * hours, 2)
+        return round(self.hourly_rate * 1.25 * self.overtime_hours, 2)
     
     @property
     def daily_rate(self):
@@ -569,74 +559,3 @@ class Tax(db.Model):
             return round((income * self.rate) + (self.fixed or 0), 2)
 
         return 0
-
-
-
-
-class Loan(db.Model):
-    __tablename__ = "loan"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    employee_id = db.Column(
-        db.Integer,
-        db.ForeignKey("employee.id")
-    )
-
-    employee = db.relationship("Employee", back_populates="loans")
-
-    provider = db.Column(db.String(100))  
-    # Example: Pag-IBIG, SSS, MENPC
-
-    loan_type = db.Column(db.String(100))  
-    # Example: MPL, Salary Loan, Emergency Loan
-
-    total_amount = db.Column(db.Float)
-
-    monthly_payment = db.Column(db.Float)
-
-    remaining_balance = db.Column(db.Float)
-
-    start_date = db.Column(db.Date)
-
-    active = db.Column(db.Boolean, default=True)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # RELATIONSHIP
-    payments = db.relationship(
-        "LoanPayment",
-        back_populates="loan",
-        cascade="all, delete-orphan"
-    )
-
-
-
-
-class LoanPayment(db.Model):
-    __tablename__ = "loan_payment"
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    loan_id = db.Column(
-        db.Integer,
-        db.ForeignKey("loan.id"),
-        nullable=False
-    )
-
-    payroll_id = db.Column(
-        db.Integer,
-        db.ForeignKey("payroll.id"),
-        nullable=False
-    )
-
-    amount_paid = db.Column(db.Float)
-
-    remaining_balance = db.Column(db.Float)
-
-    payment_date = db.Column(db.Date)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    loan = db.relationship("Loan", back_populates="payments")
-    payroll = db.relationship("Payroll", back_populates="loan_payments")

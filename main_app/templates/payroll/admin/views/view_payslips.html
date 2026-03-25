@@ -1,44 +1,64 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Payroll Admin - Payslips{% endblock %}
+{% block title %}Payslips | Payroll Admin {% endblock %}
 
 {% block content %}
 
-<section class="p-6 space-y-8 text-gray-200 min-h-screen bg-gray-900">
+<section class="p-6 space-y-6 text-gray-200 min-h-screen bg-gray-900">
 
 <!-- HEADER -->
-<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div class="flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
 
 <div>
-<h1 class="text-3xl font-bold text-emerald-400 tracking-wide">
+<h1 class="text-3xl font-bold text-emerald-400">
 Payslip Management
 </h1>
-<p class="text-gray-400 text-sm">
+<p class="text-sm text-gray-400">
 Manage employee payslips and distribution status
 </p>
 </div>
 
 </div>
 
+<!-- ================= SUMMARY CARDS ================= -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-<!-- ================= FILTER + SEARCH CARD ================= -->
+<div class="bg-gray-800 border border-gray-700 rounded-2xl p-4">
+<p class="text-gray-400 text-sm">Total Payslips</p>
+<p class="text-2xl font-bold text-emerald-400">{{ payslips.total }}</p>
+</div>
 
-<div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-4">
+<div class="bg-gray-800 border border-gray-700 rounded-2xl p-4">
+<p class="text-gray-400 text-sm">Not Claimed</p>
+<p class="text-2xl font-bold text-yellow-400">
+{{ not_claimed_count or 0 }}
+</p>
+</div>
 
-<!-- Search -->
+<div class="bg-gray-800 border border-gray-700 rounded-2xl p-4">
+<p class="text-gray-400 text-sm">Claimed</p>
+<p class="text-2xl font-bold text-green-400">
+{{ claimed_count or 0 }}
+</p>
+</div>
+
+</div>
+
+<!-- ================= FILTER CARD ================= -->
+<div class="bg-gray-800 border border-gray-700 rounded-2xl p-5 shadow-xl">
+
 <form method="get"
 action="{{ url_for('payroll_admin_bp.view_payslips') }}"
-class="flex flex-wrap gap-4 items-center">
+class="grid grid-cols-1 md:grid-cols-4 gap-3">
 
 <input type="text"
 name="search"
 value="{{ search or '' }}"
-placeholder="Search employee or payslip number..."
-class="flex-1 min-w-[260px] px-4 py-2 rounded-xl bg-gray-900 border border-gray-700
-focus:ring-2 focus:ring-emerald-600 outline-none transition">
+placeholder="Search employee or payslip no..."
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700 text-sm">
 
 <select name="department_id"
 onchange="this.form.submit()"
-class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700 text-sm">
 
 <option value="">All Departments</option>
 {% for dept in departments %}
@@ -52,20 +72,19 @@ class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
 
 <select name="status"
 onchange="this.form.submit()"
-class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700 text-sm">
 
 <option value="">All Status</option>
-<option value="Not Claimed" {% if selected_status=="Not Claimed" %}selected{% endif %}>Not Claimed</option>
-<option value="Claimed" {% if selected_status=="Claimed" %}selected{% endif %}>Claimed</option>
+<option value="0" {% if selected_status=="0" %}selected{% endif %}>Not Claimed</option>
+<option value="1" {% if selected_status=="1" %}selected{% endif %}>Claimed</option>
 
 </select>
 
 <select name="period_id"
 onchange="this.form.submit()"
-class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
+class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700 text-sm">
 
 <option value="">All Periods</option>
-
 {% for period in payroll_periods %}
 <option value="{{ period.id }}"
 {% if period.id == selected_period %}selected{% endif %}>
@@ -79,39 +98,39 @@ class="px-4 py-2 rounded-xl bg-gray-900 border border-gray-700">
 
 </form>
 
+<!-- CLEAR FILTER -->
+<div class="mt-3 flex justify-end">
+  <a href="{{ url_for('payroll_admin_bp.view_payslips') }}"
+     class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600
+            text-gray-200 text-sm rounded-xl transition shadow-sm">
+
+    <i class="fa-solid fa-filter-circle-xmark"></i>
+    Clear Filters
+  </a>
 </div>
 
+</div>
 
 <!-- ================= ACTIONS ================= -->
-
-<div class="flex flex-wrap gap-3">
+<div class="flex gap-3 flex-wrap">
 
 <button id="generatePayslipsByPeriodBtn"
-class="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700
-rounded-xl transition shadow-md">
+class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white flex items-center gap-2">
 
-<span>📄</span>
-Generate Payslips by Period
+<i class="fa-solid fa-file-invoice-dollar"></i>
+Generate Payslips
 </button>
 
 </div>
 
-
-<!-- ================= TABLE CARD ================= -->
-
+<!-- ================= TABLE ================= -->
 <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow-xl overflow-hidden">
-
-<div class="p-5 border-b border-gray-700">
-<h2 class="text-lg font-semibold text-emerald-400">
-Payslip Records
-</h2>
-</div>
 
 <div class="overflow-x-auto">
 
 <table class="w-full text-sm">
 
-<thead class="bg-gray-900 text-emerald-400 uppercase text-xs tracking-wider">
+<thead class="bg-gray-900 text-emerald-400 text-xs uppercase">
 <tr>
 <th class="p-4 text-left">Payslip No</th>
 <th class="p-4 text-left">Employee</th>
@@ -127,8 +146,7 @@ Payslip Records
 <tbody class="divide-y divide-gray-700">
 
 {% for p in payslips.items %}
-
-<tr class="hover:bg-gray-700/40 transition">
+<tr class="hover:bg-gray-700/30 transition">
 
 <td class="p-4 font-medium">{{ p.payslip_number }}</td>
 
@@ -136,66 +154,65 @@ Payslip Records
 {{ p.employee.first_name }} {{ p.employee.last_name }}
 </td>
 
-<td class="p-4">
+<td class="p-4 text-gray-400">
 {{ p.employee.department.name if p.employee.department else '-' }}
 </td>
 
-<td class="p-4">
-{{ p.pay_period_start }} → {{ p.pay_period_end }}
+<td class="p-4 text-gray-400">
+{% set period = period_map.get(p.payroll_id) %}
+
+{% if period %}
+    {{ period.start_date.strftime('%Y-%m-%d') }}
+    →
+    {{ period.end_date.strftime('%Y-%m-%d') }}
+{% else %}
+    -
+{% endif %}
 </td>
 
 <td class="p-4 text-right text-emerald-400 font-semibold">
 ₱ {{ "{:,.2f}".format(p.net_pay) }}
 </td>
 
-<td class="p-4 text-center text-gray-400 text-xs">
+<td class="p-4 text-center text-xs text-gray-500">
 {{ p.generated_at.strftime('%Y-%m-%d') }}
 </td>
 
+<!-- ================= STATUS (FIXED) ================= -->
 <td class="p-4 text-center">
 
-{% if p.status == 'Generated' %}
-<span class="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500 text-xs">
-Not Claimed
-</span>
-
-{% elif p.status == 'Distributed' %}
-<span class="px-3 py-1 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-600 text-xs">
+{% if p.claimed %}
+<span class="status-badge px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs border border-green-500">
 Claimed
+</span>
+{% else %}
+<span class="status-badge px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs border border-yellow-500">
+Not Claimed
 </span>
 {% endif %}
 
 </td>
 
+<!-- ================= ACTION ================= -->
 <td class="p-4 text-center">
 
-{% if p.status == 'Generated' %}
+{% if not p.claimed %}
 <button type="button"
-class="distribute-btn px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm transition"
-data-url="{{ url_for('payroll_admin_bp.distribute_payslip', payslip_id=p.id) }}">
-
-Mark as Claimed
+class="distribute-btn px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm"
+data-url="{{ url_for('payroll_admin_bp.claim_payslip', payslip_id=p.id) }}">
+Mark Claimed
 </button>
 
 {% else %}
 <button disabled
 class="px-4 py-1.5 bg-gray-600 rounded-lg text-sm opacity-60">
-Claimed
+Done
 </button>
 {% endif %}
 
 </td>
 
 </tr>
-
-{% else %}
-
-<tr>
-<td colspan="8" class="p-8 text-center text-gray-400">
-No payslips found.
-</td>
-</tr>
-
 {% endfor %}
 
 </tbody>
@@ -204,71 +221,59 @@ No payslips found.
 </div>
 </div>
 
-
 <!-- ================= PAGINATION ================= -->
+<div class="flex justify-between items-center text-sm text-gray-400">
 
-<div class="flex justify-center items-center gap-6 text-gray-300">
+<div>
+Page {{ payslips.page }} of {{ payslips.pages }}
+</div>
+
+<div class="flex gap-2">
 
 {% if payslips.has_prev %}
-<a href="{{ url_for('payroll_admin_bp.view_payslips',
-page=payslips.prev_num,
-search=search,
-department_id=selected_department,
-status=selected_status,
-period_id=selected_period) }}"
-
-class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
-Previous
+<a href="{{ url_for('payroll_admin_bp.view_payslips', page=payslips.prev_num) }}"
+class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
+Prev
 </a>
 {% endif %}
 
-<span class="text-gray-400">
-Page {{ payslips.page }} of {{ payslips.pages }}
-</span>
-
 {% if payslips.has_next %}
-<a href="{{ url_for('payroll_admin_bp.view_payslips',
-page=payslips.next_num,
-search=search,
-department_id=selected_department,
-status=selected_status,
-period_id=selected_period) }}"
-
-class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+<a href="{{ url_for('payroll_admin_bp.view_payslips', page=payslips.next_num) }}"
+class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600">
 Next
 </a>
 {% endif %}
 
 </div>
 
+</div>
+
 </section>
 
-
 <!-- ================= SCRIPTS ================= -->
-
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 
-// Generate Payslips
+// Generate payslips
 document.getElementById("generatePayslipsByPeriodBtn").addEventListener("click", function(){
 
 Swal.fire({
-title:'Generate Payslips?',
-icon:'question',
-showCancelButton:true,
-confirmButtonColor:'#10b981'
-}).then(result=>{
+title: 'Generate Payslips?',
+text: 'This will create payslips for selected period.',
+icon: 'question',
+showCancelButton: true,
+confirmButtonColor: '#10b981'
+}).then(result => {
 if(result.isConfirmed){
-window.location.href =
-"{{ url_for('payroll_admin_bp.generate_payslips_by_period') }}";
+window.location.href = "{{ url_for('payroll_admin_bp.generate_payslips_by_period') }}";
 }
 });
 
 });
 
-// Mark as Claimed
-document.querySelectorAll('.distribute-btn').forEach(btn=>{
+// Mark as claimed
+document.querySelectorAll('.distribute-btn').forEach(btn => {
 
 btn.addEventListener('click', function(){
 
@@ -276,34 +281,31 @@ const url = this.dataset.url;
 const row = this.closest('tr');
 
 Swal.fire({
-title:'Mark as Claimed?',
-icon:'warning',
-showCancelButton:true,
-confirmButtonColor:'#10b981'
-}).then(result=>{
+title: 'Mark as Claimed?',
+icon: 'warning',
+showCancelButton: true,
+confirmButtonColor: '#10b981'
+}).then(result => {
 
 if(result.isConfirmed){
 
-fetch(url,{method:'POST'})
-.then(()=>{
+fetch(url, {method: 'POST'})
+.then(() => {
 
-const badge = row.querySelector('span');
-if(badge){
-badge.innerText='Claimed';
-badge.className =
-"px-3 py-1 rounded-full bg-emerald-600/20 text-emerald-400 border border-emerald-600 text-xs";
-}
+this.disabled = true;
+this.innerText = "Done";
+this.classList.add("bg-gray-600", "opacity-60");
 
-this.disabled=true;
-this.innerText="Claimed";
-this.classList.remove("bg-emerald-600","hover:bg-emerald-700");
-this.classList.add("bg-gray-600","opacity-60");
+// update badge safely
+const badge = row.querySelector(".status-badge");
+badge.className = "status-badge px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs border border-green-500";
+badge.innerText = "Claimed";
 
 Swal.fire({
-icon:'success',
-title:'Payslip claimed',
-timer:1500,
-showConfirmButton:false
+icon: 'success',
+title: 'Updated',
+timer: 1200,
+showConfirmButton: false
 });
 
 });

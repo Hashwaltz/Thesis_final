@@ -23,4 +23,3 @@ from . import payroll_services
 from . import periods_services
 from . import payslips
 from . import reports
-from . import loans
