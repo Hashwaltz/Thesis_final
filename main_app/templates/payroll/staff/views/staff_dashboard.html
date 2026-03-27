@@ -1,117 +1,106 @@
 {% extends "payroll/staff/staff_base.html" %}
 
-{% block title %}Staff Dashboard{% endblock %}
-{% block page_title %}Staff Dashboard{% endblock %}
+{% block title %}Dashboard | Payroll Staff{% endblock %}
+{% block page_title %}Dashboard {% endblock %}
 
 {% block content %}
-<section class="space-y-8">
+<section class="space-y-8 p-4 sm:p-6">
 
-  <h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-    <i class="fa-solid fa-user-clock text-3xl"></i>
+  <!-- HEADER -->
+  <h1 class="text-2xl sm:text-3xl font-semibold text-emerald-400 flex items-center gap-3">
+    <i class="fa-solid fa-user-clock text-3xl sm:text-4xl"></i>
     Staff Dashboard
   </h1>
 
   <!-- KPI GRID -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    
     <!-- Active Employees -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-emerald-600/20 rounded-full">
-        <i class="fa-solid fa-users text-emerald-400 text-3xl"></i>
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 flex items-center gap-4 hover:scale-105 transition-transform">
+      <div class="p-3 bg-emerald-600/20 rounded-full flex-shrink-0">
+        <i class="fa-solid fa-users text-emerald-400 text-2xl sm:text-3xl"></i>
       </div>
-      <div>
-        <p class="text-gray-400">Active Employees</p>
-        <h2 class="text-3xl font-bold text-emerald-400">{{ total_employees }}</h2>
+      <div class="truncate">
+        <p class="text-gray-400 text-sm sm:text-base truncate">Active Employees</p>
+        <h2 class="text-2xl sm:text-3xl font-bold text-emerald-400 truncate">{{ total_employees }}</h2>
       </div>
     </div>
 
     <!-- Departments -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-      <div class="p-3 bg-blue-600/20 rounded-full">
-        <i class="fa-solid fa-building text-blue-400 text-3xl"></i>
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 flex items-center gap-4 hover:scale-105 transition-transform">
+      <div class="p-3 bg-blue-600/20 rounded-full flex-shrink-0">
+        <i class="fa-solid fa-building text-blue-400 text-2xl sm:text-3xl"></i>
       </div>
-      <div>
-        <p class="text-gray-400">Departments</p>
-        <h2 class="text-3xl font-bold text-blue-400">{{ total_departments }}</h2>
+      <div class="truncate">
+        <p class="text-gray-400 text-sm sm:text-base truncate">Departments</p>
+        <h2 class="text-2xl sm:text-3xl font-bold text-blue-400 truncate">{{ total_departments }}</h2>
       </div>
     </div>
 
     <!-- Payroll Pipeline -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col gap-2">
-      <p class="text-gray-400">Payroll Pipeline</p>
-      <div class="flex justify-between text-sm text-gray-300">
-        <span>Draft:</span> <span>{{ pending_payrolls }}</span>
-      </div>
-      <div class="flex justify-between text-sm text-gray-300">
-        <span>Processing:</span> <span>{{ processing_payrolls }}</span>
-      </div>
-      <div class="flex justify-between text-sm text-gray-300">
-        <span>Completed:</span> <span>{{ completed_payrolls }}</span>
-      </div>
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 flex flex-col gap-2 hover:scale-105 transition-transform">
+      <p class="text-gray-400 text-sm sm:text-base">Payroll Pipeline</p>
+      <div class="flex justify-between text-xs sm:text-sm text-gray-300"><span>Draft:</span> <span>{{ pending_payrolls }}</span></div>
+      <div class="flex justify-between text-xs sm:text-sm text-gray-300"><span>Processing:</span> <span>{{ processing_payrolls }}</span></div>
+      <div class="flex justify-between text-xs sm:text-sm text-gray-300"><span>Completed:</span> <span>{{ completed_payrolls }}</span></div>
     </div>
 
     <!-- Payslip Status -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col gap-2">
-      <p class="text-gray-400">Payslip Status</p>
-      <div class="flex justify-between text-sm text-gray-300">
-        <span>Generated:</span> <span>{{ generated_payslips }}</span>
-      </div>
-      <div class="flex justify-between text-sm text-gray-300">
-        <span>Claimed:</span> <span>{{ claimed_payslips }}</span>
-      </div>
-      <div class="flex justify-between text-sm text-gray-300 mt-2 font-semibold">
-        <span>Queue Size:</span> <span>{{ payroll_queue_size }}</span>
-      </div>
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 flex flex-col gap-2 hover:scale-105 transition-transform">
+      <p class="text-gray-400 text-sm sm:text-base">Payslip Status</p>
+      <div class="flex justify-between text-xs sm:text-sm text-gray-300"><span>Generated:</span> <span>{{ generated_payslips }}</span></div>
+      <div class="flex justify-between text-xs sm:text-sm text-gray-300"><span>Claimed:</span> <span>{{ claimed_payslips }}</span></div>
+      <div class="flex justify-between text-sm mt-2 font-semibold"><span>Queue Size:</span> <span>{{ payroll_queue_size }}</span></div>
     </div>
 
   </div>
 
   <!-- Open Payroll Period -->
-  <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex justify-between items-center">
-    <p class="text-gray-400">Current Payroll Period:</p>
+  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+    <p class="text-gray-400 text-sm sm:text-base">Current Payroll Period:</p>
     {% if has_open_period %}
-      <span class="text-green-400 font-semibold">{{ current_period.period_name }} (Open)</span>
+      <span class="text-green-400 font-semibold text-sm sm:text-base truncate">{{ current_period.period_name }} (Open)</span>
     {% else %}
-      <span class="text-red-400 font-semibold">No Open Period</span>
+      <span class="text-red-400 font-semibold text-sm sm:text-base">No Open Period</span>
     {% endif %}
   </div>
 
   <!-- Monthly Payroll Overview -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <p class="text-gray-400">Payrolls Processed This Month</p>
-      <h2 class="text-3xl font-bold text-purple-400">{{ monthly_completed_payrolls }}</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 hover:scale-105 transition-transform">
+      <p class="text-gray-400 text-sm sm:text-base truncate">Payrolls Processed This Month</p>
+      <h2 class="text-2xl sm:text-3xl font-bold text-purple-400 truncate">{{ monthly_completed_payrolls }}</h2>
     </div>
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <p class="text-gray-400">Payslips Generated This Month</p>
-      <h2 class="text-3xl font-bold text-yellow-400">{{ monthly_generated_payslips }}</h2>
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 hover:scale-105 transition-transform">
+      <p class="text-gray-400 text-sm sm:text-base truncate">Payslips Generated This Month</p>
+      <h2 class="text-2xl sm:text-3xl font-bold text-yellow-400 truncate">{{ monthly_generated_payslips }}</h2>
     </div>
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <p class="text-gray-400">Unclaimed Payslips</p>
-      <h2 class="text-3xl font-bold text-red-400">{{ unclaimed_count }}</h2>
+    <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 hover:scale-105 transition-transform">
+      <p class="text-gray-400 text-sm sm:text-base truncate">Unclaimed Payslips</p>
+      <h2 class="text-2xl sm:text-3xl font-bold text-red-400 truncate">{{ unclaimed_count }}</h2>
     </div>
   </div>
 
   <!-- Attendance Chart -->
-  <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 mt-6">
-    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 mt-6 overflow-x-auto">
+    <h3 class="text-sm sm:text-base font-semibold text-emerald-400 mb-4 flex items-center gap-2">
       <i class="fa-solid fa-chart-line"></i> Monthly Attendance Overview
     </h3>
-    <div class="h-[400px]">
-      <canvas id="attendanceChart"></canvas>
+    <div class="w-full h-64 sm:h-96">
+      <canvas id="attendanceChart" class="w-full h-full"></canvas>
     </div>
   </div>
 
   <!-- Recent Unclaimed Payslips -->
-  <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 mt-6">
-    <h3 class="text-sm font-semibold text-red-400 mb-4">
+  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 mt-6 overflow-x-auto">
+    <h3 class="text-sm sm:text-base font-semibold text-red-400 mb-4 flex items-center gap-2">
       <i class="fa-solid fa-file-invoice-dollar"></i> Pending Payslips (Action Required)
     </h3>
     <ul class="space-y-2">
       {% for ps in unclaimed_payslips %}
-      <li class="flex justify-between items-center p-2 bg-gray-900 rounded-lg">
-        <span>{{ ps.employee.full_name if ps.employee else "Unknown" }}</span>
-        <span class="text-sm text-gray-400">{{ ps.generated_at.strftime("%Y-%m-%d") }}</span>
+      <li class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 bg-gray-900 rounded-lg min-w-[220px]">
+        <span class="truncate">{{ ps.employee.full_name if ps.employee else "Unknown" }}</span>
+        <span class="text-sm text-gray-400 mt-1 sm:mt-0">{{ ps.generated_at.strftime("%Y-%m-%d") }}</span>
       </li>
       {% else %}
       <li class="text-gray-400">No pending payslips</li>
@@ -121,49 +110,52 @@
 
 </section>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', ()=>{
-
-const ctx = document.getElementById('attendanceChart');
-
-new Chart(ctx,{
-  type:'line',
-  data:{
-    labels: {{ monthly_dates | tojson }},
-    datasets:[
-      {
-        label:'Present',
-        data: {{ monthly_present_counts | tojson }},
-        borderColor:'#10b981',
-        backgroundColor:'#10b98133',
-        tension:0.4,
-        fill:true
-      },
-      {
-        label:'Absent',
-        data: {{ monthly_absent_counts | tojson }},
-        borderColor:'#ef4444',
-        backgroundColor:'#ef444433',
-        tension:0.4,
-        fill:true
-      },
-      {
-        label:'Late',
-        data: {{ monthly_late_counts | tojson }},
-        borderColor:'#fbbf24',
-        backgroundColor:'#fbbf2433',
-        tension:0.4,
-        fill:true
+  const ctx = document.getElementById('attendanceChart');
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels: {{ monthly_dates | tojson }},
+      datasets:[
+        {
+          label:'Present',
+          data: {{ monthly_present_counts | tojson }},
+          borderColor:'#10b981',
+          backgroundColor:'#10b98133',
+          tension:0.4,
+          fill:true
+        },
+        {
+          label:'Absent',
+          data: {{ monthly_absent_counts | tojson }},
+          borderColor:'#ef4444',
+          backgroundColor:'#ef444433',
+          tension:0.4,
+          fill:true
+        },
+        {
+          label:'Late',
+          data: {{ monthly_late_counts | tojson }},
+          borderColor:'#fbbf24',
+          backgroundColor:'#fbbf2433',
+          tension:0.4,
+          fill:true
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#e5e7eb' } } },
+      scales:{
+        x:{ ticks:{ color:'#e5e7eb' }, grid:{ color:'#374151' } },
+        y:{ ticks:{ color:'#e5e7eb' }, grid:{ color:'#374151' } }
       }
-    ]
-  },
-  options:{
-    responsive:true,
-    maintainAspectRatio:false
-  }
-});
-
+    }
+  });
 });
 </script>
 {% endblock %}

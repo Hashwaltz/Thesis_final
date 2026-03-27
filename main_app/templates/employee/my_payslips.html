@@ -1,12 +1,11 @@
 {% extends 'employee/employee_base.html' %}
-{% block title %}My Payslips{% endblock %}
+{% block title %}My Payslips | Employee{% endblock %}
 
 {% block content %}
-
 <div class="max-w-6xl mx-auto space-y-6">
 
   <!-- HEADER -->
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow">
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-md">
     <h1 class="text-2xl font-bold text-white">My Payslips</h1>
     <p class="text-gray-400 text-sm mt-1">
       View all your payroll records (latest first)
@@ -17,46 +16,39 @@
   <div class="space-y-4">
 
     {% if payrolls %}
-
       {% for p in payrolls %}
-      <div class="bg-gray-950 border border-gray-800 rounded-2xl shadow hover:border-green-500 transition">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow hover:shadow-lg hover:border-green-500 transition duration-200">
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between p-5 gap-4">
 
-          <!-- LEFT -->
+          <!-- LEFT: Period Info -->
           <div>
             <h2 class="text-lg font-semibold text-white">
               {{ p.period.period_name }}
             </h2>
-
             <p class="text-sm text-gray-400">
-              {{ p.period.start_date.strftime('%b %d, %Y') }}
-              -
-              {{ p.period.end_date.strftime('%b %d, %Y') }}
+              {{ p.period.start_date.strftime('%b %d, %Y') }} - {{ p.period.end_date.strftime('%b %d, %Y') }}
             </p>
-
             <p class="text-xs text-gray-500 mt-1">
-              Pay Date:
-              {{ p.period.pay_date.strftime('%b %d, %Y') if p.period.pay_date else 'N/A' }}
+              Pay Date: {{ p.period.pay_date.strftime('%b %d, %Y') if p.period.pay_date else 'N/A' }}
             </p>
           </div>
 
-          <!-- NET PAY -->
+          <!-- CENTER: Net Pay -->
           <div class="text-left md:text-center">
             <p class="text-gray-400 text-sm">Net Pay</p>
-            <p class="text-xl font-bold text-green-400">
+            <p class="text-2xl font-bold text-green-400">
               ₱{{ "{:,.2f}".format(p.net_pay or 0) }}
             </p>
           </div>
 
-          <!-- ACTION -->
-          <div class="flex items-center gap-3">
+          <!-- RIGHT: Actions -->
+          <div class="flex flex-wrap items-center gap-3 md:justify-end">
             <span class="px-3 py-1 text-xs rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
               Available
             </span>
-
             <a href="{{ url_for('employee_bp.view_payslip', id=p.id) }}"
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition">
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200">
               View Payslip
             </a>
           </div>
@@ -67,20 +59,17 @@
       {% endfor %}
 
     {% else %}
-
-      <!-- EMPTY -->
-      <div class="bg-gray-950 border border-gray-800 rounded-2xl p-10 text-center">
+      <!-- EMPTY STATE -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center shadow-inner">
         <h3 class="text-white text-lg font-semibold">
           No Payslips Found
         </h3>
-        <p class="text-gray-400 text-sm mt-1">
+        <p class="text-gray-400 text-sm mt-2">
           Your payroll records will appear here once processed.
         </p>
       </div>
-
     {% endif %}
 
   </div>
 </div>
-
 {% endblock %}

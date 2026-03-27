@@ -3,18 +3,23 @@
 
 {% block content %}
 
-<section class="p-6 space-y-6 text-gray-200">
+<section class="p-4 sm:p-6 space-y-6 text-gray-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
 
 <!-- ===== HEADER ===== -->
-<header class="flex justify-between items-center">
+<header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
 
-  <h1 class="text-2xl font-semibold text-emerald-400">
-    {{ action }} Loan
-  </h1>
+  <div class="flex items-center gap-3">
+    <div class="p-3 bg-emerald-500/20 rounded-xl">
+      <i class="fa-solid fa-money-check-dollar text-emerald-400"></i>
+    </div>
+    <h1 class="text-xl sm:text-2xl font-bold text-white">
+      {{ action }} Loan
+    </h1>
+  </div>
 
   <a href="{{ url_for('payroll_admin_bp.loans') }}"
-     class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
-    Back to Loans
+     class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition flex items-center gap-2">
+    <i class="fa-solid fa-arrow-left"></i> Back
   </a>
 
 </header>
@@ -34,7 +39,9 @@ document.addEventListener("DOMContentLoaded", function(){
     toast:true,
     position:'top-end',
     timer:2500,
-    showConfirmButton:false
+    showConfirmButton:false,
+    background:'#1f2937',
+    color:'#e5e7eb'
   });
   {% endfor %}
 });
@@ -45,148 +52,110 @@ document.addEventListener("DOMContentLoaded", function(){
 
 <!-- ===== FORM ===== -->
 <form method="POST"
-class="bg-gray-800 p-6 rounded-2xl border border-gray-700 max-w-lg space-y-5">
+class="bg-slate-800/70 backdrop-blur-md p-6 rounded-2xl border border-slate-700 max-w-2xl space-y-5 shadow-lg">
 
 <!-- Employee -->
-<div>
-  <label class="block mb-2 text-gray-300">Employee</label>
-
+<div class="relative">
+  <label class="block mb-1 text-gray-400 text-sm">Employee</label>
+  <i class="fa-solid fa-user absolute left-3 top-9 text-gray-400"></i>
   <select name="employee_id"
-          class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none"
+          class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
           required>
-
     <option value="">Select Employee</option>
-
     {% for emp in employees %}
     <option value="{{ emp.id }}"
       {% if loan and loan.employee_id == emp.id %}selected{% endif %}>
       {{ emp.get_full_name() }}
     </option>
     {% endfor %}
-
   </select>
 </div>
-
 
 <!-- Provider -->
-<div>
-  <label class="block mb-2 text-gray-300">Loan Provider</label>
-
+<div class="relative">
+  <label class="block mb-1 text-gray-400 text-sm">Loan Provider</label>
+  <i class="fa-solid fa-building-columns absolute left-3 top-9 text-gray-400"></i>
   <select name="provider"
-          class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none"
+          class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
           required>
-
     <option value="">Select Provider</option>
-
-    <option value="Pag-IBIG"
-      {% if loan and loan.provider == 'Pag-IBIG' %}selected{% endif %}>
-      Pag-IBIG
-    </option>
-
-    <option value="SSS"
-      {% if loan and loan.provider == 'SSS' %}selected{% endif %}>
-      SSS
-    </option>
-
-     <option value="GSIS"
-      {% if loan and loan.provider == 'GSIS' %}selected{% endif %}>
-      GSIS
-    </option>
-
-    <option value="MENPC"
-      {% if loan and loan.provider == 'MENPC' %}selected{% endif %}>
-      MENPC
-    </option>
-
+    <option value="Pag-IBIG" {% if loan and loan.provider == 'Pag-IBIG' %}selected{% endif %}>Pag-IBIG</option>
+    <option value="SSS" {% if loan and loan.provider == 'SSS' %}selected{% endif %}>SSS</option>
+    <option value="GSIS" {% if loan and loan.provider == 'GSIS' %}selected{% endif %}>GSIS</option>
+    <option value="MENPC" {% if loan and loan.provider == 'MENPC' %}selected{% endif %}>MENPC</option>
   </select>
 </div>
-
 
 <!-- Loan Type -->
-<div>
-  <label class="block mb-2 text-gray-300">Loan Type</label>
-
+<div class="relative">
+  <label class="block mb-1 text-gray-400 text-sm">Loan Type</label>
+  <i class="fa-solid fa-file-invoice-dollar absolute left-3 top-9 text-gray-400"></i>
   <select name="loan_type"
-          class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none"
+          class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
           required>
-
     <option value="">Select Type</option>
-
-    <option value="MPL"
-      {% if loan and loan.loan_type == 'MPL' %}selected{% endif %}>
-      Multi-Purpose Loan (MPL)
-    </option>
-
-    <option value="Salary Loan"
-      {% if loan and loan.loan_type == 'Salary Loan' %}selected{% endif %}>
-      Salary Loan
-    </option>
-
-    <option value="Emergency Loan"
-      {% if loan and loan.loan_type == 'Emergency Loan' %}selected{% endif %}>
-      Emergency Loan
-    </option>
-
-    <option value="Personal Loan"
-      {% if loan and loan.loan_type == 'Personal Loan' %}selected{% endif %}>
-      Personal Loan
-    </option>
-
+    <option value="MPL" {% if loan and loan.loan_type == 'MPL' %}selected{% endif %}>Multi-Purpose Loan (MPL)</option>
+    <option value="Salary Loan" {% if loan and loan.loan_type == 'Salary Loan' %}selected{% endif %}>Salary Loan</option>
+    <option value="Emergency Loan" {% if loan and loan.loan_type == 'Emergency Loan' %}selected{% endif %}>Emergency Loan</option>
+    <option value="Personal Loan" {% if loan and loan.loan_type == 'Personal Loan' %}selected{% endif %}>Personal Loan</option>
   </select>
 </div>
 
+<!-- Amounts Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-<!-- Total Amount -->
-<div>
-  <label class="block mb-2 text-gray-300">Total Amount</label>
+  <!-- Total Amount -->
+  <div class="relative">
+    <label class="block mb-1 text-gray-400 text-sm">Total Amount</label>
+    <i class="fa-solid fa-coins absolute left-3 top-9 text-gray-400"></i>
+    <input type="number" step="0.01"
+           name="total_amount"
+           value="{{ loan.total_amount if loan else '' }}"
+           class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
+           required>
+  </div>
 
-  <input type="number" step="0.01"
-         name="total_amount"
-         value="{{ loan.total_amount if loan else '' }}"
-         class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none"
-         required>
+  <!-- Monthly Payment -->
+  <div class="relative">
+    <label class="block mb-1 text-gray-400 text-sm">Monthly Payment</label>
+    <i class="fa-solid fa-calendar-dollar absolute left-3 top-9 text-gray-400"></i>
+    <input type="number" step="0.01"
+           name="monthly_payment"
+           value="{{ loan.monthly_payment if loan else '' }}"
+           class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
+           required>
+  </div>
+
 </div>
-
-
-<!-- Monthly Payment -->
-<div>
-  <label class="block mb-2 text-gray-300">Monthly Payment</label>
-
-  <input type="number" step="0.01"
-         name="monthly_payment"
-         value="{{ loan.monthly_payment if loan else '' }}"
-         class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 focus:ring-2 focus:ring-emerald-600 outline-none"
-         required>
-</div>
-
 
 <!-- Start Date -->
-<div>
-  <label class="block mb-2 text-gray-300">Start Date</label>
-
+<div class="relative">
+  <label class="block mb-1 text-gray-400 text-sm">Start Date</label>
+  <i class="fa-solid fa-calendar absolute left-3 top-9 text-gray-400"></i>
   <input type="date"
          name="start_date"
          value="{{ loan.start_date if loan else '' }}"
-         class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+         class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600">
 </div>
-
 
 <!-- Active -->
-<div class="flex items-center gap-2">
+<div class="flex items-center justify-between bg-slate-700/50 p-3 rounded-xl border border-slate-600">
+  <span class="text-gray-300 text-sm flex items-center gap-2">
+    <i class="fa-solid fa-toggle-on text-emerald-400"></i> Active Status
+  </span>
+
   <input type="checkbox"
          name="active"
-         class="w-4 h-4 accent-emerald-500"
+         class="w-5 h-5 accent-emerald-500"
          {% if not loan or loan.active %}checked{% endif %}>
-
-  <label class="text-gray-300">Active</label>
 </div>
-
 
 <!-- Submit -->
 <button type="button"
         id="loanSubmitBtn"
-        class="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition font-semibold">
+        class="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl transition font-semibold text-white shadow-md hover:shadow-emerald-500/20">
 
+  <i class="fa-solid fa-floppy-disk mr-1"></i>
   {{ action }}
 
 </button>
@@ -198,7 +167,6 @@ class="bg-gray-800 p-6 rounded-2xl border border-gray-700 max-w-lg space-y-5">
 
 <!-- ===== JS VALIDATION ===== -->
 <script>
-
 const form = document.querySelector("form");
 const submitBtn = document.getElementById("loanSubmitBtn");
 
@@ -209,14 +177,14 @@ submitBtn.addEventListener("click", function(){
   const type = form.loan_type.value;
 
   if(!employee || !provider || !type){
-
     Swal.fire({
       icon:'warning',
       title:'Missing Required Fields',
       text:'Employee, provider, and loan type are required',
-      confirmButtonColor:'#16a34a'
+      confirmButtonColor:'#16a34a',
+      background:'#1f2937',
+      color:'#e5e7eb'
     });
-
     return;
   }
 
@@ -225,7 +193,9 @@ submitBtn.addEventListener("click", function(){
     text:'Confirm loan details before saving',
     icon:'question',
     showCancelButton:true,
-    confirmButtonColor:'#16a34a'
+    confirmButtonColor:'#16a34a',
+    background:'#1f2937',
+    color:'#e5e7eb'
   }).then(result=>{
     if(result.isConfirmed){
       form.submit();
@@ -233,7 +203,6 @@ submitBtn.addEventListener("click", function(){
   });
 
 });
-
 </script>
 
 {% endblock %}

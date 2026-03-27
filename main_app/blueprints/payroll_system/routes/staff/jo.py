@@ -112,7 +112,7 @@ def preview_jo_payroll(period_id, department_id):
         if not second_half:
 
             sss = getattr(emp, "sss_rss", 0) or 0
-            phic = getattr(emp, "philhealth_share", 0) or 0
+            phic_emp, phic_gov = compute_philhealth(gross_pay)  # auto-compute from gross pay
 
             deductions.append({
                 "key": "sss",
@@ -125,12 +125,12 @@ def preview_jo_payroll(period_id, department_id):
             deductions.append({
                 "key": "philhealth",
                 "name": "PhilHealth",
-                "employee_share": phic,
+                "employee_share": phic_emp,  # auto-computed
                 "employer_share": 0,
-                "editable": True
+                "editable": True  # still editable
             })
 
-            total_deductions += (sss + phic)
+            total_deductions += sss + phic_emp
 
             allowed_loans = ALLOWED_LOAN_1_15
 
@@ -305,6 +305,8 @@ def process_jo_payroll(period_id, department_id):
                 ))
 
             phic_emp, phic_gov = compute_philhealth(gross_pay)
+
+            phic_emp = safe_float(request.form.get(f"philhealth_{emp.id}"))  # get submitted/edited value
 
             if phic_emp > 0:
                 total_deductions += phic_emp

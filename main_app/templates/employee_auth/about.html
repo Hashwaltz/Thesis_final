@@ -2,181 +2,135 @@
 {% block title %}About | Employee Portal{% endblock %}
 
 {% block content %}
-
 <section class="w-full bg-gray-950 text-gray-100">
 
-  <!-- Hero Section -->
+  <!-- HERO -->
+  <div class="relative bg-gradient-to-br from-purple-700 via-indigo-800 to-purple-900 py-24 text-center">
+    <div class="max-w-5xl mx-auto px-6">
 
-  <div class="relative bg-gradient-to-br from-purple-700 to-indigo-800 py-20 text-center">
-    <div class="max-w-4xl mx-auto px-6">
-      <h1 class="text-5xl font-bold mb-4 text-white">About the Employee Portal</h1>
-      <p class="text-gray-200 text-lg leading-relaxed">
-        Providing employees with secure and convenient access to their personal
-        records, attendance history, and payroll information.
+      <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">
+        About the Employee Portal
+      </h1>
+
+      <p class="text-gray-200 text-base sm:text-lg max-w-2xl mx-auto">
+        A modern platform that gives employees secure, fast, and convenient access
+        to their records, attendance, and payroll information.
       </p>
+
     </div>
   </div>
 
-  <!-- System Overview -->
+  <!-- OVERVIEW -->
+  <section class="max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
 
-  <div class="max-w-6xl mx-auto py-20 px-6 grid lg:grid-cols-2 gap-12 items-center">
     <div>
-      <h2 class="text-3xl font-bold mb-4 text-purple-400">Purpose of the Portal</h2>
-
-```
-  <p class="text-gray-300 leading-relaxed mb-6">
-    The <strong>GovHRPay Employee Portal</strong> is a self-service platform
-    designed to give government employees convenient access to their
-    personal employment records. Through this portal, employees can
-    securely view their profile information, attendance history,
-    payroll records, and other work-related information.
-  </p>
-
-  <p class="text-gray-300 leading-relaxed">
-    By integrating the portal with the Human Resource and Payroll systems,
-    employees can stay informed about their employment details without
-    needing to request records manually from HR offices. This promotes
-    transparency, efficiency, and improved communication between employees
-    and the administration.
-  </p>
-</div>
-
-<div class="flex justify-center">
-  <img
-    src="{{ url_for('static', filename='img/hr_about.avif') }}"
-    alt="Employee Portal Overview"
-    class="rounded-2xl shadow-2xl w-full max-w-md"
-  />
-</div>
-```
-
-  </div>
-
-  <!-- About Norzagaray Section -->
-
-  <section class="bg-gray-900 py-20">
-    <div class="max-w-6xl mx-auto px-6">
-      <h2 class="text-3xl font-bold text-center text-purple-400 mb-10">
-        About Norzagaray, Bulacan
+      <h2 class="text-3xl font-bold text-purple-400 mb-4">
+        Purpose of the Portal
       </h2>
 
-```
-  <div class="grid lg:grid-cols-2 gap-12 items-center">
-
-    <div>
-      <img
-        src="{{ url_for('static', filename='img/muni.jpg') }}"
-        alt="Norzagaray Landscape"
-        class="rounded-2xl shadow-lg w-full"
-      />
-    </div>
-
-    <div>
-      <p class="text-gray-300 mb-4 leading-relaxed">
-        <strong>Norzagaray</strong> is a 1st class municipality located in
-        the province of Bulacan, Philippines. It is well known for its
-        scenic landscapes, historical heritage, and natural attractions
-        such as Angat Dam and the Ipo Dam watershed area.
+      <p class="text-gray-300 leading-relaxed mb-4">
+        <strong>GovHRPay Employee Portal</strong> is a self-service system that allows
+        employees to access their employment information anytime, anywhere.
       </p>
 
-      <p class="text-gray-300 mb-4 leading-relaxed">
-        Established in 1860, Norzagaray has grown into a vibrant community
-        committed to progress and innovation. The municipality continues
-        to strengthen its governance through digital transformation and
-        modern public service systems.
+      <p class="text-gray-300 leading-relaxed mb-4">
+        It integrates HR and Payroll systems into one platform—eliminating manual
+        requests and improving accessibility to employee records.
       </p>
 
       <p class="text-gray-300 leading-relaxed">
-        The implementation of systems like <strong>GovHRPay</strong> and
-        the Employee Portal reflects the local government's commitment
-        to improving efficiency, transparency, and accessibility of
-        services for its workforce.
+        This system enhances <span class="text-purple-400 font-medium">transparency</span>,
+        <span class="text-purple-400 font-medium">efficiency</span>, and
+        <span class="text-purple-400 font-medium">communication</span> within the organization.
       </p>
     </div>
 
-  </div>
-</div>
-```
+    <div class="flex justify-center">
+      <img src="{{ url_for('static', filename='img/hr_about.avif') }}"
+           class="rounded-2xl shadow-2xl w-full max-w-md hover:scale-105 transition duration-300"
+           alt="Portal Overview">
+    </div>
 
   </section>
 
-  <!-- Social Media Section -->
+  <!-- NORZAGARAY -->
+  <section class="bg-gray-900 py-20">
+    <div class="max-w-7xl mx-auto px-6">
 
+      <h2 class="text-3xl font-bold text-center text-purple-400 mb-12">
+        About Norzagaray, Bulacan
+      </h2>
+
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+        <img src="{{ url_for('static', filename='img/muni.jpg') }}"
+             class="rounded-2xl shadow-lg w-full">
+
+        <div>
+          <p class="text-gray-300 mb-4 leading-relaxed">
+            <strong>Norzagaray</strong> is a 1st class municipality in Bulacan known
+            for its natural beauty, including Angat and Ipo Dam.
+          </p>
+
+          <p class="text-gray-300 mb-4 leading-relaxed">
+            Established in 1860, it continues to evolve through digital transformation
+            and improved public service systems.
+          </p>
+
+          <p class="text-gray-300 leading-relaxed">
+            Systems like <strong>GovHRPay</strong> reflect the municipality’s commitment
+            to innovation, transparency, and efficiency.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SOCIAL -->
   <section class="bg-gradient-to-r from-purple-800 to-indigo-800 py-16 text-center">
-    <div class="max-w-4xl mx-auto px-6">
 
-```
-  <h2 class="text-3xl font-bold text-white mb-6">
-    Connect With Norzagaray
-  </h2>
+    <h2 class="text-3xl font-bold text-white mb-4">
+      Stay Connected
+    </h2>
 
-  <p class="text-gray-200 mb-8">
-    Stay updated with news, announcements, and public service updates
-    from the Local Government of Norzagaray.
-  </p>
+    <p class="text-gray-200 mb-8">
+      Follow updates from the Local Government of Norzagaray
+    </p>
 
-  <div class="flex justify-center space-x-6">
+    <div class="flex justify-center gap-6 text-2xl">
 
-    <a href="https://www.facebook.com/lgunorzagaray"
-       target="_blank"
-       class="text-purple-300 hover:text-white transition">
+      <a href="https://www.facebook.com/lgunorzagaray" target="_blank"
+         class="hover:text-white text-purple-300 transition hover:scale-110">
+        <i class="fab fa-facebook-f"></i>
+      </a>
 
-      <i class="fab fa-facebook-f text-3xl"></i>
+      <a href="#" class="hover:text-white text-purple-300 transition hover:scale-110">
+        <i class="fab fa-instagram"></i>
+      </a>
 
-    </a>
+      <a href="#" class="hover:text-white text-purple-300 transition hover:scale-110">
+        <i class="fab fa-twitter"></i>
+      </a>
 
-    <a href="https://www.instagram.com"
-       target="_blank"
-       class="text-purple-300 hover:text-white transition">
-
-      <i class="fab fa-instagram text-3xl"></i>
-
-    </a>
-
-    <a href="https://www.twitter.com"
-       target="_blank"
-       class="text-purple-300 hover:text-white transition">
-
-      <i class="fab fa-twitter text-3xl"></i>
-
-    </a>
-
-  </div>
-
-</div>
-```
+    </div>
 
   </section>
 
-  <!-- Developers Section -->
+  <!-- DEVELOPERS -->
+  <section class="py-20 text-center">
 
-  <section class="bg-gray-950 py-20">
+    <h2 class="text-3xl font-bold text-purple-400 mb-4">
+      Developed By
+    </h2>
 
-```
-<div class="max-w-6xl mx-auto px-6 text-center">
+    <p class="text-gray-300 max-w-2xl mx-auto mb-10">
+      This system was developed to modernize employee services and improve
+      access to HR and payroll information through a secure web-based platform.
+    </p>
 
-  <h2 class="text-3xl font-bold text-purple-400 mb-6">
-    Developed By
-  </h2>
-
-  <p class="text-gray-300 mb-10 max-w-3xl mx-auto">
-    The GovHRPay Employee Portal was developed as part of a digital
-    transformation initiative aimed at improving accessibility to
-    employment records for government employees. The system was
-    created to support transparency, efficiency, and modern
-    information management within the Local Government of Norzagaray.
-  </p>
-
-  <div class="flex justify-center">
-    <img
-      src="{{ url_for('static', filename='img/dev_team.jpg') }}"
-      alt="Development Team"
-      class="rounded-2xl shadow-lg w-full max-w-lg"
-    />
-  </div>
-
-</div>
-```
+    <img src="{{ url_for('static', filename='img/dev_team.jpg') }}"
+         class="rounded-2xl shadow-xl w-full max-w-lg mx-auto hover:scale-105 transition">
 
   </section>
 

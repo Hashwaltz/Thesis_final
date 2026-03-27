@@ -1,85 +1,154 @@
 {% extends 'employee/employee_base.html' %}
-{% block title %}Request Leave{% endblock %}
+{% block title %}Request Leave | Employee{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto p-6 bg-gray-900 rounded-2xl shadow-xl space-y-6">
+<main class="p-6 bg-gray-900 min-h-screen flex items-center justify-center">
 
-  <!-- Header -->
-  <header>
-    <h1 class="text-2xl font-bold text-purple-400 flex items-center gap-2">
-      <i class="fa-solid fa-calendar-days text-2xl"></i>
-      Request Leave
-    </h1>
-    <p class="text-gray-400 mt-1">Fill out the form below to submit a leave request.</p>
-  </header>
+  <div class="w-full max-w-3xl bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-gray-700 space-y-6">
 
-  <!-- Leave Form -->
-  <form id="leaveForm" method="POST" class="space-y-6">
-
-    <!-- Leave Type -->
-    <div class="flex flex-col">
-      <label for="leave_type" class="text-gray-200 font-medium mb-2">Leave Type</label>
-      <select name="leave_type" id="leave_type" required
-              class="bg-gray-800 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400">
-        <option value="">Select Leave Type</option>
-        {% for lt in leave_types %}
-        <option value="{{ lt.id }}">{{ lt.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- Start Date & End Date -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="flex flex-col">
-        <label for="start_date" class="text-gray-200 font-medium mb-2">Start Date</label>
-        <input type="date" name="start_date" id="start_date" required
-               class="bg-gray-800 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400">
+    <!-- Header -->
+    <header class="text-center">
+      <div class="flex justify-center mb-3">
+        <div class="bg-purple-600/20 p-3 rounded-full">
+          <i class="fa-solid fa-calendar-days text-purple-400 text-2xl"></i>
+        </div>
       </div>
-      <div class="flex flex-col">
-        <label for="end_date" class="text-gray-200 font-medium mb-2">End Date</label>
-        <input type="date" name="end_date" id="end_date" required
-               class="bg-gray-800 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400">
+      <h1 class="text-2xl font-bold text-white">Request Leave</h1>
+      <p class="text-gray-400 text-sm mt-1">
+        Submit your leave request easily and track its status.
+      </p>
+    </header>
+
+    <!-- Form -->
+    <form id="leaveForm" method="POST" class="space-y-6">
+
+      <!-- Leave Type -->
+      <div>
+        <label class="text-gray-300 text-sm mb-2 block">Leave Type</label>
+        <div class="relative">
+          <i class="fa-solid fa-list absolute left-3 top-3 text-gray-400"></i>
+          <select name="leave_type" required
+                  class="w-full pl-10 pr-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
+                         focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+            <option value="">Select Leave Type</option>
+            {% for lt in leave_types %}
+            <option value="{{ lt.id }}">{{ lt.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
-    </div>
 
-    <!-- Reason -->
-    <div class="flex flex-col">
-      <label for="reason" class="text-gray-200 font-medium mb-2">Reason</label>
-      <textarea name="reason" id="reason" rows="4" placeholder="Enter reason..." required
-                class="bg-gray-800 text-gray-100 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"></textarea>
-    </div>
+      <!-- Dates -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    <!-- Submit Button -->
-    <div class="flex justify-end">
-      <button type="submit" id="submitBtn"
-              class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg shadow-md transition">
-        <i class="fa-solid fa-paper-plane"></i>
-        Submit Request
-      </button>
-    </div>
+        <!-- Start -->
+        <div>
+          <label class="text-gray-300 text-sm mb-2 block">Start Date</label>
+          <div class="relative">
+            <i class="fa-solid fa-calendar absolute left-3 top-3 text-gray-400"></i>
+            <input type="date" name="start_date" id="start_date" required
+                   class="w-full pl-10 pr-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
+                          focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+          </div>
+        </div>
 
-  </form>
-</div>
+        <!-- End -->
+        <div>
+          <label class="text-gray-300 text-sm mb-2 block">End Date</label>
+          <div class="relative">
+            <i class="fa-solid fa-calendar-check absolute left-3 top-3 text-gray-400"></i>
+            <input type="date" name="end_date" id="end_date" required
+                   class="w-full pl-10 pr-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
+                          focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+          </div>
+        </div>
 
-<!-- SweetAlert2 -->
+      </div>
+
+      <!-- Days Preview -->
+      <div id="dayPreview" class="hidden text-sm text-purple-400 bg-purple-900/30 px-4 py-2 rounded-lg">
+        Total Leave Days: <span id="totalDays"></span>
+      </div>
+
+      <!-- Reason -->
+      <div>
+        <label class="text-gray-300 text-sm mb-2 block">Reason</label>
+        <textarea name="reason" rows="4" required
+                  placeholder="Enter reason for leave..."
+                  class="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
+                         focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"></textarea>
+      </div>
+
+      <!-- Submit -->
+      <div class="flex justify-end">
+        <button type="submit" id="submitBtn"
+                class="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700
+                       text-white rounded-xl shadow-lg transition duration-200">
+
+          <i class="fa-solid fa-paper-plane"></i>
+          <span id="btnText">Submit Request</span>
+
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</main>
+
+<!-- SweetAlert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  const leaveForm = document.getElementById('leaveForm');
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  const leaveForm = document.getElementById('leaveForm');
+  const startDate = document.getElementById('start_date');
+  const endDate = document.getElementById('end_date');
+  const dayPreview = document.getElementById('dayPreview');
+  const totalDays = document.getElementById('totalDays');
+  const submitBtn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+
+  // Calculate leave days
+  function calculateDays() {
+    if (startDate.value && endDate.value) {
+      const start = new Date(startDate.value);
+      const end = new Date(endDate.value);
+
+      if (end >= start) {
+        const diff = (end - start) / (1000 * 60 * 60 * 24) + 1;
+        totalDays.textContent = diff + " day(s)";
+        dayPreview.classList.remove('hidden');
+      } else {
+        dayPreview.classList.add('hidden');
+      }
+    }
+  }
+
+  startDate.addEventListener('change', calculateDays);
+  endDate.addEventListener('change', calculateDays);
+
+  // Submit confirmation
   leaveForm.addEventListener('submit', function(e) {
-    e.preventDefault(); // Prevent default submission
+    e.preventDefault();
 
     Swal.fire({
       title: 'Submit Leave Request?',
-      text: "Are you sure you want to submit this leave request?",
+      text: "Please confirm your submission.",
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#a855f7',
       cancelButtonColor: '#ef4444',
-      confirmButtonText: 'Yes, submit it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonText: 'Yes, submit'
     }).then((result) => {
       if (result.isConfirmed) {
+
+        // Loading state
+        submitBtn.disabled = true;
+        btnText.textContent = "Submitting...";
+
         leaveForm.submit();
       }
     });
@@ -89,12 +158,15 @@
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
       Swal.fire({
-        icon: '{{ "success" if category=="success" else "error" }}',
-        title: msg,
+        icon: "{{ 'success' if category=='success' else 'error' }}",
+        title: "{{ msg }}",
         timer: 2000,
         showConfirmButton: false
       });
     {% endfor %}
   {% endwith %}
+
+});
 </script>
+
 {% endblock %}

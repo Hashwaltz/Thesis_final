@@ -26,7 +26,7 @@
       <div>
         <label class="block mb-1 text-sm text-gray-400">Employee</label>
         <input type="text"
-               value="{{ loan.employee.full_name if loan.employee else 'N/A' }}"
+               value="{{ loan.employee.get_full_name() if loan.employee else 'N/A' }}"
                disabled
                class="w-full px-4 py-2 bg-gray-700 rounded-lg text-gray-300">
       </div>

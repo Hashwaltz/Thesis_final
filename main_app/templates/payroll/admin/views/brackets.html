@@ -1,101 +1,174 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
 
-{% block title %}Deduction Brackets & Taxes{% endblock %}
+{% block title %}Deduction Brackets & Taxes | Payroll Admin{% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-6 text-gray-200">
 
-  <!-- PAGE HEADER -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-    <h1 class="text-2xl font-bold text-emerald-400">Deduction Brackets & Formulas</h1>
-    <p class="text-gray-400 text-sm">Manage contribution formulas & salary brackets for deductions including Philippine Income Tax</p>
-  </header>
+<section class="min-h-screen p-6 space-y-8 text-gray-100 bg-gray-950">
 
-  <!-- CONTRIBUTION FORMULAS CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4">
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-      <strong class="text-emerald-400">PhilHealth Formula</strong>
-      <p class="text-gray-300 mt-1 text-sm">2.5% of monthly salary<br>(split 50/50 employee & employer)</p>
-    </div>
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-      <strong class="text-emerald-400">GSIS / SSS Formula</strong>
-      <p class="text-gray-300 mt-1 text-sm">SSS: Based on salary brackets<br>GSIS: 9% employee / 12% employer</p>
-    </div>
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-      <strong class="text-emerald-400">Pag-IBIG Formula</strong>
-      <p class="text-gray-300 mt-1 text-sm">2% of monthly salary up to ₱5,000<br>(Employee & Employer share equal)</p>
-    </div>
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 text-center">
-      <strong class="text-emerald-400">Other Contributions</strong>
-      <p class="text-gray-300 mt-1 text-sm">EC / Employee Compensation<br>as applicable</p>
-    </div>
-  </div>
+<!-- HEADER -->
+<header class="space-y-2">
+  <h1 class="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+    <i class="fa-solid fa-scale-balanced"></i>
+    Deduction Brackets & Formulas
+  </h1>
 
-  <!-- INCOME TAX CARD -->
-  <div class="bg-gray-900 p-6 rounded-2xl border border-gray-700 mt-6">
-    <h2 class="text-emerald-400 font-bold text-lg mb-2">Income Tax (BIR / TRAIN Law)</h2>
-    <p class="text-gray-300 text-sm">
-      Monthly taxable income is computed after contributions.<br>
-      Tax brackets:
+  <p class="text-gray-400 text-sm max-w-2xl">
+    Manage payroll deduction rules including government contributions and simplified tax computation.
+  </p>
+</header>
+
+
+<!-- FORMULA CARDS -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+  <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl">
+    <div class="flex items-center gap-2 text-emerald-400 font-semibold">
+      <i class="fa-solid fa-heart-pulse"></i> PhilHealth
+    </div>
+    <p class="text-sm text-gray-300 mt-2">
+      2.5% of monthly salary<br>
+      Split 50% employee / 50% employer
     </p>
-    <ul class="text-gray-300 text-sm mt-2 list-disc list-inside">
-      <li>0 – 20,833 → 0%</li>
-      <li>20,833 – 33,332 → 20% excess over 20,833</li>
-      <li>33,333 – 66,666 → 25% excess over 33,332</li>
-      <li>66,667 – 166,666 → 30% excess over 66,666</li>
-      <li>166,667 – 666,666 → 32% excess over 166,666</li>
-      <li>666,667+ → 35% excess over 666,666</li>
-    </ul>
   </div>
 
-  <!-- BRACKETS TABLE -->
-  <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden mt-6">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-900 text-emerald-400 uppercase text-xs tracking-wider">
-        <tr>
-          <th class="p-4 text-center">Deduction</th>
-          <th class="p-4 text-center">Salary From</th>
-          <th class="p-4 text-center">Salary To</th>
-          <th class="p-4 text-center">Employee Share</th>
-          <th class="p-4 text-center">Employer Share</th>
-          <th class="p-4 text-center">EC</th>
-          <th class="p-4 text-center">Income Tax (Example)</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        {% for b in brackets %}
-        <tr class="hover:bg-gray-700/40">
-          <td class="p-4 text-center">{{ b.deduction.name if b.deduction else 'N/A' }}</td>
-          <td class="p-4 text-center">{{ "{:,}".format(b.salary_from) }}</td>
-          <td class="p-4 text-center">{{ "{:,}".format(b.salary_to) }}</td>
-          <td class="p-4 text-center text-emerald-400">{{ "{:,.2f}".format(b.employee_share or 0) }}</td>
-          <td class="p-4 text-center">{{ "{:,.2f}".format(b.employer_share or 0) }}</td>
-          <td class="p-4 text-center text-yellow-400">{{ "{:,.2f}".format(b.ec or 0) }}</td>
-          <td class="p-4 text-center text-red-400">
-            {% set salary = (b.salary_from + b.salary_to) / 2 %}
-            {% if salary <= 20833 %}
-              0
-            {% elif salary <= 33332 %}
-              {{ "{:,.2f}".format(0 + (salary - 20833) * 0.20) }}
-            {% elif salary <= 66666 %}
-              {{ "{:,.2f}".format(2500 + (salary - 33332) * 0.25) }}
-            {% elif salary <= 166666 %}
-              {{ "{:,.2f}".format(10833.5 + (salary - 66666) * 0.30) }}
-            {% elif salary <= 666666 %}
-              {{ "{:,.2f}".format(40833.5 + (salary - 166666) * 0.32) }}
-            {% else %}
-              {{ "{:,.2f}".format(200833.5 + (salary - 666666) * 0.35) }}
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7" class="p-6 text-center text-gray-400">No brackets found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl">
+    <div class="flex items-center gap-2 text-emerald-400 font-semibold">
+      <i class="fa-solid fa-shield-halved"></i> SSS / GSIS
+    </div>
+    <p class="text-sm text-gray-300 mt-2">
+      Based on salary bracket tables<br>
+      GSIS: 9% employee / 12% employer
+    </p>
   </div>
+
+  <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl">
+    <div class="flex items-center gap-2 text-emerald-400 font-semibold">
+      <i class="fa-solid fa-house"></i> Pag-IBIG
+    </div>
+    <p class="text-sm text-gray-300 mt-2">
+      2% employee share<br>
+      Employer matches 2%<br>
+      <span class="text-yellow-400">Max ₱5,000 salary cap</span>
+    </p>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl">
+    <div class="flex items-center gap-2 text-emerald-400 font-semibold">
+      <i class="fa-solid fa-circle-info"></i> Other
+    </div>
+    <p class="text-sm text-gray-300 mt-2">
+      EC / loan deductions / adjustments<br>
+      Based on HR policy
+    </p>
+  </div>
+
+</div>
+
+
+<!-- TAX SYSTEM -->
+<div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl space-y-3">
+
+  <h2 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
+    <i class="fa-solid fa-receipt"></i>
+    Income Tax (Simplified System)
+  </h2>
+
+  <p class="text-gray-300 text-sm">
+    Tax is computed after all contributions are deducted.
+  </p>
+
+  <div class="grid md:grid-cols-2 gap-3 text-sm">
+
+    <div class="bg-gray-800 p-3 rounded-lg">
+      <span class="text-emerald-400 font-semibold">10% Tax</span><br>
+      Applied to taxable income above ₱20,000
+    </div>
+
+    <div class="bg-gray-800 p-3 rounded-lg">
+      <span class="text-emerald-400 font-semibold">5% Reduced Rate</span><br>
+      Applied if income is ≤ ₱20,000 or special exemption applies
+    </div>
+
+  </div>
+</div>
+
+
+<!-- TABLE -->
+<div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-x-auto">
+
+<table class="w-full text-sm min-w-[900px]">
+
+<thead class="bg-gray-800 text-emerald-400 uppercase text-xs">
+  <tr>
+    <th class="p-4">Deduction</th>
+    <th class="p-4">From</th>
+    <th class="p-4">To</th>
+    <th class="p-4">Employee</th>
+    <th class="p-4">Employer</th>
+    <th class="p-4">EC</th>
+    <th class="p-4">Tax Estimate</th>
+  </tr>
+</thead>
+
+<tbody class="divide-y divide-gray-800">
+
+{% for b in brackets %}
+<tr class="hover:bg-gray-800/40 transition">
+
+  <td class="p-4 text-center">
+    {{ b.deduction.name if b.deduction else 'N/A' }}
+  </td>
+
+  <td class="p-4 text-center">
+    ₱{{ "{:,}".format(b.salary_from) }}
+  </td>
+
+  <td class="p-4 text-center">
+    ₱{{ "{:,}".format(b.salary_to) }}
+  </td>
+
+  <td class="p-4 text-center text-emerald-400">
+    {{ "{:,.2f}".format(b.employee_share or 0) }}
+  </td>
+
+  <td class="p-4 text-center">
+    {{ "{:,.2f}".format(b.employer_share or 0) }}
+  </td>
+
+  <td class="p-4 text-center text-yellow-400">
+    {{ "{:,.2f}".format(b.ec or 0) }}
+  </td>
+
+  <!-- TAX (UPDATED LOGIC) -->
+  <td class="p-4 text-center text-red-400">
+
+    {% set salary = (b.salary_from + b.salary_to) / 2 %}
+    {% set taxable = salary * 0.9 %} {# example deduction buffer #}
+
+    {% if taxable <= 20000 %}
+      {{ "{:,.2f}".format(taxable * 0.05) }}
+    {% else %}
+      {{ "{:,.2f}".format(taxable * 0.10) }}
+    {% endif %}
+
+  </td>
+
+</tr>
+{% else %}
+<tr>
+  <td colspan="7" class="text-center p-6 text-gray-400">
+    No brackets found.
+  </td>
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
 
 </section>
+
 {% endblock %}

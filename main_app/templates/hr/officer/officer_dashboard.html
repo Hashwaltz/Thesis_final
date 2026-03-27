@@ -1,17 +1,18 @@
 {% extends 'hr/officer/officer_base.html' %}
-{% block title %}HR Officer - Dashboard{% endblock %}
+{% block title %}Dashboard | HR Officer{% endblock %}
 
 {% block content %}
 
-<div class="space-y-6">
+<div class="space-y-8">
 
 <!-- ================================================= -->
-<!-- DASHBOARD HEADER FILTER STYLE UI -->
+<!-- HEADER -->
 <!-- ================================================= -->
 
-<header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-slate-800 p-4 rounded-2xl shadow">
+<header class="flex flex-col md:flex-row justify-between items-center gap-4 
+bg-gradient-to-r from-slate-800 to-slate-900 p-5 rounded-2xl shadow-xl border border-slate-700">
 
-<h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
+<h1 class="text-2xl md:text-3xl font-bold text-blue-400 flex items-center gap-3">
 <i class="fa-solid fa-calendar-days text-3xl"></i>
 Attendance Dashboard
 </h1>
@@ -19,18 +20,16 @@ Attendance Dashboard
 <div class="flex flex-wrap gap-3">
 
 <select id="monthSelect"
-class="bg-slate-900 text-white px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500">
-
+class="bg-slate-900 border border-slate-600 text-white px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500">
 {% for m in range(1,13) %}
 <option value="{{m}}">
 {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1] }}
 </option>
 {% endfor %}
-
 </select>
 
 <select id="yearSelect"
-class="bg-slate-900 text-white px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500">
+class="bg-slate-900 border border-slate-600 text-white px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500">
 <script>
 let y = new Date().getFullYear();
 for(let i=y-5;i<=y+5;i++){
@@ -40,15 +39,11 @@ document.write(`<option value="${i}">${i}</option>`);
 </select>
 
 <button onclick="reloadCalendar()"
-class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl transition flex items-center gap-2">
-
-<i class="fa-solid fa-magnifying-glass"></i>
-<span>View</span>
-
+class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-xl text-white font-medium flex items-center gap-2 shadow-md transition">
+<i class="fa-solid fa-magnifying-glass"></i> View
 </button>
 
 </div>
-
 </header>
 
 <!-- ================================================= -->
@@ -57,32 +52,26 @@ class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl transition 
 
 <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
 
-<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
-<div class="text-blue-400 text-4xl">
-<i class="fa-solid fa-circle-check"></i>
-</div>
+<div class="bg-gradient-to-br from-green-600/20 to-slate-800 p-6 rounded-2xl shadow-lg border border-green-500/20 flex items-center gap-4 hover:scale-[1.03] transition">
+<i class="fa-solid fa-circle-check text-green-400 text-4xl"></i>
 <div>
-<h2 class="text-3xl font-bold">{{ present_count }}</h2>
+<h2 class="text-3xl font-bold text-white">{{ present_count }}</h2>
 <p class="text-slate-300">Present Today</p>
 </div>
 </div>
 
-<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
-<div class="text-red-400 text-4xl">
-<i class="fa-solid fa-circle-xmark"></i>
-</div>
+<div class="bg-gradient-to-br from-red-600/20 to-slate-800 p-6 rounded-2xl shadow-lg border border-red-500/20 flex items-center gap-4 hover:scale-[1.03] transition">
+<i class="fa-solid fa-circle-xmark text-red-400 text-4xl"></i>
 <div>
-<h2 class="text-3xl font-bold">{{ absent_count }}</h2>
+<h2 class="text-3xl font-bold text-white">{{ absent_count }}</h2>
 <p class="text-slate-300">Absent Today</p>
 </div>
 </div>
 
-<div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex items-center gap-4">
-<div class="text-yellow-400 text-4xl">
-<i class="fa-solid fa-users"></i>
-</div>
+<div class="bg-gradient-to-br from-yellow-500/20 to-slate-800 p-6 rounded-2xl shadow-lg border border-yellow-400/20 flex items-center gap-4 hover:scale-[1.03] transition">
+<i class="fa-solid fa-users text-yellow-400 text-4xl"></i>
 <div>
-<h2 class="text-3xl font-bold">{{ total_users }}</h2>
+<h2 class="text-3xl font-bold text-white">{{ total_users }}</h2>
 <p class="text-slate-300">Total Employees</p>
 </div>
 </div>
@@ -93,10 +82,11 @@ class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl transition 
 <!-- CALENDAR -->
 <!-- ================================================= -->
 
-<section class="bg-slate-800 rounded-2xl shadow-lg p-6">
+<section class="bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-slate-700">
 
-<h2 class="text-lg font-semibold text-white mb-4">
-Attendance Calendar - {{ current_month_year }}
+<h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+<i class="fa-solid fa-calendar"></i>
+{{ current_month_year }}
 </h2>
 
 <div id="attendanceCalendar"
@@ -108,24 +98,24 @@ class="grid grid-cols-7 gap-3 text-center text-sm"></div>
 <!-- REMINDERS -->
 <!-- ================================================= -->
 
-<section class="bg-slate-800 rounded-2xl shadow-lg p-6">
+<section class="bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-xl p-6 border border-slate-700">
 
-<h2 class="text-lg font-semibold text-white mb-4">
+<h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+<i class="fa-solid fa-bell"></i>
 Daily Reminders
 </h2>
 
 {% if reminders %}
-<ul class="space-y-2 text-slate-300">
+<ul class="space-y-3 text-slate-300">
 {% for reminder in reminders %}
-<li class="flex items-center gap-2">
+<li class="flex items-center gap-3 bg-slate-800 p-3 rounded-xl hover:bg-slate-700 transition">
 <i class="fa-solid fa-bell text-blue-400"></i>
-<span>{{ reminder }} and Services Available</span>
+<span>{{ reminder }}</span>
 </li>
 {% endfor %}
 </ul>
-
 {% else %}
-<p class="text-slate-400 text-center">No reminders for today!</p>
+<p class="text-slate-400 text-center">No reminders for today 🎉</p>
 {% endif %}
 
 </section>
@@ -133,22 +123,23 @@ Daily Reminders
 </div>
 
 <!-- ================================================= -->
-<!-- MODAL (IMPROVED UI) -->
+<!-- MODAL -->
 <!-- ================================================= -->
 
 <div id="attendanceModal"
-class="fixed inset-0 hidden bg-black/80 flex justify-center items-center z-50 p-4">
+class="fixed inset-0 hidden bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
 
-<div class="bg-slate-900 rounded-2xl p-6 w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-slate-700 shadow-xl">
+<div class="bg-slate-900 rounded-2xl p-6 w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-slate-700 shadow-2xl animate-fadeIn">
 
-<h2 class="text-2xl font-semibold mb-5 text-blue-400">
+<h2 class="text-2xl font-bold mb-5 text-blue-400 flex items-center gap-2">
+<i class="fa-solid fa-user-clock"></i>
 Attendance Details
 </h2>
 
 <div id="modalContent" class="grid md:grid-cols-2 gap-4"></div>
 
 <button onclick="closeModal()"
-class="mt-6 w-full bg-blue-600 hover:bg-blue-700 transition py-3 rounded-xl text-white font-medium">
+class="mt-6 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl text-white font-medium transition">
 Close
 </button>
 
@@ -156,7 +147,7 @@ Close
 </div>
 
 <!-- ================================================= -->
-<!-- SCRIPT ENGINE -->
+<!-- SCRIPT -->
 <!-- ================================================= -->
 
 <script>
@@ -168,13 +159,10 @@ window.location.href=`?month=${month}&year=${year}`;
 }
 
 function getBorderClass(status){
-
 status=(status||"").toLowerCase();
-
 if(status.includes("present")) return "border-green-500";
 if(status.includes("late")) return "border-yellow-500";
 if(status.includes("absent")) return "border-red-500";
-
 return "border-slate-600";
 }
 
@@ -186,11 +174,7 @@ let container=document.getElementById("modalContent");
 container.innerHTML="";
 
 if(!details || details.length===0){
-container.innerHTML=`
-<p class="text-center text-gray-400 md:col-span-2">
-No attendance records.
-</p>
-`;
+container.innerHTML=`<p class="text-center text-gray-400 md:col-span-2">No attendance records.</p>`;
 }
 else{
 
@@ -199,9 +183,9 @@ details.forEach(d=>{
 let borderClass=getBorderClass(d.status);
 
 container.innerHTML+=`
-<div class="bg-slate-800 rounded-xl p-4 border-l-4 ${borderClass} hover:scale-[1.02] transition">
+<div class="bg-slate-800 rounded-xl p-4 border-l-4 ${borderClass} hover:scale-[1.03] transition shadow">
 
-<p class="text-lg font-semibold text-gray-200 mb-2">
+<p class="text-lg font-semibold text-white mb-2">
 ${d.name || "Unknown"}
 </p>
 
@@ -213,7 +197,6 @@ ${d.name || "Unknown"}
 </div>
 `;
 });
-
 }
 
 modal.classList.remove("hidden");
@@ -235,7 +218,6 @@ document.getElementById("yearSelect").value=year;
 const calendarContainer=document.getElementById("attendanceCalendar");
 
 const daysInMonth=new Date(year,month,0).getDate();
-
 const weekDays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 weekDays.forEach(day=>{
@@ -263,25 +245,18 @@ details:[]
 };
 
 cell.className=`
-bg-slate-700 rounded-xl p-2 min-h-[90px]
+bg-slate-800 rounded-xl p-3 min-h-[100px]
 flex flex-col justify-center items-center
-hover:bg-slate-600 transition cursor-pointer
+hover:bg-slate-700 hover:scale-[1.05]
+transition cursor-pointer shadow
 `;
 
 cell.innerHTML=`
-<div class="text-white font-bold mb-1">${date}</div>
+<div class="text-white font-bold mb-1 text-lg">${date}</div>
 
-<div class="text-xs text-green-300">
-Present: ${summary.present}
-</div>
-
-<div class="text-xs text-yellow-300">
-Late: ${summary.late}
-</div>
-
-<div class="text-xs text-red-300">
-Absent: ${summary.absent}
-</div>
+<div class="text-xs text-green-300">✔ ${summary.present}</div>
+<div class="text-xs text-yellow-300">⏱ ${summary.late}</div>
+<div class="text-xs text-red-300">✖ ${summary.absent}</div>
 `;
 
 cell.onclick=()=>openModal(summary.details||[]);

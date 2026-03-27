@@ -1,50 +1,71 @@
 {% extends "hr/leave_officer/leave_base.html" %}
-{% block title %}Leave Officer Dashboard{% endblock %}
+{% block title %}Dashboard | Leave Officer {% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-6 space-y-6">
+<main class="p-4 md:p-6 space-y-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
 
   <!-- HEADER -->
   <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-file-signature text-3xl"></i>
+    <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+      <div class="p-2 bg-blue-500/20 rounded-lg">
+        <i class="fa-solid fa-file-signature text-blue-400 text-xl"></i>
+      </div>
       Leave Officer Dashboard
     </h1>
-    <span class="text-gray-400 text-sm">{{ current_month_year }}</span>
+    <span class="text-gray-400 text-sm bg-slate-800 px-3 py-1 rounded-lg border border-gray-700">
+      {{ current_month_year }}
+    </span>
   </header>
 
   <!-- INFO CARDS -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
-    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
-      <i class="fa-solid fa-hourglass-half text-yellow-400 text-3xl"></i>
-      <div>
-        <p class="text-gray-400 text-sm">Pending Leaves</p>
-        <h2 class="text-3xl font-bold text-yellow-400">{{ pending_leaves }}</h2>
+    <!-- CARD -->
+    <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-yellow-400 transition duration-300 shadow hover:shadow-yellow-500/10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-400 text-sm">Pending Leaves</p>
+          <h2 class="text-3xl font-bold text-yellow-400 mt-1">{{ pending_leaves }}</h2>
+        </div>
+        <div class="p-3 rounded-xl bg-yellow-500/10 group-hover:scale-110 transition">
+          <i class="fa-solid fa-hourglass-half text-yellow-400 text-2xl"></i>
+        </div>
       </div>
     </div>
 
-    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
-      <i class="fa-solid fa-circle-check text-green-400 text-3xl"></i>
-      <div>
-        <p class="text-gray-400 text-sm">Approved Leaves</p>
-        <h2 class="text-3xl font-bold text-green-400">{{ approved_leaves }}</h2>
+    <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-green-400 transition duration-300 shadow hover:shadow-green-500/10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-400 text-sm">Approved Leaves</p>
+          <h2 class="text-3xl font-bold text-green-400 mt-1">{{ approved_leaves }}</h2>
+        </div>
+        <div class="p-3 rounded-xl bg-green-500/10 group-hover:scale-110 transition">
+          <i class="fa-solid fa-circle-check text-green-400 text-2xl"></i>
+        </div>
       </div>
     </div>
 
-    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
-      <i class="fa-solid fa-circle-xmark text-red-400 text-3xl"></i>
-      <div>
-        <p class="text-gray-400 text-sm">Rejected Leaves</p>
-        <h2 class="text-3xl font-bold text-red-400">{{ rejected_leaves }}</h2>
+    <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-red-400 transition duration-300 shadow hover:shadow-red-500/10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-400 text-sm">Rejected Leaves</p>
+          <h2 class="text-3xl font-bold text-red-400 mt-1">{{ rejected_leaves }}</h2>
+        </div>
+        <div class="p-3 rounded-xl bg-red-500/10 group-hover:scale-110 transition">
+          <i class="fa-solid fa-circle-xmark text-red-400 text-2xl"></i>
+        </div>
       </div>
     </div>
 
-    <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 flex items-center gap-3">
-      <i class="fa-solid fa-users text-blue-400 text-3xl"></i>
-      <div>
-        <p class="text-gray-400 text-sm">Active Employees</p>
-        <h2 class="text-3xl font-bold text-blue-400">{{ total_users }}</h2>
+    <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-blue-400 transition duration-300 shadow hover:shadow-blue-500/10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-400 text-sm">Active Employees</p>
+          <h2 class="text-3xl font-bold text-blue-400 mt-1">{{ total_users }}</h2>
+        </div>
+        <div class="p-3 rounded-xl bg-blue-500/10 group-hover:scale-110 transition">
+          <i class="fa-solid fa-users text-blue-400 text-2xl"></i>
+        </div>
       </div>
     </div>
 
@@ -52,22 +73,24 @@
 
   <!-- REMINDERS -->
   {% if reminders %}
-  <div class="bg-yellow-900/30 border border-yellow-600 rounded-xl p-4">
-    <h3 class="font-semibold text-yellow-400 mb-2">
-      <i class="fa-solid fa-bell mr-2"></i> Reminders
+  <div class="bg-yellow-500/10 backdrop-blur-md border border-yellow-500/30 rounded-2xl p-5 shadow">
+    <h3 class="font-semibold text-yellow-300 mb-3 flex items-center gap-2">
+      <i class="fa-solid fa-bell"></i> Reminders
     </h3>
-    <ul class="list-disc list-inside text-yellow-300 text-sm">
+    <ul class="space-y-1 text-yellow-200 text-sm">
       {% for reminder in reminders %}
-        <li>{{ reminder }}</li>
+        <li class="flex items-start gap-2">
+          <span>•</span> {{ reminder }}
+        </li>
       {% endfor %}
     </ul>
   </div>
   {% endif %}
 
   <!-- LEAVE GRAPH -->
-  <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-    <h2 class="text-lg font-semibold text-gray-200 mb-3">
-      <i class="fa-solid fa-chart-line mr-2"></i> Monthly Leave Requests
+  <div class="bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 shadow">
+    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+      <i class="fa-solid fa-chart-line text-blue-400"></i> Monthly Leave Requests
     </h2>
 
     <canvas id="leaveChart" height="110"></canvas>
@@ -88,24 +111,27 @@
           label: "Pending",
           data: {{ pending_data | tojson }},
           borderColor: "#FACC15",
-          backgroundColor: "#FACC1580",
+          backgroundColor: "transparent",
           borderWidth: 2,
+          pointBackgroundColor: "#FACC15",
           tension: 0.4
         },
         {
           label: "Approved",
           data: {{ approved_data | tojson }},
           borderColor: "#22C55E",
-          backgroundColor: "#22C55E80",
+          backgroundColor: "transparent",
           borderWidth: 2,
+          pointBackgroundColor: "#22C55E",
           tension: 0.4
         },
         {
           label: "Rejected",
           data: {{ rejected_data | tojson }},
           borderColor: "#EF4444",
-          backgroundColor: "#EF444480",
+          backgroundColor: "transparent",
           borderWidth: 2,
+          pointBackgroundColor: "#EF4444",
           tension: 0.4
         }
       ]
@@ -114,9 +140,7 @@
       responsive: true,
       plugins: {
         legend: {
-          labels: {
-            color: "#E5E7EB"
-          }
+          labels: { color: "#E5E7EB" }
         }
       },
       scales: {
@@ -132,4 +156,5 @@
     }
   });
 </script>
+
 {% endblock %}

@@ -172,7 +172,7 @@ Claimed
 {% if p.status == 'Generated' %}
 <button type="button"
 class="distribute-btn px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm transition"
-data-url="{{ url_for('payroll_admin_bp.distribute_payslip', payslip_id=p.id) }}">
+data-url="{{ url_for('payroll_admin_bp.claim_payslip', payslip_id=p.id) }}">
 
 Mark as Claimed
 </button>

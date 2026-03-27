@@ -1,300 +1,197 @@
 {% extends 'payroll/staff/staff_base.html' %}
-{% block title %}Employee Payrolls{% endblock %}
+{% block title %}Payrolls | Payroll Staff{% endblock %}
 
 {% block content %}
 
 <section class="p-6 space-y-6 text-gray-200">
 
-<header class="flex justify-between items-center">
-<h1 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-<i class="fa-solid fa-file-invoice-dollar text-3xl"></i>
-Employee Payrolls
-</h1>
-</header>
+  <!-- HEADER -->
+  <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <h1 class="text-2xl sm:text-3xl font-semibold text-emerald-400 flex items-center gap-3">
+      <i class="fa-solid fa-file-invoice-dollar text-3xl sm:text-4xl"></i>
+      Employee Payrolls
+    </h1>
+  </header>
 
-<!-- ================= FILTERS ================= -->
+  <!-- FILTERS -->
+  <form method="get"
+        action="{{ url_for('payroll_staff_bp.view_payrolls') }}"
+        class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 items-start sm:items-end">
 
-<form method="get"
-action="{{ url_for('payroll_staff_bp.view_payrolls') }}"
-class="bg-gray-800 p-5 rounded-2xl border border-gray-700 flex flex-wrap gap-4">
+    <input type="text"
+           name="search"
+           value="{{ search }}"
+           placeholder="Search employee..."
+           class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 outline-none flex-1 min-w-[180px]"/>
 
-<input type="text"
-name="search"
-value="{{ search }}"
-placeholder="Search employee..."
-class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 outline-none"/>
+    <select name="department_id"
+            onchange="this.form.submit()"
+            class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 flex-1 min-w-[150px]">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+      <option value="{{ dept.id }}" {% if dept.id==selected_department %}selected{% endif %}>
+        {{ dept.name }}
+      </option>
+      {% endfor %}
+    </select>
 
-<select name="department_id"
-onchange="this.form.submit()"
-class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+    <select name="pay_period_id"
+            onchange="this.form.submit()"
+            class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 flex-1 min-w-[200px]">
+      <option value="">All Periods</option>
+      {% for period in payroll_periods %}
+      <option value="{{ period.id }}" {% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
+        {{ period.period_name }} ({{ period.start_date.strftime('%Y-%m-%d') }} - {{ period.end_date.strftime('%Y-%m-%d') }})
+      </option>
+      {% endfor %}
+    </select>
 
-<option value="">All Departments</option>
-{% for dept in departments %}
-<option value="{{ dept.id }}"
-{% if dept.id==selected_department %}selected{% endif %}>
-{{ dept.name }}
-</option>
-{% endfor %}
-</select>
+    <!-- Clear Filters Button -->
+    <a href="{{ url_for('payroll_staff_bp.view_payrolls') }}"
+       class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition">
+      Clear Filters
+    </a>
 
-<select name="pay_period_id"
-onchange="this.form.submit()"
-class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600">
+  </form>
 
-<option value="">All Periods</option>
-{% for period in payroll_periods %}
-<option value="{{ period.id }}"
-{% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
-{{ period.period_name }}
-({{ period.start_date.strftime('%Y-%m-%d') }} - {{ period.end_date.strftime('%Y-%m-%d') }})
-</option>
-{% endfor %}
-</select>
+  <!-- TABLE -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700 shadow-sm">
+    <table class="min-w-full text-sm table-auto">
+      <thead class="bg-gray-900 text-emerald-400">
+        <tr>
+          <th class="p-3 text-left">Employee</th>
+          <th class="p-3 text-left">Department</th>
+          <th class="p-3 text-right">Salary Rate</th>
+          <th class="p-3 text-right">Gross Pay</th>
+          <th class="p-3 text-right">Allowance</th>
+          <th class="p-3 text-right">Deductions</th>
+          <th class="p-3 text-right">Loans</th>
+          <th class="p-3 text-right">Net Pay</th>
+          <th class="p-3 text-left">Period</th>
+        </tr>
+      </thead>
 
-</form>
-
-<!-- TABLE -->
-
-<div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
-
-<table class="min-w-full text-sm">
-
-<thead class="bg-gray-900 text-emerald-400">
-<tr>
-<th class="p-3 text-left">Employee</th>
-<th class="p-3 text-left">Department</th>
-<th class="p-3 text-right">Salary Rate</th>
-<th class="p-3 text-right">Gross Pay</th>
-<th class="p-3 text-right">Allowance</th>
-<th class="p-3 text-right">Deductions</th>
-<th class="p-3 text-right">Loans</th>
-<th class="p-3 text-right">Net Pay</th>
-<th class="p-3 text-left">Period</th>
-</tr>
-</thead>
-
-<tbody class="divide-y divide-gray-700">
-
-{% for payroll in payrolls.items %}
-
-<tr class="hover:bg-gray-700/40 cursor-pointer transition"
-
-onclick="openPayrollModal({
-employee_name:'{{ payroll.employee.get_full_name() }}',
-employee_type:'{{ payroll.employee_type }}',
-salary:{{ payroll.employee.salary or 0 }},
-hourly_rate:{{ payroll.hourly_rate_value or 0 }},
-daily_rate:{{ payroll.daily_rate_value or 0 }},
-working_hours:{{ payroll.working_hours or 0 }},
-days_worked:{{ payroll.days_worked or 0 }},
-allowance_total:{{ payroll.allowance_total or 0 }},
-gross_pay:{{ payroll.gross_pay or 0 }},
-deductions:{{ payroll.total_deductions or 0 }},
-loan_total:{{ payroll.loan_total or 0 }},
-net_pay:{{ payroll.net_pay or 0 }},
-period_start:'{{ payroll.period.start_date if payroll.period else '' }}',
-period_end:'{{ payroll.period.end_date if payroll.period else '' }}',
-
-deduction_list: [
-{% for d in payroll.deduction_breakdown %}
-{
-name: "{{ d.deduction_name }}",
-amount: {{ d.employee_share or 0 }}
-},
-{% endfor %}
-],
-
-loan_list: [
-{% for lp in payroll.loan_payments %}
-{
-name: "{{ lp.loan.provider }} ({{ lp.loan.loan_type }})",
-amount: {{ lp.amount_paid or 0 }}
-},
-{% endfor %}
-]
-
-})">
-
-<td class="p-3">{{ payroll.employee.get_full_name() }}</td>
-
-<td class="p-3">
-{{ payroll.employee.department.name if payroll.employee.department else "-" }}
-</td>
-
-<td class="p-3 text-right text-emerald-400">
-₱ {{ "{:,.2f}".format(payroll.employee.salary or 0) }}
-</td>
-
-<td class="p-3 text-right">
-₱ {{ "{:,.2f}".format(payroll.gross_pay or 0) }}
-</td>
-
-<td class="p-3 text-right text-emerald-400">
-₱ {{ "{:,.2f}".format(payroll.allowance_total or 0) }}
-</td>
-
-<td class="p-3 text-right text-yellow-400">
-₱ {{ "{:,.2f}".format(payroll.total_deductions or 0) }}
-</td>
-
-<td class="p-3 text-right text-red-400">
-₱ {{ "{:,.2f}".format(payroll.loan_total or 0) }}
-</td>
-
-<td class="p-3 text-right font-semibold text-emerald-400">
-₱ {{ "{:,.2f}".format(
-    (payroll.net_pay or 0)
-) }}
-</td>
-
-<td class="p-3">
-{{ payroll.period.start_date }} – {{ payroll.period.end_date }}
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-</table>
-
-</div>
+      <tbody class="divide-y divide-gray-700">
+      {% for payroll in payrolls.items %}
+        <tr class="hover:bg-gray-700/40 cursor-pointer transition-all duration-150"
+            onclick="openPayrollModal({
+              employee_name:'{{ payroll.employee.get_full_name() }}',
+              employee_type:'{{ payroll.employee_type }}',
+              salary:{{ payroll.employee.salary or 0 }},
+              hourly_rate:{{ payroll.hourly_rate_value or 0 }},
+              daily_rate:{{ payroll.daily_rate_value or 0 }},
+              working_hours:{{ payroll.working_hours or 0 }},
+              days_worked:{{ payroll.days_worked or 0 }},
+              allowance_total:{{ payroll.allowance_total or 0 }},
+              gross_pay:{{ payroll.gross_pay or 0 }},
+              deductions:{{ payroll.total_deductions or 0 }},
+              loan_total:{{ payroll.loan_total or 0 }},
+              net_pay:{{ payroll.net_pay or 0 }},
+              period_start:'{{ payroll.period.start_date if payroll.period else '' }}',
+              period_end:'{{ payroll.period.end_date if payroll.period else '' }}',
+              deduction_list: [{% for d in payroll.deduction_breakdown %}{name:"{{ d.deduction_name }}",amount:{{ d.employee_share or 0 }}},{% endfor %}],
+              loan_list: [{% for lp in payroll.loan_payments %}{name:"{{ lp.loan.provider }} ({{ lp.loan.loan_type }})",amount:{{ lp.amount_paid or 0 }}},{% endfor %}]
+            })">
+          <td class="p-3 truncate">{{ payroll.employee.get_full_name() }}</td>
+          <td class="p-3 truncate">{{ payroll.employee.department.name if payroll.employee.department else "-" }}</td>
+          <td class="p-3 text-right text-emerald-400">₱ {{ "{:,.2f}".format(payroll.employee.salary or 0) }}</td>
+          <td class="p-3 text-right">₱ {{ "{:,.2f}".format(payroll.gross_pay or 0) }}</td>
+          <td class="p-3 text-right text-emerald-400">₱ {{ "{:,.2f}".format(payroll.allowance_total or 0) }}</td>
+          <td class="p-3 text-right text-yellow-400">₱ {{ "{:,.2f}".format(payroll.total_deductions or 0) }}</td>
+          <td class="p-3 text-right text-red-400">₱ {{ "{:,.2f}".format(payroll.loan_total or 0) }}</td>
+          <td class="p-3 text-right font-semibold text-emerald-400">₱ {{ "{:,.2f}".format(payroll.net_pay or 0) }}</td>
+          <td class="p-3 truncate">{{ payroll.period.start_date }} – {{ payroll.period.end_date }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
 </section>
 
 <!-- MODAL -->
-
 <div id="payrollModal"
-class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center justify-center">
+     class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
 
-<div class="bg-gray-900 w-[900px] rounded-2xl border border-gray-700 shadow-xl">
+  <div class="bg-gray-900 w-full max-w-3xl rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
+    <div class="flex justify-between p-5 border-b border-gray-700">
+      <h2 class="text-emerald-400 font-semibold text-lg">Payroll Details</h2>
+      <button onclick="closePayrollModal()" class="text-gray-400 hover:text-white text-2xl">✕</button>
+    </div>
 
-<div class="flex justify-between p-5 border-b border-gray-700">
-<h2 class="text-emerald-400 font-semibold text-lg">Payroll Details</h2>
-<button onclick="closePayrollModal()" class="text-gray-400 hover:text-white text-xl">✕</button>
-</div>
+    <div id="payrollModalContent" class="p-6 space-y-4 text-sm max-h-[80vh] overflow-y-auto"></div>
+  </div>
 
-<div id="payrollModalContent" class="p-6 space-y-4 text-sm"></div>
-
-</div>
 </div>
 
 <script>
-
 function openPayrollModal(p){
+  let rateLabel="", rateComputation=""
+  if(p.employee_type==="Part-Time"){
+    rateLabel="Hourly Rate × Hours"
+    rateComputation=`₱${p.hourly_rate} × ${p.working_hours}`
+  } else if(["Casual","Job Order (JO)","Job Orders"].includes(p.employee_type)){
+    rateLabel="Daily Rate × Days"
+    rateComputation=`₱${p.daily_rate} × ${p.days_worked}`
+  } else {
+    rateLabel="Monthly Salary"
+    rateComputation=`₱${p.salary}`
+  }
 
-let rateLabel=""
-let rateComputation=""
+  let deductionHTML = p.deduction_list.length>0 ? p.deduction_list.map(d=>`
+    <p class="flex justify-between">
+      <span>${d.name}</span>
+      <span class="text-yellow-400">₱${Number(d.amount).toLocaleString()}</span>
+    </p>`).join('') : "<p>No deductions</p>"
 
-if(p.employee_type==="Part-Time"){
-rateLabel="Hourly Rate × Hours"
-rateComputation=`₱${p.hourly_rate} × ${p.working_hours}`
-}
-else if(
-p.employee_type==="Casual" ||
-p.employee_type==="Job Order (JO)" ||
-p.employee_type==="Job Orders"
-){
-rateLabel="Daily Rate × Days"
-rateComputation=`₱${p.daily_rate} × ${p.days_worked}`
-}
-else{
-rateLabel="Monthly Salary"
-rateComputation=`₱${p.salary}`
-}
+  let loanHTML = p.loan_list && p.loan_list.length>0 ? p.loan_list.map(l=>`
+    <p class="flex justify-between">
+      <span>${l.name}</span>
+      <span class="text-red-400">₱${Number(l.amount).toLocaleString()}</span>
+    </p>`).join('') : "<p>No loans</p>"
 
-// ----------------------
-// DEDUCTIONS
-// ----------------------
-let deductionHTML = ""
-if(p.deduction_list.length > 0){
-p.deduction_list.forEach(d => {
-deductionHTML += `
-<p class="flex justify-between">
-<span>${d.name}</span>
-<span class="text-yellow-400">₱${Number(d.amount).toLocaleString()}</span>
-</p>`
-})
-}else{
-deductionHTML = "<p>No deductions</p>"
-}
+  document.getElementById("payrollModalContent").innerHTML = `
+    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
+      <p class="text-emerald-400 text-lg font-semibold">${p.employee_name}</p>
+      <p>Employment Type : ${p.employee_type}</p>
+      <p>Period : ${p.period_start || '-'} → ${p.period_end || '-'}</p>
+    </div>
 
-// ----------------------
-// LOANS
-// ----------------------
-let loanHTML = ""
-if(p.loan_list && p.loan_list.length > 0){
-p.loan_list.forEach(l => {
-loanHTML += `
-<p class="flex justify-between">
-<span>${l.name}</span>
-<span class="text-red-400">₱${Number(l.amount).toLocaleString()}</span>
-</p>`
-})
-}else{
-loanHTML = "<p>No loans</p>"
-}
+    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+      <p class="text-gray-400">${rateLabel}</p>
+      <p class="text-xl font-semibold text-emerald-400">${rateComputation}</p>
 
-document.getElementById("payrollModalContent").innerHTML = `
+      <p>Allowance :
+        <span class="text-emerald-400">₱${Number(p.allowance_total || 0).toLocaleString()}</span>
+      </p>
 
-<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-2">
-<p class="text-emerald-400 text-lg font-semibold">${p.employee_name}</p>
-<p>Employment Type : ${p.employee_type}</p>
-<p>Period : ${p.period_start || '-'} → ${p.period_end || '-'}</p>
-</div>
+      <hr class="border-gray-700">
 
-<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+      <p>Gross Pay : <span class="text-emerald-400">₱${Number(p.gross_pay).toLocaleString()}</span></p>
 
-<p class="text-gray-400">${rateLabel}</p>
-<p class="text-xl font-semibold text-emerald-400">${rateComputation}</p>
+      <div class="pt-2 border-t border-gray-700">
+        <p class="text-yellow-400 font-semibold mb-2">Deduction Breakdown</p>
+        ${deductionHTML}
+      </div>
 
-<p>Allowance :
-<span class="text-emerald-400">
-₱${Number(p.allowance_total || 0).toLocaleString()}
-</span>
-</p>
+      <div class="pt-2 border-t border-gray-700 mt-2">
+        <p class="text-red-400 font-semibold mb-2">Loan Deductions</p>
+        ${loanHTML}
+      </div>
 
-<hr class="border-gray-700">
+      <p class="text-yellow-400 mt-2">Total Deductions : ₱${Number(p.deductions).toLocaleString()}</p>
+      <p class="text-red-400 mt-1">Total Loans : ₱${Number(p.loan_total || 0).toLocaleString()}</p>
 
-<p>
-Gross Pay :
-<span class="text-emerald-400">
-₱${Number(p.gross_pay).toLocaleString()}
-</span>
-</p>
+      <p class="text-2xl font-bold text-emerald-400">Net Pay : ₱${Number(p.net_pay).toLocaleString()}</p>
+    </div>
+  `;
 
-<div class="pt-2 border-t border-gray-700">
-<p class="text-yellow-400 font-semibold mb-2">Deduction Breakdown</p>
-${deductionHTML}
-</div>
-
-<div class="pt-2 border-t border-gray-700 mt-2">
-<p class="text-red-400 font-semibold mb-2">Loan Deductions</p>
-${loanHTML}
-</div>
-
-<p class="text-yellow-400 mt-2">
-Total Deductions : ₱${Number(p.deductions).toLocaleString()}
-</p>
-
-<p class="text-red-400 mt-1">
-Total Loans : ₱${Number(p.loan_total || 0).toLocaleString()}
-</p>
-
-<p class="text-2xl font-bold text-emerald-400">
-Net Pay : ₱${Number(p.net_pay).toLocaleString()}
-</p>
-
-</div>
-`;
-
-document.getElementById("payrollModal").classList.remove("hidden")
+  document.getElementById("payrollModal").classList.remove("hidden")
 }
 
 function closePayrollModal(){
-document.getElementById("payrollModal").classList.add("hidden")
+  document.getElementById("payrollModal").classList.add("hidden")
 }
-
 </script>
 
 {% endblock %}

@@ -1,156 +1,123 @@
 {% extends 'employee/employee_base.html' %}
-{% block title %}My Job History{% endblock %}
+{% block title %}Job History | Employee{% endblock %}
 
 {% block content %}
 
-<main class="p-6 space-y-6">
+<main class="p-6 space-y-8">
 
-<!-- HEADER -->
-<div class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-        <i class="fa-solid fa-briefcase text-3xl"></i>
-        My Job History
+  <!-- HEADER -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <h1 class="text-3xl font-bold text-blue-400 flex items-center gap-3">
+      <i class="fa-solid fa-briefcase"></i>
+      My Job History
     </h1>
-</div>
+  </div>
 
+  <!-- EMPLOYEE INFO CARD -->
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+    
+    <div>
+      <p class="text-xl font-semibold text-white">
+        {{ employee.get_full_name() }}
+      </p>
+      <p class="text-sm text-gray-400">
+        Employee ID: <span class="text-gray-200 font-medium">{{ employee.employee_id }}</span>
+      </p>
+    </div>
 
-<!-- EMPLOYEE INFO -->
-<div class="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow flex items-center justify-between">
+    <div class="text-sm text-gray-400">
+      Department: 
+      <span class="text-white font-medium">
+        {{ employee.department.name if employee.department else "-" }}
+      </span>
+    </div>
 
-<div>
-<p class="text-lg font-semibold text-white">
-{{ employee.get_full_name() }}
-</p>
+  </div>
 
-<p class="text-sm text-gray-400">
-Employee ID: {{ employee.employee_id }}
-</p>
-</div>
+  <!-- JOB HISTORY TABLE -->
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow overflow-x-auto">
 
-<div class="text-sm text-gray-400">
-Department:
-<span class="text-white font-medium">
-{{ employee.department.name if employee.department else "-" }}
-</span>
-</div>
+    <table class="w-full min-w-[700px] text-sm text-left text-gray-300">
+      <thead class="bg-gray-900 text-gray-400 uppercase text-xs tracking-wider">
+        <tr>
+          <th class="px-5 py-3">Effective Date</th>
+          <th class="px-5 py-3">Position</th>
+          <th class="px-5 py-3">Department</th>
+          <th class="px-5 py-3">Status</th>
+          <th class="px-5 py-3">Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
 
-</div>
+        {% for history in job_history.items %}
+        <tr class="border-t border-gray-700 hover:bg-gray-700/40 transition duration-200 ease-in-out">
 
+          <td class="px-5 py-3 font-medium">
+            {{ history.effective_date.strftime("%B %d, %Y") if history.effective_date else "-" }}
+          </td>
 
+          <td class="px-5 py-3">
+            {{ history.position.name if history.position else "-" }}
+          </td>
 
-<!-- JOB HISTORY TABLE -->
+          <td class="px-5 py-3">
+            {{ history.department.name if history.department else "-" }}
+          </td>
 
-<div class="bg-gray-800 border border-gray-700 rounded-xl shadow overflow-hidden">
+          <td class="px-5 py-3">
+            <span class="px-3 py-1 rounded-full text-xs font-semibold
+            {% if history.status == 'Active' %} bg-green-500/20 text-green-400
+            {% elif history.status == 'Transferred' %} bg-blue-500/20 text-blue-400
+            {% elif history.status == 'Promoted' %} bg-purple-500/20 text-purple-400
+            {% elif history.status == 'Retired' %} bg-gray-500/20 text-gray-400
+            {% elif history.status == 'Resigned' %} bg-yellow-500/20 text-yellow-400
+            {% elif history.status == 'Fired' %} bg-red-500/20 text-red-400
+            {% else %} bg-gray-600/30 text-gray-300
+            {% endif %}">
+              {{ history.status }}
+            </span>
+          </td>
 
-<table class="w-full text-sm text-left text-gray-300">
+          <td class="px-5 py-3 text-gray-400">
+            {{ history.remarks if history.remarks else "-" }}
+          </td>
 
-<thead class="bg-gray-900 text-gray-400 uppercase text-xs">
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center py-8 text-gray-500 font-medium">
+            No job history records found.
+          </td>
+        </tr>
+        {% endfor %}
 
-<tr>
-<th class="px-4 py-3">Effective Date</th>
-<th class="px-4 py-3">Position</th>
-<th class="px-4 py-3">Department</th>
-<th class="px-4 py-3">Status</th>
-<th class="px-4 py-3">Remarks</th>
-</tr>
+      </tbody>
+    </table>
 
-</thead>
+  </div>
 
-<tbody>
+  <!-- PAGINATION -->
+  {% if job_history.pages > 1 %}
+  <div class="flex flex-wrap justify-center mt-6 gap-3 items-center">
+    {% if job_history.has_prev %}
+    <a href="{{ url_for('employee_bp.employee_job_history', page=job_history.prev_num) }}"
+       class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+       ← Previous
+    </a>
+    {% endif %}
 
-{% for history in job_history.items %}
+    <span class="px-4 py-2 text-gray-300 font-medium">
+      Page {{ job_history.page }} of {{ job_history.pages }}
+    </span>
 
-<tr class="border-t border-gray-700 hover:bg-gray-700/40 transition">
-
-<td class="px-4 py-3">
-{{ history.effective_date.strftime("%B %d, %Y") if history.effective_date else "-" }}
-</td>
-
-<td class="px-4 py-3">
-{{ history.position.name if history.position else "-" }}
-</td>
-
-<td class="px-4 py-3">
-{{ history.department.name if history.department else "-" }}
-</td>
-
-<td class="px-4 py-3">
-
-<span class="px-3 py-1 rounded-full text-xs font-semibold
-{% if history.status == 'Active' %}
-bg-green-500/20 text-green-400
-{% elif history.status == 'Transferred' %}
-bg-blue-500/20 text-blue-400
-{% elif history.status == 'Promoted' %}
-bg-purple-500/20 text-purple-400
-{% elif history.status == 'Retired' %}
-bg-gray-500/20 text-gray-400
-{% elif history.status == 'Resigned' %}
-bg-yellow-500/20 text-yellow-400
-{% elif history.status == 'Fired' %}
-bg-red-500/20 text-red-400
-{% else %}
-bg-gray-600/30 text-gray-300
-{% endif %}
-">
-
-{{ history.status }}
-
-</span>
-
-</td>
-
-<td class="px-4 py-3 text-gray-400">
-{{ history.remarks if history.remarks else "-" }}
-</td>
-
-</tr>
-
-{% else %}
-
-<tr>
-<td colspan="5" class="text-center py-6 text-gray-500">
-No job history records found.
-</td>
-</tr>
-
-{% endfor %}
-
-</tbody>
-
-</table>
-
-</div>
-
-
-
-<!-- PAGINATION -->
-
-{% if job_history.pages > 1 %}
-
-<div class="flex justify-center mt-6 gap-2">
-
-{% if job_history.has_prev %}
-<a href="{{ url_for('employee_bp.employee_job_history', page=job_history.prev_num) }}"
-class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">
-Previous
-</a>
-{% endif %}
-
-<span class="px-4 py-2 text-gray-300">
-Page {{ job_history.page }} of {{ job_history.pages }}
-</span>
-
-{% if job_history.has_next %}
-<a href="{{ url_for('employee_bp.employee_job_history', page=job_history.next_num) }}"
-class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600">
-Next
-</a>
-{% endif %}
-
-</div>
-
-{% endif %}
+    {% if job_history.has_next %}
+    <a href="{{ url_for('employee_bp.employee_job_history', page=job_history.next_num) }}"
+       class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+       Next →
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
 
 </main>
 

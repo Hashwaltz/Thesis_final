@@ -24,6 +24,15 @@ def add_payroll_period():
             start_date = datetime.strptime(request.form.get('start_date'), "%Y-%m-%d").date()
             end_date = datetime.strptime(request.form.get('end_date'), "%Y-%m-%d").date()
             pay_date = datetime.strptime(request.form.get('pay_date'), "%Y-%m-%d").date()
+            
+            
+            if not period_name or not start_date or not end_date or not pay_date:
+                flash("All fields are required.", "danger")
+                return redirect(request.url)
+
+            if start_date > end_date:
+                flash("Start date cannot be later than end date.", "danger")
+                return redirect(request.url)
 
             new_period = PayrollPeriod(
                 period_name=period_name,
@@ -80,4 +89,3 @@ def delete_payroll_period(period_id):
     db.session.commit()
     flash('Payroll period deleted successfully.', 'success')
     return redirect(url_for('payroll_admin_bp.view_payroll_periods'))
-

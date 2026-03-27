@@ -1,5 +1,5 @@
 {% extends 'employee/employee_base.html' %} 
-{% block title %}Attendance Records{% endblock %}
+{% block title %}Attendance | Employee{% endblock %}
 
 {% block content %}
 <main class="p-6 space-y-8 bg-gray-900 min-h-screen">
@@ -10,6 +10,7 @@
       <i class="fa-solid fa-calendar-days text-purple-400"></i>
       Attendance Records
     </h1>
+
     <p class="text-gray-400">
       <span class="font-semibold">Summary for this Month:</span>
       Present: <span class="text-green-400">{{ summary.present }}</span> |
@@ -20,28 +21,28 @@
   </header>
 
   <!-- Filter Form -->
-  <div class="bg-gray-800 p-6 rounded-2xl shadow-md mb-6">
+  <div class="bg-gray-800 p-6 rounded-2xl shadow-md">
     <form method="get" id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 
       <!-- Start Date -->
-      <div class="flex flex-col">
-        <label class="text-gray-400 mb-1">Start Date</label>
+      <div>
+        <label class="text-gray-400 mb-1 block">Start Date</label>
         <input type="date" name="start_date" value="{{ start_date_filter }}" 
-               class="p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100">
+               class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100 focus:ring-2 focus:ring-purple-500">
       </div>
 
       <!-- End Date -->
-      <div class="flex flex-col">
-        <label class="text-gray-400 mb-1">End Date</label>
+      <div>
+        <label class="text-gray-400 mb-1 block">End Date</label>
         <input type="date" name="end_date" value="{{ end_date_filter }}" 
-               class="p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100">
+               class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100 focus:ring-2 focus:ring-purple-500">
       </div>
 
       <!-- Status -->
-      <div class="flex flex-col">
-        <label class="text-gray-400 mb-1">Status</label>
-        <select name="status_filter" id="statusFilter" 
-                class="p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100">
+      <div>
+        <label class="text-gray-400 mb-1 block">Status</label>
+        <select name="status_filter" id="statusFilter"
+                class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100 focus:ring-2 focus:ring-purple-500">
           <option value="" {% if not status_filter %}selected{% endif %}>All</option>
           <option value="Present" {% if status_filter=='Present' %}selected{% endif %}>Present</option>
           <option value="Absent" {% if status_filter=='Absent' %}selected{% endif %}>Absent</option>
@@ -50,10 +51,10 @@
         </select>
       </div>
 
-      <!-- Filter Button -->
+      <!-- Button -->
       <div class="flex items-end gap-2">
-        <button type="submit" 
-                class="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition">
+        <button type="submit"
+                class="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow transition">
           <i class="fa-solid fa-magnifying-glass"></i> Filter
         </button>
       </div>
@@ -63,8 +64,10 @@
 
   <!-- Attendance Table -->
   <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow-md p-4">
+
     <table class="min-w-full divide-y divide-gray-700">
-      <caption class="text-lg font-semibold text-gray-100 mb-2">Attendance List</caption>
+      <caption class="text-lg font-semibold text-gray-100 mb-4">Attendance List</caption>
+
       <thead>
         <tr class="text-left text-gray-400 uppercase text-sm">
           <th class="px-4 py-2">Date</th>
@@ -73,57 +76,104 @@
           <th class="px-4 py-2">Status</th>
         </tr>
       </thead>
+
       <tbody class="divide-y divide-gray-700">
         {% for att in attendances.items %}
         <tr class="text-gray-100 hover:bg-gray-700 transition">
-          <td class="px-4 py-2">{{ att.date.strftime('%Y-%m-%d') }}</td>
-          <td class="px-4 py-2">{{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}</td>
-          <td class="px-4 py-2">{{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}</td>
+
+          <td class="px-4 py-2">
+            {{ att.date.strftime('%Y-%m-%d') }}
+          </td>
+
+          <td class="px-4 py-2">
+            {{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}
+          </td>
+
+          <td class="px-4 py-2">
+            {{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}
+          </td>
+
           <td class="px-4 py-2 font-semibold">
-            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full 
-                         {% if att.status == 'Present' %}bg-green-700 text-green-400
-                         {% elif att.status == 'Late' %}bg-yellow-700 text-yellow-400
-                         {% elif att.status == 'Half Day' %}bg-purple-700 text-purple-400
-                         {% else %}bg-red-700 text-red-400{% endif %}">
-              <i class="fa-solid 
-                        {% if att.status == 'Present' %}fa-check
-                        {% elif att.status == 'Late' %}fa-clock
-                        {% elif att.status == 'Half Day' %}fa-adjust
-                        {% else %}fa-xmark{% endif %}"></i>
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm
+              {% if att.status == 'Present' %}bg-green-700/30 text-green-400
+              {% elif att.status == 'Late' %}bg-yellow-700/30 text-yellow-400
+              {% elif att.status == 'Half Day' %}bg-purple-700/30 text-purple-400
+              {% else %}bg-red-700/30 text-red-400{% endif %}">
+
+              <i class="fa-solid
+                {% if att.status == 'Present' %}fa-check
+                {% elif att.status == 'Late' %}fa-clock
+                {% elif att.status == 'Half Day' %}fa-adjust
+                {% else %}fa-xmark{% endif %}">
+              </i>
+
               {{ att.status }}
             </span>
           </td>
+
         </tr>
         {% else %}
         <tr>
-          <td colspan="4" class="px-4 py-2 text-center text-gray-400">No attendance records found.</td>
+          <td colspan="4" class="px-4 py-6 text-center text-gray-400">
+            No attendance records found.
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
     <!-- Pagination -->
-    <div class="flex justify-center mt-4 text-gray-400 space-x-4">
+    <div class="flex justify-center items-center mt-6 text-gray-400 space-x-3">
+
       {% if attendances.has_prev %}
-        <a href="{{ url_for('employee_bp.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}" 
-          class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">Previous</a>
+        <a href="{{ url_for('employee_bp.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
+           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">
+           Previous
+        </a>
       {% endif %}
 
-      <span class="px-3 py-1">{{ attendances.page }} of {{ attendances.pages }}</span>
+      <span class="px-3 py-1 bg-gray-700 rounded-lg">
+        {{ attendances.page }} / {{ attendances.pages }}
+      </span>
 
       {% if attendances.has_next %}
-        <a href="{{ url_for('employee_bp.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}" 
-          class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">Next</a>
+        <a href="{{ url_for('employee_bp.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
+           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">
+           Next
+        </a>
       {% endif %}
+
     </div>
+
   </div>
 
 </main>
 
-<!-- Auto-submit JS for status -->
+<!-- SweetAlert -->
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // Auto-submit on status change
   document.getElementById('statusFilter').addEventListener('change', function() {
       document.getElementById('filterForm').submit();
   });
+
+  // Flash Messages
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      Swal.fire({
+        icon: "{{ 'success' if category == 'success' else 'error' }}",
+        title: "{{ 'Success' if category == 'success' else 'Error' }}",
+        text: "{{ msg }}",
+        timer: 2000,
+        showConfirmButton: false
+      });
+    {% endfor %}
+  {% endwith %}
+
+});
 </script>
+
 {% endblock %}

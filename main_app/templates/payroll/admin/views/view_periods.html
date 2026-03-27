@@ -1,25 +1,33 @@
 {% extends 'payroll/admin/payroll_admin_base.html' %}
-{% block title %}Payroll Admin - Payroll Periods{% endblock %}
+{% block title %}Payroll Periods | Payroll Admin {% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-6 text-gray-200">
+<section class="p-4 sm:p-6 space-y-6 text-gray-200">
 
   <!-- ===== HEADER ===== -->
-  <div class="flex items-center justify-between mb-4">
-    <h1 class="text-2xl font-semibold text-emerald-400">Payroll Periods</h1>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+
+    <h1 class="text-xl sm:text-2xl font-semibold text-emerald-400">
+      Payroll Periods
+    </h1>
+
     <a href="{{ url_for('payroll_admin_bp.add_payroll_period') }}"
-       class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white transition">
+       class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white transition w-full sm:w-auto">
       <i class="fa-solid fa-plus"></i>
       Add Payroll Period
     </a>
+
   </div>
 
   <!-- ===== FILTERS ===== -->
-  <form method="GET" class="flex flex-wrap gap-4 mb-4">
+  <form method="GET"
+        class="flex flex-col lg:flex-row flex-wrap gap-4 items-stretch lg:items-end">
+
     <!-- Status -->
-    <div class="flex flex-col">
-      <label for="status" class="text-gray-300">Status</label>
-      <select name="status" id="status" class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200">
+    <div class="flex flex-col w-full sm:w-auto">
+      <label class="text-gray-300 text-sm">Status</label>
+      <select name="status"
+              class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 w-full sm:w-auto">
         <option value="">All</option>
         <option value="Open" {% if request.args.get('status') == 'Open' %}selected{% endif %}>Open</option>
         <option value="Processing" {% if request.args.get('status') == 'Processing' %}selected{% endif %}>Processing</option>
@@ -28,126 +36,144 @@
     </div>
 
     <!-- Start Date -->
-    <div class="flex flex-col">
-      <label for="start_date" class="text-gray-300">Start Date From</label>
-      <input type="date" name="start_date" id="start_date"
+    <div class="flex flex-col w-full sm:w-auto">
+      <label class="text-gray-300 text-sm">Start Date From</label>
+      <input type="date"
+             name="start_date"
              value="{{ request.args.get('start_date', '') }}"
-             class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200">
+             class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 w-full sm:w-auto">
     </div>
 
     <!-- End Date -->
-    <div class="flex flex-col">
-      <label for="end_date" class="text-gray-300">End Date To</label>
-      <input type="date" name="end_date" id="end_date"
+    <div class="flex flex-col w-full sm:w-auto">
+      <label class="text-gray-300 text-sm">End Date To</label>
+      <input type="date"
+             name="end_date"
              value="{{ request.args.get('end_date', '') }}"
-             class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200">
+             class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 w-full sm:w-auto">
     </div>
 
-    <div class="flex items-end">
+    <!-- BUTTONS -->
+    <div class="flex gap-2 w-full sm:w-auto">
+
       <button type="submit"
-              class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition">
+              class="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition">
         Filter
       </button>
+
+      <!-- CLEAR FILTER 🔥 -->
+      <a href="{{ url_for('payroll_admin_bp.view_payroll_periods') }}"
+         class="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-white text-center transition">
+        Clear
+      </a>
+
     </div>
+
   </form>
 
-<!-- TABLE CARD -->
-<div class="overflow-hidden bg-gray-800 rounded-2xl border border-gray-700 shadow-xl">
+  <!-- ===== TABLE ===== -->
+  <div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700 shadow-xl">
 
-<table class="w-full text-sm">
+    <table class="min-w-[900px] w-full text-xs sm:text-sm">
 
-<thead class="bg-gray-900">
-<tr class="text-gray-400">
-    <th class="p-4 text-center">Period Name</th>
-    <th class="p-4 text-center">Start Date</th>
-    <th class="p-4 text-center">End Date</th>
-    <th class="p-4 text-center">Pay Date</th>
-    <th class="p-4 text-center">Status</th>
-    <th class="p-4 text-center">Created At</th>
-    <th class="p-4 text-center">Actions</th>
-</tr>
-</thead>
+      <thead class="bg-gray-900">
+        <tr class="text-gray-400">
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">Period Name</th>
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">Start Date</th>
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">End Date</th>
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">Pay Date</th>
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">Status</th>
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">Created At</th>
+          <th class="p-3 sm:p-4 text-center whitespace-nowrap">Actions</th>
+        </tr>
+      </thead>
 
-<tbody class="divide-y divide-gray-700">
+      <tbody class="divide-y divide-gray-700">
 
-{% if periods %}
-{% for period in periods %}
+      {% if periods %}
+      {% for period in periods %}
 
-<tr class="hover:bg-gray-700/40 transition">
+        <tr class="hover:bg-gray-700/40 transition">
 
-<td class="p-4 text-center font-medium text-white">
-{{ period.period_name }}
-</td>
+          <td class="p-3 sm:p-4 text-center font-medium text-white whitespace-nowrap">
+            {{ period.period_name }}
+          </td>
 
-<td class="p-4 text-center">
-{{ period.start_date.strftime('%b %d, %Y') }}
-</td>
+          <td class="p-3 sm:p-4 text-center whitespace-nowrap">
+            {{ period.start_date.strftime('%b %d, %Y') }}
+          </td>
 
-<td class="p-4 text-center">
-{{ period.end_date.strftime('%b %d, %Y') }}
-</td>
+          <td class="p-3 sm:p-4 text-center whitespace-nowrap">
+            {{ period.end_date.strftime('%b %d, %Y') }}
+          </td>
 
-<td class="p-4 text-center">
-{{ period.pay_date.strftime('%b %d, %Y') }}
-</td>
+          <td class="p-3 sm:p-4 text-center whitespace-nowrap">
+            {{ period.pay_date.strftime('%b %d, %Y') }}
+          </td>
 
-<td class="p-4 text-center font-semibold"
-style="color:
-{% if period.status == 'Open' %}#10b981
-{% elif period.status == 'Processing' %}#f59e0b
-{% else %}#ef4444
-{% endif %};">
+          <td class="p-3 sm:p-4 text-center font-semibold whitespace-nowrap"
+              style="color:
+              {% if period.status == 'Open' %}#10b981
+              {% elif period.status == 'Processing' %}#f59e0b
+              {% else %}#ef4444{% endif %};">
+            {{ period.status }}
+          </td>
 
-{{ period.status }}
+          <td class="p-3 sm:p-4 text-center text-gray-400 whitespace-nowrap">
+            {{ period.created_at.strftime('%b %d, %Y') }}
+          </td>
 
-</td>
+          <td class="p-3 sm:p-4 text-center whitespace-nowrap">
 
-<td class="p-4 text-center text-gray-400">
-{{ period.created_at.strftime('%b %d, %Y') }}
-</td>
+            <a href="{{ url_for('payroll_admin_bp.edit_payroll_period', period_id=period.id) }}"
+               class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500 hover:bg-yellow-400 rounded-lg text-gray-900 text-sm transition">
 
-<td class="p-4 text-center">
+              <i class="fa-solid fa-pen-to-square"></i>
+              Edit
 
-<a href="{{ url_for('payroll_admin_bp.edit_payroll_period', period_id=period.id) }}"
-class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500 hover:bg-yellow-400 rounded-lg text-gray-900 text-sm transition">
+            </a>
 
-<i class="fa-solid fa-pen-to-square"></i>
-Edit
+          </td>
 
-</a>
+        </tr>
 
-</td>
+      {% endfor %}
+      {% else %}
 
-</tr>
+        <tr>
+          <td colspan="7" class="p-6 text-center text-gray-400">
+            No payroll periods found.
+          </td>
+        </tr>
 
-{% endfor %}
-{% else %}
+      {% endif %}
 
-<tr>
-<td colspan="7" class="p-6 text-center text-gray-400">
-No payroll periods found.
-</td>
-</tr>
+      </tbody>
+    </table>
 
-{% endif %}
-
-</tbody>
-</table>
-</div>
+  </div>
 
   <!-- ===== PAGINATION ===== -->
-  <div class="flex justify-center items-center gap-4 mt-4">
+  <div class="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 mt-4">
+
     {% if pagination.has_prev %}
       <a href="{{ url_for('payroll_admin_bp.view_payroll_periods', page=pagination.prev_num, status=request.args.get('status',''), start_date=request.args.get('start_date',''), end_date=request.args.get('end_date','')) }}"
-         class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition">Previous</a>
+         class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition w-full sm:w-auto text-center">
+        Previous
+      </a>
     {% endif %}
 
-    <span class="text-gray-400">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    <span class="text-gray-400 text-sm text-center">
+      Page {{ pagination.page }} of {{ pagination.pages }}
+    </span>
 
     {% if pagination.has_next %}
       <a href="{{ url_for('payroll_admin_bp.view_payroll_periods', page=pagination.next_num, status=request.args.get('status',''), start_date=request.args.get('start_date',''), end_date=request.args.get('end_date','')) }}"
-         class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition">Next</a>
+         class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-200 transition w-full sm:w-auto text-center">
+        Next
+      </a>
     {% endif %}
+
   </div>
 
 </section>

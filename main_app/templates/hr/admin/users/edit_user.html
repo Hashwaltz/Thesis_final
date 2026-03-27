@@ -1,50 +1,93 @@
 <div id="editUserModal"
-class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+     class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
 
-<div class="bg-gray-900 p-6 rounded-xl w-full max-w-md">
+  <div class="bg-gray-900 p-6 rounded-2xl w-full max-w-md border border-gray-700 shadow-xl relative">
 
-<h2 class="text-lg font-bold text-blue-400 mb-4">Edit User</h2>
+    <!-- Close Button -->
+    <button type="button"
+            id="cancelEditUserModal"
+            class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
 
-<form id="editUserFormModal">
+    <!-- Header -->
+    <h2 class="text-xl font-semibold text-blue-400 mb-5 text-center flex items-center justify-center gap-2">
+      <i class="fa-solid fa-user-pen"></i>
+      Edit User
+    </h2>
 
-<input type="hidden" name="email">
+    <form id="editUserFormModal" class="space-y-4">
 
-<div class="mb-4">
-<label class="text-gray-400 text-sm">Role</label>
-<select name="role" class="w-full bg-gray-800 p-2 rounded">
-<option value="">Select Role</option>
-<option value="hr_admin">HR Admin</option>
-<option value="officer">HR Officer</option>
-<option value="leave_officer">Leave Officer</option>
-<option value="employee">Employee</option>
-<option value="payroll_admin">Payroll Admin</option>
-<option value="payroll_staff">Payroll Staff</option>
-</select>
-</div>
+      <input type="hidden" name="email">
 
-<div id="departmentField" class="hidden mb-4">
-<label class="text-gray-400 text-sm">Department</label>
-<select name="department_id" class="w-full bg-gray-800 p-2 rounded">
-<option value="">Select Department</option>
-{% for dept in departments %}
-<option value="{{ dept.id }}">{{ dept.name }}</option>
-{% endfor %}
-</select>
-</div>
+      <!-- Role -->
+      <div>
+        <label class="block text-gray-400 text-sm mb-1">
+          <i class="fa-solid fa-user-shield mr-1"></i> Role
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-user-shield absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <select name="role"
+                  class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Role</option>
+            <option value="hr_admin">HR Admin</option>
+            <option value="officer">HR Officer</option>
+            <option value="leave_officer">Leave Officer</option>
+            <option value="employee">Employee</option>
+            <option value="payroll_admin">Payroll Admin</option>
+            <option value="payroll_staff">Payroll Staff</option>
+          </select>
+        </div>
+      </div>
 
-<div class="mb-4">
-<label class="text-gray-400 text-sm">Status</label>
-<select name="status" class="w-full bg-gray-800 p-2 rounded">
-<option value="1">Active</option>
-<option value="0">Inactive</option>
-</select>
-</div>
+      <!-- Department -->
+      <div id="departmentField" class="hidden">
+        <label class="block text-gray-400 text-sm mb-1">
+          <i class="fa-solid fa-building mr-1"></i> Department
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-building absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <select name="department_id"
+                  class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Department</option>
+            {% for dept in departments %}
+              <option value="{{ dept.id }}">{{ dept.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
 
-<div class="flex justify-end gap-3">
-<button type="button" id="cancelEditUserModal" class="bg-gray-600 px-4 py-2 rounded">Cancel</button>
-<button type="submit" class="bg-blue-600 px-4 py-2 rounded">Update</button>
-</div>
+      <!-- Status -->
+      <div>
+        <label class="block text-gray-400 text-sm mb-1">
+          <i class="fa-solid fa-toggle-on mr-1"></i> Status
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-toggle-on absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <select name="status"
+                  class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-blue-500">
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </select>
+        </div>
+      </div>
 
-</form>
-</div>
+      <!-- Buttons -->
+      <div class="flex justify-end gap-3 pt-2">
+
+        <button type="button"
+                id="cancelEditUserModal"
+                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
+          <i class="fa-solid fa-ban"></i> Cancel
+        </button>
+
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-md">
+          <i class="fa-solid fa-floppy-disk"></i> Update
+        </button>
+
+      </div>
+
+    </form>
+  </div>
 </div>

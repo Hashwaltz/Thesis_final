@@ -1,93 +1,193 @@
 {% extends "employee/employee_base.html" %}
-{% block title %}Employee Dashboard{% endblock %}
+{% block title %}Dashboard | Employee{% endblock %}
 
 {% block content %}
-<div class="p-6 bg-gray-900 min-h-screen space-y-6">
+<div class="p-4 md:p-6 bg-gray-950 min-h-screen space-y-6">
 
-  <!-- Greeting -->
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-100">Welcome, {{ employee.get_full_name() }}!</h1>
-    <p class="text-gray-400">{{ employee.position.name if employee.position else 'Employee' }} - {{ employee.department.name if employee.department else '' }}</p>
+  <!-- HEADER / GREETING -->
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-gray-900 p-6 rounded-2xl shadow border border-gray-800">
+
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-white">
+        Welcome, {{ employee.get_full_name() }} 👋
+      </h1>
+      <p class="text-gray-400 mt-1">
+        {{ employee.position.name if employee.position else 'Employee' }}
+        • {{ employee.department.name if employee.department else 'No Department' }}
+      </p>
+    </div>
+
+    <div class="text-sm text-gray-400">
+      {{ today.strftime('%A, %B %d, %Y') }}
+    </div>
+
   </div>
 
-  <!-- Dashboard Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <!-- QUICK STATS -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-    <!-- Attendance Summary -->
-    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
+      <p class="text-gray-400 text-sm">Days Recorded</p>
+      <h2 class="text-xl font-bold text-white">{{ total_days }}</h2>
+    </div>
+
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
+      <p class="text-gray-400 text-sm">Present</p>
+      <h2 class="text-xl font-bold text-green-400">{{ present_days }}</h2>
+    </div>
+
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
+      <p class="text-gray-400 text-sm">Late</p>
+      <h2 class="text-xl font-bold text-yellow-400">{{ late_days }}</h2>
+    </div>
+
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
+      <p class="text-gray-400 text-sm">Leave Types</p>
+      <h2 class="text-xl font-bold text-purple-400">{{ leave_summary|length }}</h2>
+    </div>
+
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid lg:grid-cols-3 gap-6">
+
+    <!-- ATTENDANCE -->
+    <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800 hover:shadow-xl transition">
+
       <div class="flex items-center gap-3 mb-4">
         <i class="fa-solid fa-calendar-check text-purple-400 text-2xl"></i>
-        <h2 class="text-xl font-semibold text-gray-100">Attendance Summary</h2>
+        <h2 class="text-lg font-semibold text-white">Attendance Summary</h2>
       </div>
-      <p class="text-gray-400 mb-2">({{ today.strftime('%b %Y') }})</p>
-      <ul class="space-y-2 text-gray-200">
-        <li><strong>Total Days Recorded:</strong> {{ total_days }}</li>
-        <li><strong>Present:</strong> {{ present_days }}</li>
-        <li><strong>Late:</strong> {{ late_days }}</li>
+
+      <p class="text-gray-400 mb-3 text-sm">
+        {{ today.strftime('%B %Y') }}
+      </p>
+
+      <ul class="space-y-2 text-gray-200 text-sm">
+        <li class="flex justify-between">
+          <span>Total Days</span>
+          <span class="font-semibold">{{ total_days }}</span>
+        </li>
+        <li class="flex justify-between">
+          <span>Present</span>
+          <span class="text-green-400 font-semibold">{{ present_days }}</span>
+        </li>
+        <li class="flex justify-between">
+          <span>Late</span>
+          <span class="text-yellow-400 font-semibold">{{ late_days }}</span>
+        </li>
       </ul>
+
     </div>
 
-    <!-- Leave Summary -->
-    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+    <!-- LEAVE -->
+    <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800 hover:shadow-xl transition">
+
       <div class="flex items-center gap-3 mb-4">
         <i class="fa-solid fa-plane-departure text-purple-400 text-2xl"></i>
-        <h2 class="text-xl font-semibold text-gray-100">Leave Balances</h2>
+        <h2 class="text-lg font-semibold text-white">Leave Balances</h2>
       </div>
-      <ul class="space-y-2 text-gray-200">
+
+      <ul class="space-y-2 text-sm text-gray-200 max-h-48 overflow-y-auto pr-2">
         {% for leave_name, balance in leave_summary.items() %}
-          <li>
-            <i class="fa-solid fa-circle-check text-purple-400 mr-2"></i>
-            <strong>{{ leave_name }}:</strong> {{ balance | round(2) }} days
+          <li class="flex justify-between items-center">
+            <span>{{ leave_name }}</span>
+            <span class="text-purple-400 font-semibold">
+              {{ balance | round(2) }} d
+            </span>
           </li>
         {% else %}
-          <li>No leave records found.</li>
+          <li class="text-gray-400">No leave records found.</li>
         {% endfor %}
       </ul>
+
     </div>
 
-    <!-- Latest Payslip -->
-    <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
+    <!-- PAYSLIP -->
+    <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800 hover:shadow-xl transition">
+
       <div class="flex items-center gap-3 mb-4">
         <i class="fa-solid fa-file-invoice text-purple-400 text-2xl"></i>
-        <h2 class="text-xl font-semibold text-gray-100">Latest Payslip</h2>
+        <h2 class="text-lg font-semibold text-white">Latest Payslip</h2>
       </div>
+
       {% if latest_payslip %}
-        <ul class="space-y-2 text-gray-200">
-          <li><i class="fa-solid fa-calendar-days text-purple-400 mr-2"></i><strong>Pay Date:</strong> {{ latest_payslip.generated_at.strftime('%b %d, %Y') }}</li>
-          <li><i class="fa-solid fa-money-bill-wave text-purple-400 mr-2"></i><strong>Gross Pay:</strong> ₱{{ latest_payslip.gross_pay or 0 }}</li>
-          <li><i class="fa-solid fa-scale-balanced text-purple-400 mr-2"></i><strong>Total Deductions:</strong> ₱{{ latest_payslip.total_deductions or 0 }}</li>
-          <li><i class="fa-solid fa-hand-holding-dollar text-purple-400 mr-2"></i><strong>Net Pay:</strong> ₱{{ latest_payslip.net_pay or 0 }}</li>
+        <ul class="space-y-2 text-sm text-gray-200">
+
+          <li class="flex justify-between">
+            <span>Pay Date</span>
+            <span>{{ latest_payslip.generated_at.strftime('%b %d, %Y') }}</span>
+          </li>
+
+          <li class="flex justify-between">
+            <span>Gross</span>
+            <span class="text-green-400">₱{{ latest_payslip.gross_pay or 0 }}</span>
+          </li>
+
+          <li class="flex justify-between">
+            <span>Deductions</span>
+            <span class="text-red-400">₱{{ latest_payslip.total_deductions or 0 }}</span>
+          </li>
+
+          <li class="flex justify-between font-semibold">
+            <span>Net Pay</span>
+            <span class="text-purple-400">₱{{ latest_payslip.net_pay or 0 }}</span>
+          </li>
+
         </ul>
+
         <a href="#"
-           class="mt-4 inline-flex items-center gap-2 text-white bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded transition">
+           class="mt-4 w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition">
           <i class="fa-solid fa-eye"></i> View Payslip
         </a>
+
       {% else %}
-        <p class="text-gray-400">No payslip generated yet.</p>
+        <p class="text-gray-400 text-sm">No payslip available yet.</p>
       {% endif %}
+
     </div>
 
   </div>
 
-  <!-- Quick Actions -->
-  <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-2xl transition">
-    <h2 class="text-xl font-semibold mb-4 text-gray-100 flex items-center gap-2">
+  <!-- QUICK ACTIONS -->
+  <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800">
+
+    <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">
       <i class="fa-solid fa-bolt text-purple-400"></i> Quick Actions
     </h2>
+
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <a href="{{url_for('employee_bp.request_leave')}}" class="flex items-center justify-center gap-2 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition">
-        <i class="fa-solid fa-plane-departure"></i> Request Leave
+
+      <a href="{{url_for('employee_bp.request_leave')}}"
+         class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl transition hover:-translate-y-1">
+
+        <i class="fa-solid fa-plane-departure text-xl mb-2"></i>
+        <span class="text-sm">Request Leave</span>
       </a>
-      <a href="{{url_for('employee_bp.attendance')}}" class="flex items-center justify-center gap-2 bg-purple-400 text-white px-4 py-2 rounded hover:bg-purple-500 transition">
-        <i class="fa-solid fa-calendar-check"></i> View Attendance
+
+      <a href="{{url_for('employee_bp.attendance')}}"
+         class="flex flex-col items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-xl transition hover:-translate-y-1">
+
+        <i class="fa-solid fa-calendar-check text-xl mb-2"></i>
+        <span class="text-sm">Attendance</span>
       </a>
-      <a href="#" class="flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition">
-        <i class="fa-solid fa-file-invoice"></i> View Payslips
+
+      <a href="#"
+         class="flex flex-col items-center justify-center bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl transition hover:-translate-y-1">
+
+        <i class="fa-solid fa-file-invoice text-xl mb-2"></i>
+        <span class="text-sm">Payslips</span>
       </a>
-      <a href="{{url_for('employee_bp.profile')}}" class="flex items-center justify-center gap-2 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition">
-        <i class="fa-solid fa-user-pen"></i> Update Profile
+
+      <a href="{{url_for('employee_bp.profile')}}"
+         class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-xl transition hover:-translate-y-1">
+
+        <i class="fa-solid fa-user-pen text-xl mb-2"></i>
+        <span class="text-sm">Profile</span>
       </a>
+
     </div>
+
   </div>
 
 </div>

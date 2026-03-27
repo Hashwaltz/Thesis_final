@@ -44,29 +44,48 @@
   <body class="bg-gray-900 text-gray-100">
 
     <!-- NAVBAR -->
-    <header class="absolute inset-x-0 top-0 z-50 animate-fade-up delay-100">
+    <header class="absolute inset-x-0 top-0 z-50">
       <nav class="flex items-center justify-between p-6 lg:px-8">
-        <div class="flex lg:flex-1 items-center animate-fade-left delay-200">
-          <a href="{{ url_for('index') }}" class="-m-1.5 p-1.5 flex items-center space-x-2">
+
+        <!-- LOGO -->
+        <div class="flex items-center">
+          <a href="{{ url_for('index') }}" class="flex items-center space-x-2">
             <span class="text-white font-semibold text-lg">GovHRPay</span>
           </a>
         </div>
-        <div class="flex lg:hidden animate-fade-right delay-200">
-          <button
-            type="button"
-            command="show-modal"
-            commandfor="mobile-menu"
-            class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-300 hover:text-white"
-          >
-            <i class="fa-solid fa-bars text-xl"></i>
-          </button>
-        </div>
-        <div class="hidden lg:flex lg:gap-x-10 animate-fade-up delay-300">
+
+        <!-- DESKTOP NAV -->
+        <div class="hidden lg:flex lg:gap-x-10">
           <a href="{{url_for('index')}}" class="text-sm font-semibold text-white hover:text-indigo-400">Home</a>
           <a href="{{url_for('about')}}" class="text-sm font-semibold text-indigo-400">About</a>
           <a href="{{url_for('features')}}" class="text-sm font-semibold text-white hover:text-indigo-400">System Features</a>
         </div>
+
+        <!-- HAMBURGER -->
+        <div class="lg:hidden">
+          <button onclick="toggleMenu()" class="text-white text-2xl">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+
       </nav>
+
+      <!-- MOBILE MENU -->
+      <div id="mobileMenu" class="hidden bg-gray-900 px-6 pb-6 space-y-4 lg:hidden">
+
+        <a href="{{url_for('index')}}" class="block text-white font-semibold hover:text-indigo-400">
+          Home
+        </a>
+
+        <a href="{{url_for('about')}}" class="block text-indigo-400 font-semibold">
+          About
+        </a>
+
+        <a href="{{url_for('features')}}" class="block text-white font-semibold hover:text-indigo-400">
+          System Features
+        </a>
+
+      </div>
     </header>
 
     <!-- HERO -->

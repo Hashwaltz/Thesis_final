@@ -1,105 +1,142 @@
-{% extends "payroll_base.html" %}
+{% extends "payroll_auth/payroll_base.html" %}
 {% block title %}About | GovHRPay Payroll{% endblock %}
 
 {% block content %}
 <section class="w-full bg-gray-950 text-gray-100">
 
-  <!-- Hero Section -->
-  <div class="relative bg-gradient-to-br from-green-700 to-emerald-800 py-20 text-center">
-    <div class="max-w-4xl mx-auto px-6">
-      <h1 class="text-5xl font-bold mb-4 text-white">About GovHRPay Payroll</h1>
-      <p class="text-gray-200 text-lg leading-relaxed">
-        Empowering Accurate, Transparent, and Secure Payroll Management for Norzagaray’s Government Workforce.
+  <!-- HERO -->
+  <div class="relative bg-gradient-to-br from-green-700 to-emerald-800 py-24 text-center">
+    <div class="max-w-5xl mx-auto px-6">
+
+      <div class="flex justify-center mb-6">
+        <img src="{{ url_for('static', filename='img/logo2.avif') }}"
+             class="w-24 h-24 rounded-full shadow-lg border border-white"
+             alt="GovHRPay Logo">
+      </div>
+
+      <h1 class="text-5xl font-bold mb-4 text-white">GovHRPay Payroll</h1>
+      <p class="text-gray-200 text-lg leading-relaxed max-w-3xl mx-auto">
+        A Web-Based Payroll Management System designed to automate salary computation,
+        deductions, and payslip generation for government employees in Norzagaray.
       </p>
     </div>
   </div>
 
-  <!-- System Overview -->
+  <!-- SYSTEM OVERVIEW -->
   <div class="max-w-6xl mx-auto py-20 px-6 grid lg:grid-cols-2 gap-12 items-center">
+
     <div>
-      <h2 class="text-3xl font-bold mb-4 text-green-400">Our Vision & Purpose</h2>
-      <p class="text-gray-300 leading-relaxed mb-6">
-        <strong>GovHRPay Payroll</strong> is a modern digital payroll system designed to ensure
-        accurate salary computation, automated deductions, and transparent payslip generation
-        for local government employees.
+      <h2 class="text-3xl font-bold mb-4 text-green-400">System Overview</h2>
+
+      <p class="text-gray-300 leading-relaxed mb-4">
+        <strong>GovHRPay Payroll</strong> is a modern payroll system designed to ensure
+        accurate salary computation and efficient payroll processing.
       </p>
+
+      <p class="text-gray-300 leading-relaxed mb-4">
+        It integrates employee attendance, government deductions, and benefits into
+        one streamlined platform.
+      </p>
+
       <p class="text-gray-300 leading-relaxed">
-        It integrates seamlessly with the HR system to provide real-time attendance-based payroll,
-        tax and contribution automation, and secure financial records management.
+        The system enhances transparency, reduces manual errors, and ensures timely
+        salary distribution.
       </p>
     </div>
+
     <div class="flex justify-center">
-      <img src="{{ url_for('static', filename='img/payroll_about.avif') }}"
-           alt="Payroll System Overview"
-           class="rounded-2xl shadow-2xl w-full max-w-md" />
+      <img src="{{ url_for('static', filename='img/hr/payroll.jpg') }}"
+           class="rounded-2xl shadow-2xl w-full max-w-md"
+           alt="Payroll System Overview">
     </div>
   </div>
 
-  <!-- About Norzagaray Section -->
+  <!-- CORE FEATURES -->
   <section class="bg-gray-900 py-20">
     <div class="max-w-6xl mx-auto px-6">
+
       <h2 class="text-3xl font-bold text-center text-green-400 mb-10">
-        About Norzagaray, Bulacan
+        Core Modules
       </h2>
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <img src="{{ url_for('static', filename='img/muni.jpg') }}"
-               alt="Norzagaray Landscape"
-               class="rounded-2xl shadow-lg w-full" />
-        </div>
-        <div>
-          <p class="text-gray-300 mb-4 leading-relaxed">
-            <strong>Norzagaray</strong> is a 1st class municipality located in the province of Bulacan,
-            Philippines. GovHRPay Payroll supports the municipality by ensuring every employee
-            receives accurate and timely compensation.
-          </p>
-          <p class="text-gray-300 mb-4 leading-relaxed">
-            By automating payroll, deductions, and payslips, the system strengthens transparency,
-            accountability, and financial integrity in public service.
-          </p>
-          <p class="text-gray-300 leading-relaxed">
-            GovHRPay Payroll is part of the municipality’s digital governance initiative,
-            working hand-in-hand with the HR system for complete workforce management.
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+          <h3 class="text-lg font-semibold text-white mb-2">Payroll Processing</h3>
+          <p class="text-gray-300 text-sm">
+            Automates salary computation based on attendance and employee data.
           </p>
         </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+          <h3 class="text-lg font-semibold text-white mb-2">Deductions Management</h3>
+          <p class="text-gray-300 text-sm">
+            Handles taxes, GSIS, PhilHealth, Pag-IBIG, and other deductions automatically.
+          </p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+          <h3 class="text-lg font-semibold text-white mb-2">Payslip Generation</h3>
+          <p class="text-gray-300 text-sm">
+            Generates detailed and downloadable employee payslips.
+          </p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+          <h3 class="text-lg font-semibold text-white mb-2">Attendance Integration</h3>
+          <p class="text-gray-300 text-sm">
+            Syncs attendance records directly into payroll computation.
+          </p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+          <h3 class="text-lg font-semibold text-white mb-2">Payroll Reports</h3>
+          <p class="text-gray-300 text-sm">
+            Provides summaries, analytics, and payroll history reports.
+          </p>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+          <h3 class="text-lg font-semibold text-white mb-2">Data Security</h3>
+          <p class="text-gray-300 text-sm">
+            Ensures secure handling of financial records and employee payroll data.
+          </p>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- Social Media Section -->
-  <section class="bg-gradient-to-r from-green-800 to-emerald-800 py-16 text-center">
-    <div class="max-w-4xl mx-auto px-6">
-      <h2 class="text-3xl font-bold text-white mb-6">Connect With Norzagaray</h2>
-      <p class="text-gray-200 mb-8">
-        Stay updated with news, announcements, and payroll-related advisories from the Local Government of Norzagaray.
-      </p>
-      <div class="flex justify-center space-x-6">
-        <a href="https://www.facebook.com/lgunorzagaray" target="_blank" class="text-green-300 hover:text-white transition">
-          <i class="fab fa-facebook-f text-3xl"></i>
-        </a>
-        <a href="https://www.instagram.com" target="_blank" class="text-green-300 hover:text-white transition">
-          <i class="fab fa-instagram text-3xl"></i>
-        </a>
-        <a href="https://www.twitter.com" target="_blank" class="text-green-300 hover:text-white transition">
-          <i class="fab fa-twitter text-3xl"></i>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Developers Section -->
+  <!-- SYSTEM IMPACT -->
   <section class="bg-gray-950 py-20">
-    <div class="max-w-6xl mx-auto px-6 text-center">
-      <h2 class="text-3xl font-bold text-green-400 mb-6">Developed By</h2>
-      <p class="text-gray-300 mb-10 max-w-3xl mx-auto">
-        GovHRPay Payroll was developed as part of a digital transformation initiative to modernize
-        government payroll services in Norzagaray, Bulacan.
+    <div class="max-w-5xl mx-auto px-6 text-center">
+
+      <h2 class="text-3xl font-bold text-green-400 mb-6">System Impact</h2>
+
+      <p class="text-gray-300 leading-relaxed">
+        GovHRPay Payroll improves efficiency in payroll operations by automating
+        complex computations and minimizing manual errors. It strengthens financial
+        transparency and ensures that employees receive accurate and timely compensation.
       </p>
-      <div class="flex justify-center">
-        <img src="{{ url_for('static', filename='img/dev_team.jpg') }}"
-             alt="Development Team"
-             class="rounded-2xl shadow-lg w-full max-w-lg" />
-      </div>
+
+    </div>
+  </section>
+
+  <!-- DEVELOPERS -->
+  <section class="bg-gray-900 py-20">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+
+      <h2 class="text-3xl font-bold text-green-400 mb-6">Developed By</h2>
+
+      <p class="text-gray-300 mb-10 max-w-3xl mx-auto">
+        GovHRPay Payroll is part of a digital governance initiative aimed at modernizing
+        payroll systems in Norzagaray, Bulacan through a secure and efficient platform.
+      </p>
+
+      <img src="{{ url_for('static', filename='img/dev_team.jpg') }}"
+           class="rounded-2xl shadow-lg w-full max-w-lg mx-auto"
+           alt="Development Team">
+
     </div>
   </section>
 
