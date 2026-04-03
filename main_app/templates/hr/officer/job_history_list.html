@@ -6,18 +6,15 @@
 
   <!-- Page Header -->
   <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-
     <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
       <i class="fa-solid fa-briefcase text-3xl"></i>
       Job History
     </h1>
-
   </header>
-
 
   <!-- Filters -->
   <form method="GET"
-        class="flex flex-col md:flex-row gap-4 items-start md:items-end
+        class="flex flex-col md:flex-row gap-4 flex-wrap items-start md:items-end
                bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
 
     <!-- Employee Search -->
@@ -28,7 +25,7 @@
              value="{{ request.args.get('employee','') }}"
              placeholder="Search employee..."
              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                    focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">
     </div>
 
     <!-- Department -->
@@ -36,17 +33,13 @@
       <label class="text-gray-400">Department</label>
       <select name="department"
               class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                     focus:outline-none focus:ring-2 focus:ring-blue-400">
-
+                     focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">
         <option value="">All Departments</option>
-
         {% for dept in departments %}
-        <option value="{{ dept.id }}"
-        {% if request.args.get('department') == dept.id|string %}selected{% endif %}>
+        <option value="{{ dept.id }}" {% if request.args.get('department') == dept.id|string %}selected{% endif %}>
           {{ dept.name }}
         </option>
         {% endfor %}
-
       </select>
     </div>
 
@@ -55,163 +48,96 @@
       <label class="text-gray-400">Status</label>
       <select name="status"
               class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                     focus:outline-none focus:ring-2 focus:ring-blue-400">
-
+                     focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">
         <option value="">All Status</option>
-        <option value="Active">Active</option>
-        <option value="Resigned">Resigned</option>
-        <option value="Terminated">Terminated</option>
-        <option value="LWOP">LWOP</option>
-
+        <option value="Active" {% if request.args.get('status') == 'Active' %}selected{% endif %}>Active</option>
+        <option value="Resigned" {% if request.args.get('status') == 'Resigned' %}selected{% endif %}>Resigned</option>
+        <option value="Terminated" {% if request.args.get('status') == 'Terminated' %}selected{% endif %}>Terminated</option>
+        <option value="LWOP" {% if request.args.get('status') == 'LWOP' %}selected{% endif %}>LWOP</option>
       </select>
     </div>
 
     <!-- Buttons -->
-    <div class="flex gap-2 mt-2 md:mt-0">
-
+    <div class="flex gap-2 mt-2 md:mt-0 flex-wrap">
       <button type="submit"
               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2
                      rounded-xl flex items-center gap-2 transition">
-
         <i class="fa-solid fa-magnifying-glass"></i>
         <span class="hidden sm:inline">Search</span>
-
       </button>
 
       <a href="{{ url_for('hr_officer_bp.job_history_list') }}"
          class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2
                 rounded-xl flex items-center gap-2 transition">
-
         <i class="fa-solid fa-eraser"></i>
         <span class="hidden sm:inline">Clear</span>
-
       </a>
-
     </div>
 
   </form>
 
-
   <!-- Job History Table -->
   <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
-
     <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
-
       <thead class="bg-gray-900 text-gray-400">
         <tr>
-          <th class="px-4 py-3 text-left">Employee</th>
-          <th class="px-4 py-3 text-left">Position</th>
-          <th class="px-4 py-3 text-left">Department</th>
-          <th class="px-4 py-3 text-left">Employment Type</th>
-          <th class="px-4 py-3 text-left">Start</th>
-          <th class="px-4 py-3 text-left">End</th>
-          <th class="px-4 py-3 text-left">Salary</th>
-          <th class="px-4 py-3 text-left">Status</th>
-          <th class="px-4 py-3 text-left">Remarks</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Employee</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Position</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Department</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Employment Type</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Start</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">End</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Salary</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Status</th>
+          <th class="px-4 py-3 text-left whitespace-nowrap">Remarks</th>
         </tr>
       </thead>
 
       <tbody class="divide-y divide-gray-700 text-gray-200">
-
         {% for job in job_history.items %}
-
         <tr class="hover:bg-gray-700 transition">
-
+          <td class="px-4 py-2 whitespace-nowrap">{{ job.employee.get_full_name() }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ job.position.name if job.position else '-' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ job.department.name if job.department else '-' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ job.employment_type.name if job.employment_type else '-' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ job.effective_date }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">{{ job.end_date if job.end_date else 'Present' }}</td>
+          <td class="px-4 py-2 whitespace-nowrap">₱{{ "{:,.2f}".format(job.salary) if job.salary else '-' }}</td>
           <td class="px-4 py-2 whitespace-nowrap">
-            {{ job.employee.get_full_name() }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ job.position.name if job.position else '-' }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ job.department.name if job.department else '-' }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ job.employment_type.name if job.employment_type else '-' }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ job.effective_date }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-            {{ job.end_date if job.end_date else 'Present' }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-             ₱{{ "{:,.2f}".format(job.salary) if job.salary else '-' }}
-          </td>
-
-          <td class="px-4 py-2 whitespace-nowrap">
-
             {% if job.status == "Active" %}
             <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs">Active</span>
-
             {% elif job.status == "Resigned" %}
             <span class="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs">Resigned</span>
-
             {% elif job.status == "Terminated" %}
             <span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs">Terminated</span>
-
             {% else %}
-            <span class="bg-gray-500/20 text-gray-300 px-2 py-1 rounded text-xs">
-              {{ job.status }}
-            </span>
+            <span class="bg-gray-500/20 text-gray-300 px-2 py-1 rounded text-xs">{{ job.status }}</span>
             {% endif %}
-
           </td>
-
-          <td class="px-4 py-2">
-            {{ job.remarks or '-' }}
-          </td>
-
+          <td class="px-4 py-2 whitespace-pre-wrap">{{ job.remarks or '-' }}</td>
         </tr>
-
         {% else %}
-
         <tr>
-          <td colspan="9" class="px-4 py-3 text-center text-gray-400">
-            No job history records found.
-          </td>
+          <td colspan="9" class="px-4 py-3 text-center text-gray-400">No job history records found.</td>
         </tr>
-
         {% endfor %}
-
       </tbody>
-
     </table>
-
   </div>
 
-
   <!-- Pagination -->
-  <div class="flex justify-center gap-4 text-gray-400">
-
+  <div class="flex flex-col sm:flex-row justify-center gap-4 text-gray-400 items-center mt-4 flex-wrap">
     {% if job_history.has_prev %}
-     <a href="{{ url_for('hr_officer_bp.job_history_list',
-        page=job_history.prev_num,
-        **args) }}"
-      class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
-      Previous
-    </a>
+    <a href="{{ url_for('hr_officer_bp.job_history_list', page=job_history.prev_num, **args) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Previous</a>
     {% endif %}
 
-    <span class="px-4 py-2">
-      Page {{ job_history.page }} of {{ job_history.pages }}
-    </span>
+    <span class="px-4 py-2">Page {{ job_history.page }} of {{ job_history.pages }}</span>
 
     {% if job_history.has_next %}
-      <a href="{{ url_for('hr_officer_bp.job_history_list',
-          page=job_history.next_num,
-          **args) }}"
-        class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">
-        Next
-      </a>
+    <a href="{{ url_for('hr_officer_bp.job_history_list', page=job_history.next_num, **args) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Next</a>
     {% endif %}
-
   </div>
 
 </main>

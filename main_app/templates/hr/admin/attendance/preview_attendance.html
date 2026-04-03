@@ -1,0 +1,161 @@
+{% extends "hr/admin/admin_base.html" %}
+{% block title %}Preview Attendance | HR Admin{% endblock %}
+
+{% block content %}
+<main class="p-6 space-y-6 max-w-5xl mx-auto">
+
+  <!-- Card Container -->
+  <div class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6">
+
+    <!-- Header with Actions -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+      <h2 class="text-xl font-semibold text-blue-400">Preview Attendance Data</h2>
+      <div class="flex flex-wrap gap-2">
+        <form action="{{ url_for('hr_admin_bp.confirm_attendance') }}" method="POST" class="flex gap-2 flex-wrap">
+          <button type="submit"
+                  class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+            <i class="fas fa-check"></i> Confirm Import
+          </button>
+          <a href="{{ url_for('hr_admin_bp.import_attendance') }}"
+             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+            <i class="fas fa-times"></i> Cancel
+          </a>
+        </form>
+      </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg text-blue-200 text-sm">
+      <i class="fas fa-info-circle mr-2"></i>
+      <strong>Preview Mode:</strong> Data is sorted by date ascending. Time In = first punch, Time Out = last punch per day.
+    </div>
+
+    <!-- Responsive Table -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto divide-y divide-slate-700 text-gray-200">
+        <thead class="bg-slate-900 text-gray-400">
+          <tr>
+            <th class="px-4 py-2 text-left cursor-pointer hover:text-blue-400" onclick="sortTable(0)">
+              Date <i class="fas fa-sort ml-1 text-xs"></i>
+            </th>
+            <th class="px-4 py-2 text-left cursor-pointer hover:text-blue-400" onclick="sortTable(1)">
+              User ID <i class="fas fa-sort ml-1 text-xs"></i>
+            </th>
+            <th class="px-4 py-2 text-left">Employee Name</th>
+            <th class="px-4 py-2 text-left">Department</th>
+            <th class="px-4 py-2 text-left">Time In</th>
+            <th class="px-4 py-2 text-left">Time Out</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700" id="attendanceTableBody">
+          {% for record in attendance_data %}
+          <tr class="hover:bg-slate-700 transition" data-date="{{ record.date_display }}">
+            <td class="px-4 py-2 whitespace-nowrap font-mono text-sm">{{ record.date_display }}</td>
+            <td class="px-4 py-2 whitespace-nowrap">
+              <span class="bg-slate-700 px-2 py-1 rounded text-xs">{{ record.user_id }}</span>
+            </td>
+            <td class="px-4 py-2 whitespace-nowrap font-medium text-white">{{ record.employee_name }}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-slate-400">{{ record.department }}</td>
+            <!-- Time In Column -->
+            <td class="px-4 py-2 whitespace-nowrap">
+              {% if record.time_in and record.time_in not in ['None', '', '00:00'] %}
+                {% if record.time_in is string %}
+                  <!-- Handle ISO string format "21:36:00" -->
+                  {% set t = record.time_in[:5].split(':') %}
+                  {% set h = t[0]|int %}
+                  {% set m = t[1] %}
+                  {% set ampm = 'AM' if h < 12 else 'PM' %}
+                  {% set h12 = h % 12 if h % 12 != 0 else 12 %}
+                  <span class="text-green-400 font-mono">
+                    {{ "%02d"|format(h12) }}:{{ m }} {{ ampm }}
+                  </span>
+                {% else %}
+                  <!-- Handle time object -->
+                  <span class="text-green-400 font-mono">
+                    {{ record.time_in.strftime('%I:%M %p') }}
+                  </span>
+                {% endif %}
+              {% else %}
+                <!-- No time in = absent -->
+                <span class="text-slate-500 font-mono">00:00</span>
+              {% endif %}
+            </td>
+
+            <!-- Time Out Column -->
+            <td class="px-4 py-2 whitespace-nowrap">
+              {% if record.time_out and record.time_out not in ['None', '', '00:00'] %}
+                {% if record.time_out is string %}
+                  <!-- Handle ISO string format "17:00:00" -->
+                  {% set t = record.time_out[:5].split(':') %}
+                  {% set h = t[0]|int %}
+                  {% set m = t[1] %}
+                  {% set ampm = 'AM' if h < 12 else 'PM' %}
+                  {% set h12 = h % 12 if h % 12 != 0 else 12 %}
+                  <span class="text-red-400 font-mono">
+                    {{ "%02d"|format(h12) }}:{{ m }} {{ ampm }}
+                  </span>
+                {% else %}
+                  <!-- Handle time object -->
+                  <span class="text-red-400 font-mono">
+                    {{ record.time_out.strftime('%I:%M %p') }}
+                  </span>
+                {% endif %}
+              {% else %}
+                <!-- Show 5:00 PM as default when time_in exists but no time_out -->
+                {% if record.time_in and record.time_in not in ['None', '', '00:00'] %}
+                  <span class="text-amber-400 font-mono">05:00 PM</span>
+                {% else %}
+                  <!-- No attendance at all -->
+                  <span class="text-slate-500 font-mono">00:00</span>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer Stats -->
+    <div class="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-sm">
+      <p class="text-slate-400">
+        <i class="fas fa-database mr-1"></i>
+        Total Records: <span class="text-white font-semibold">{{ attendance_data|length }}</span>
+      </p>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span><i class="fas fa-sign-in-alt text-green-400 mr-1"></i> First punch = Time In</span>
+        <span><i class="fas fa-sign-out-alt text-red-400 mr-1"></i> Last punch = Time Out</span>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Simple Table Sort Script -->
+<script>
+function sortTable(columnIndex) {
+  const table = document.querySelector('#attendanceTableBody').closest('table');
+  const tbody = document.getElementById('attendanceTableBody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  rows.sort((a, b) => {
+    const aText = a.children[columnIndex].textContent.trim();
+    const bText = b.children[columnIndex].textContent.trim();
+    
+    // Special handling for date column (index 0)
+    if (columnIndex === 0) {
+      return new Date(aText) - new Date(bText);
+    }
+    // Numeric handling for User ID
+    if (columnIndex === 1) {
+      return parseInt(aText) - parseInt(bText);
+    }
+    // Default string comparison
+    return aText.localeCompare(bText);
+  });
+  
+  // Re-append sorted rows
+  rows.forEach(row => tbody.appendChild(row));
+}
+</script>
+{% endblock %}

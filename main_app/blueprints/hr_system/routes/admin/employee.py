@@ -347,16 +347,23 @@ def edit_employee(employee_id):
                 old_status != employee.status):
 
                 remarks_list = []
+              # Fetch names for remarks
+                old_employment_type_name = EmploymentType.query.get(old_employment_type_id).name if old_employment_type_id else "N/A"
+                new_employment_type_name = employee.employment_type.name if employee.employment_type else "N/A"
+
+                old_department_name = Department.query.get(old_department_id).name if old_department_id else "N/A"
+                new_department_name = employee.department.name if employee.department else "N/A"
+
+                old_position_name = Position.query.get(old_position_id).name if old_position_id else "N/A"
+                new_position_name = employee.position.name if employee.position else "N/A"
+
+                # Build remarks
                 if old_position_id != employee.position_id:
-                    remarks_list.append(f"Position: {old_position_id} → {employee.position_id}")
+                    remarks_list.append(f"Position: {old_position_name} → {new_position_name}")
                 if old_department_id != employee.department_id:
-                    remarks_list.append(f"Department: {old_department_id} → {employee.department_id}")
+                    remarks_list.append(f"Department: {old_department_name} → {new_department_name}")
                 if old_employment_type_id != employee.employment_type_id:
-                    remarks_list.append(f"Employment Type: {old_employment_type_id} → {employee.employment_type_id}")
-                if old_salary != employee.salary:
-                    remarks_list.append(f"Salary: {old_salary} → {employee.salary}")
-                if old_status != employee.status:
-                    remarks_list.append(f"Status: {old_status} → {employee.status}")
+                    remarks_list.append(f"Employment Type: {old_employment_type_name} → {new_employment_type_name}")
 
                 job_entry = JobHistory(
                     employee_id=employee.id,

@@ -9,16 +9,17 @@ app = create_app()
 def random_time(start_hour=7, end_hour=8):
     hour = random.randint(start_hour, end_hour - 1)
     minute = random.randint(0, 59)
-    return time(hour, minute)
+    second = random.randint(0, 59)
+    return time(hour, minute, second)
 
 def random_late_time():
-    return time(8, random.randint(1, 15))
+    return time(8, random.randint(1, 15), random.randint(0, 59))
 
 def generate_attendance_jan_to_nov():
     with app.app_context():
         employees = Employee.query.all()
-        start_date = date(2025, 1, 1)
-        end_date = date(2025, 11, 30)
+        start_date = date(2026, 1, 1)
+        end_date = date(2026, 4, 30)
 
         holidays = [
             date(2025, 1, 1), date(2025, 2, 25), date(2025, 3, 31),
@@ -29,9 +30,6 @@ def generate_attendance_jan_to_nov():
 
         attendance_objs = []
 
-        # ------------------------------
-        # Step 1: Generate Attendance
-        # ------------------------------
         for emp in employees:
             current = start_date
             while current <= end_date:
@@ -46,21 +44,14 @@ def generate_attendance_jan_to_nov():
 
                 late_days = random.sample(month_days, min(7, len(month_days)))
                 remaining = [d for d in month_days if d not in late_days]
-                leave_days = random.sample(remaining, min(2, len(remaining)))
-                remaining = [d for d in remaining if d not in leave_days]
                 absent_days = random.sample(remaining, min(2, len(remaining)))
 
                 for day in month_days:
                     if day in late_days:
                         status = "Late"
                         time_in = random_late_time()
-                        time_out = time(17, 0)
+                        time_out = time(17, 0, 0)
                         remarks = "Late arrival"
-                    elif day in leave_days:
-                        status = "On Leave"
-                        time_in = None
-                        time_out = None
-                        remarks = "Approved leave"
                     elif day in absent_days:
                         status = "Absent"
                         time_in = None
@@ -69,7 +60,7 @@ def generate_attendance_jan_to_nov():
                     else:
                         status = "Present"
                         time_in = random_time()
-                        time_out = time(17, 0)
+                        time_out = time(17, 0, 0)
                         remarks = None
 
                     attendance_objs.append(
@@ -89,14 +80,13 @@ def generate_attendance_jan_to_nov():
         print("✅ Attendance generated successfully!")
 
         # ------------------------------
-        # Step 2: Generate LateComputation
+        # Generate LateComputation
         # ------------------------------
         late_objs = []
         all_attendances = Attendance.query.all()
         for att in all_attendances:
             late_data = extract_late_from_attendance(att)
             if late_data:
-                # Avoid duplicates
                 existing = LateComputation.query.filter_by(attendance_id=att.id).first()
                 if not existing:
                     late_objs.append(
@@ -112,11 +102,9 @@ def generate_attendance_jan_to_nov():
                         )
                     )
 
-        # Bulk insert all LateComputation
         db.session.bulk_save_objects(late_objs)
         db.session.commit()
         print("✅ LateComputation generated successfully!")
 
 if __name__ == "__main__":
     generate_attendance_jan_to_nov()
-

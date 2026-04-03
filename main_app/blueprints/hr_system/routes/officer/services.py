@@ -4,9 +4,10 @@ from sqlalchemy.orm import joinedload
 from datetime import date
 
 
-from main_app.models.hr_models import  Employee, EmploymentType
+from main_app.models.hr_models import  Employee, EmploymentType, JobHistory, Position, Department
 from main_app.helpers.decorators import hr_officer_required
-from main_app.helpers.docs import generate_coe_pdf, generate_service_record_docx, generate_moa_excel
+from main_app.helpers.docs import generate_coe_pdf, generate_moa_excel
+from main_app.services.pdf_generator import generate_service_record_pdf
 
 from main_app.blueprints.hr_system.routes.officer import hr_officer_bp
 
@@ -60,31 +61,36 @@ def generate_moa_all(employment_type_id):
 
 
 
-
-
 @hr_officer_bp.route('/employees/<int:employee_id>/service_record')
 @login_required
 @hr_officer_required
 def export_service_record(employee_id):
+    try:
+        employee = Employee.query.options(
+            joinedload(Employee.department),
+            joinedload(Employee.position),
+            joinedload(Employee.employment_type),
+            joinedload(Employee.job_histories).joinedload(JobHistory.position),
+            joinedload(Employee.job_histories).joinedload(JobHistory.department),
+            joinedload(Employee.job_histories).joinedload(JobHistory.employment_type)
+        ).get_or_404(employee_id)
 
-    # Get employee
-    employee = Employee.query.get_or_404(employee_id)
+        file_stream = generate_service_record_pdf(employee)
+        file_stream.seek(0)
 
-    # Generate the document
-    file_stream = generate_service_record_docx(employee)
+        filename = f"Service_Record_{employee.last_name}_{employee.first_name}.pdf".replace(" ", "_")
 
-    # Important: reset pointer
-    file_stream.seek(0)
+        return send_file(
+            file_stream,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/pdf"
+        )
 
-    # Create cleaner filename
-    filename = f"Service_Record_{employee.last_name}_{employee.first_name}.docx"
-
-    return send_file(
-        file_stream,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"ERROR: {str(e)}"
 
 
 @hr_officer_bp.route("/employee/<int:employee_id>/generate-coe")

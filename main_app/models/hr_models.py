@@ -37,8 +37,7 @@ class Employee(db.Model):
     archived = db.Column(db.Boolean, default=False)
     archived_at = db.Column(db.DateTime)
     # Check if this exists:
-    cs_eligibility = db.Column(db.String(50))
-
+    cs_eligibility = db.Column(db.String(50))   
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -58,7 +57,7 @@ class Employee(db.Model):
     employment_type_id = db.Column(db.Integer, db.ForeignKey("employment_type.id", name="fk_employee_employment_type_id"))
     employment_type = db.relationship("EmploymentType", back_populates="employees", foreign_keys=[employment_type_id])
 
-
+    job_histories = db.relationship("JobHistory", back_populates="employee", lazy=True)
 
     # ✅ Convenient relationships (view-only)
     deductions = db.relationship(
@@ -511,7 +510,7 @@ class JobHistory(db.Model):
     remarks = db.Column(db.Text)                      # Promotions, transfers, cause of separation
 
     # Relationships
-    employee = db.relationship("Employee", backref="job_history", lazy=True)
+    employee = db.relationship("Employee", back_populates="job_histories", lazy=True)
     position = db.relationship("Position", lazy=True)
     employment_type = db.relationship("EmploymentType", lazy=True)
     department = db.relationship("Department", lazy=True)

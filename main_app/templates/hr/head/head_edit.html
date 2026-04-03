@@ -83,7 +83,7 @@
         {{ field("Last Name", employee.last_name) }}
         {{ field("Email", employee.email) }}
         {{ field("Mobile Number", employee.phone) }}
-        {{ field("Address", employee.address) }}
+        {{ field("Address", employee.get_full_address()) }}
       </div>
     </section>
 

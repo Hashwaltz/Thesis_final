@@ -4,7 +4,7 @@ from main_app.models.hr_models import Employee, Attendance, LeaveCredit
 from main_app.models.payroll_models import Payslip
 from main_app.helpers.decorators import employee_required
 from datetime import date
-
+import calendar
 
 from main_app.blueprints.employee_system.routes.employee import employee_bp 
 
@@ -22,11 +22,15 @@ def dashboard():
     if not employee:
         return redirect(url_for("employee_auth_bp.logout"))
     
-    # Attendance summary for current month
+   # Attendance summary for current month
     today = date.today()
+
+    first_day = date(today.year, today.month, 1)
+    last_day = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+
     attendances = Attendance.query.filter(
         Attendance.employee_id == employee.id,
-        Attendance.date.between(date(today.year, today.month, 1), date(today.year, today.month, 31))
+        Attendance.date.between(first_day, last_day)
     ).all()
     
     present_days = sum(1 for a in attendances if a.status == "Present")

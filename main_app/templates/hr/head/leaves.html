@@ -25,7 +25,6 @@
 class="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
 
 <div class="flex flex-col w-full sm:w-64">
-
 <label class="text-xs uppercase tracking-wide text-gray-400 mb-1">
 Status
 </label>
@@ -40,9 +39,7 @@ class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
 <option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
 
 </select>
-
 </div>
-
 </form>
 
 <!-- TABLE -->
@@ -96,6 +93,7 @@ bg-red-600/20 text-red-400
 {{ leave.status }}
 </span>
 </td>
+
 <td class="px-4 py-2 text-gray-200">
 {{ leave.reason }}
 </td>
@@ -105,8 +103,14 @@ bg-red-600/20 text-red-400
 {% if leave.status == 'Pending' %}
 
 <button
-onclick="openLeaveModal({{ leave.id }})"
-class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
+onclick="openLeaveModal(
+    {{ leave.id }},
+    '{{ leave.employee.get_full_name()|escape }}',
+    '{{ leave.leave_type.name|escape }}',
+    '{{ leave.start_date.strftime('%Y-%m-%d') }}',
+    '{{ leave.end_date.strftime('%Y-%m-%d') }}'
+)"
+class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
 
 <i class="fa-solid fa-pen-to-square"></i>
 Review
@@ -124,7 +128,7 @@ Review
 {% else %}
 
 <tr>
-<td colspan="6" class="text-center text-gray-400 py-6">
+<td colspan="7" class="text-center text-gray-400 py-6">
 No leave requests found.
 </td>
 </tr>
@@ -141,7 +145,7 @@ No leave requests found.
 
 {% if leaves.has_prev %}
 <a href="{{ url_for('hr_head_bp.leaves', page=leaves.prev_num, status=status_filter) }}"
-class="px-4 py-2 bg-gray-700 rounded-xl">
+class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
 Previous
 </a>
 {% endif %}
@@ -150,7 +154,7 @@ Previous
 
 {% if leaves.has_next %}
 <a href="{{ url_for('hr_head_bp.leaves', page=leaves.next_num, status=status_filter) }}"
-class="px-4 py-2 bg-gray-700 rounded-xl">
+class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
 Next
 </a>
 {% endif %}
@@ -163,45 +167,60 @@ Next
 <!-- ================= MODAL ================= -->
 
 <div id="leaveModal"
-class="fixed inset-0 hidden bg-black/80 items-center justify-center z-50">
+class="fixed inset-0 hidden bg-black/70 backdrop-blur-sm items-center justify-center z-50">
 
-<div class="bg-gray-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+<div class="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-5">
 
-<h2 class="text-xl text-blue-400 font-semibold">
-Leave Request Review
+<!-- Header -->
+<div class="flex items-center justify-between">
+<h2 class="text-lg font-semibold text-blue-400 flex items-center gap-2">
+<i class="fa-solid fa-calendar-check"></i>
+Review Leave Request
 </h2>
 
-<form id="leaveApproveForm" method="POST">
+<button onclick="closeLeaveModal()" class="text-gray-400 hover:text-white">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
 
-<input type="hidden" name="status" id="leaveStatusInput">
+<!-- Dynamic Info -->
+<div class="bg-gray-800 border border-gray-700 rounded-xl p-3 text-sm text-gray-300 space-y-1">
+<p id="modalEmployee" class="font-medium text-gray-100"></p>
+<p id="modalType"></p>
+<p id="modalDates" class="text-xs text-gray-400"></p>
+</div>
 
-<textarea name="comments"
-placeholder="Optional comment"
-class="w-full bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
-</textarea>
+<p class="text-xs text-gray-500">
+This action cannot be undone.
+</p>
 
-<div class="flex gap-3 mt-4">
+<!-- Actions -->
+<div class="flex gap-3 pt-2">
 
 <button type="button"
 onclick="closeLeaveModal()"
-class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-xl">
+class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-xl transition">
 Cancel
 </button>
 
 <button type="button"
 onclick="submitLeave('Approved')"
-class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl">
+class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl flex items-center justify-center gap-2 transition">
+<i class="fa-solid fa-check"></i>
 Approve
 </button>
 
 <button type="button"
 onclick="submitLeave('Rejected')"
-class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl">
+class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl flex items-center justify-center gap-2 transition">
+<i class="fa-solid fa-xmark"></i>
 Reject
 </button>
 
 </div>
 
+<form id="leaveApproveForm" method="POST">
+<input type="hidden" name="status" id="leaveStatusInput">
 </form>
 
 </div>
@@ -213,31 +232,29 @@ Reject
 
 let currentLeaveId = null;
 
-function openLeaveModal(leaveId){
-currentLeaveId = leaveId;
+function openLeaveModal(id, name, type, start, end){
+    currentLeaveId = id;
 
-document.getElementById("leaveModal")
-.classList.remove("hidden");
+    document.getElementById("modalEmployee").innerText = name;
+    document.getElementById("modalType").innerText = type;
+    document.getElementById("modalDates").innerText = start + " → " + end;
 
-document.getElementById("leaveModal")
-.classList.add("flex");
+    const modal = document.getElementById("leaveModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
 }
 
 function closeLeaveModal(){
-document.getElementById("leaveModal")
-.classList.add("hidden");
+    const modal = document.getElementById("leaveModal");
+    modal.classList.add("hidden");
 }
 
 function submitLeave(status){
+    const form = document.getElementById("leaveApproveForm");
+    form.action = `/hr/head/leaves/${currentLeaveId}/approve`;
 
-const form = document.getElementById("leaveApproveForm");
-
-form.action = `/hr/head/leaves/${currentLeaveId}/approve`;
-
-const input = document.getElementById("leaveStatusInput");
-input.value = status;
-
-form.submit();
+    document.getElementById("leaveStatusInput").value = status;
+    form.submit();
 }
 
 </script>

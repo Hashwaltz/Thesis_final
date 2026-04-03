@@ -12,6 +12,9 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from flask import current_app, send_file
 from datetime import datetime
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.lib.colors import HexColor
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -346,177 +349,182 @@ def generate_service_record_docx(employee):
     buffer.seek(0)
     return buffer
 
+
+
+
 def generate_coe_pdf(employee, fields=None):
     """
-    Generate COE PDF for a given employee.
-    `fields` is a list of fields to include. E.g. ['position', 'department', 'deductions']
+    Generate COE PDF with conditional field inclusion.
+    `fields`: list of fields to include ['position', 'department', 'employment_type', 
+             'hire_date', 'end_date', 'working_duration', 'deductions']
     """
     fields = fields or []
-
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter,
-                            rightMargin=50, leftMargin=50, topMargin=40, bottomMargin=60)
+    
+    doc = SimpleDocTemplate(
+        buffer, pagesize=letter,
+        rightMargin=inch, leftMargin=inch,
+        topMargin=inch, bottomMargin=inch
+    )
+    
     styles = getSampleStyleSheet()
-    center_style = ParagraphStyle("Center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=11)
-    title_style = ParagraphStyle("Title", parent=styles["Heading1"], alignment=TA_CENTER, spaceAfter=20)
-    right_style = ParagraphStyle("Right", parent=styles["Normal"], alignment=TA_RIGHT, fontSize=10)
-    body_style = ParagraphStyle("Body", parent=styles["Normal"], alignment=TA_CENTER, leading=18, fontSize=11)
+    OFFICIAL_BLUE = HexColor('#000080')
 
-    # Logo
+    # ─── STYLES ────────────────────────────────────────────────────────────────
+    header_style = ParagraphStyle(
+        'Header', parent=styles['Normal'],
+        alignment=TA_CENTER, fontSize=10, leading=12, textColor=OFFICIAL_BLUE
+    )
+    header_bold_style = ParagraphStyle(
+        'HeaderBold', parent=header_style,
+        fontSize=11, fontName='Helvetica-Bold'
+    )
+    date_style = ParagraphStyle(
+        'Date', parent=styles['Normal'],
+        alignment=TA_RIGHT, fontSize=11, spaceAfter=20
+    )
+    title_style = ParagraphStyle(
+        'Title', parent=styles['Normal'],
+        alignment=TA_CENTER, fontSize=14, fontName='Helvetica-Bold',
+        spaceAfter=20
+    )
+    body_style = ParagraphStyle(
+        'Body', parent=styles['Normal'],
+        alignment=TA_LEFT, fontSize=11, leading=18,
+        firstLineIndent=0.5*inch, spaceAfter=12
+    )
+    signature_style = ParagraphStyle(
+        'Signature', parent=styles['Normal'],
+        alignment=TA_RIGHT, fontSize=11, leading=14, spaceBefore=30
+    )
+
+    story = []
+
+    # ─── LOGO ──────────────────────────────────────────────────────────────────
     logo_path = os.path.join(current_app.root_path, "static", "img", "garay.png")
     if os.path.exists(logo_path):
-        logo = Image(logo_path, width=70, height=70)
-        header_table = Table([[logo]], colWidths=[450], hAlign="CENTER")
-    else:
-        header_table = Table([[""]], colWidths=[450])
+        logo = Image(logo_path, width=0.85*inch, height=0.85*inch)
+        story.append(Table([[logo]], colWidths=[6.5*inch], style=[('ALIGN', (0,0), (-1,-1), 'CENTER')]))
+        story.append(Spacer(1, 6))
 
-    header_text = """
-    Republic of the Philippines<br/>
-    Province of Bulacan<br/>
-    MUNICIPALITY OF NORZAGARAY<br/>
-    HUMAN RESOURCE MANAGEMENT OFFICE
-    """
+    # ─── HEADER ───────────────────────────────────────────────────────────────
+    story.append(Paragraph("Republic of the Philippines", header_style))
+    story.append(Paragraph("Province of Bulacan", header_style))
+    story.append(Paragraph("MUNICIPALITY OF NORZAGARAY", header_bold_style))
+    story.append(Paragraph("HUMAN RESOURCE MANAGEMENT OFFICE", header_bold_style))
 
-    separator = Table([[""]], colWidths=[450])
+    # ─── BLUE SEPARATOR LINE ───────────────────────────────────────────────────
+    separator = Table([[""]], colWidths=[6.5*inch])
     separator.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.darkblue),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2)
+        ('LINEBELOW', (0,0), (-1,-1), 4, OFFICIAL_BLUE),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4)
     ]))
+    story.append(separator)
+    story.append(Spacer(1, 16))
 
+    # ─── DATE ──────────────────────────────────────────────────────────────────
     today_date = datetime.now().strftime("%B %d, %Y")
-    date_paragraph = Paragraph(today_date, right_style)
+    story.append(Paragraph(today_date, date_style))
 
-    # Gender title
-    gender = (employee.gender or "").lower()
-    if gender == "male":
-        title_prefix = "Mr."
-    elif gender == "female":
-        title_prefix = "Ms."
-    else:
-        title_prefix = "Mr./Ms."
-    display_name = f"{title_prefix} {employee.last_name}"
+    # ─── TITLE ─────────────────────────────────────────────────────────────────
+    story.append(Paragraph("CERTIFICATION", title_style))
 
-    # Model data
-    position_name = employee.position.name if employee.position else "N/A"
-    department_name = employee.department.name if employee.department else "N/A"
-    employment_type = employee.employment_type.name if employee.employment_type else "N/A"
-    hire_date = employee.date_hired.strftime("%B %d, %Y") if employee.date_hired else "N/A"
-    end_date = "Present" if employee.status == "Active" else (employee.status or "N/A")
-    working_duration = employee.get_working_duration()
+    # ─── SALUTATION ────────────────────────────────────────────────────────────
+    story.append(Paragraph("<b>TO WHOM IT MAY CONCERN:</b>", body_style))
+    story.append(Spacer(1, 8))
 
-    # Fetch deductions from EmployeeDeductions table if requested
-    deductions_text = ""
-    if "deductions" in fields:
-        deductions = []
-        for ed in getattr(employee, "employee_deductions", []):  # relationship Employee.employee_deductions
-            deduction_name = ed.deduction.name if ed.deduction else "N/A"
-            deductions.append(f"{deduction_name}")
-        if deductions:
-            deductions_text = ", ".join(deductions)
+    # ─── DYNAMIC DATA EXTRACTION ───────────────────────────────────────────────
+    gender = (getattr(employee, 'gender', '') or '').lower()
+    prefix = "Mr." if gender == "male" else ("Ms." if gender == "female" else "Mr./Ms.")
+    
+    first_name = getattr(employee, 'first_name', '') or ''
+    middle_name = getattr(employee, 'middle_name', '') or ''
+    last_name = getattr(employee, 'last_name', '') or ''
+    full_name = f"{first_name} {middle_name} {last_name}".strip().upper()
+
+    # Conditional data fetching based on fields
+    position = getattr(getattr(employee, 'position', None), 'name', None) if 'position' in fields else None
+    department = getattr(getattr(employee, 'department', None), 'name', None) if 'department' in fields else None
+    emp_type = getattr(getattr(employee, 'employment_type', None), 'name', None) if 'employment_type' in fields else None
+    
+    hire_date = None
+    if 'hire_date' in fields and getattr(employee, 'date_hired', None):
+        hire_date = employee.date_hired.strftime("%B %d, %Y")
+    
+    end_date = None
+    if 'end_date' in fields:
+        if getattr(employee, 'status', '') == 'Active':
+            end_date = "Present"
+        elif getattr(employee, 'end_date', None):
+            end_date = employee.end_date.strftime("%B %d, %Y")
+    
+    working_duration = None
+    if 'working_duration' in fields and hasattr(employee, 'get_working_duration'):
+        working_duration = employee.get_working_duration()
+
+    # ─── BUILD BODY TEXT WITH CONDITIONAL FIELDS ───────────────────────────────
+    body_parts = [f"This is to certify that <b>{full_name}</b> had been employed in this Local Government Unit, detailed at the Norzagaray College"]
+    
+    # Add position if requested
+    if position:
+        body_parts.append(f"as <b>{position}</b>")
+    
+    # Add department if requested (with proper connector)
+    if department:
+        if position:
+            body_parts.append(f"under the <b>{department}</b>")
         else:
-            deductions_text = "No deductions linked."
+            body_parts.append(f"under the <b>{department}</b>")
+    
+    # Add employment type if requested
+    if emp_type:
+        body_parts.append(f"on a <b>{emp_type}</b> Status")
+    
+    # Add date range if any date fields are requested
+    if hire_date or end_date:
+        date_clause = "since" if hire_date else ""
+        if hire_date:
+            date_clause += f" <b>{hire_date}</b>"
+        if end_date:
+            date_clause += f" up to <b>{end_date}</b>"
+        body_parts.append(date_clause.strip())
+    
+    # Add working duration if requested
+    if working_duration:
+        body_parts.append(f"with a total duration of <b>{working_duration}</b>")
+    
+    # Join body parts with proper punctuation
+    body_text = " ".join(body_parts).rstrip()
+    if not body_text.endswith('.'):
+        body_text += "."
+    
+    story.append(Paragraph(body_text, body_style))
 
-    # Build body text
-    body_lines = [f"<b>TO WHOM IT MAY CONCERN:</b><br/><br/>",
-                  f"This is to certify that <b>{display_name}</b>,"]
+    # ─── ADD DEDUCTIONS IF REQUESTED ───────────────────────────────────────────
+    if 'deductions' in fields:
+        deductions = []
+        for ed in getattr(employee, "employee_deductions", []):
+            deduction_name = getattr(getattr(ed, 'deduction', None), 'name', None)
+            if deduction_name:
+                deductions.append(deduction_name)
+        if deductions:
+            ded_text = f"Deductions: {', '.join(deductions)}."
+            story.append(Paragraph(ded_text, body_style))
 
-    if "position" in fields:
-        body_lines.append(f"a <b>{position_name}</b>")
-    if "department" in fields:
-        body_lines.append(f"under the <b>{department_name}</b>")
-    if "employment_type" in fields:
-        body_lines.append(f"is employed as <b>{employment_type}</b> status in this office.")
+    # ─── ISSUED STATEMENT ──────────────────────────────────────────────────────
+    issued_text = f"Issued upon request of {prefix} {last_name} for whatever legal purpose this may serve."
+    story.append(Paragraph(issued_text, body_style))
 
-    if "hire_date" in fields or "end_date" in fields or "working_duration" in fields:
-        body_lines.append("<br/><br/>")
-        if "hire_date" in fields:
-            body_lines.append(f"Working since <b>{hire_date}</b>")
-        if "end_date" in fields:
-            body_lines.append(f"up to <b>{end_date}</b>")
-        if "working_duration" in fields:
-            body_lines.append(f"with total duration of <b>{working_duration}</b>.")
+    # ─── SIGNATURE BLOCK ───────────────────────────────────────────────────────
+    sig_text = "<b>FERNANDO DG. CRUZ</b><br/>Acting MHRMO"
+    story.append(Paragraph(sig_text, signature_style))
 
-    if deductions_text:
-        body_lines.append(f"<br/><br/>Deductions: {deductions_text}")
-
-    body_lines.append(f"<br/><br/>This certification is issued upon the request of {display_name} for whatever legal purpose this may serve.")
-    body_text = " ".join(body_lines)
-
-    signature_block = Paragraph("""
-    <br/><br/><br/>
-    <b>FERNANDO DG. CRUZ</b><br/>
-    Acting MHRMO
-    """, right_style)
-
-    story = [
-        header_table,
-        Paragraph(header_text, center_style),
-        Spacer(1, 6),
-        separator,
-        Spacer(1, 20),
-        date_paragraph,
-        Spacer(1, 20),
-        Paragraph("CERTIFICATION", title_style),
-        Paragraph(body_text, body_style),
-        signature_block
-    ]
-
+    # ─── BUILD PDF ─────────────────────────────────────────────────────────────
     doc.build(story)
     buffer.seek(0)
     return buffer
 
 
-
-
-
-
-
-""""
-
-def generate_leave_print_pdf_route(
-    leave,
-    employee,
-    filename_prefix="Leave_Form"
-):
-   
-    Reusable leave form PDF generator wrapper
-   
-
-    pdf_buffer = io.BytesIO()
-
-    # ----------------------------
-    # Create PDF Document
-    # ----------------------------
-    doc = SimpleDocTemplate(
-        pdf_buffer,
-        pagesize=letter
-    )
-
-    # ---------------------------------------------------
-    # IMPORTANT
-    # Replace this with your real PDF content generator
-    # Example assumes you already have:
-    # generate_csform4_quadrants_pdf()
-    # ---------------------------------------------------
-
-    from main_app.helpers.docs import generate_csform4_quadrants_pdf
-
-    pdf_buffer = generate_csform4_quadrants_pdf(
-        leave,
-        employee
-    )
-
-    filename = f"{filename_prefix}_{employee.last_name}_{leave.id}.pdf"
-
-    pdf_buffer.seek(0)
-
-    return send_file(
-        pdf_buffer,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/pdf"
-    )
-    """
 
 
 def safe_get(obj, attr, default=0):
