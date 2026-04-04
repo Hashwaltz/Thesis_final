@@ -2,7 +2,7 @@
 {% block title %}Late Computation | Leave Officer{% endblock %}
 
 {% block content %}
-<main class="p-6 bg-[#0f172a] min-h-screen text-gray-100 space-y-6">
+<main class="p-4 md:p-6 bg-[#0f172a] min-h-screen text-gray-100 space-y-6">
 
   <!-- ================= FILTERS ================= -->
   <div class="bg-[#1e293b] p-4 rounded-2xl shadow border border-gray-700 flex flex-wrap items-end gap-4">
@@ -10,7 +10,9 @@
 
       <!-- Month -->
       <div class="flex flex-col">
-        <label class="text-sm text-gray-400">Month</label>
+        <label class="text-sm text-gray-400 flex items-center gap-1">
+          <i class="fa-solid fa-calendar-days text-gray-300"></i> Month
+        </label>
         <select name="month" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200">
           {% for mname in month_names %}
             <option value="{{ loop.index }}" {% if loop.index == month %}selected{% endif %}>{{ mname }}</option>
@@ -20,7 +22,9 @@
 
       <!-- Year -->
       <div class="flex flex-col">
-        <label class="text-sm text-gray-400">Year</label>
+        <label class="text-sm text-gray-400 flex items-center gap-1">
+          <i class="fa-solid fa-calendar-alt text-gray-300"></i> Year
+        </label>
         <select name="year" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200">
           {% for y in range(2020, 2031) %}
             <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
@@ -30,7 +34,9 @@
 
       <!-- Employee -->
       <div class="flex flex-col">
-        <label class="text-sm text-gray-400">Employee</label>
+        <label class="text-sm text-gray-400 flex items-center gap-1">
+          <i class="fa-solid fa-user text-gray-300"></i> Employee
+        </label>
         <select name="employee_id" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200">
           <option value="">-- Select Employee --</option>
           {% for emp in employees %}
@@ -49,7 +55,7 @@
   </div>
 
   <!-- ================= SUMMARY CARDS ================= -->
-  {% if summary %}
+  {% if data %}
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     {% for card in [
         {'label':'TOTAL LATE (MIN)','value':summary.total_late_minutes},
@@ -58,7 +64,7 @@
         {'label':'TOTAL UNDERTIME (MIN)','value':summary.total_undertime_minutes},
         {'label':'DAYS UNDERTIME','value':summary.days_undertime},
         {'label':'UNDERTIME DEDUCTION','value':summary.undertime_deduction},
-        {'label':'OVERALL MINUTES','value':summary.overall_minutes},
+        {'label':'OVERALL (MIN & SEC)','value':summary.overall_time_str},
         {'label':'OVERALL DAYS','value':summary.overall_days},
         {'label':'OVERALL DEDUCTION','value':summary.overall_deduction,'colspan':2}
       ] %}
@@ -74,6 +80,7 @@
   {% if data %}
   <div class="flex justify-between items-center mt-6 mb-2">
     <h2 class="text-xl font-bold text-gray-300">
+      <i class="fa-solid fa-calendar-days text-blue-400 mr-2"></i>
       {{ month_names[month-1] }} {{ year }}
     </h2>
   </div>
@@ -83,16 +90,21 @@
   {% if data %}
     {% for row in data %}
       <div class="bg-[#1e293b] rounded-2xl shadow border border-gray-700 p-4 mt-4">
-        <h3 class="font-semibold text-lg text-emerald-400 mb-2">{{ row.employee.get_full_name() }}</h3>
-        <div class="grid grid-cols-7 gap-2 text-xs">
+        <h3 class="font-semibold text-lg text-emerald-400 mb-2">
+          <i class="fa-solid fa-user-tie mr-2"></i>
+          {{ row.employee.get_full_name() }}
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
           {% for d in range(1, days_in_month + 1) %}
             {% set day = row.days.get(d) %}
             <div class="bg-[#0f172a] p-2 rounded-lg border border-gray-600 flex flex-col items-center text-center">
               <span class="font-medium text-gray-400">{{ d }} <span class="text-sm text-gray-500">({{ day.weekday }})</span></span>
-              <span class="text-green-400 font-semibold">
+              <span class="text-green-400 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
                 IN: {{ day.time_in }}
               </span>
-              <span class="text-yellow-400 font-semibold">
+              <span class="text-yellow-400 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-arrow-up-from-bracket"></i>
                 OUT: {{ day.time_out }}
               </span>
             </div>
@@ -102,6 +114,7 @@
     {% endfor %}
   {% else %}
     <div class="text-center text-gray-400 mt-4">
+      <i class="fa-solid fa-info-circle mr-2"></i>
       Select an employee and click View to see late computation.
     </div>
   {% endif %}

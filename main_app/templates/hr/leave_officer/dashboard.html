@@ -1,5 +1,5 @@
 {% extends "hr/leave_officer/leave_base.html" %}
-{% block title %}Dashboard | Leave Officer {% endblock %}
+{% block title %}Dashboard | Leave Officer{% endblock %}
 
 {% block content %}
 <main class="p-4 md:p-6 space-y-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
@@ -13,19 +13,29 @@
       Leave Officer Dashboard
     </h1>
     <span class="text-gray-400 text-sm bg-slate-800 px-3 py-1 rounded-lg border border-gray-700">
-      {{ current_month_year }}
+      {{ current_month_year|default("Loading...") }}
     </span>
   </header>
 
-  <!-- INFO CARDS -->
-  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+  <!-- FLASH MESSAGES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="p-4 rounded-xl border {% if category == 'error' %}bg-red-900/30 border-red-700 text-red-300{% else %}bg-blue-900/30 border-blue-700 text-blue-300{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-    <!-- CARD -->
+  <!-- INFO CARDS -->
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+    <!-- Pending -->
     <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-yellow-400 transition duration-300 shadow hover:shadow-yellow-500/10">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-gray-400 text-sm">Pending Leaves</p>
-          <h2 class="text-3xl font-bold text-yellow-400 mt-1">{{ pending_leaves }}</h2>
+          <h2 class="text-3xl font-bold text-yellow-400 mt-1">{{ pending_leaves|default(0) }}</h2>
         </div>
         <div class="p-3 rounded-xl bg-yellow-500/10 group-hover:scale-110 transition">
           <i class="fa-solid fa-hourglass-half text-yellow-400 text-2xl"></i>
@@ -33,11 +43,12 @@
       </div>
     </div>
 
+    <!-- Approved -->
     <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-green-400 transition duration-300 shadow hover:shadow-green-500/10">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-gray-400 text-sm">Approved Leaves</p>
-          <h2 class="text-3xl font-bold text-green-400 mt-1">{{ approved_leaves }}</h2>
+          <h2 class="text-3xl font-bold text-green-400 mt-1">{{ approved_leaves|default(0) }}</h2>
         </div>
         <div class="p-3 rounded-xl bg-green-500/10 group-hover:scale-110 transition">
           <i class="fa-solid fa-circle-check text-green-400 text-2xl"></i>
@@ -45,11 +56,12 @@
       </div>
     </div>
 
+    <!-- Rejected -->
     <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-red-400 transition duration-300 shadow hover:shadow-red-500/10">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-gray-400 text-sm">Rejected Leaves</p>
-          <h2 class="text-3xl font-bold text-red-400 mt-1">{{ rejected_leaves }}</h2>
+          <h2 class="text-3xl font-bold text-red-400 mt-1">{{ rejected_leaves|default(0) }}</h2>
         </div>
         <div class="p-3 rounded-xl bg-red-500/10 group-hover:scale-110 transition">
           <i class="fa-solid fa-circle-xmark text-red-400 text-2xl"></i>
@@ -57,11 +69,12 @@
       </div>
     </div>
 
+    <!-- Active Employees -->
     <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-blue-400 transition duration-300 shadow hover:shadow-blue-500/10">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-gray-400 text-sm">Active Employees</p>
-          <h2 class="text-3xl font-bold text-blue-400 mt-1">{{ total_users }}</h2>
+          <h2 class="text-3xl font-bold text-blue-400 mt-1">{{ total_users|default(0) }}</h2>
         </div>
         <div class="p-3 rounded-xl bg-blue-500/10 group-hover:scale-110 transition">
           <i class="fa-solid fa-users text-blue-400 text-2xl"></i>
@@ -69,10 +82,22 @@
       </div>
     </div>
 
+    <!-- Approval Rate -->
+    <div class="group bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 hover:border-emerald-400 transition duration-300 shadow hover:shadow-emerald-500/10">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-400 text-sm">Approval Rate</p>
+          <h2 class="text-3xl font-bold text-emerald-400 mt-1">{{ approval_rate|default(0) }}%</h2>
+        </div>
+        <div class="p-3 rounded-xl bg-emerald-500/10 group-hover:scale-110 transition">
+          <i class="fa-solid fa-percent text-emerald-400 text-2xl"></i>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- REMINDERS -->
-  {% if reminders %}
+  {% if reminders and reminders|length > 0 %}
   <div class="bg-yellow-500/10 backdrop-blur-md border border-yellow-500/30 rounded-2xl p-5 shadow">
     <h3 class="font-semibold text-yellow-300 mb-3 flex items-center gap-2">
       <i class="fa-solid fa-bell"></i> Reminders
@@ -87,73 +112,238 @@
   </div>
   {% endif %}
 
-  <!-- LEAVE GRAPH -->
-  <div class="bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 shadow">
-    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-      <i class="fa-solid fa-chart-line text-blue-400"></i> Monthly Leave Requests
-    </h2>
+  <!-- MAIN GRID: Graph + Top Leave Types -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- 📊 LEAVE TRENDS GRAPH -->
+    <div class="lg:col-span-2 bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 shadow">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-blue-400"></i> Leave Request Trends (Last 6 Months)
+        </h2>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1 text-yellow-400"><span class="w-2 h-2 rounded-full bg-yellow-400"></span> Pending</span>
+          <span class="flex items-center gap-1 text-green-400"><span class="w-2 h-2 rounded-full bg-green-400"></span> Approved</span>
+          <span class="flex items-center gap-1 text-red-400"><span class="w-2 h-2 rounded-full bg-red-400"></span> Rejected</span>
+        </div>
+      </div>
 
-    <canvas id="leaveChart" height="110"></canvas>
+      <!-- Fixed-height wrapper for Chart.js -->
+      <div class="relative h-72 w-full">
+        <canvas id="leaveChart"></canvas>
+      </div>
+      
+      {% if not monthly_leave_labels or monthly_leave_labels|length == 0 %}
+      <p class="text-center text-gray-500 py-8">No leave data available for the past 6 months.</p>
+      {% endif %}
+      
+      <!-- Month-over-Month Indicator -->
+      <div class="mt-4 flex items-center gap-2 text-sm">
+        <span class="text-gray-400">vs last month:</span>
+        {% if mom_trend|default("stable") == "up" %}
+          <span class="text-red-400 font-medium">↑ {{ mom_change|default(0) }}%</span>
+        {% elif mom_trend|default("stable") == "down" %}
+          <span class="text-green-400 font-medium">↓ {{ mom_change|default(0)|abs }}%</span>
+        {% else %}
+          <span class="text-gray-400 font-medium">No change</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 🏆 TOP 3 LEAVE TYPES -->
+    <div class="bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 shadow">
+      <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-trophy text-purple-400"></i> Top Leave Types  Requested
+      </h2>
+      
+      <div class="space-y-4">
+        {% if top_leave_types and top_leave_types|length > 0 %}
+          {% for leave in top_leave_types %}
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-slate-700">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-full 
+                {% if leave.rank|default(0) == 1 %}bg-yellow-500/20 text-yellow-400
+                {% elif leave.rank|default(0) == 2 %}bg-gray-400/20 text-gray-300
+                {% elif leave.rank|default(0) == 3 %}bg-amber-700/20 text-amber-500
+                {% else %}bg-slate-700 text-gray-500{% endif %} font-bold text-sm">
+                {{ leave.rank|default("–") }}
+              </span>
+              <div>
+                <p class="font-medium text-white">{{ leave.name|default("N/A") }}</p>
+                <p class="text-xs text-gray-500">{{ leave.count|default(0) }} requests</p>
+              </div>
+            </div>
+            <span class="text-sm font-semibold text-purple-400">{{ leave.percentage|default(0) }}%</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-500 text-sm text-center py-4">No leave type data available</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- SECONDARY GRID: Department + Recent Pending -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <!-- 🏢 DEPARTMENT BREAKDOWN -->
+    <div class="bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 shadow">
+      <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-building text-cyan-400"></i> Top Departments
+      </h2>
+      
+      <div class="space-y-3">
+        {% if dept_breakdown and dept_breakdown|length > 0 %}
+          {% set max_count = dept_breakdown[0].count if dept_breakdown and dept_breakdown[0].count else 1 %}
+          {% for dept in dept_breakdown %}
+          <div class="flex items-center justify-between">
+            <span class="text-gray-300">{{ dept.name|default("Unknown") }}</span>
+            <div class="flex items-center gap-3">
+              <div class="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-cyan-500 rounded-full" 
+                     style="width: {{ (dept.count / max_count * 100) if max_count > 0 else 0 }}%"></div>
+              </div>
+              <span class="text-sm font-medium text-cyan-400 w-8 text-right">{{ dept.count|default(0) }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-500 text-sm text-center py-4">No department data available</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ⏳ RECENT PENDING REQUESTS -->
+    <div class="bg-slate-800/70 backdrop-blur-md rounded-2xl p-5 border border-slate-700 shadow">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-clock text-yellow-400"></i> Pending Review
+        </h2>
+        {% if pending_leaves|default(0) > 0 %}
+        <a href="/leave-officer/pending" class="text-xs text-blue-400 hover:text-blue-300 transition">View All →</a>
+        {% endif %}
+      </div>
+      
+      <div class="space-y-3">
+        {% if recent_pending and recent_pending|length > 0 %}
+          {% for req in recent_pending %}
+          <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-700 hover:border-yellow-500/50 transition cursor-pointer">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="font-medium text-white">{{ req.employee|default("Unknown Employee") }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ req.type|default("Unknown Type") }} • {{ req.dates|default("N/A") }}</p>
+              </div>
+              <span class="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">{{ req.created|default("N/A") }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-500 text-sm text-center py-4">No pending requests</p>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
 </main>
 
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById("leaveChart");
-
-  new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: {{ monthly_leave_labels | tojson }},
-      datasets: [
-        {
-          label: "Pending",
-          data: {{ pending_data | tojson }},
-          borderColor: "#FACC15",
-          backgroundColor: "transparent",
-          borderWidth: 2,
-          pointBackgroundColor: "#FACC15",
-          tension: 0.4
-        },
-        {
-          label: "Approved",
-          data: {{ approved_data | tojson }},
-          borderColor: "#22C55E",
-          backgroundColor: "transparent",
-          borderWidth: 2,
-          pointBackgroundColor: "#22C55E",
-          tension: 0.4
-        },
-        {
-          label: "Rejected",
-          data: {{ rejected_data | tojson }},
-          borderColor: "#EF4444",
-          backgroundColor: "transparent",
-          borderWidth: 2,
-          pointBackgroundColor: "#EF4444",
-          tension: 0.4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          labels: { color: "#E5E7EB" }
-        }
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById("leaveChart");
+    
+    {% if monthly_leave_labels and monthly_leave_labels|length > 0 %}
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: {{ monthly_leave_labels | tojson }},
+        datasets: [
+          {
+            label: "Pending",
+            data: {{ pending_data | tojson }},
+            borderColor: "#FACC15",
+            backgroundColor: "rgba(250, 204, 21, 0.1)",
+            borderWidth: 2,
+            pointBackgroundColor: "#FACC15",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.4,
+            fill: false
+          },
+          {
+            label: "Approved",
+            data: {{ approved_data | tojson }},
+            borderColor: "#22C55E",
+            backgroundColor: "rgba(34, 197, 94, 0.1)",
+            borderWidth: 2,
+            pointBackgroundColor: "#22C55E",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.4,
+            fill: false
+          },
+          {
+            label: "Rejected",
+            data: {{ rejected_data | tojson }},
+            borderColor: "#EF4444",
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            borderWidth: 2,
+            pointBackgroundColor: "#EF4444",
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.4,
+            fill: false
+          }
+        ]
       },
-      scales: {
-        x: {
-          ticks: { color: "#9CA3AF" },
-          grid: { color: "#374151" }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            backgroundColor: "rgba(30, 41, 59, 0.95)",
+            titleColor: "#E5E7EB",
+            bodyColor: "#9CA3AF",
+            borderColor: "#374151",
+            borderWidth: 1,
+            padding: 12
+          }
         },
-        y: {
-          ticks: { color: "#9CA3AF" },
-          grid: { color: "#374151" }
+        interaction: {
+          mode: "nearest",
+          axis: "x",
+          intersect: false
+        },
+        scales: {
+          x: {
+            ticks: { color: "#9CA3AF", font: { size: 11 } },
+            grid: { color: "#374151", drawBorder: false }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { 
+              color: "#9CA3AF",
+              font: { size: 11 },
+              callback: function(value) {
+                if (Number.isInteger(value)) return value;
+                return null;
+              }
+            },
+            grid: { color: "#374151", drawBorder: false },
+            min: 0
+          }
         }
       }
+    });
+    {% else %}
+    // Hide canvas if no data - prevent rendering errors
+    if (ctx) {
+      ctx.style.display = 'none';
     }
+    {% endif %}
   });
 </script>
 

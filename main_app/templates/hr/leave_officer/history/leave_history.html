@@ -2,166 +2,334 @@
 {% block title %}{{ employee.get_full_name() }} - Leave History{% endblock %}
 
 {% block content %}
+<div class="max-w-6xl mx-auto p-6 space-y-6 text-slate-100">
 
-<div class="max-w-6xl mx-auto space-y-6">
-
-  <!-- HEADER -->
-  <div class="flex items-center justify-between mb-6">
+    <!-- Header -->
     <div>
-      <h2 class="text-3xl font-bold text-gray-100">{{ employee.get_full_name() }}</h2>
-      <p class="text-gray-400 text-sm">Leave Credit History</p>
+        <h1 class="text-2xl font-bold">Leave Officer Panel</h1>
+        <h2 class="text-lg text-slate-300">
+            {{ employee.first_name }} {{ employee.last_name }}
+        </h2>
+        <p class="text-sm text-slate-400">Leave Credit History</p>
     </div>
-    <div class="bg-gray-800 px-4 py-2 rounded-lg shadow text-sm text-gray-300">
-      Latest Records First
-    </div>
-  </div>
 
-  <!-- ===================================================== -->
-  <!-- ANNUAL SUMMARY (NEW) -->
-  <!-- ===================================================== -->
-  {% if annual_summary %}
-  <div class="bg-gray-900 rounded-xl p-6 border border-gray-700">
+    <!-- 📊 Annual Summary -->
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow">
+        <h3 class="text-lg font-semibold mb-4">📊 Annual Leave Summary</h3>
 
-    <h3 class="text-xl font-bold text-white mb-4">📊 Annual Leave Summary</h3>
-
-    <div class="grid md:grid-cols-2 gap-4">
-
-      {% for year, data in annual_summary.items() %}
-      <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
-
-        <div class="text-lg font-semibold text-white mb-3">
-          {{ year }}
-        </div>
-
-        <div class="flex justify-between text-sm">
-          <span class="text-green-400">
-            Sick Leave: {{ data["Sick Leave"] | round(3) }}
-          </span>
-
-          <span class="text-blue-400">
-            Vacation Leave: {{ data["Vacation Leave"] | round(3) }}
-          </span>
-        </div>
-
-      </div>
-      {% endfor %}
-
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ===================================================== -->
-  <!-- MONTHLY PROCESSING -->
-  <!-- ===================================================== -->
-
-  {% set balances = {"Sick Leave":0, "Vacation Leave":0} %}
-  {% set processed_months = [] %}
-
-  {% for month in history_data %}
-      {% set month_balances = {} %}
-
-      {% for ld in month.leave_data %}
-          {% set new_balance = balances[ld.leave_type] + ld.earned - ld.used %}
-          {% set balances = balances.update({ld.leave_type:new_balance}) or balances %}
-          {% set month_balances = month_balances.update({ld.leave_type:new_balance}) or month_balances %}
-      {% endfor %}
-
-      {% set _ = processed_months.append({
-          "month": month.month,
-          "worked_days": month.worked_days,
-          "total_days": month.total_days,
-          "leave_data": month.leave_data,
-          "balances": month_balances
-      }) %}
-  {% endfor %}
-
-  <!-- ===================================================== -->
-  <!-- MONTHLY CARDS -->
-  <!-- ===================================================== -->
-
-  {% for month in processed_months | reverse %}
-
-      {% set filtered_leaves = month.leave_data | selectattr("earned","gt",0) | list %}
-      {% set filtered_leaves = filtered_leaves + (month.leave_data | selectattr("used","gt",0) | list) %}
-
-      {% if filtered_leaves %}
-      <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 hover:shadow-2xl transition">
-
-        <!-- Month Header -->
-        <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
-
-          <div>
-            📅 {{ month.month }}
-            <span class="text-gray-400 text-sm">
-              ({{ month.worked_days }}/{{ month.total_days }} worked days)
-            </span>
-          </div>
-
-          <div class="flex gap-4 text-sm">
-            <span class="bg-green-600/20 text-green-400 px-3 py-1 rounded-full">
-              Sick: {{ month.balances["Sick Leave"] | round(3) }}
-            </span>
-
-            <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full">
-              Vacation: {{ month.balances["Vacation Leave"] | round(3) }}
-            </span>
-          </div>
-
-        </div>
-
-        <!-- Leave Cards -->
-        <div class="p-6 grid md:grid-cols-2 gap-6">
-
-          {% for ld in filtered_leaves %}
-          <div class="bg-gray-700 rounded-lg p-5 shadow-inner border border-gray-600">
-
-            <div class="flex justify-between items-center mb-3">
-              <span class="font-semibold text-blue-400">{{ ld.leave_type }}</span>
-              <span class="text-xs text-gray-400">
-                Balance: {{ month.balances[ld.leave_type] | round(3) }}
-              </span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            {% for year, credits in annual_summary.items() %}
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                <p class="font-semibold text-white">{{ year }}</p>
+                <p class="text-sm text-slate-400 mt-1">
+                    Sick: {{ credits['Sick Leave'] }}
+                </p>
+                <p class="text-sm text-slate-400">
+                    Vacation: {{ credits['Vacation Leave'] }}
+                </p>
             </div>
+            {% endfor %}
+        </div>
+    </div>
 
-            <div class="flex flex-wrap gap-2">
-              <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs">
-                Earned: {{ ld.earned }}
-              </span>
+    <!-- 📅 Yearly Accordion -->
+    <div class="space-y-4">
 
-              {% if ld.used > 0 %}
-              <span class="bg-red-600 text-white px-3 py-1 rounded-full text-xs">
-                Used: {{ ld.used }}
-              </span>
-              {% endif %}
+        {% for year, months in history_by_year.items() %}
+        <div x-data="{ open: {{ 'true' if loop.first else 'false' }} }"
+             class="border border-slate-700 rounded-2xl overflow-hidden bg-slate-800 shadow">
+
+            <!-- Header -->
+            <button @click="open = !open"
+                class="w-full flex justify-between items-center px-5 py-4 text-left hover:bg-slate-700 transition">
+
+                <div>
+                    <p class="font-semibold text-white">📅 {{ year }}</p>
+                    <p class="text-sm text-slate-400">
+                        Sick: {{ annual_summary.get(year, {}).get('Sick Leave', 0) }} |
+                        Vacation: {{ annual_summary.get(year, {}).get('Vacation Leave', 0) }}
+                    </p>
+                </div>
+
+                <svg :class="open ? 'rotate-180' : ''"
+                     class="w-5 h-5 text-slate-400 transition-transform"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <!-- Body -->
+            <div x-show="open" x-transition class="p-5 space-y-4 bg-slate-900">
+
+                {% for month in months %}
+                <div class="bg-slate-800 border border-slate-700 rounded-xl shadow">
+
+                    <!-- Month Header -->
+                    <div class="flex justify-between items-center px-4 py-3 border-b border-slate-700">
+                        <h4 class="font-semibold text-white">
+                            📅 {{ month.month }}
+                            <span class="text-sm text-slate-400">
+                                ({{ month.worked_days }}/{{ month.total_days }} days)
+                            </span>
+                        </h4>
+
+                        <span class="px-3 py-1 text-xs rounded-full bg-green-600/20 text-green-400 border border-green-600">
+                            Earned: {{ month.earned_credit }}
+                        </span>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="p-4 space-y-4">
+
+                        <!-- 🎯 Late Deduction Summary (VL-FIRST LOGIC) -->
+                        {% if month.late_deduction > 0 %}
+                        <div class="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-4">
+                            <div class="flex items-start gap-3">
+                                <span class="text-red-400 text-lg">⚠️</span>
+                                <div class="flex-1">
+                                    <p class="text-red-400 font-medium">
+                                        Late Deduction Applied: <span class="font-bold">-{{ month.late_deduction }}</span> credits
+                                    </p>
+                                    
+                                    <!-- Deduction Breakdown: VL First, Then SL -->
+                                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                                        <div class="bg-slate-800 p-2 rounded border border-slate-600">
+                                            <p class="text-slate-400">From Vacation Leave</p>
+                                            <p class="text-blue-400 font-semibold">
+                                                -{{ month.deduction_breakdown.from_vl }} credits
+                                            </p>
+                                        </div>
+                                        <div class="bg-slate-800 p-2 rounded border border-slate-600">
+                                            <p class="text-slate-400">From Sick Leave</p>
+                                            <p class="text-emerald-400 font-semibold">
+                                                -{{ month.deduction_breakdown.from_sl }} credits
+                                            </p>
+                                        </div>
+                                        {% if month.deduction_breakdown.unapplied > 0 %}
+                                        <div class="bg-amber-900/30 p-2 rounded border border-amber-600">
+                                            <p class="text-amber-400">Unapplied (No Credits)</p>
+                                            <p class="text-amber-300 font-semibold">
+                                                {{ month.deduction_breakdown.unapplied }} credits
+                                            </p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- ✅ Total Consumption Summary for VL -->
+                                    {% set vl_data = month.leave_data | selectattr('leave_type', 'equalto', 'Vacation Leave') | first | default(None) %}
+                                    {% if vl_data %}
+                                        {% set vl_leave_used = vl_data.used | default(0) %}
+                                        {% set vl_total_consumed = vl_leave_used + month.deduction_breakdown.from_vl %}
+                                        <p class="text-slate-300 text-sm mt-3 p-2 bg-slate-800/50 rounded border border-slate-700">
+                                            💡 <strong>Vacation Leave Total Consumption:</strong><br>
+                                            {{ vl_leave_used }} (leave requests) + {{ month.deduction_breakdown.from_vl }} (late) = 
+                                            <span class="text-amber-400 font-bold">{{ vl_total_consumed }} credits</span>
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <!-- ✅ Total Consumption Summary for SL -->
+                                    {% set sl_data = month.leave_data | selectattr('leave_type', 'equalto', 'Sick Leave') | first | default(None) %}
+                                    {% if sl_data and month.deduction_breakdown.from_sl > 0 %}
+                                        {% set sl_leave_used = sl_data.used | default(0) %}
+                                        {% set sl_total_consumed = sl_leave_used + month.deduction_breakdown.from_sl %}
+                                        <p class="text-slate-300 text-sm mt-2 p-2 bg-slate-800/50 rounded border border-slate-700">
+                                            💡 <strong>Sick Leave Total Consumption:</strong><br>
+                                            {{ sl_leave_used }} (leave requests) + {{ month.deduction_breakdown.from_sl }} (late) = 
+                                            <span class="text-amber-400 font-bold">{{ sl_total_consumed }} credits</span>
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <p class="text-slate-500 text-xs mt-2">
+                                        Policy: Late deductions consume Vacation Leave first. 
+                                        Sick Leave is only used when VL balance is exhausted.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Leave Types with NET Credits After Deduction + TOTAL CONSUMPTION -->
+                        <div class="grid md:grid-cols-2 gap-4">
+                            {% for ld in month.leave_data %}
+                            <div class="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                                <h5 class="text-blue-400 font-semibold mb-2">
+                                    {{ ld.leave_type }}
+                                </h5>
+                                
+                                {# Calculate calendar days used for this leave type this month #}
+                                {% set calendar_days_used = ld.usage_details | sum(attribute='days_used') | default(0) %}
+                                
+                                {# For VL/SL, show detailed credit breakdown #}
+                                {% if ld.leave_type in ["Vacation Leave", "Sick Leave"] %}
+                                    {% set leave_credits_used = ld.used | default(0) %}
+                                    {% set late_credits_deducted = month.deduction_breakdown.from_vl if ld.leave_type == "Vacation Leave" else month.deduction_breakdown.from_sl %}
+                                    {% set total_credits_consumed = leave_credits_used + late_credits_deducted %}
+                                    
+                                    <!-- Credit Consumption Summary Box -->
+                                    <div class="bg-slate-800 p-3 rounded border border-slate-600 mb-3">
+                                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-2">Credits Consumed This Month</p>
+                                        <div class="space-y-1 text-sm">
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-400">Leave Requests:</span>
+                                                <span class="text-blue-400 font-medium">{{ leave_credits_used }} credits</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-400">Late Deduction:</span>
+                                                <span class="text-red-400 font-medium">-{{ late_credits_deducted }} credits</span>
+                                            </div>
+                                            <div class="flex justify-between pt-1 border-t border-slate-700">
+                                                <span class="text-slate-300 font-semibold">Total Consumed:</span>
+                                                <span class="text-amber-400 font-bold">{{ total_credits_consumed }} credits</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Net Balance Display -->
+                                    {% if ld.leave_type == "Vacation Leave" %}
+                                        <p class="text-sm text-slate-300">
+                                            Net Balance: <span class="font-bold text-white">{{ month.vl_net_credit }}</span>
+                                        </p>
+                                    {% elif ld.leave_type == "Sick Leave" %}
+                                        <p class="text-sm text-slate-300">
+                                            Net Balance: <span class="font-bold text-white">{{ month.sl_net_credit }}</span>
+                                        </p>
+                                    {% endif %}
+                                    
+                                    <!-- Calendar Days Reference -->
+                                    {% if calendar_days_used > 0 %}
+                                    <p class="text-xs text-slate-500 mt-2">
+                                        📅 Calendar days taken: {{ calendar_days_used }} day{{ 's' if calendar_days_used != 1 else '' }}
+                                        <span class="block text-slate-600">(Converted to {{ leave_credits_used }} credits per accrual policy)</span>
+                                    </p>
+                                    {% endif %}
+                                    
+                                {% else %}
+                                    {# Other leave types - simple display #}
+                                    <p class="text-sm text-slate-300">
+                                        Balance: {{ ld.remaining }}
+                                    </p>
+                                    <p class="text-sm text-slate-400 mt-2">
+                                        Earned: {{ ld.earned }} | Used: {{ ld.used }}
+                                    </p>
+                                {% endif %}
+                                
+                                <!-- Base Earned/Used Reference -->
+                                <p class="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-800">
+                                    Monthly Accrual: +{{ ld.earned }} credits | Leave Requests: {{ ld.used }} credits
+                                </p>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Late Records Table (Display Only - Minutes + Seconds) -->
+                        {% if month.late_deductions %}
+                        <details class="group">
+                          <summary class="cursor-pointer text-sm text-slate-400 hover:text-white flex items-center gap-2">
+                            <span>🕐 View Late Records ({{ month.late_deductions|length }})</span>
+                            <span class="text-xs bg-slate-700 px-2 py-0.5 rounded">Display Only</span>
+                          </summary>
+
+                          <div class="overflow-x-auto mt-3">
+                            <table class="min-w-full text-sm text-left text-slate-300">
+                              <thead class="text-xs uppercase text-slate-400 border-b border-slate-700">
+                                <tr>
+                                  <th class="px-3 py-2">Date</th>
+                                  <th class="px-3 py-2">Time In</th>
+                                  <th class="px-3 py-2">Late Duration</th>
+                                  <th class="px-3 py-2 text-slate-500">Daily Deduction</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for late in month.late_deductions %}
+                                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                                  <td class="px-3 py-2 font-mono">{{ late.date }}</td>
+                                  <td class="px-3 py-2">{{ late.time_in }}</td>
+                                  <td class="px-3 py-2 text-emerald-400 font-medium">
+                                    {{ late.late_display }}
+                                  </td>
+                                  <td class="px-3 py-2 text-slate-500 text-xs">—</td>
+                                </tr>
+                                {% endfor %}
+                                <!-- Summary Row -->
+                                <tr class="bg-slate-800/80 font-semibold border-t border-slate-600">
+                                  <td colspan="2" class="px-3 py-2 text-slate-300">MONTHLY TOTAL</td>
+                                  <td class="px-3 py-2 text-emerald-400">
+                                    {% set total_mins = month.late_deductions|sum(attribute='late_minutes') %}
+                                    {% set total_secs = month.late_deductions|sum(attribute='late_seconds') %}
+                                    {% set extra_mins = total_secs // 60 %}
+                                    {% set final_secs = total_secs % 60 %}
+                                    {{ total_mins + extra_mins }} min {{ final_secs }} sec
+                                  </td>
+                                  <td class="px-3 py-2 text-red-400">
+                                    -{{ month.late_deduction }} credits
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                        {% endif %}
+
+                        <!-- Leave Usage -->
+                        {% if month.leave_usage %}
+                        <details class="group">
+                            <summary class="cursor-pointer text-sm text-slate-400 hover:text-white">
+                                View Leave Usage
+                            </summary>
+
+                            <div class="overflow-x-auto mt-3">
+                                <table class="min-w-full text-sm text-left text-slate-300">
+                                    <thead class="text-xs uppercase text-slate-400 border-b border-slate-700">
+                                        <tr>
+                                            <th class="px-3 py-2">Type</th>
+                                            <th class="px-3 py-2">From</th>
+                                            <th class="px-3 py-2">To</th>
+                                            <th class="px-3 py-2">Days</th>
+                                            <th class="px-3 py-2">Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for usage in month.leave_usage %}
+                                        <tr class="border-b border-slate-800">
+                                            <td class="px-3 py-2">{{ usage.leave_type }}</td>
+                                            <td class="px-3 py-2">{{ usage.start_date }}</td>
+                                            <td class="px-3 py-2">{{ usage.end_date }}</td>
+                                            <td class="px-3 py-2">{{ usage.days_used }}</td>
+                                            <td class="px-3 py-2">{{ usage.reason }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </details>
+                        {% endif %}
+
+                    </div>
+                </div>
+                {% endfor %}
+
             </div>
-
-          </div>
-          {% endfor %}
-
         </div>
+        {% endfor %}
 
-        <!-- Monthly Total -->
-        <div class="bg-gray-900 px-6 py-3 flex gap-6 text-sm text-gray-300">
-
-          <span>
-            Sick Leave Remaining:
-            <span class="text-green-400 font-semibold">
-              {{ month.balances["Sick Leave"] | round(3) }}
-            </span>
-          </span>
-
-          <span>
-            Vacation Leave Remaining:
-            <span class="text-blue-400 font-semibold">
-              {{ month.balances["Vacation Leave"] | round(3) }}
-            </span>
-          </span>
-
-        </div>
-
-      </div>
-      {% endif %}
-  {% endfor %}
+    </div>
+    
+    <!-- 💡 Legend / Help Section -->
+    <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-sm text-slate-400">
+        <p class="font-semibold text-slate-300 mb-2">📋 Deduction Policy Reference:</p>
+        <ul class="list-disc list-inside space-y-1">
+            <li><span class="text-blue-400">Vacation Leave (VL)</span> is deducted first for late penalties</li>
+            <li><span class="text-emerald-400">Sick Leave (SL)</span> is only used when VL balance reaches zero</li>
+            <li>Credits are only earned when employment type is <strong>Regular (ID:1)</strong> or <strong>Casual (ID:3)</strong></li>
+            <li>Unapplied deductions occur when both VL and SL balances are exhausted</li>
+            <li><strong>Total Consumption = Leave Credits Used + Late Deduction Credits</strong></li>
+        </ul>
+    </div>
 
 </div>
+
+<!-- AlpineJS (needed for accordion) -->
+<script src="//unpkg.com/alpinejs" defer></script>
 
 {% endblock %}

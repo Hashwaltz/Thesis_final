@@ -247,7 +247,6 @@ def confirm_attendance():
             flash(f'✅ Successfully imported {count} attendance records!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash(f'💥 Database error: {str(e)}', 'error')
     finally:
         session.pop('pending_attendance', None)
     
