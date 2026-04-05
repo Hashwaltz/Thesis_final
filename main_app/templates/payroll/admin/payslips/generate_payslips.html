@@ -112,25 +112,6 @@
 <!-- SWEETALERT -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
-<!-- FLASH -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  {% for category, message in messages %}
-  Swal.fire({
-    icon: "{{ 'success' if category=='success' else 'warning' if category=='warning' else 'error' }}",
-    title: "{{ message }}",
-    confirmButtonColor: "#10b981"
-  });
-  {% endfor %}
-});
-</script>
-{% endif %}
-{% endwith %}
-
-
 <!-- CONFIRMATION -->
 <script>
 document.getElementById("generateBtn").addEventListener("click", function () {

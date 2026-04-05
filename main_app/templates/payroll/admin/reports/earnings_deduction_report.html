@@ -1,0 +1,507 @@
+{% extends "payroll/admin/payroll_admin_base.html" %}
+{% block title %}Earnings & Deduction Report{% endblock %}
+
+{% block content %}
+<section class="p-4 md:p-6 space-y-6">
+
+<!-- ===== HEADER WITH FILTERS ===== -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+        <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-3">
+            <i class="fa-solid fa-file-invoice-dollar text-2xl"></i>
+            Earnings & Deduction Report
+        </h1>
+        <p class="text-gray-400 text-sm mt-1">
+            Filter payroll data by provider: SSS, GSIS, PhilHealth, Tax, or Loans
+        </p>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ url_for('payroll_admin_bp.export_earnings_deduction_pdf', 
+                          provider=selected_provider,
+                          department_id=selected_department,
+                          period_id=selected_period,
+                          date_from=date_from,
+                          date_to=date_to,
+                          search=search) }}" 
+          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+            <i class="fa-solid fa-file-pdf"></i> Export PDF
+        </a>
+        <a href="{{ url_for('payroll_admin_bp.earnings_deduction_report') }}" 
+           class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+            Reset
+        </a>
+    </div>
+</div>
+
+<!-- ===== FILTERS CARD ===== -->
+<div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+    <form method="GET" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Provider Filter -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Provider</label>
+                <select name="provider" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    {% for opt in provider_options %}
+                        <option value="{{ opt.value }}" {% if selected_provider == opt.value %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Department Filter -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Department</label>
+                <select name="department_id" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_department == dept.id %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Pay Period Filter -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Pay Period</label>
+                <select name="period_id" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">All Periods</option>
+                    {% for period in payroll_periods %}
+                        <option value="{{ period.id }}" {% if selected_period == period.id %}selected{% endif %}>
+                            {{ period.period_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Search -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Search Employee</label>
+                <input type="text" name="search" value="{{ search or '' }}" placeholder="Name or ID"
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <!-- Date Range -->
+            <div class="flex items-end gap-2">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">From</label>
+                    <input type="date" name="date_from" value="{{ date_from or '' }}"
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-400 mb-1">To</label>
+                    <input type="date" name="date_to" value="{{ date_to or '' }}"
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="sm:col-span-2 flex items-end gap-2">
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <i class="fa-solid fa-filter"></i> Apply Filters
+                </button>
+                <button type="button" onclick="clearFilters()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+                    Clear All
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ===== FILTER STATUS BAR ===== -->
+<div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+    <p class="text-sm text-gray-400">
+        Showing: 
+        <span class="text-emerald-400 font-medium">
+            {{ selected_provider or 'All Providers' }}
+        </span>
+        {% if selected_department %}
+            <span class="text-gray-500 mx-2">•</span>
+            {% set dept_name = departments|selectattr('id','equalto',selected_department)|map(attribute='name')|first|default('Unknown') %}
+            <span class="text-emerald-400 font-medium">{{ dept_name }}</span>
+        {% endif %}
+        {% if selected_period %}
+            <span class="text-gray-500 mx-2">•</span>
+            {% set period_name = payroll_periods|selectattr('id','equalto',selected_period)|map(attribute='period_name')|first|default('Unknown') %}
+            <span class="text-emerald-400 font-medium">{{ period_name }}</span>
+        {% endif %}
+    </p>
+    <span class="text-xs text-gray-500">{{ pagination.total }} records found</span>
+</div>
+
+<!-- ===== SUMMARY CARDS ===== -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Total Employees -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-emerald-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Total Employees</p>
+                <h2 class="text-2xl md:text-3xl font-bold text-white mt-1">{{ summary_stats.total_employees }}</h2>
+                <p class="text-emerald-400 text-xs mt-1">
+                    <i class="fa-solid fa-users"></i> In report
+                </p>
+            </div>
+            <div class="p-2.5 bg-emerald-500/15 rounded-xl group-hover:bg-emerald-500/25 transition">
+                <i class="fa-solid fa-users text-emerald-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Earnings -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-green-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Total Earnings</p>
+                <h2 class="text-xl md:text-2xl font-bold text-white mt-1">₱{{ "{:,.2f}".format(summary_stats.total_earnings) }}</h2>
+                <p class="text-green-400 text-xs mt-1">
+                    Gross pay this period
+                </p>
+            </div>
+            <div class="p-2.5 bg-green-500/15 rounded-xl group-hover:bg-green-500/25 transition">
+                <i class="fa-solid fa-coins text-green-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provider Deductions -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-red-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">{{ selected_provider or 'All' }} Deductions</p>
+                <h2 class="text-xl md:text-2xl font-bold text-white mt-1">₱{{ "{:,.2f}".format(summary_stats.total_provider_deductions) }}</h2>
+                <p class="text-red-400 text-xs mt-1">
+                    Employee share total
+                </p>
+            </div>
+            <div class="p-2.5 bg-red-500/15 rounded-xl group-hover:bg-red-500/25 transition">
+                <i class="fa-solid fa-arrow-trend-down text-red-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Net Pay -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Total Net Pay</p>
+                <h2 class="text-xl md:text-2xl font-bold text-white mt-1">₱{{ "{:,.2f}".format(summary_stats.total_net_pay) }}</h2>
+                <p class="text-blue-400 text-xs mt-1">
+                    After all deductions
+                </p>
+            </div>
+            <div class="p-2.5 bg-blue-500/15 rounded-xl group-hover:bg-blue-500/25 transition">
+                <i class="fa-solid fa-wallet text-blue-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DEPARTMENT BREAKDOWN ===== -->
+{% if dept_breakdown %}
+<div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+    <h3 class="text-sm font-semibold text-emerald-400 mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-building"></i> Department Breakdown
+    </h3>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="text-gray-400 text-xs uppercase border-b border-gray-700">
+                <tr>
+                    <th class="text-left py-3 px-2">Department</th>
+                    <th class="text-center py-3 px-2">Employees</th>
+                    <th class="text-right py-3 px-2">Total Earnings</th>
+                    <th class="text-right py-3 px-2">Total Deductions</th>
+                    <th class="text-right py-3 px-2">Net Pay</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-300 divide-y divide-gray-700/50">
+                {% for dept in dept_breakdown %}
+                <tr class="hover:bg-gray-700/30 transition">
+                    <td class="py-3 px-2 font-medium text-white">{{ dept.name or 'N/A' }}</td>
+                    <td class="py-3 px-2 text-center">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold">
+                            {{ dept.employee_count or 0 }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-2 text-right text-green-400">₱{{ "{:,.2f}".format(dept.total_earnings or 0) }}</td>
+                    <td class="py-3 px-2 text-right text-red-400">₱{{ "{:,.2f}".format(dept.total_deductions or 0) }}</td>
+                    <td class="py-3 px-2 text-right font-semibold text-emerald-400">
+                        ₱{{ "{:,.2f}".format((dept.total_earnings or 0) - (dept.total_deductions or 0)) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== DETAILED REPORT TABLE ===== -->
+<div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+            <i class="fa-solid fa-table-list"></i> Detailed Report
+        </h3>
+        <span class="bg-gray-700 text-gray-300 text-xs px-3 py-1 rounded-full">
+            {{ pagination.total }} records
+        </span>
+    </div>
+    
+    {% if report_data %}
+    <div class="overflow-x-auto -mx-4 px-4 custom-scrollbar">
+        <table class="w-full text-sm">
+            <thead class="text-gray-400 text-xs uppercase border-b border-gray-700 sticky top-0 bg-gray-800/95 backdrop-blur">
+                <tr>
+                    <th class="text-left py-3 px-2">Employee</th>
+                    <th class="text-left py-3 px-2 hidden md:table-cell">Department</th>
+                    <th class="text-left py-3 px-2 hidden lg:table-cell">Period</th>
+                    <th class="text-right py-3 px-2">Basic</th>
+                    <th class="text-right py-3 px-2 hidden sm:table-cell">OT</th>
+                    <th class="text-right py-3 px-2">Gross</th>
+                    <th class="text-right py-3 px-2 text-red-400">{{ selected_provider or 'All' }} Ded.</th>
+                    <th class="text-right py-3 px-2">Net Pay</th>
+                    <th class="text-center py-3 px-2">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-300 divide-y divide-gray-700/50">
+                {% for record in report_data %}
+                <tr class="hover:bg-gray-700/30 transition group">
+                    <!-- Employee Info -->
+                    <td class="py-3 px-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-medium text-emerald-400 flex-shrink-0">
+                                {# ✅ FIXED: Use pre-computed initials from Python #}
+                                {{ record.employee_initials or 'E' }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="font-medium text-white truncate">{{ record.employee_name or 'N/A' }}</p>
+                                <p class="text-xs text-gray-500">{{ record.employee_id or '' }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <td class="py-3 px-2 hidden md:table-cell text-gray-400">{{ record.department or 'N/A' }}</td>
+                    <td class="py-3 px-2 hidden lg:table-cell text-gray-400 text-xs">{{ record.period or 'N/A' }}</td>
+                    
+                    <!-- Earnings -->
+                    <td class="py-3 px-2 text-right text-gray-300">₱{{ "{:,.0f}".format(record.earnings.basic_salary or 0) }}</td>
+                    <td class="py-3 px-2 text-right text-gray-400 hidden sm:table-cell">₱{{ "{:,.0f}".format(record.earnings.overtime or 0) }}</td>
+                    <td class="py-3 px-2 text-right font-semibold text-green-400">₱{{ "{:,.0f}".format(record.earnings.gross_pay or 0) }}</td>
+                    
+                    <!-- Provider Deductions -->
+                    <td class="py-3 px-2 text-right">
+                        <span class="text-red-400 font-semibold">₱{{ "{:,.0f}".format(record.provider_total or 0) }}</span>
+                        {% if record.deductions and selected_provider %}
+                        <div class="mt-1 text-xs text-gray-500">
+                            {% for ded in record.deductions[:2] %}
+                                <span class="block truncate max-w-[100px]">{{ ded.name|truncate(15, True) }}</span>
+                            {% endfor %}
+                            {% if record.deductions|length > 2 %}
+                                <span class="text-gray-600">+{{ record.deductions|length - 2 }} more</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- Net Pay -->
+                    <td class="py-3 px-2 text-right font-bold text-emerald-400">₱{{ "{:,.0f}".format(record.net_pay or 0) }}</td>
+                    
+                    <!-- Actions -->
+                    <td class="py-3 px-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <a href="{{ url_for('payroll_admin_bp.view_payslips') }}?search={{ record.employee_id }}" 
+                               class="p-1.5 text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition" 
+                               title="View Payslip">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </a>
+                            <button type="button" 
+                                    class="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition"
+                                    onclick="showDeductionDetails({{ record.deductions|tojson|safe }})"
+                                    title="View Deductions">
+                                <i class="fa-solid fa-list text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="mt-4 flex items-center justify-between">
+        <p class="text-xs text-gray-500">
+            Page {{ pagination.page }} of {{ pagination.pages }}
+        </p>
+        <nav class="flex items-center gap-1">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('payroll_admin_bp.earnings_deduction_report', 
+                               page=pagination.prev_num,
+                               provider=selected_provider,
+                               department_id=selected_department,
+                               period_id=selected_period,
+                               date_from=date_from,
+                               date_to=date_to,
+                               search=search) }}" 
+               class="px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+                ← Prev
+            </a>
+            {% endif %}
+            
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+                {% if page_num %}
+                    <a href="{{ url_for('payroll_admin_bp.earnings_deduction_report',
+                                       page=page_num,
+                                       provider=selected_provider,
+                                       department_id=selected_department,
+                                       period_id=selected_period,
+                                       date_from=date_from,
+                                       date_to=date_to,
+                                       search=search) }}" 
+                       class="px-3 py-1.5 text-xs rounded-lg transition {% if page_num == pagination.page %}bg-emerald-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-700{% endif %}">
+                        {{ page_num }}
+                    </a>
+                {% else %}
+                    <span class="px-2 text-gray-600">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('payroll_admin_bp.earnings_deduction_report',
+                               page=pagination.next_num,
+                               provider=selected_provider,
+                               department_id=selected_department,
+                               period_id=selected_period,
+                               date_from=date_from,
+                               date_to=date_to,
+                               search=search) }}" 
+               class="px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+                Next →
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-700/50 flex items-center justify-center">
+            <i class="fa-solid fa-folder-open text-2xl text-gray-500"></i>
+        </div>
+        <p class="text-gray-400 mb-2">No records found</p>
+        <p class="text-sm text-gray-500 mb-4">Try adjusting your filters to see more results</p>
+        <button onclick="clearFilters()" class="text-emerald-400 hover:text-emerald-300 text-sm font-medium transition">
+            Clear all filters →
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+</section>
+
+<!-- ===== DEDUCTION DETAILS MODAL ===== -->
+<div id="deductionModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-2xl border border-gray-700 w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <h4 class="font-semibold text-white">Deduction Breakdown</h4>
+            <button onclick="closeDeductionModal()" class="text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="deductionModalContent" class="p-4 overflow-y-auto max-h-[60vh] custom-scrollbar">
+            <!-- Dynamic content -->
+        </div>
+        <div class="p-4 border-t border-gray-700 bg-gray-900/50">
+            <button onclick="closeDeductionModal()" class="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 py-2 rounded-lg text-sm font-medium transition">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SCRIPTS ===== -->
+<script>
+// Clear all filters
+function clearFilters() {
+    window.location.href = "{{ url_for('payroll_admin_bp.earnings_deduction_report') }}";
+}
+
+// Show deduction details modal
+function showDeductionDetails(deductions) {
+    const modal = document.getElementById('deductionModal');
+    const content = document.getElementById('deductionModalContent');
+    
+    if (!deductions || deductions.length === 0) {
+        content.innerHTML = '<p class="text-gray-400 text-center py-4">No deductions to display</p>';
+    } else {
+        let html = '<div class="space-y-3">';
+        deductions.forEach(function(ded) {
+            const empShare = Number(ded.employee_share || 0);
+            const empShareFmt = empShare.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const employerShare = Number(ded.employer_share || 0);
+            const employerShareFmt = employerShare.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const ec = Number(ded.ec || 0);
+            const ecFmt = ec.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            html += `
+                <div class="p-3 bg-gray-700/30 rounded-lg">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-medium text-white">${ded.name || 'Unknown'}</span>
+                        <span class="text-red-400 font-semibold">₱${empShareFmt}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-400">
+                        <div>Employer: ₱${employerShareFmt}</div>
+                        <div class="text-right">EC: ₱${ecFmt}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+// Close modal
+function closeDeductionModal() {
+    document.getElementById('deductionModal').classList.add('hidden');
+}
+
+// Close modal on outside click
+document.getElementById('deductionModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeductionModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDeductionModal();
+});
+</script>
+
+<!-- ===== CUSTOM STYLES ===== -->
+<style>
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+    background: #374151; 
+    border-radius: 3px; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+/* Sticky header for table */
+thead.sticky { position: sticky; top: 0; z-index: 10; }
+
+/* Responsive table adjustments */
+@media (max-width: 768px) {
+    table th.hidden, table td.hidden { display: none; }
+}
+</style>
+{% endblock %}

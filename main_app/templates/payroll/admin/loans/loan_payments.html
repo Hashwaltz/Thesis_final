@@ -91,7 +91,7 @@
           </td>
 
           <td class="px-4 py-3 text-yellow-400 font-semibold">
-            ₱{{ "{:,.2f}".format(payment.remaining_balance) }}
+            ₱{{ "{:,.2f}".format(payment.remaining_balance or 0) }}
           </td>
 
         </tr>

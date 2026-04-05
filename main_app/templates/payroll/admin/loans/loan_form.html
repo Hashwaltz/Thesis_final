@@ -2,207 +2,293 @@
 {% block title %}{{ action }} Loan{% endblock %}
 
 {% block content %}
+<section class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4 sm:px-6">
 
-<section class="p-4 sm:p-6 space-y-6 text-gray-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+  <!-- ===== HEADER ===== -->
+  <div class="max-w-4xl mx-auto mb-6">
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
+          <i class="fa-solid fa-money-check-dollar text-emerald-400 text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-white">{{ action }} Loan</h1>
+          <p class="text-sm text-gray-400 mt-0.5">Enter loan details and assign to employee</p>
+        </div>
+      </div>
 
-<!-- ===== HEADER ===== -->
-<header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-
-  <div class="flex items-center gap-3">
-    <div class="p-3 bg-emerald-500/20 rounded-xl">
-      <i class="fa-solid fa-money-check-dollar text-emerald-400"></i>
-    </div>
-    <h1 class="text-xl sm:text-2xl font-bold text-white">
-      {{ action }} Loan
-    </h1>
+      <a href="{{ url_for('payroll_admin_bp.loans') }}"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition text-sm font-medium text-gray-200 border border-slate-600 hover:border-slate-500">
+        <i class="fa-solid fa-arrow-left"></i> Back to Loans
+      </a>
+    </header>
   </div>
 
-  <a href="{{ url_for('payroll_admin_bp.loans') }}"
-     class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition flex items-center gap-2">
-    <i class="fa-solid fa-arrow-left"></i> Back
-  </a>
-
-</header>
-
-
-<!-- ===== SWEETALERT ===== -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-  {% for category, message in messages %}
-  Swal.fire({
-    icon: "{{ 'success' if category=='success' else 'error' }}",
-    title: "{{ message }}",
-    toast:true,
-    position:'top-end',
-    timer:2500,
-    showConfirmButton:false,
-    background:'#1f2937',
-    color:'#e5e7eb'
-  });
-  {% endfor %}
-});
-</script>
-{% endif %}
-{% endwith %}
-
-
-<!-- ===== FORM ===== -->
-<form method="POST"
-class="bg-slate-800/70 backdrop-blur-md p-6 rounded-2xl border border-slate-700 max-w-2xl space-y-5 shadow-lg">
-
-<!-- Employee -->
-<div class="relative">
-  <label class="block mb-1 text-gray-400 text-sm">Employee</label>
-  <i class="fa-solid fa-user absolute left-3 top-9 text-gray-400"></i>
-  <select name="employee_id"
-          class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-          required>
-    <option value="">Select Employee</option>
-    {% for emp in employees %}
-    <option value="{{ emp.id }}"
-      {% if loan and loan.employee_id == emp.id %}selected{% endif %}>
-      {{ emp.get_full_name() }}
-    </option>
+  <!-- ===== SWEETALERT ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function(){
+    {% for category, message in messages %}
+    Swal.fire({
+      icon: "{{ 'success' if category=='success' else 'error' }}",
+      title: "{{ message }}",
+      toast: true,
+      position: 'top-end',
+      timer: 2500,
+      showConfirmButton: false,
+      background: '#1f2937',
+      color: '#e5e7eb',
+      timerProgressBar: true
+    });
     {% endfor %}
-  </select>
-</div>
+  });
+  </script>
+  {% endif %}
+  {% endwith %}
 
-<!-- Provider -->
-<div class="relative">
-  <label class="block mb-1 text-gray-400 text-sm">Loan Provider</label>
-  <i class="fa-solid fa-building-columns absolute left-3 top-9 text-gray-400"></i>
-  <select name="provider"
-          class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-          required>
-    <option value="">Select Provider</option>
-    <option value="Pag-IBIG" {% if loan and loan.provider == 'Pag-IBIG' %}selected{% endif %}>Pag-IBIG</option>
-    <option value="SSS" {% if loan and loan.provider == 'SSS' %}selected{% endif %}>SSS</option>
-    <option value="GSIS" {% if loan and loan.provider == 'GSIS' %}selected{% endif %}>GSIS</option>
-    <option value="MENPC" {% if loan and loan.provider == 'MENPC' %}selected{% endif %}>MENPC</option>
-  </select>
-</div>
+  <!-- ===== CENTERED FORM ===== -->
+  <div class="max-w-2xl mx-auto">
+    <form method="POST"
+          class="bg-slate-800/80 backdrop-blur-md p-6 sm:p-8 rounded-2xl border border-slate-700 shadow-2xl space-y-6">
 
-<!-- Loan Type -->
-<div class="relative">
-  <label class="block mb-1 text-gray-400 text-sm">Loan Type</label>
-  <i class="fa-solid fa-file-invoice-dollar absolute left-3 top-9 text-gray-400"></i>
-  <select name="loan_type"
-          class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-          required>
-    <option value="">Select Type</option>
-    <option value="MPL" {% if loan and loan.loan_type == 'MPL' %}selected{% endif %}>Multi-Purpose Loan (MPL)</option>
-    <option value="Salary Loan" {% if loan and loan.loan_type == 'Salary Loan' %}selected{% endif %}>Salary Loan</option>
-    <option value="Emergency Loan" {% if loan and loan.loan_type == 'Emergency Loan' %}selected{% endif %}>Emergency Loan</option>
-    <option value="Personal Loan" {% if loan and loan.loan_type == 'Personal Loan' %}selected{% endif %}>Personal Loan</option>
-  </select>
-</div>
+      <!-- Employee -->
+      <div class="relative group">
+        <label for="employee_id" class="block mb-2 text-gray-300 text-sm font-medium">
+          Employee <span class="text-red-400">*</span>
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-400 transition"></i>
+          <select id="employee_id" name="employee_id"
+                  class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-700/80 border border-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-gray-200"
+                  required>
+            <option value="">Select Employee</option>
+            {% for emp in employees %}
+            <option value="{{ emp.id }}"
+              {% if loan and loan.employee_id == emp.id %}selected{% endif %}>
+              {{ emp.get_full_name() }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
 
-<!-- Amounts Grid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Provider -->
+      <div class="relative group">
+        <label for="provider" class="block mb-2 text-gray-300 text-sm font-medium">
+          Loan Provider <span class="text-red-400">*</span>
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-building-columns absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-400 transition"></i>
+          <select id="provider" name="provider"
+                  class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-700/80 border border-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-gray-200"
+                  required>
+            <option value="">Select Provider</option>
+            <option value="Pag-IBIG" {% if loan and loan.provider == 'Pag-IBIG' %}selected{% endif %}>Pag-IBIG</option>
+            <option value="SSS" {% if loan and loan.provider == 'SSS' %}selected{% endif %}>SSS</option>
+            <option value="GSIS" {% if loan and loan.provider == 'GSIS' %}selected{% endif %}>GSIS</option>
+            <option value="MENPC" {% if loan and loan.provider == 'MENPC' %}selected{% endif %}>MENPC</option>
+          </select>
+        </div>
+      </div>
 
-  <!-- Total Amount -->
-  <div class="relative">
-    <label class="block mb-1 text-gray-400 text-sm">Total Amount</label>
-    <i class="fa-solid fa-coins absolute left-3 top-9 text-gray-400"></i>
-    <input type="number" step="0.01"
-           name="total_amount"
-           value="{{ loan.total_amount if loan else '' }}"
-           class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-           required>
+      <!-- Loan Type -->
+      <div class="relative group">
+        <label for="loan_type" class="block mb-2 text-gray-300 text-sm font-medium">
+          Loan Type <span class="text-red-400">*</span>
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-file-invoice-dollar absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-400 transition"></i>
+          <select id="loan_type" name="loan_type"
+                  class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-700/80 border border-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-gray-200"
+                  required>
+            <option value="">Select Type</option>
+            <option value="MPL" {% if loan and loan.loan_type == 'MPL' %}selected{% endif %}>Multi-Purpose Loan (MPL)</option>
+            <option value="Salary Loan" {% if loan and loan.loan_type == 'Salary Loan' %}selected{% endif %}>Salary Loan</option>
+            <option value="Emergency Loan" {% if loan and loan.loan_type == 'Emergency Loan' %}selected{% endif %}>Emergency Loan</option>
+            <option value="Personal Loan" {% if loan and loan.loan_type == 'Personal Loan' %}selected{% endif %}>Personal Loan</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Amounts Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <!-- Total Amount -->
+        <div class="relative group">
+          <label for="total_amount" class="block mb-2 text-gray-300 text-sm font-medium">
+            Total Amount (₱) <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-coins absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-400 transition"></i>
+            <input type="number" step="0.01" min="0"
+                   id="total_amount" name="total_amount"
+                   value="{{ loan.total_amount if loan else '' }}"
+                   class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-700/80 border border-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-gray-200 font-mono"
+                   required>
+          </div>
+        </div>
+
+        <!-- Monthly Payment -->
+        <div class="relative group">
+          <label for="monthly_payment" class="block mb-2 text-gray-300 text-sm font-medium">
+            Monthly Payment (₱) <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-calendar-dollar absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-400 transition"></i>
+            <input type="number" step="0.01" min="0"
+                   id="monthly_payment" name="monthly_payment"
+                   value="{{ loan.monthly_payment if loan else '' }}"
+                   class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-700/80 border border-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-gray-200 font-mono"
+                   required>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start Date -->
+      <div class="relative group">
+        <label for="start_date" class="block mb-2 text-gray-300 text-sm font-medium">
+          Start Date
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-calendar absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-400 transition"></i>
+          <input type="date"
+                 id="start_date" name="start_date"
+                 value="{{ loan.start_date.strftime('%Y-%m-%d') if loan and loan.start_date else '' }}"
+                 class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-700/80 border border-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-gray-200">
+        </div>
+      </div>
+
+      <!-- Active Toggle -->
+      <div class="flex items-center justify-between bg-slate-700/50 p-4 rounded-xl border border-slate-600">
+        <div class="flex items-center gap-3">
+          <div class="p-2 bg-emerald-500/20 rounded-lg">
+            <i class="fa-solid fa-toggle-on text-emerald-400"></i>
+          </div>
+          <div>
+            <span class="text-gray-200 text-sm font-medium">Active Status</span>
+            <p class="text-xs text-gray-400">Loan is currently being deducted</p>
+          </div>
+        </div>
+        <input type="checkbox"
+               name="active"
+               id="active"
+               class="w-5 h-5 accent-emerald-500 cursor-pointer"
+               {% if not loan or loan.active %}checked{% endif %}>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="button"
+              id="loanSubmitBtn"
+              class="w-full px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 rounded-xl transition-all duration-200 font-semibold text-white shadow-lg hover:shadow-emerald-500/25 flex items-center justify-center gap-2 group">
+        <i class="fa-solid fa-floppy-disk group-hover:scale-110 transition-transform"></i>
+        {{ action }} Loan
+      </button>
+
+    </form>
+
+    <!-- Helper Text -->
+    <p class="text-center text-xs text-gray-500 mt-4">
+      <i class="fa-solid fa-circle-info mr-1"></i>
+      All fields marked with <span class="text-red-400">*</span> are required
+    </p>
   </div>
-
-  <!-- Monthly Payment -->
-  <div class="relative">
-    <label class="block mb-1 text-gray-400 text-sm">Monthly Payment</label>
-    <i class="fa-solid fa-calendar-dollar absolute left-3 top-9 text-gray-400"></i>
-    <input type="number" step="0.01"
-           name="monthly_payment"
-           value="{{ loan.monthly_payment if loan else '' }}"
-           class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-           required>
-  </div>
-
-</div>
-
-<!-- Start Date -->
-<div class="relative">
-  <label class="block mb-1 text-gray-400 text-sm">Start Date</label>
-  <i class="fa-solid fa-calendar absolute left-3 top-9 text-gray-400"></i>
-  <input type="date"
-         name="start_date"
-         value="{{ loan.start_date if loan else '' }}"
-         class="w-full pl-10 px-4 py-2 rounded-lg bg-slate-700 border border-slate-600">
-</div>
-
-<!-- Active -->
-<div class="flex items-center justify-between bg-slate-700/50 p-3 rounded-xl border border-slate-600">
-  <span class="text-gray-300 text-sm flex items-center gap-2">
-    <i class="fa-solid fa-toggle-on text-emerald-400"></i> Active Status
-  </span>
-
-  <input type="checkbox"
-         name="active"
-         class="w-5 h-5 accent-emerald-500"
-         {% if not loan or loan.active %}checked{% endif %}>
-</div>
-
-<!-- Submit -->
-<button type="button"
-        id="loanSubmitBtn"
-        class="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl transition font-semibold text-white shadow-md hover:shadow-emerald-500/20">
-
-  <i class="fa-solid fa-floppy-disk mr-1"></i>
-  {{ action }}
-
-</button>
-
-</form>
 
 </section>
 
-
 <!-- ===== JS VALIDATION ===== -->
 <script>
-const form = document.querySelector("form");
-const submitBtn = document.getElementById("loanSubmitBtn");
+document.addEventListener("DOMContentLoaded", function() {
+  const form = document.querySelector("form");
+  const submitBtn = document.getElementById("loanSubmitBtn");
 
-submitBtn.addEventListener("click", function(){
-
-  const employee = form.employee_id.value;
-  const provider = form.provider.value;
-  const type = form.loan_type.value;
-
-  if(!employee || !provider || !type){
-    Swal.fire({
-      icon:'warning',
-      title:'Missing Required Fields',
-      text:'Employee, provider, and loan type are required',
-      confirmButtonColor:'#16a34a',
-      background:'#1f2937',
-      color:'#e5e7eb'
-    });
-    return;
-  }
-
-  Swal.fire({
-    title:'Save Loan?',
-    text:'Confirm loan details before saving',
-    icon:'question',
-    showCancelButton:true,
-    confirmButtonColor:'#16a34a',
-    background:'#1f2937',
-    color:'#e5e7eb'
-  }).then(result=>{
-    if(result.isConfirmed){
-      form.submit();
+  // Real-time validation feedback
+  const requiredFields = ['employee_id', 'provider', 'loan_type', 'total_amount', 'monthly_payment'];
+  requiredFields.forEach(id => {
+    const field = document.getElementById(id);
+    if (field) {
+      field.addEventListener('blur', function() {
+        if (!this.value) {
+          this.classList.add('border-red-500', 'focus:ring-red-500');
+          this.classList.remove('border-slate-600', 'focus:ring-emerald-500');
+        } else {
+          this.classList.remove('border-red-500', 'focus:ring-red-500');
+          this.classList.add('border-slate-600', 'focus:ring-emerald-500');
+        }
+      });
     }
   });
 
+  submitBtn.addEventListener("click", function() {
+    const employee = form.employee_id.value;
+    const provider = form.provider.value;
+    const type = form.loan_type.value;
+    const total = parseFloat(form.total_amount.value) || 0;
+    const monthly = parseFloat(form.monthly_payment.value) || 0;
+
+    // Validation
+    if (!employee || !provider || !type) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Required Fields',
+        text: 'Employee, provider, and loan type are required',
+        confirmButtonColor: '#16a34a',
+        background: '#1f2937',
+        color: '#e5e7eb'
+      });
+      return;
+    }
+
+    if (total <= 0 || monthly <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Amounts',
+        text: 'Total amount and monthly payment must be greater than 0',
+        confirmButtonColor: '#16a34a',
+        background: '#1f2937',
+        color: '#e5e7eb'
+      });
+      return;
+    }
+
+    if (monthly > total) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Payment Exceeds Total',
+        text: 'Monthly payment cannot be greater than total loan amount',
+        confirmButtonColor: '#16a34a',
+        background: '#1f2937',
+        color: '#e5e7eb'
+      });
+      return;
+    }
+
+    // Confirmation
+    Swal.fire({
+      title: '{{ action }} this loan?',
+      html: `
+        <div class="text-left text-sm text-gray-300 space-y-1">
+          <p><strong>Employee:</strong> ${form.employee_id.options[form.employee_id.selectedIndex].text}</p>
+          <p><strong>Provider:</strong> ${provider}</p>
+          <p><strong>Type:</strong> ${type}</p>
+          <p><strong>Total:</strong> ₱${total.toLocaleString('en-PH', {minimumFractionDigits: 2})}</p>
+          <p><strong>Monthly:</strong> ₱${monthly.toLocaleString('en-PH', {minimumFractionDigits: 2})}</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, {{ action|lower }} it',
+      cancelButtonText: 'Cancel',
+      background: '#1f2937',
+      color: '#e5e7eb'
+    }).then(result => {
+      if (result.isConfirmed) {
+        form.submit();
+      }
+    });
+  });
 });
 </script>
-
 {% endblock %}

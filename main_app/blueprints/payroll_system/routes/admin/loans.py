@@ -15,19 +15,23 @@ from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
 @login_required
 @payroll_admin_required
 def loans():
-
     page = request.args.get("page", 1, type=int)
+    pagination = Loan.query.order_by(Loan.created_at.desc()).paginate(page=page, per_page=10, error_out=False)
 
-    pagination = Loan.query.order_by(
-        Loan.created_at.desc()
-    ).paginate(page=page, per_page=10, error_out=False)
+    # 🔍 Calculate actual remaining balance from LoanPayment records
+    for loan in pagination.items:
+        total_paid = db.session.query(db.func.sum(LoanPayment.amount_paid))\
+            .filter_by(loan_id=loan.id).scalar() or 0
+        
+        loan.remaining_balance = max(0, (loan.total_amount or 0) - float(total_paid))
+        if loan.remaining_balance <= 0:
+            loan.active = False
 
     return render_template(
         "payroll/admin/views/loan_list.html",
         loans=pagination.items,
         pagination=pagination
     )
-
 
 
 @payroll_admin_bp.route('/loans/create', methods=['GET', 'POST'])

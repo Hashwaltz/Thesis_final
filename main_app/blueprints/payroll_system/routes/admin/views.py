@@ -1,17 +1,15 @@
-
 from sqlalchemy import func, or_
 from sqlalchemy.orm import joinedload
-from datetime import date, datetime
-from flask import render_template, request, redirect, flash, url_for
+from datetime import date, datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from flask import render_template, request, redirect, flash, url_for, current_app
 from flask_login import login_required, current_user
-
 
 from main_app.models.hr_models import Employee, Leave, Department, EmploymentType
 from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction, DeductionBracket
 from main_app.helpers.decorators import payroll_admin_required
 from main_app.extensions import db
 from main_app.helpers.utils import generate_payslip
-
 
 from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
 
@@ -20,184 +18,224 @@ from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
 @payroll_admin_required
 @login_required
 def payroll_dashboard():
-
     today = date.today()
-    start_month = today.replace(day=1)
+    
+    # Default: Last 6 months of data
+    default_from = today - relativedelta(months=5)
+    default_to = today
+    
+    # Parse query params safely
+    date_from_str = request.args.get('date_from')
+    date_to_str = request.args.get('date_to')
+    
+    try:
+        date_from = date.fromisoformat(date_from_str) if date_from_str else default_from
+    except (ValueError, TypeError):
+        date_from = default_from
+        
+    try:
+        date_to = date.fromisoformat(date_to_str) if date_to_str else default_to
+    except (ValueError, TypeError):
+        date_to = default_to
+
+    # ✅ OVERLAP CONDITION: Catches any payroll period that touches the date range
+    period_overlap = (PayrollPeriod.start_date <= date_to) & (PayrollPeriod.end_date >= date_from)
+    
+    # ✅ Accept both "Approved" AND "Processed" as completed payroll statuses
+    COMPLETED_STATUSES = ["Approved", "Processed"]
 
     # ================= BASIC METRICS =================
-
-    total_employees = Employee.query.count()
-
-    employees_paid = (
-        db.session.query(Payroll)
-        .join(PayrollPeriod)
+    total_employees = Employee.query.filter_by(status="Active").count()
+    
+    # Paid query - includes completed statuses only
+    paid_query = db.session.query(Payroll)\
+        .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
         .filter(
-            Payroll.status == "Approved",
-            PayrollPeriod.start_date >= start_month
+            Payroll.status.in_(COMPLETED_STATUSES),
+            period_overlap
         )
-        .count()
-    )
-
-    pending_payrolls = (
-        db.session.query(Payroll)
-        .join(PayrollPeriod)
+    
+    employees_paid = paid_query.count()
+    payroll_completion_rate = round((employees_paid / total_employees * 100) if total_employees > 0 else 0, 1)
+    
+    # Pending query - excludes completed statuses
+    pending_payrolls = db.session.query(Payroll)\
+        .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
         .filter(
-            Payroll.status != "Approved",
-            PayrollPeriod.start_date >= start_month
-        )
-        .count()
-    )
-
-    # ================= PAYROLL TOTALS =================
-
-    total_payroll_amount = (
-        db.session.query(func.sum(Payroll.net_pay))
-        .join(PayrollPeriod)
-        .filter(PayrollPeriod.start_date >= start_month)
-        .scalar() or 0
-    )
-
-    total_gross = (
-        db.session.query(func.sum(Payroll.gross_pay))
-        .join(PayrollPeriod)
-        .filter(PayrollPeriod.start_date >= start_month)
-        .scalar() or 0
-    )
-
-    total_deductions = (
-        db.session.query(func.sum(Payroll.total_deductions))
-        .join(PayrollPeriod)
-        .filter(PayrollPeriod.start_date >= start_month)
-        .scalar() or 0
-    )
-
-    highest_salary = (
-        db.session.query(func.max(Payroll.net_pay))
-        .join(PayrollPeriod)
-        .filter(PayrollPeriod.start_date >= start_month)
-        .scalar() or 0
-    )
-
-    avg_salary = (
-        db.session.query(func.avg(Payroll.net_pay))
-        .join(PayrollPeriod)
-        .filter(PayrollPeriod.start_date >= start_month)
-        .scalar() or 0
-    )
-
-    # ================= LEAVE IMPACT =================
-
-    leave_impact = (
-        db.session.query(func.count(Leave.id))
+            ~Payroll.status.in_(COMPLETED_STATUSES),
+            period_overlap
+        ).count()
+    
+    # ================= FINANCIAL METRICS =================
+    financial_data = paid_query.with_entities(
+        func.sum(Payroll.net_pay).label('total_net'),
+        func.sum(Payroll.gross_pay).label('total_gross'),
+        func.sum(Payroll.total_deductions).label('total_deductions'),
+        func.avg(Payroll.net_pay).label('avg_net'),
+        func.max(Payroll.net_pay).label('max_net'),
+        func.min(Payroll.net_pay).label('min_net')
+    ).first()
+    
+    # ✅ Safe attribute access (SQLAlchemy Row, NOT dict)
+    total_payroll_amount = financial_data.total_net or 0 if financial_data else 0
+    total_gross = financial_data.total_gross or 0 if financial_data else 0
+    total_deductions = financial_data.total_deductions or 0 if financial_data else 0
+    avg_salary = financial_data.avg_net or 0 if financial_data else 0
+    highest_salary = financial_data.max_net or 0 if financial_data else 0
+    lowest_salary = financial_data.min_net or 0 if financial_data else 0
+    
+    # ================= DEPARTMENT BREAKDOWN =================
+    dept_breakdown = db.session.query(
+        Department.name,
+        func.count(Payroll.id).label('paid_count'),
+        func.sum(Payroll.net_pay).label('dept_total')
+    ).select_from(Payroll)\
+     .join(Employee, Payroll.employee_id == Employee.id)\
+     .join(Department, Employee.department_id == Department.id)\
+     .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
+     .filter(
+         Payroll.status.in_(COMPLETED_STATUSES),
+         period_overlap
+     ).group_by(Department.id).all()
+    
+    # ================= PAYROLL TREND (Last 6 months) =================
+    from_date_trend = today - relativedelta(months=5)
+    monthly_trend = db.session.query(
+        func.strftime('%Y-%m', PayrollPeriod.start_date).label('month'),
+        func.sum(Payroll.net_pay).label('total'),
+        func.count(Payroll.id).label('count')
+    ).join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
+     .filter(PayrollPeriod.start_date >= from_date_trend)\
+     .group_by(func.strftime('%Y-%m', PayrollPeriod.start_date))\
+     .order_by(func.strftime('%Y-%m', PayrollPeriod.start_date)).all()
+    
+    # ================= DEDUCTION BREAKDOWN =================
+    deduction_summary = db.session.query(
+        PayrollDeduction.deduction_name,
+        func.sum(PayrollDeduction.employee_share).label('total')
+    ).join(Payroll, PayrollDeduction.payroll_id == Payroll.id)\
+     .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
+     .filter(period_overlap)\
+     .group_by(PayrollDeduction.deduction_name)\
+     .order_by(func.sum(PayrollDeduction.employee_share).desc()).all()
+    
+    # ================= LEAVE & OVERTIME IMPACT =================
+    leave_impact = db.session.query(func.count(Leave.id))\
         .filter(
             Leave.status == 'Approved',
-            Leave.start_date >= start_month
-        )
+            Leave.start_date.between(date_from, date_to)
+        ).scalar() or 0
+    
+    overtime_total = db.session.query(func.sum(Payroll.overtime_hours))\
+        .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
+        .filter(period_overlap)\
         .scalar() or 0
-    )
-
-    # ================= PAYROLL STATUS =================
-
-    approved_payrolls = Payroll.query.filter_by(status="Approved").count()
-
-    draft_payrolls = Payroll.query.filter_by(status="Draft").count()
-
-    # ================= PAYROLL TREND =================
-
-    monthly_data = (
-        db.session.query(
-            func.strftime('%Y-%m', PayrollPeriod.start_date),
-            func.sum(Payroll.net_pay)
-        )
-        .join(PayrollPeriod)
-        .group_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
-        .order_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
-        .all()
-    )
-
-    chart_labels = [m for m, _ in monthly_data]
-    chart_values = [float(v or 0) for _, v in monthly_data]
-
-    # ================= SALARY TREND =================
-
-    salary_data = (
-        db.session.query(
-            func.strftime('%Y-%m', PayrollPeriod.start_date),
-            func.avg(Payroll.net_pay)
-        )
-        .join(PayrollPeriod)
-        .group_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
-        .order_by(func.strftime('%Y-%m', PayrollPeriod.start_date))
-        .all()
-    )
-
-    salary_labels = [m for m, _ in salary_data]
-    salary_values = [float(v or 0) for _, v in salary_data]
-
-    # ================= DEDUCTION BREAKDOWN =================
-
-    deduction_summary = (
-        db.session.query(
-            PayrollDeduction.deduction_name,
-            func.sum(PayrollDeduction.employee_share)
-        )
-        .group_by(PayrollDeduction.deduction_name)
-        .all()
-    )
-
-    ded_labels = [d for d, _ in deduction_summary]
-    ded_values = [float(v or 0) for _, v in deduction_summary]
-
-    # ================= TABLE DATA =================
-
-    recent_payrolls = (
-        Payroll.query
-        .order_by(Payroll.created_at.desc())
-        .limit(8)
-        .all()
-    )
-
-    pending_list = (
-        Payroll.query
-        .filter(Payroll.status != "Approved")
-        .limit(8)
-        .all()
-    )
-
-    upcoming_period = PayrollPeriod.query.filter_by(status="Open").first()
-
-    # ================= RENDER =================
-
+    
+    # ================= STATUS DISTRIBUTION (All statuses for chart) =================
+    status_counts = db.session.query(
+        Payroll.status,
+        func.count(Payroll.id)
+    ).join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
+     .filter(period_overlap)\
+     .group_by(Payroll.status).all()
+    
+    # ================= RECENT ACTIVITY (No date filter - always show latest) =================
+    recent_payrolls = Payroll.query\
+        .options(joinedload(Payroll.employee), joinedload(Payroll.period))\
+        .order_by(Payroll.created_at.desc())\
+        .limit(10).all()
+    
+    pending_list = Payroll.query\
+        .filter(~Payroll.status.in_(COMPLETED_STATUSES))\
+        .options(joinedload(Payroll.employee))\
+        .order_by(Payroll.created_at.desc())\
+        .limit(8).all()
+    
+    # ================= UPCOMING DEADLINES =================
+    upcoming_period = PayrollPeriod.query\
+        .filter(PayrollPeriod.status == "Open", PayrollPeriod.end_date >= today)\
+        .order_by(PayrollPeriod.end_date.asc()).first()
+    
+    days_until_payday = (upcoming_period.pay_date - today).days if upcoming_period else None
+    
+    # ================= ALERTS =================
+    alerts = []
+    if total_employees > 0 and pending_payrolls > total_employees * 0.3:
+        alerts.append({'type': 'warning', 'message': f'{pending_payrolls} payrolls pending approval'})
+    if overtime_total and overtime_total > 500:
+        alerts.append({'type': 'info', 'message': f'High overtime: {overtime_total:.1f} hours this period'})
+    if employees_paid == 0 and total_employees > 0:
+        alerts.append({
+            'type': 'info', 
+            'message': f'No completed payrolls found for {date_from.strftime("%b %d")} to {date_to.strftime("%b %d, %Y")}. Try adjusting the date range.'
+        })
+    
+    # ================= PREPARE CHART DATA =================
+    chart_labels = [row.month for row in monthly_trend]
+    chart_values = [float(row.total or 0) for row in monthly_trend]
+    chart_counts = [int(row.count or 0) for row in monthly_trend]
+    
+    ded_labels = [row.deduction_name for row in deduction_summary]
+    ded_values = [float(row.total or 0) for row in deduction_summary]
+    
+    status_labels = [row[0] for row in status_counts]
+    status_values = [int(row[1]) for row in status_counts]
+    
+    dept_labels = [row.name for row in dept_breakdown]
+    dept_values = [float(row.dept_total or 0) for row in dept_breakdown]
+    
+    # 🔍 DEBUG LOGGING (Remove in production)
+    current_app.logger.info(f"Dashboard: date_from={date_from}, date_to={date_to}, paid={employees_paid}, total_emp={total_employees}")
+    
     return render_template(
         'payroll/admin/views/admin_dashboard.html',
-
+        # Metrics
         total_employees=total_employees,
         employees_paid=employees_paid,
         pending_payrolls=pending_payrolls,
-
+        payroll_completion_rate=payroll_completion_rate,
+        
+        # Financials
         total_payroll_amount=total_payroll_amount,
         total_gross=total_gross,
         total_deductions=total_deductions,
         highest_salary=highest_salary,
+        lowest_salary=lowest_salary,
         avg_salary=avg_salary,
-
+        
+        # Impact metrics
         leave_impact=leave_impact,
-
-        approved_payrolls=approved_payrolls,
-        draft_payrolls=draft_payrolls,
-
+        overtime_total=round(overtime_total, 1) if overtime_total else 0,
+        
+        # Status & Trends
+        status_labels=status_labels,
+        status_values=status_values,
         chart_labels=chart_labels,
         chart_values=chart_values,
-
-        salary_labels=salary_labels,
-        salary_values=salary_values,
-
+        chart_counts=chart_counts,
+        
+        # Breakdowns
         ded_labels=ded_labels,
         ded_values=ded_values,
-
+        dept_labels=dept_labels,
+        dept_values=dept_values,
+        
+        # Tables & Lists
         recent_payrolls=recent_payrolls,
         pending_list=pending_list,
-        upcoming_period=upcoming_period
+        
+        # Context
+        upcoming_period=upcoming_period,
+        days_until_payday=days_until_payday,
+        alerts=alerts,
+        
+        # Filters (ISO format for form persistence)
+        date_from=date_from.isoformat(),
+        date_to=date_to.isoformat(),
+        
+        # For display in template
+        filter_start=date_from,
+        filter_end=date_to,
     )
 
 

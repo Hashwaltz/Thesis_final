@@ -18,7 +18,7 @@ def random_late_time():
 def generate_attendance_jan_to_nov():
     with app.app_context():
         employees = Employee.query.all()
-        start_date = date(2026, 4, 1)
+        start_date = date(2026, 1, 1)
         end_date = date(2026, 4, 30)
 
         holidays = [

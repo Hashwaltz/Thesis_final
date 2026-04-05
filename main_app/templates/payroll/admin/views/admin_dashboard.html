@@ -2,240 +2,554 @@
 {% block title %}Dashboard | Payroll Admin{% endblock %}
 
 {% block content %}
-<section class="p-4 md:p-6 space-y-8">
+<section class="p-4 md:p-6 space-y-6">
 
-<!-- ===== HEADER ===== -->
-<h1 class="text-xl md:text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-  <i class="fa-solid fa-money-check-dollar text-2xl md:text-3xl"></i>
-  Payroll Dashboard
-</h1>
-
-<!-- ================= KPI METRICS ================= -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-  <!-- Card -->
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-    <div class="p-3 bg-emerald-600/20 rounded-full">
-      <i class="fa-solid fa-users text-emerald-400 text-2xl md:text-3xl"></i>
-    </div>
+<!-- ===== HEADER WITH FILTERS ===== -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
-      <p class="text-gray-400 text-sm">Total Employees</p>
-      <h2 class="text-2xl md:text-3xl font-bold text-emerald-400">
-        {{ total_employees }}
-      </h2>
-    </div>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-    <div class="p-3 bg-green-600/20 rounded-full">
-      <i class="fa-solid fa-circle-check text-green-400 text-2xl md:text-3xl"></i>
-    </div>
-    <div>
-      <p class="text-gray-400 text-sm">Paid This Month</p>
-      <h2 class="text-2xl md:text-3xl font-bold text-green-400">
-        {{ employees_paid }}
-      </h2>
-    </div>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-    <div class="p-3 bg-yellow-500/20 rounded-full">
-      <i class="fa-solid fa-clock text-yellow-400 text-2xl md:text-3xl"></i>
-    </div>
-    <div>
-      <p class="text-gray-400 text-sm">Pending Payrolls</p>
-      <h2 class="text-2xl md:text-3xl font-bold text-yellow-400">
-        {{ pending_payrolls }}
-      </h2>
-    </div>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700 flex items-center gap-4">
-    <div class="p-3 bg-emerald-500/20 rounded-full">
-      <i class="fa-solid fa-coins text-emerald-400 text-2xl md:text-3xl"></i>
-    </div>
-    <div>
-      <p class="text-gray-400 text-sm">Total Payroll</p>
-      <h2 class="text-xl md:text-2xl font-bold text-emerald-400">
-        ₱{{ "{:,.2f}".format(total_payroll_amount) }}
-      </h2>
-    </div>
-  </div>
-
-</div>
-
-<!-- ================= FINANCIAL SUMMARY ================= -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-xl border border-gray-700">
-    <p class="text-gray-400 text-sm">Total Gross Payroll</p>
-    <h2 class="text-xl md:text-2xl font-bold text-blue-400">
-      ₱{{ "{:,.2f}".format(total_gross) }}
-    </h2>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-xl border border-gray-700">
-    <p class="text-gray-400 text-sm">Total Deductions</p>
-    <h2 class="text-xl md:text-2xl font-bold text-red-400">
-      ₱{{ "{:,.2f}".format(total_deductions) }}
-    </h2>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-xl border border-gray-700">
-    <p class="text-gray-400 text-sm">Highest Net Pay</p>
-    <h2 class="text-xl md:text-2xl font-bold text-green-400">
-      ₱{{ "{:,.2f}".format(highest_salary) }}
-    </h2>
-  </div>
-
-</div>
-
-<!-- ================= CHARTS ================= -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
-    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
-      <i class="fa-solid fa-chart-line"></i>
-      Monthly Payroll Trend
-    </h3>
-    <div class="h-[250px] md:h-[300px]">
-      <canvas id="payrollChart"></canvas>
-    </div>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
-    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
-      <i class="fa-solid fa-chart-area"></i>
-      Average Salary Trend
-    </h3>
-    <div class="h-[250px] md:h-[300px]">
-      <canvas id="salaryChart"></canvas>
-    </div>
-  </div>
-
-</div>
-
-<!-- ================= DEDUCTION + STATUS ================= -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
-    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
-      <i class="fa-solid fa-chart-pie"></i>
-      Deduction Breakdown
-    </h3>
-    <div class="h-[250px] md:h-[300px]">
-      <canvas id="deductionChart"></canvas>
-    </div>
-  </div>
-
-  <div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
-    <h3 class="text-sm font-semibold text-emerald-400 mb-4">
-      <i class="fa-solid fa-chart-simple"></i>
-      Payroll Status
-    </h3>
-    <div class="h-[250px] md:h-[300px]">
-      <canvas id="statusChart"></canvas>
-    </div>
-  </div>
-
-</div>
-
-<!-- ================= RECENT PAYROLL ================= -->
-<div class="bg-gray-800 p-5 md:p-6 rounded-2xl border border-gray-700">
-
-  <h3 class="text-sm font-semibold text-emerald-400 mb-4">
-    <i class="fa-solid fa-clock"></i>
-    Recent Payroll Activity
-  </h3>
-
-  <!-- RESPONSIVE TABLE -->
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[700px]">
-
-      <!-- Sticky header -->
-      <thead class="sticky top-0 bg-gray-800 text-gray-400 border-b border-gray-700">
-        <tr class="h-10">
-          <th class="text-left px-2 md:px-4">Employee</th>
-          <th class="text-center px-2 md:px-4">Period</th>
-          <th class="text-center px-2 md:px-4">Status</th>
-          <th class="text-center px-2 md:px-4">Net Pay</th>
-        </tr>
-      </thead>
-
-      <tbody class="text-gray-300">
-
-        {% for p in recent_payrolls %}
-        <tr class="border-t border-gray-700 hover:bg-gray-700/20 transition h-12">
-
-          <td class="px-2 md:px-4 text-left whitespace-nowrap">
-            {{ p.employee.first_name }} {{ p.employee.last_name }}
-          </td>
-
-          <td class="px-2 md:px-4 text-center whitespace-nowrap">
-            {{ p.period.period_name }}
-          </td>
-
-          <td class="px-2 md:px-4 text-center">
-            <span class="inline-block px-2 md:px-3 py-1 rounded text-xs
-            {% if p.status == 'Approved' %}
-            bg-green-500/20 text-green-400
+        <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-3">
+            <i class="fa-solid fa-money-check-dollar text-2xl"></i>
+            Payroll Dashboard
+        </h1>
+        <p class="text-gray-400 text-sm mt-1">
+            {% if upcoming_period %}
+                Next Payday: <span class="text-emerald-400 font-medium">{{ upcoming_period.pay_date.strftime('%B %d, %Y') }}</span>
+                {% if days_until_payday %}
+                    ({{ days_until_payday }} days)
+                {% endif %}
             {% else %}
-            bg-yellow-500/20 text-yellow-400
-            {% endif %}">
-              {{ p.status }}
+                <span class="text-gray-500">No open payroll period</span>
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- Date Range Filter -->
+    <form method="GET" class="flex flex-wrap items-center gap-2">
+        <input type="date" name="date_from" value="{{ date_from }}" 
+               class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <span class="text-gray-500 text-sm">to</span>
+        <input type="date" name="date_to" value="{{ date_to }}"
+               class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1">
+            <i class="fa-solid fa-filter"></i> Apply
+        </button>
+        <a href="{{ url_for('payroll_admin_bp.payroll_dashboard') }}" 
+           class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+            Reset
+        </a>
+    </form>
+</div>
+
+<!-- ===== FILTER STATUS BAR ===== -->
+<div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+    <p class="text-sm text-gray-400">
+        Showing: 
+        <span class="text-emerald-400 font-medium">{{ filter_start.strftime('%b %d, %Y') }}</span>
+        to 
+        <span class="text-emerald-400 font-medium">{{ filter_end.strftime('%b %d, %Y') }}</span>
+        <span class="text-gray-500 mx-2">•</span>
+        <span class="text-gray-400">Status: Approved/Processed = Paid</span>
+    </p>
+    <a href="{{ url_for('payroll_admin_bp.payroll_dashboard') }}?date_from=2025-01-01&date_to=2025-12-31" 
+       class="text-xs text-blue-400 hover:text-blue-300 transition flex items-center gap-1">
+        <i class="fa-solid fa-calendar"></i> Show All 2025
+    </a>
+</div>
+
+<!-- ===== ALERTS ===== -->
+{% if alerts %}
+<div class="space-y-2">
+    {% for alert in alerts %}
+    <div class="flex items-start gap-3 p-3 rounded-lg border 
+        {% if alert.type == 'warning' %}bg-yellow-500/10 border-yellow-500/30 text-yellow-400
+        {% elif alert.type == 'info' %}bg-blue-500/10 border-blue-500/30 text-blue-400
+        {% elif alert.type == 'error' %}bg-red-500/10 border-red-500/30 text-red-400
+        {% else %}bg-gray-700/50 border-gray-600 text-gray-300{% endif %}">
+        <i class="fa-solid {% if alert.type == 'warning' %}fa-triangle-exclamation{% elif alert.type == 'error' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} mt-0.5"></i>
+        <span class="text-sm">{{ alert.message }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ===== EMPTY STATE (if no data) ===== -->
+{% if employees_paid == 0 and total_employees > 0 %}
+<div class="p-6 bg-gray-800/30 rounded-xl border border-dashed border-gray-600 text-center">
+    <i class="fa-solid fa-folder-open text-4xl text-gray-500 mb-3"></i>
+    <p class="text-gray-400">No completed payrolls found for this date range.</p>
+    <p class="text-sm text-gray-500 mt-1">Payrolls must have status "Approved" or "Processed" to appear here.</p>
+    <div class="mt-4 flex justify-center gap-2 flex-wrap">
+        <a href="{{ url_for('payroll_admin_bp.payroll_dashboard') }}?date_from=2025-01-01&date_to=2025-12-31" 
+           class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition">
+            Show All 2025
+        </a>
+        <a href="{{ url_for('payroll_admin_bp.view_payrolls') }}" 
+           class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg text-sm transition">
+            View All Payrolls →
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- ===== KPI CARDS ===== -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Total Employees -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-emerald-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Total Employees</p>
+                <h2 class="text-2xl md:text-3xl font-bold text-white mt-1">{{ total_employees }}</h2>
+                <p class="text-emerald-400 text-xs mt-1">
+                    <i class="fa-solid fa-check"></i> Active
+                </p>
+            </div>
+            <div class="p-2.5 bg-emerald-500/15 rounded-xl group-hover:bg-emerald-500/25 transition">
+                <i class="fa-solid fa-users text-emerald-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Rate -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-green-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Completion Rate</p>
+                <h2 class="text-2xl md:text-3xl font-bold text-white mt-1">{{ payroll_completion_rate }}%</h2>
+                <p class="text-green-400 text-xs mt-1">
+                    {{ employees_paid }}/{{ total_employees }} paid
+                </p>
+            </div>
+            <div class="p-2.5 bg-green-500/15 rounded-xl group-hover:bg-green-500/25 transition">
+                <i class="fa-solid fa-chart-pie text-green-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-yellow-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Pending Review</p>
+                <h2 class="text-2xl md:text-3xl font-bold text-white mt-1">{{ pending_payrolls }}</h2>
+                <p class="text-yellow-400 text-xs mt-1">
+                    Draft/Processed
+                </p>
+            </div>
+            <div class="p-2.5 bg-yellow-500/15 rounded-xl group-hover:bg-yellow-500/25 transition">
+                <i class="fa-solid fa-clock text-yellow-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Payroll -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 hover:border-blue-500/50 transition group">
+        <div class="flex items-start justify-between">
+            <div>
+                <p class="text-gray-400 text-xs md:text-sm">Total Disbursed</p>
+                <h2 class="text-xl md:text-2xl font-bold text-white mt-1">₱{{ "{:,.2f}".format(total_payroll_amount) }}</h2>
+                <p class="text-blue-400 text-xs mt-1">
+                    Net pay this period
+                </p>
+            </div>
+            <div class="p-2.5 bg-blue-500/15 rounded-xl group-hover:bg-blue-500/25 transition">
+                <i class="fa-solid fa-coins text-blue-400 text-lg"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== FINANCIAL SUMMARY ===== -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-gray-400 text-sm">Gross Payroll</p>
+            <i class="fa-solid fa-arrow-trend-up text-blue-400"></i>
+        </div>
+        <h3 class="text-xl md:text-2xl font-bold text-blue-400">₱{{ "{:,.2f}".format(total_gross) }}</h3>
+        <p class="text-gray-500 text-xs mt-1">Before deductions</p>
+    </div>
+    
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-gray-400 text-sm">Total Deductions</p>
+            <i class="fa-solid fa-arrow-trend-down text-red-400"></i>
+        </div>
+        <h3 class="text-xl md:text-2xl font-bold text-red-400">₱{{ "{:,.2f}".format(total_deductions) }}</h3>
+        <p class="text-gray-500 text-xs mt-1">Taxes, loans, benefits</p>
+    </div>
+    
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-gray-400 text-sm">Avg. Net Salary</p>
+            <i class="fa-solid fa-scale-balanced text-emerald-400"></i>
+        </div>
+        <h3 class="text-xl md:text-2xl font-bold text-emerald-400">₱{{ "{:,.2f}".format(avg_salary) }}</h3>
+        <p class="text-gray-500 text-xs mt-1">Per employee this period</p>
+    </div>
+</div>
+
+<!-- ===== CHARTS GRID ===== -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Payroll Trend -->
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-emerald-400">
+                <i class="fa-solid fa-chart-line mr-2"></i>Payroll Trend (6mo)
+            </h3>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Amount</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400/50"></span>Count</span>
+            </div>
+        </div>
+        <div class="h-[220px] md:h-[280px]">
+            <canvas id="payrollChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Department Breakdown -->
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+            <i class="fa-solid fa-building mr-2"></i>By Department
+        </h3>
+        <div class="h-[220px] md:h-[280px]">
+            <canvas id="deptChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Deduction Breakdown -->
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+            <i class="fa-solid fa-chart-pie mr-2"></i>Deduction Breakdown
+        </h3>
+        <div class="h-[220px] md:h-[280px]">
+            <canvas id="deductionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Status Distribution -->
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <h3 class="text-sm font-semibold text-emerald-400 mb-4">
+            <i class="fa-solid fa-clipboard-check mr-2"></i>Payroll Status
+        </h3>
+        <div class="h-[220px] md:h-[280px]">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DATA TABLES ===== -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Recent Payrolls -->
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-emerald-400">
+                <i class="fa-solid fa-clock-rotate-left mr-2"></i>Recent Activity
+            </h3>
+            <a href="{{ url_for('payroll_admin_bp.view_payrolls') }}" class="text-xs text-emerald-400 hover:text-emerald-300 transition">View All →</a>
+        </div>
+        
+        {% if recent_payrolls %}
+        <div class="overflow-x-auto -mx-4 px-4">
+            <table class="w-full text-sm">
+                <thead class="text-gray-400 text-xs uppercase border-b border-gray-700">
+                    <tr>
+                        <th class="text-left py-3 px-2">Employee</th>
+                        <th class="text-center py-3 px-2 hidden md:table-cell">Period</th>
+                        <th class="text-center py-3 px-2">Status</th>
+                        <th class="text-right py-3 px-2">Net Pay</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-300 divide-y divide-gray-700/50">
+                    {% for p in recent_payrolls %}
+                    <tr class="hover:bg-gray-700/30 transition">
+                        <td class="py-3 px-2">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-medium text-emerald-400">
+                                    {{ p.employee.first_name[0] }}{{ p.employee.last_name[0] }}
+                                </div>
+                                <span class="truncate max-w-[120px] md:max-w-none">
+                                    {{ p.employee.first_name }} {{ p.employee.last_name }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2 text-center hidden md:table-cell text-gray-400 text-xs">
+                            {{ p.period.period_name }}
+                        </td>
+                        <td class="py-3 px-2 text-center">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                                {% if p.status in ['Approved', 'Processed'] %}bg-green-500/15 text-green-400
+                                {% elif p.status == 'Draft' %}bg-yellow-500/15 text-yellow-400
+                                {% else %}bg-gray-500/15 text-gray-400{% endif %}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-right font-semibold text-emerald-400">
+                            ₱{{ "{:,.0f}".format(p.net_pay) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-gray-500 py-8 text-sm">No recent payroll activity</p>
+        {% endif %}
+    </div>
+
+    <!-- Pending Approvals -->
+    <div class="bg-gray-800/50 p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-emerald-400">
+                <i class="fa-solid fa-circle-exclamation mr-2"></i>Pending Review
+            </h3>
+            <span class="bg-yellow-500/15 text-yellow-400 text-xs px-2 py-1 rounded-full">
+                {{ pending_list|length }} items
             </span>
-          </td>
+        </div>
+        
+        {% if pending_list %}
+        <div class="space-y-3 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+            {% for p in pending_list %}
+            <div class="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-medium text-white truncate">
+                        {{ p.employee.first_name }} {{ p.employee.last_name }}
+                    </p>
+                    <p class="text-xs text-gray-400">{{ p.period.period_name }}</p>
+                </div>
+                <div class="text-right ml-3">
+                    <p class="text-sm font-semibold text-emerald-400">₱{{ "{:,.0f}".format(p.net_pay) }}</p>
+                    <a href="{{ url_for('payroll_admin_bp.view_payrolls') }}" class="text-xs text-blue-400 hover:text-blue-300 transition">Review</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center text-gray-500 py-8 text-sm">All payrolls are completed! 🎉</p>
+        {% endif %}
+    </div>
+</div>
 
-          <td class="px-2 md:px-4 text-center text-emerald-400 font-semibold whitespace-nowrap">
-            ₱{{ "{:,.2f}".format(p.net_pay) }}
-          </td>
-
-        </tr>
-        {% endfor %}
-
-      </tbody>
-    </table>
-  </div>
-
+<!-- ===== IMPACT METRICS ===== -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-gray-800/30 p-4 rounded-xl border border-gray-700/30 text-center">
+        <p class="text-2xl font-bold text-purple-400">{{ leave_impact }}</p>
+        <p class="text-xs text-gray-400 mt-1">Leaves Approved</p>
+    </div>
+    <div class="bg-gray-800/30 p-4 rounded-xl border border-gray-700/30 text-center">
+        <p class="text-2xl font-bold text-orange-400">{{ overtime_total }}h</p>
+        <p class="text-xs text-gray-400 mt-1">Overtime Hours</p>
+    </div>
+    <div class="bg-gray-800/30 p-4 rounded-xl border border-gray-700/30 text-center">
+        <p class="text-2xl font-bold text-cyan-400">₱{{ "{:,.0f}".format(highest_salary) }}</p>
+        <p class="text-xs text-gray-400 mt-1">Highest Net Pay</p>
+    </div>
+    <div class="bg-gray-800/30 p-4 rounded-xl border border-gray-700/30 text-center">
+        <p class="text-2xl font-bold text-pink-400">₱{{ "{:,.0f}".format(lowest_salary) }}</p>
+        <p class="text-xs text-gray-400 mt-1">Lowest Net Pay</p>
+    </div>
 </div>
 
 </section>
 
+<!-- ===== CHART.JS SETUP ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
+    
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+            legend: { 
+                labels: { font: { size: 11 }, padding: 15 },
+                position: 'bottom'
+            },
+            tooltip: {
+                backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                titleColor: '#fff',
+                bodyColor: '#e5e7eb',
+                borderColor: '#374151',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: true,
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) label += ': ';
+                        if (context.parsed.y !== null) {
+                            label += '₱' + new Intl.NumberFormat('en-PH').format(context.parsed.y);
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: { 
+                grid: { color: 'rgba(55, 65, 81, 0.5)', drawBorder: false },
+                ticks: { font: { size: 10 } }
+            },
+            y: { 
+                grid: { color: 'rgba(55, 65, 81, 0.5)', drawBorder: false },
+                ticks: { 
+                    font: { size: 10 },
+                    callback: function(value) {
+                        if (value >= 1000000) return '₱' + (value/1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return '₱' + (value/1000).toFixed(0) + 'k';
+                        return '₱' + value;
+                    }
+                }
+            }
+        }
+    };
 
-const payrollCtx = document.getElementById('payrollChart');
-const salaryCtx = document.getElementById('salaryChart');
-const deductionCtx = document.getElementById('deductionChart');
-const statusCtx = document.getElementById('statusChart');
+    // Payroll Trend (Dual Dataset)
+    const payrollCtx = document.getElementById('payrollChart');
+    if (payrollCtx) {
+        new Chart(payrollCtx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels | tojson }},
+                datasets: [
+                    {
+                        label: 'Total Amount',
+                        data: {{ chart_values | tojson }},
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Employee Count',
+                        data: {{ chart_counts | tojson }},
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                ...commonOptions,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    ...commonOptions.scales,
+                    y1: {
+                        ...commonOptions.scales.y,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { callback: (v) => Math.round(v) }
+                    }
+                }
+            }
+        });
+    }
 
-new Chart(payrollCtx,{
-type:'line',
-data:{labels:{{ chart_labels | tojson }},datasets:[{data:{{ chart_values | tojson }},borderColor:'#10b981',backgroundColor:'#10b98133',fill:true,tension:.4}]},
-options:{responsive:true,maintainAspectRatio:false}
-});
+    // Department Chart
+    const deptCtx = document.getElementById('deptChart');
+    if (deptCtx && {{ dept_values | length }} > 0) {
+        new Chart(deptCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ dept_labels | tojson }},
+                datasets: [{
+                    label: 'Total Payroll',
+                    data: {{ dept_values | tojson }},
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    borderColor: '#10b981',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
 
-new Chart(salaryCtx,{
-type:'line',
-data:{labels:{{ salary_labels | tojson }},datasets:[{data:{{ salary_values | tojson }},borderColor:'#22c55e',backgroundColor:'#22c55e33',fill:true,tension:.4}]},
-options:{responsive:true,maintainAspectRatio:false}
-});
+    // Deduction Pie
+    const dedCtx = document.getElementById('deductionChart');
+    if (dedCtx && {{ ded_values | length }} > 0) {
+        new Chart(dedCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ ded_labels | tojson }},
+                datasets: [{
+                    data: {{ ded_values | tojson }},
+                    backgroundColor: [
+                        '#ef4444', '#f59e0b', '#3b82f6', '#22c55e', 
+                        '#a855f7', '#06b6d4', '#eab308', '#ec4899'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#1f2937'
+                }]
+            },
+            options: {
+                ...commonOptions,
+                cutout: '65%',
+                plugins: {
+                    ...commonOptions.plugins,
+                    legend: { 
+                        labels: { font: { size: 10 }, padding: 12, boxWidth: 12 }
+                    }
+                }
+            }
+        });
+    }
 
-new Chart(deductionCtx,{
-type:'doughnut',
-data:{labels:{{ ded_labels | tojson }},datasets:[{data:{{ ded_values | tojson }},backgroundColor:['#ef4444','#f59e0b','#3b82f6','#22c55e','#a855f7']}]},
-options:{responsive:true,maintainAspectRatio:false,cutout:'70%'}
-});
-
-new Chart(statusCtx,{
-type:'bar',
-data:{labels:["Approved","Draft"],datasets:[{data:[{{approved_payrolls}},{{draft_payrolls}}],backgroundColor:['#22c55e','#f59e0b']}]},
-options:{responsive:true,maintainAspectRatio:false}
-});
-
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx && {{ status_values | length }} > 0) {
+        new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ status_labels | tojson }},
+                datasets: [{
+                    data: {{ status_values | tojson }},
+                    backgroundColor: [
+                        '#22c55e', '#f59e0b', '#ef4444', '#6b7280', '#8b5cf6'
+                    ].slice(0, {{ status_values | length }}),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: { legend: { display: false } },
+                scales: {
+                    ...commonOptions.scales,
+                    y: { 
+                        ...commonOptions.scales.y,
+                        ticks: { callback: (v) => Math.round(v) }
+                    }
+                }
+            }
+        });
+    }
 });
 </script>
 
+<!-- ===== CUSTOM STYLES ===== -->
+<style>
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+    background: #374151; 
+    border-radius: 3px; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+@media (max-width: 768px) {
+    .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+    h2.text-2xl { font-size: 1.25rem; }
+    .text-xl { font-size: 1rem; }
+}
+</style>
 {% endblock %}

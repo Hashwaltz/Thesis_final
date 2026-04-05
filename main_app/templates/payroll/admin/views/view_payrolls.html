@@ -2,206 +2,452 @@
 {% block title %}Payrolls | Payroll Admin{% endblock %}
 
 {% block content %}
-
 <section class="p-4 md:p-6 space-y-6 text-gray-200">
 
 <!-- ===== HEADER ===== -->
-<header class="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-  <h1 class="text-xl md:text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-    <i class="fa-solid fa-file-invoice-dollar text-2xl md:text-3xl"></i>
-    Employee Payrolls
-  </h1>
+<header class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 pb-2 border-b border-gray-700/50">
+  <div>
+    <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-3">
+      <i class="fa-solid fa-file-invoice-dollar text-2xl"></i>
+      Employee Payrolls
+    </h1>
+    <p class="text-gray-400 text-sm mt-1">{{ payrolls.total }} records</p>
+  </div>
+  
+  <!-- Quick Stats Badges -->
+  <div class="flex flex-wrap gap-2">
+    <span class="px-3 py-1 bg-green-500/15 text-green-400 rounded-full text-xs font-medium border border-green-500/20">
+      <i class="fa-solid fa-check mr-1"></i>{{ payrolls.items|selectattr('status','equalto','Approved')|list|length }} Approved
+    </span>
+    <span class="px-3 py-1 bg-yellow-500/15 text-yellow-400 rounded-full text-xs font-medium border border-yellow-500/20">
+      <i class="fa-solid fa-clock mr-1"></i>{{ payrolls.items|selectattr('status','equalto','Draft')|list|length }} Draft
+    </span>
+  </div>
 </header>
 
 <!-- ================= FILTERS ================= -->
-<form method="get"
-action="{{ url_for('payroll_admin_bp.view_payrolls') }}"
-class="bg-gray-800 p-5 rounded-2xl border border-gray-700 grid grid-cols-1 md:grid-cols-4 gap-4">
+<form method="get" action="{{ url_for('payroll_admin_bp.view_payrolls') }}"
+      class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50 grid grid-cols-1 md:grid-cols-4 gap-4">
 
-  <!-- Search -->
-  <input type="text"
-    name="search"
-    value="{{ search }}"
-    placeholder="Search employee..."
-    class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 outline-none w-full"/>
+  <!-- Search with Icon -->
+  <div class="relative">
+    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+    <input type="text" name="search" value="{{ search }}" placeholder="Search employee..."
+           class="w-full pl-9 pr-4 py-2.5 rounded-lg bg-gray-900/50 border border-gray-600 
+                  text-gray-200 placeholder-gray-500 text-sm
+                  focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition"/>
+  </div>
 
   <!-- Department -->
-  <select name="department_id"
-    onchange="this.form.submit()"
-    class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 w-full">
-    <option value="">All Departments</option>
-    {% for dept in departments %}
-    <option value="{{ dept.id }}"
-      {% if dept.id==selected_department %}selected{% endif %}>
-      {{ dept.name }}
-    </option>
-    {% endfor %}
-  </select>
+  <div class="relative">
+    <i class="fa-solid fa-building absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+    <select name="department_id" onchange="this.form.submit()"
+            class="w-full pl-9 pr-8 py-2.5 rounded-lg bg-gray-900/50 border border-gray-600 
+                   text-gray-200 text-sm appearance-none cursor-pointer
+                   focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+      <option value="{{ dept.id }}" {% if dept.id==selected_department %}selected{% endif %}>
+        {{ dept.name }}
+      </option>
+      {% endfor %}
+    </select>
+    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none"></i>
+  </div>
 
   <!-- Period -->
-  <select name="pay_period_id"
-    onchange="this.form.submit()"
-    class="px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 w-full">
-
-    <option value="">All Periods</option>
-
-    {% for period in payroll_periods %}
-    <option value="{{ period.id }}"
-      {% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
-      {{ period.period_name }}
-    </option>
-    {% endfor %}
-
-  </select>
+  <div class="relative">
+    <i class="fa-regular fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+    <select name="pay_period_id" onchange="this.form.submit()"
+            class="w-full pl-9 pr-8 py-2.5 rounded-lg bg-gray-900/50 border border-gray-600 
+                   text-gray-200 text-sm appearance-none cursor-pointer
+                   focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition">
+      <option value="">All Periods</option>
+      {% for period in payroll_periods %}
+      <option value="{{ period.id }}" {% if selected_pay_period and period.id==selected_pay_period.id %}selected{% endif %}>
+        {{ period.period_name }}
+      </option>
+      {% endfor %}
+    </select>
+    <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none"></i>
+  </div>
 
   <!-- Clear Button -->
   <a href="{{ url_for('payroll_admin_bp.view_payrolls') }}"
-     class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">
-     <i class="fa-solid fa-rotate-left"></i>
-     Clear Filters
+     class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-700/50 hover:bg-gray-600/50 
+            border border-gray-600 rounded-lg text-sm text-gray-300 transition group">
+     <i class="fa-solid fa-rotate-left group-hover:rotate-180 transition-transform"></i>
+     <span class="hidden sm:inline">Clear</span>
   </a>
-
 </form>
 
 <!-- ================= ACTIONS ================= -->
 <div class="flex flex-wrap gap-3">
+  <!-- Generate Payslips -->
+  <form id="generateAllPayslipsForm"
+        action="{{ url_for('payroll_admin_bp.generate_payslips_by_period',
+                         pay_period_id=selected_pay_period.id if selected_pay_period else 1) }}"
+        method="POST">
+    <button type="button" id="generateAllPayslipsBtn"
+            class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 
+                   hover:from-green-700 hover:to-emerald-700 text-white rounded-lg text-sm font-medium 
+                   shadow-lg shadow-green-500/20 transition-all hover:shadow-green-500/40">
+      <i class="fa-solid fa-receipt"></i> Generate Payslips
+    </button>
+  </form>
 
-<form id="generateAllPayslipsForm"
-action="{{ url_for('payroll_admin_bp.generate_payslips_by_period',
-pay_period_id=selected_pay_period.id if selected_pay_period else 1) }}"
-method="POST">
-
-<button type="button"
-id="generateAllPayslipsBtn"
-class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-sm">
-
-<i class="fa-solid fa-receipt"></i>
-Generate All Payslips
-</button>
-
-</form>
-
-<a href="{{ url_for('payroll_admin_bp.export_payroll_excel_route',
-search=search,
-department_id=selected_department,
-pay_period_id=selected_pay_period.id if selected_pay_period else '') }}"
-class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
-
-<i class="fa-solid fa-file-excel"></i>
-Export Excel
-</a>
-
+  <!-- Export Excel -->
+  <a href="{{ url_for('payroll_admin_bp.export_payroll_excel_route',
+                     search=search,
+                     department_id=selected_department,
+                     pay_period_id=selected_pay_period.id if selected_pay_period else '') }}"
+     class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 
+            hover:from-blue-700 hover:to-cyan-700 text-white rounded-lg text-sm font-medium 
+            shadow-lg shadow-blue-500/20 transition-all hover:shadow-blue-500/40">
+    <i class="fa-solid fa-file-excel"></i> Export Excel
+  </a>
 </div>
 
 <!-- ================= TABLE ================= -->
-<div class="overflow-x-auto bg-gray-800 rounded-2xl border border-gray-700">
+<div class="overflow-hidden bg-gray-800/50 backdrop-blur rounded-2xl border border-gray-700/50">
+  <div class="overflow-x-auto">
+    <table class="min-w-[900px] w-full text-sm">
+      <thead class="bg-gray-900/80 text-emerald-400 text-xs uppercase tracking-wider sticky top-0 z-10">
+        <tr>
+          <th class="p-3 md:p-4 text-left font-medium">Employee</th>
+          <th class="p-3 md:p-4 text-left font-medium hidden md:table-cell">Department</th>
+          <th class="p-3 md:p-4 text-right font-medium">Salary</th>
+          <th class="p-3 md:p-4 text-right font-medium">Gross</th>
+          <th class="p-3 md:p-4 text-right font-medium">Deductions</th>
+          <th class="p-3 md:p-4 text-right font-medium">Net</th>
+          <th class="p-3 md:p-4 text-left font-medium hidden lg:table-cell">Period</th>
+          <th class="p-3 md:p-4 text-center font-medium">Status</th>
+        </tr>
+      </thead>
 
-<table class="min-w-[900px] w-full text-sm">
+      <tbody class="divide-y divide-gray-700/50">
+        {% for payroll in payrolls.items %}
+        <tr class="group hover:bg-gray-700/40 cursor-pointer transition"
+            onclick="openPayrollModal({
+              employee_name: {{ payroll.employee.get_full_name()|tojson }},
+              employee_type: {{ payroll.employee_type|tojson }},
+              salary: {{ payroll.employee.salary|default(0) }},
+              hourly_rate: {{ payroll.hourly_rate_value|default(0) }},
+              daily_rate: {{ payroll.daily_rate_value|default(0) }},
+              working_hours: {{ payroll.working_hours|default(0) }},
+              days_worked: {{ payroll.days_worked|default(0) }},
+              allowance: {{ payroll.allowance_total|default(0) }},
+              gross_pay: {{ payroll.gross_pay|default(0) }},
+              deductions: {{ payroll.total_deductions|default(0) }},
+              net_pay: {{ payroll.net_pay|default(0) }},
+              period_start: {{ (payroll.period.start_date.isoformat() if payroll.period and payroll.period.start_date else '')|tojson }},
+              period_end: {{ (payroll.period.end_date.isoformat() if payroll.period and payroll.period.end_date else '')|tojson }}
+            })">
 
-<thead class="bg-gray-900 text-emerald-400 sticky top-0">
-<tr>
-<th class="p-2 md:p-3 text-left">Employee</th>
-<th class="p-2 md:p-3 text-left">Department</th>
-<th class="p-2 md:p-3 text-right">Salary</th>
-<th class="p-2 md:p-3 text-right">Gross</th>
-<th class="p-2 md:p-3 text-right">Deductions</th>
-<th class="p-2 md:p-3 text-right">Net</th>
-<th class="p-2 md:p-3 text-left">Period</th>
-</tr>
-</thead>
+          <!-- Employee -->
+          <td class="p-3 md:p-4 whitespace-nowrap">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center 
+                          text-sm font-semibold text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                {{ (payroll.employee.first_name[:1]|upper if payroll.employee.first_name else 'E') }}
+                {{ (payroll.employee.last_name[:1]|upper if payroll.employee.last_name else '') }}
+              </div>
+              <div class="min-w-0">
+                <p class="font-medium text-white truncate">{{ payroll.employee.get_full_name() }}</p>
+                <p class="text-xs text-gray-500">ID: {{ payroll.employee.employee_id|default('—') }}</p>
+              </div>
+            </div>
+          </td>
 
-<tbody class="divide-y divide-gray-700">
+          <!-- Department -->
+          <td class="p-3 md:p-4 hidden md:table-cell">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium 
+                        bg-gray-700/50 text-gray-300 border border-gray-600">
+              {{ payroll.employee.department.name if payroll.employee.department else "—" }}
+            </span>
+          </td>
 
-{% for payroll in payrolls.items %}
+          <!-- Salary -->
+          <td class="p-3 md:p-4 text-right text-gray-400">
+            ₱{{ "{:,.2f}".format(payroll.employee.salary|default(0)) }}
+          </td>
 
-<tr class="hover:bg-gray-700/40 cursor-pointer transition"
+          <!-- Gross -->
+          <td class="p-3 md:p-4 text-right text-blue-400 font-medium">
+            ₱{{ "{:,.2f}".format(payroll.gross_pay|default(0)) }}
+          </td>
 
-onclick="openPayrollModal({
-employee_name:'{{ payroll.employee.get_full_name() }}',
-employee_type:'{{ payroll.employee_type }}',
-salary:{{ payroll.employee.salary or 0 }},
-hourly_rate:{{ payroll.hourly_rate_value or 0 }},
-daily_rate:{{ payroll.daily_rate_value or 0 }},
-working_hours:{{ payroll.working_hours or 0 }},
-days_worked:{{ payroll.days_worked or 0 }},
-allowance:{{ payroll.allowance_total or 0 }},
-gross_pay:{{ payroll.gross_pay or 0 }},
-deductions:{{ payroll.total_deductions or 0 }},
-net_pay:{{ payroll.net_pay or 0 }},
-period_start:'{{ payroll.period.start_date if payroll.period else '' }}',
-period_end:'{{ payroll.period.end_date if payroll.period else '' }}'
-})">
+          <!-- Deductions -->
+          <td class="p-3 md:p-4 text-right text-red-400 font-medium">
+            −₱{{ "{:,.2f}".format(payroll.total_deductions|default(0)) }}
+          </td>
 
-<td class="p-2 md:p-3 whitespace-nowrap">
-{{ payroll.employee.get_full_name() }}
-</td>
+          <!-- Net Pay -->
+          <td class="p-3 md:p-4 text-right font-bold text-emerald-400">
+            ₱{{ "{:,.2f}".format(payroll.net_pay|default(0)) }}
+          </td>
 
-<td class="p-2 md:p-3">
-{{ payroll.employee.department.name if payroll.employee.department else "-" }}
-</td>
+          <!-- Period -->
+          <td class="p-3 md:p-4 whitespace-nowrap hidden lg:table-cell text-xs text-gray-400">
+            {% if payroll.period %}
+              {{ payroll.period.start_date.strftime('%b %d') }}<br>
+              <span class="text-gray-500">to {{ payroll.period.end_date.strftime('%b %d, %Y') }}</span>
+            {% else %}—{% endif %}
+          </td>
 
-<td class="p-2 md:p-3 text-right text-emerald-400">
-₱{{ "{:,.2f}".format(payroll.employee.salary or 0) }}
-</td>
-
-<td class="p-2 md:p-3 text-right">
-₱{{ "{:,.2f}".format(payroll.gross_pay or 0) }}
-</td>
-
-<td class="p-2 md:p-3 text-right text-yellow-400">
-₱{{ "{:,.2f}".format(payroll.total_deductions or 0) }}
-</td>
-
-<td class="p-2 md:p-3 text-right font-semibold text-emerald-400">
-₱{{ "{:,.2f}".format(payroll.net_pay or 0) }}
-</td>
-
-<td class="p-2 md:p-3 whitespace-nowrap">
-{{ payroll.period.start_date }} – {{ payroll.period.end_date }}
-</td>
-
-</tr>
-
-{% endfor %}
-
-</tbody>
-</table>
-
+          <!-- Status Badge -->
+          <td class="p-3 md:p-4 text-center">
+            {% if payroll.status == 'Approved' %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium 
+                          bg-green-500/15 text-green-400 border border-green-500/20">
+                <i class="fa-solid fa-circle-check"></i> Approved
+              </span>
+            {% elif payroll.status == 'Processed' %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium 
+                          bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                <i class="fa-solid fa-check"></i> Processed
+              </span>
+            {% elif payroll.status == 'Draft' %}
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium 
+                          bg-yellow-500/15 text-yellow-400 border border-yellow-500/20">
+                <i class="fa-solid fa-pen"></i> Draft
+              </span>
+            {% else %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium 
+                          bg-gray-500/15 text-gray-400 border border-gray-500/20">
+                {{ payroll.status }}
+              </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Empty State -->
+  {% if not payrolls.items %}
+  <div class="text-center py-12">
+    <i class="fa-regular fa-folder-open text-3xl text-gray-500 mb-3"></i>
+    <p class="text-gray-400 text-sm">No payrolls found. Try adjusting your filters.</p>
+  </div>
+  {% endif %}
 </div>
+
+<!-- ================= PAGINATION ================= -->
+{% if payrolls.pages > 1 %}
+<div class="flex items-center justify-center gap-1 pt-4">
+  {% if payrolls.has_prev %}
+  <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=payrolls.prev_num,
+                     search=search, department_id=selected_department,
+                     pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
+     class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+    <i class="fa-solid fa-chevron-left"></i>
+  </a>
+  {% endif %}
+  
+  {% for page_num in payrolls.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+    {% if page_num %}
+      {% if page_num == payrolls.page %}
+      <span class="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg font-medium">{{ page_num }}</span>
+      {% else %}
+      <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=page_num,
+                         search=search, department_id=selected_department,
+                         pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
+         class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+        {{ page_num }}
+      </a>
+      {% endif %}
+    {% else %}
+    <span class="px-3 py-1.5 text-sm text-gray-600">…</span>
+    {% endif %}
+  {% endfor %}
+  
+  {% if payrolls.has_next %}
+  <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=payrolls.next_num,
+                     search=search, department_id=selected_department,
+                     pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
+     class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+    <i class="fa-solid fa-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
 
 </section>
 
 <!-- ================= MODAL ================= -->
 <div id="payrollModal"
-class="fixed inset-0 hidden bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+     class="fixed inset-0 hidden bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+     onclick="if(event.target===this) closePayrollModal()">
 
-<div class="bg-gray-900 w-full max-w-2xl md:max-w-3xl rounded-2xl border border-gray-700 shadow-xl">
+  <div class="bg-gray-900 w-full max-w-2xl md:max-w-3xl rounded-2xl border border-gray-700 shadow-2xl 
+              transform transition-all duration-200 scale-95 opacity-0"
+       id="payrollModalContent">
 
-<div class="flex justify-between p-5 border-b border-gray-700">
-<h2 class="text-emerald-400 font-semibold text-lg">Payroll Details</h2>
-<button onclick="closePayrollModal()" class="text-gray-400 hover:text-white text-xl">✕</button>
+    <div class="flex justify-between items-center p-5 border-b border-gray-700">
+      <h2 class="text-emerald-400 font-semibold text-lg flex items-center gap-2">
+        <i class="fa-solid fa-receipt"></i> Payroll Details
+      </h2>
+      <button onclick="closePayrollModal()" class="text-gray-400 hover:text-white text-xl transition">✕</button>
+    </div>
+
+    <div id="payrollModalContent" class="p-6 space-y-5 text-sm">
+      <!-- Employee Header -->
+      <div class="flex items-center gap-4 pb-4 border-b border-gray-700/50">
+        <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center 
+                    text-lg font-bold text-emerald-400 border border-emerald-500/30" id="modalInitials">
+          EE
+        </div>
+        <div>
+          <h3 class="font-semibold text-white text-lg" id="modalName">Employee Name</h3>
+          <p class="text-gray-400 text-sm" id="modalType">Regular Employee</p>
+        </div>
+      </div>
+
+      <!-- Period -->
+      <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
+        <span class="text-gray-400"><i class="fa-regular fa-calendar mr-2"></i>Pay Period</span>
+        <span class="font-medium text-white" id="modalPeriod">—</span>
+      </div>
+
+      <!-- Financial Summary -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="p-4 bg-gray-800/30 rounded-xl text-center border border-gray-700/30">
+          <p class="text-xs text-gray-500 mb-1">Gross Pay</p>
+          <p class="text-lg font-semibold text-blue-400" id="modalGross">₱0.00</p>
+        </div>
+        <div class="p-4 bg-gray-800/30 rounded-xl text-center border border-gray-700/30">
+          <p class="text-xs text-gray-500 mb-1">Deductions</p>
+          <p class="text-lg font-semibold text-red-400" id="modalDeductions">−₱0.00</p>
+        </div>
+        <div class="p-4 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-xl text-center border border-emerald-500/20">
+          <p class="text-xs text-emerald-400 mb-1">Net Pay</p>
+          <p class="text-xl font-bold text-emerald-400" id="modalNet">₱0.00</p>
+        </div>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div class="p-3 bg-gray-800/30 rounded-lg">
+          <p class="text-xs text-gray-500">Base Salary</p>
+          <p class="font-medium text-white" id="modalSalary">₱0.00</p>
+        </div>
+        <div class="p-3 bg-gray-800/30 rounded-lg">
+          <p class="text-xs text-gray-500">Allowances</p>
+          <p class="font-medium text-blue-400" id="modalAllowance">₱0.00</p>
+        </div>
+        <div class="p-3 bg-gray-800/30 rounded-lg">
+          <p class="text-xs text-gray-500">Hours Worked</p>
+          <p class="font-medium text-white" id="modalHours">0h</p>
+        </div>
+        <div class="p-3 bg-gray-800/30 rounded-lg">
+          <p class="text-xs text-gray-500">Days Worked</p>
+          <p class="font-medium text-white" id="modalDays">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-3 p-5 border-t border-gray-700 bg-gray-800/30 rounded-b-2xl">
+      <button onclick="closePayrollModal()" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition">
+        Close
+      </button>
+      <button class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition">
+        <i class="fa-solid fa-print mr-1"></i> Print
+      </button>
+    </div>
+  </div>
 </div>
 
-<div id="payrollModalContent" class="p-6 space-y-4 text-sm"></div>
-
-</div>
-</div>
-
+<!-- ================= SCRIPTS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-document.getElementById("generateAllPayslipsBtn").addEventListener("click",()=>{
-Swal.fire({
-title:'Generate All Payslips?',
-icon:'warning',
-showCancelButton:true,
-confirmButtonColor:'#16a34a'
-}).then(result=>{
-if(result.isConfirmed){
-document.getElementById("generateAllPayslipsForm").submit();
+// ===== MODAL FUNCTIONS =====
+function openPayrollModal(data) {
+  // Initials
+  const names = data.employee_name.split(' ');
+  const initials = (names[0]?.[0]||'E') + (names[names.length-1]?.[0]||'E');
+  document.getElementById('modalInitials').textContent = initials.toUpperCase();
+  
+  // Text content
+  document.getElementById('modalName').textContent = data.employee_name;
+  document.getElementById('modalType').textContent = data.employee_type;
+  
+  // Format dates
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) : '—';
+  document.getElementById('modalPeriod').textContent = `${fmtDate(data.period_start)} – ${fmtDate(data.period_end)}`;
+  
+  // Format currency
+  const fmt = (v) => '₱' + Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2});
+  document.getElementById('modalSalary').textContent = fmt(data.salary);
+  document.getElementById('modalAllowance').textContent = fmt(data.allowance);
+  document.getElementById('modalGross').textContent = fmt(data.gross_pay);
+  document.getElementById('modalDeductions').textContent = '−' + fmt(data.deductions);
+  document.getElementById('modalNet').textContent = fmt(data.net_pay);
+  document.getElementById('modalHours').textContent = `${data.working_hours||0}h`;
+  document.getElementById('modalDays').textContent = data.days_worked||0;
+
+  // Show with animation
+  const modal = document.getElementById('payrollModal');
+  const content = document.getElementById('payrollModalContent');
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    content.classList.remove('scale-95','opacity-0');
+    content.classList.add('scale-100','opacity-100');
+  }, 10);
+  document.body.style.overflow = 'hidden';
 }
-})
-})
+
+function closePayrollModal() {
+  const modal = document.getElementById('payrollModal');
+  const content = document.getElementById('payrollModalContent');
+  content.classList.remove('scale-100','opacity-100');
+  content.classList.add('scale-95','opacity-0');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }, 200);
+}
+
+// ===== GENERATE PAYSLIPS CONFIRMATION =====
+document.getElementById("generateAllPayslipsBtn")?.addEventListener("click", () => {
+  Swal.fire({
+    title: 'Generate All Payslips?',
+    text: 'This will create payslips for all employees in the selected period.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#16a34a',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: '<i class="fa-solid fa-receipt mr-1"></i> Yes, Generate',
+    background: '#1f2937',
+    color: '#e5e7eb',
+    borderColor: '#374151'
+  }).then(result => {
+    if (result.isConfirmed) document.getElementById("generateAllPayslipsForm").submit();
+  });
+});
+
+// ===== KEYBOARD SUPPORT =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !document.getElementById('payrollModal').classList.contains('hidden')) {
+    closePayrollModal();
+  }
+});
 </script>
 
+<!-- ===== CUSTOM STYLES ===== -->
+<style>
+#payrollModalContent { transition: transform 0.2s ease-out, opacity 0.2s ease-out; }
+.overflow-x-auto::-webkit-scrollbar { height: 6px; }
+.overflow-x-auto::-webkit-scrollbar-track { background: transparent; }
+.overflow-x-auto::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+.overflow-x-auto::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+select { background-image: none !important; }
+input:focus, select:focus { --tw-ring-offset-width: 0px; }
+@media (max-width: 768px) {
+  table { font-size: 0.875rem; }
+  .p-3 md\:p-4 { padding: 0.75rem; }
+}
+</style>
 {% endblock %}

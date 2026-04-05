@@ -1,0 +1,247 @@
+{% extends "payroll/admin/payroll_admin_base.html" %}
+{% block title %}Deduction Detail Report{% endblock %}
+
+{% block content %}
+<section class="p-4 md:p-6 space-y-6">
+
+<!-- Header -->
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+        <h1 class="text-xl md:text-2xl font-bold text-emerald-400 flex items-center gap-3">
+            <i class="fa-solid fa-file-invoice-dollar text-2xl"></i>
+            Deduction Detail Report
+        </h1>
+        <p class="text-gray-400 text-sm mt-1">
+            Select a Provider and Period to view and export employee contributions.
+        </p>
+    </div>
+    
+    <!-- Export Button: Only shows if filters are active -->
+    {% if selected_provider and selected_period %}
+    <a href="{{ url_for('payroll_admin_bp.export_deduction_detail_pdf', 
+                       provider=selected_provider,
+                       period_id=selected_period,
+                       department_id=selected_department) }}" 
+       class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 w-fit">
+        <i class="fa-solid fa-file-pdf"></i> Export PDF
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+    <form method="GET" id="filterForm" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Provider (Required) -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Provider <span class="text-red-400">*</span></label>
+                <select name="provider" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">Select Provider</option>
+                    {% for opt in provider_options %}
+                        <option value="{{ opt.value }}" {% if selected_provider == opt.value %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Pay Period (Required) -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Pay Period <span class="text-red-400">*</span></label>
+                <select name="period_id" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">Select Period</option>
+                    {% for period in payroll_periods %}
+                        <option value="{{ period.id }}" {% if selected_period == period.id %}selected{% endif %}>
+                            {{ period.period_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Department -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Department</label>
+                <select name="department_id" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" {% if selected_department == dept.id %}selected{% endif %}>
+                            {{ dept.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Search -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Search Employee</label>
+                <input type="text" name="search" value="{{ search or '' }}" placeholder="Name or ID"
+                       class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+        </div>
+        
+        <div class="flex items-end gap-2">
+            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <i class="fa-solid fa-filter"></i> Load Report
+            </button>
+            <button type="button" onclick="clearFilters()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">
+                Clear
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Results Section: Shows ONLY when filters are applied -->
+{% if selected_provider and selected_period %}
+<div class="space-y-6 animate-fade-in">
+    
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+            <p class="text-gray-400 text-xs">Total Records</p>
+            <h3 class="text-2xl font-bold text-white mt-1">{{ summary_stats.total_records }}</h3>
+            <p class="text-emerald-400 text-xs mt-1">{{ summary_stats.total_employees }} employees</p>
+        </div>
+        
+        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+            <p class="text-gray-400 text-xs">Employee Share</p>
+            <h3 class="text-xl font-bold text-blue-400 mt-1">₱{{ "{:,.2f}".format(summary_stats.total_employee_share) }}</h3>
+        </div>
+        
+        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+            <p class="text-gray-400 text-xs">Employer Share</p>
+            <h3 class="text-xl font-bold text-green-400 mt-1">₱{{ "{:,.2f}".format(summary_stats.total_employer_share) }}</h3>
+        </div>
+        
+        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+            <p class="text-gray-400 text-xs">Total Contributions</p>
+            <h3 class="text-xl font-bold text-emerald-400 mt-1">₱{{ "{:,.2f}".format(summary_stats.total_contributions) }}</h3>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                <i class="fa-solid fa-table-list"></i> Deduction Details
+            </h3>
+            <span class="bg-gray-700 text-gray-300 text-xs px-3 py-1 rounded-full">
+                {{ pagination.total_records }} records
+            </span>
+        </div>
+        
+        {% if records %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="text-gray-400 text-xs uppercase border-b border-gray-700">
+                    <tr>
+                        <th class="text-left py-3 px-2">Employee</th>
+                        <th class="text-left py-3 px-2 hidden md:table-cell">Department</th>
+                        <th class="text-left py-3 px-2">Deduction</th>
+                        <th class="text-right py-3 px-2">Employee</th>
+                        <th class="text-right py-3 px-2 hidden lg:table-cell">Employer</th>
+                        <th class="text-right py-3 px-2 hidden lg:table-cell">EC</th>
+                        <th class="text-right py-3 px-2">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-300 divide-y divide-gray-700/50">
+                    {% for rec in records %}
+                    <tr class="hover:bg-gray-700/30 transition">
+                        <td class="py-3 px-2">
+                            <div class="min-w-0">
+                                <p class="font-medium text-white truncate">{{ rec.employee_name }}</p>
+                                <p class="text-xs text-gray-500">{{ rec.employee_id }}</p>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2 text-gray-400 hidden md:table-cell">{{ rec.department }}</td>
+                        <td class="py-3 px-2">
+                            <span class="text-xs bg-blue-500/15 text-blue-400 px-2 py-1 rounded">
+                                {{ rec.deduction_name }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-right text-blue-400">₱{{ "{:,.2f}".format(rec.employee_share) }}</td>
+                        <td class="py-3 px-2 text-right text-green-400 hidden lg:table-cell">₱{{ "{:,.2f}".format(rec.employer_share) }}</td>
+                        <td class="py-3 px-2 text-right text-gray-400 hidden lg:table-cell">₱{{ "{:,.2f}".format(rec.ec) }}</td>
+                        <td class="py-3 px-2 text-right font-bold text-emerald-400">₱{{ "{:,.2f}".format(rec.total_contribution) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.total_pages > 1 %}
+        <div class="mt-4 flex items-center justify-between">
+            <p class="text-xs text-gray-500">Page {{ pagination.page }} of {{ pagination.total_pages }}</p>
+            <nav class="flex items-center gap-1">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('payroll_admin_bp.deduction_detail_report', 
+                                   page=pagination.page-1,
+                                   provider=selected_provider,
+                                   period_id=selected_period,
+                                   department_id=selected_department,
+                                   search=search) }}" 
+                   class="px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">← Prev</a>
+                {% endif %}
+                
+                {% for p in range(1, pagination.total_pages + 1) %}
+                    <a href="{{ url_for('payroll_admin_bp.deduction_detail_report',
+                                       page=p,
+                                       provider=selected_provider,
+                                       period_id=selected_period,
+                                       department_id=selected_department,
+                                       search=search) }}" 
+                       class="px-3 py-1.5 text-xs rounded-lg transition {% if p == pagination.page %}bg-emerald-600 text-white{% else %}text-gray-400 hover:text-white hover:bg-gray-700{% endif %}">
+                        {{ p }}
+                    </a>
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <a href="{{ url_for('payroll_admin_bp.deduction_detail_report',
+                                   page=pagination.page+1,
+                                   provider=selected_provider,
+                                   period_id=selected_period,
+                                   department_id=selected_department,
+                                   search=search) }}" 
+                   class="px-3 py-1.5 text-xs text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">Next →</a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-700/50 flex items-center justify-center">
+                <i class="fa-solid fa-folder-open text-2xl text-gray-500"></i>
+            </div>
+            <p class="text-gray-400 mb-2">No deductions found</p>
+            <p class="text-sm text-gray-500">No records match the selected filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+    <!-- Initial State Message -->
+    <div class="text-center py-12 bg-gray-800/20 rounded-2xl border border-dashed border-gray-700">
+        <i class="fa-solid fa-filter-circle-xmark text-4xl text-gray-600 mb-3"></i>
+        <p class="text-gray-400">Please select a Provider and Pay Period to view the report data.</p>
+    </div>
+{% endif %}
+
+</section>
+
+<script>
+function clearFilters() {
+    window.location.href = "{{ url_for('payroll_admin_bp.deduction_detail_report') }}";
+}
+</script>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+</style>
+{% endblock %}
