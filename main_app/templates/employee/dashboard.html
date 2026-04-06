@@ -18,6 +18,12 @@
           </span>
           <span class="text-gray-500">•</span>
           <span>{{ employee.department.name if employee.department else 'No Department' }}</span>
+          {% if employee.employment_type_id not in [1, 3] %}
+          <span class="text-gray-500">•</span>
+          <span class="px-2 py-0.5 bg-gray-700/50 text-gray-400 rounded-full text-xs border border-gray-600">
+            {{ employee.employment_type.name if employee.employment_type else 'Contractual' }}
+          </span>
+          {% endif %}
         </p>
       </div>
       <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-sm">
@@ -33,7 +39,11 @@
       ('Days Recorded', total_days, 'fa-calendar-days', 'text-blue-400', 'bg-blue-500/10'),
       ('Present', present_days, 'fa-check-circle', 'text-emerald-400', 'bg-emerald-500/10'),
       ('Late', late_days, 'fa-clock', 'text-amber-400', 'bg-amber-500/10'),
-      ('Leave Types', leave_summary|length, 'fa-umbrella-beach', 'text-purple-400', 'bg-purple-500/10')
+      ('Leave Types', 
+        (leave_summary|length if employee.employment_type_id in [1, 3] else 'N/A'), 
+        'fa-umbrella-beach', 
+        'text-purple-400', 
+        'bg-purple-500/10')
     ] %}
     {% for label, value, icon, text_color, bg_color in stats %}
     <div class="group bg-gray-900/50 backdrop-blur-md p-5 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/20">
@@ -101,29 +111,56 @@
       </div>
     </div>
 
-    <!-- LEAVE -->
+    <!-- LEAVE BALANCES (Conditional Display) -->
     <div class="bg-gray-900/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-      <div class="flex items-center gap-3 mb-5">
-        <i class="fa-solid fa-suitcase text-purple-400 text-xl"></i>
-        <h2 class="text-lg font-semibold text-white">Leave Balances</h2>
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-suitcase text-purple-400 text-xl"></i>
+          <h2 class="text-lg font-semibold text-white">Leave Balances</h2>
+        </div>
+        {% if employee.employment_type_id not in [1, 3, 5] %}
+          <span class="text-xs px-2 py-1 bg-gray-700/50 text-gray-400 rounded-md border border-gray-600">
+            Not Eligible
+          </span>
+        {% endif %}
       </div>
 
-      <div class="space-y-3 max-h-56 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-        {% for leave_name, balance in leave_summary.items() %}
-          <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-2 h-2 rounded-full bg-purple-400"></div>
-              <span class="text-gray-200 text-sm">{{ leave_name }}</span>
+      {% if employee.employment_type_id in [1, 3, 5] %}
+        <!-- Eligible Employees: Show Leave Balances -->
+        <div class="space-y-3 max-h-56 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+          {% for leave_name, balance in leave_summary.items() %}
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+              <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-purple-400"></div>
+                <span class="text-gray-200 text-sm">{{ leave_name }}</span>
+              </div>
+              <span class="text-purple-300 font-semibold text-sm">{{ balance | round(2) }} days</span>
             </div>
-            <span class="text-purple-300 font-semibold text-sm">{{ balance | round(2) }} days</span>
+          {% else %}
+            <div class="text-center py-8 text-gray-500 text-sm">
+              <i class="fa-regular fa-folder-open text-2xl mb-2 opacity-50"></i>
+              <p>No leave records found.</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Ineligible Employees: Show Notice -->
+        <div class="text-center py-8">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-800/50 flex items-center justify-center border border-gray-700">
+            <i class="fa-solid fa-circle-exclamation text-2xl text-amber-400"></i>
           </div>
-        {% else %}
-          <div class="text-center py-8 text-gray-500 text-sm">
-            <i class="fa-regular fa-folder-open text-2xl mb-2 opacity-50"></i>
-            <p>No leave records found.</p>
+          <h3 class="text-gray-200 font-medium mb-2">Leave Credits Not Applicable</h3>
+          <p class="text-gray-500 text-sm mb-4">
+            {{ employee.employment_type.name if employee.employment_type else 'This employment type' }} positions are not eligible for accrued leave credits.
+          </p>
+          <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+            <p class="text-xs text-amber-300 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-circle-info"></i>
+              Contact HR for special leave arrangements or policy details.
+            </p>
           </div>
-        {% endfor %}
-      </div>
+        </div>
+      {% endif %}
     </div>
 
     <!-- PAYSLIP -->
@@ -142,7 +179,7 @@
         <div class="space-y-4">
           <div class="flex justify-between items-center text-sm">
             <span class="text-gray-400">Pay Period</span>
-            <span class="text-gray-200">{{ latest_payslip.generated_at.strftime('%b %Y') }}</span>
+            <span class="text-gray-200">{{ latest_payslip.created_at.strftime('%b %Y') }}</span>
           </div>
 
           <div class="p-4 bg-white/5 rounded-xl border border-white/5 space-y-2 text-sm">
@@ -160,7 +197,7 @@
             </div>
           </div>
 
-          <a href="#" class="w-full mt-2 flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white py-2.5 rounded-xl transition-all duration-200 font-medium shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30">
+          <a href="{{ url_for('employee_bp.my_payslips') }}" class="w-full mt-2 flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white py-2.5 rounded-xl transition-all duration-200 font-medium shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30">
             <i class="fa-solid fa-eye text-sm"></i> View Full Payslip
           </a>
         </div>
@@ -187,13 +224,32 @@
         ('Edit Profile', 'employee_bp.profile', 'fa-user-pen', 'from-gray-700 to-gray-600')
       ] %}
       {% for label, route, icon, gradient in actions %}
-        <a href="{{ url_for(route) if route != '#' else '#' }}"
-           class="group flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-gradient-to-br {{ gradient }} hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-lg">
-          <i class="fa-solid {{ icon }} text-2xl text-white/90 group-hover:scale-110 transition-transform"></i>
-          <span class="text-sm font-medium text-white/90">{{ label }}</span>
-        </a>
+        {% if label == 'Request Leave' and employee.employment_type_id not in [1, 3, 5] %}
+          <!-- Disable Leave Request for ineligible employees -->
+          <div class="group flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-600 opacity-60 cursor-not-allowed shadow-lg relative" title="Leave requests not available for this employment type">
+            <i class="fa-solid {{ icon }} text-2xl text-white/60"></i>
+            <span class="text-sm font-medium text-white/60">{{ label }}</span>
+            <div class="absolute inset-0 bg-black/20 rounded-2xl"></div>
+          </div>
+        {% else %}
+          <a href="{{ url_for(route) if route != '#' else '#' }}"
+             class="group flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-gradient-to-br {{ gradient }} hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-lg">
+            <i class="fa-solid {{ icon }} text-2xl text-white/90 group-hover:scale-110 transition-transform"></i>
+            <span class="text-sm font-medium text-white/90">{{ label }}</span>
+          </a>
+        {% endif %}
       {% endfor %}
     </div>
+    
+    <!-- Policy Notice for Ineligible Employees -->
+    {% if employee.employment_type_id not in [1, 3, 5] %}
+    <div class="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+      <p class="text-xs text-amber-300 flex items-center gap-2">
+        <i class="fa-solid fa-circle-info"></i>
+        <strong>Note:</strong> Leave request functionality is disabled for {{ employee.employment_type.name if employee.employment_type else 'your employment type' }}. Please contact HR for special arrangements.
+      </p>
+    </div>
+    {% endif %}
   </div>
 
 </div>

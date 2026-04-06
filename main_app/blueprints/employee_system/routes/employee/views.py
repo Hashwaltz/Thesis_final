@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from main_app.models.hr_models import Employee, Attendance, LeaveCredit
-from main_app.models.payroll_models import Payslip
+from main_app.models.payroll_models import Payroll
 from main_app.helpers.decorators import employee_required
 from datetime import date
 import calendar
@@ -42,7 +42,7 @@ def dashboard():
     leave_summary = {lc.leave_type.name: lc.remaining_credits() for lc in leave_credits}
 
     # Latest payslip
-    latest_payslip = Payslip.query.filter_by(employee_id=employee.id).order_by(Payslip.generated_at.desc()).first()
+    latest_payslip = Payroll.query.filter_by(employee_id=employee.id).order_by(Payroll.created_at.desc()).first()
 
     return render_template(
         "employee/dashboard.html",

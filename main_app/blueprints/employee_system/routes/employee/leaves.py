@@ -82,3 +82,31 @@ def request_leave():
     return render_template('employee/request_leave.html',
                             leave_types=leave_types,
                             today=datetime.today())
+
+
+
+@employee_bp.route('/leaves/<int:leave_id>/cancel', methods=['POST'])
+@login_required
+@employee_required
+def cancel_leave(leave_id):
+    employee = current_user.employee_profile
+    if not employee:
+        flash('Employee record not found.', 'error')
+        return redirect(url_for('employee_auth_bp.logout'))
+    
+    leave = Leave.query.get_or_404(leave_id)
+    
+    if leave.employee_id != employee.id:
+        flash('Unauthorized action.', 'error')
+        return redirect(url_for('employee_bp.leaves'))
+    
+    if leave.status != 'Pending':
+        flash(f'Cannot cancel a {leave.status.lower()} leave request.', 'error')
+        return redirect(url_for('employee_bp.leaves'))
+    
+    leave.status = 'Canceled'
+    leave.canceled_at = datetime.utcnow()  # Optional field
+    db.session.commit()
+    
+    flash('Leave request canceled successfully.', 'success')
+    return redirect(url_for('employee_bp.leaves'))

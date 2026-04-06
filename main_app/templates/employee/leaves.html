@@ -31,7 +31,7 @@
       ('Total Requests', leaves.total, 'fa-list', 'text-gray-300', 'bg-gray-500/20'),
       ('Pending', leaves.items|selectattr('status', 'equalto', 'Pending')|list|length, 'fa-clock', 'text-amber-300', 'bg-amber-500/20'),
       ('Approved', leaves.items|selectattr('status', 'equalto', 'Approved')|list|length, 'fa-check', 'text-emerald-300', 'bg-emerald-500/20'),
-      ('Rejected', leaves.items|selectattr('status', 'equalto', 'Rejected')|list|length, 'fa-xmark', 'text-red-300', 'bg-red-500/20')
+      ('Canceled', leaves.items|selectattr('status', 'equalto', 'Canceled')|list|length, 'fa-ban', 'text-gray-300', 'bg-gray-500/20')
     ] %}
     {% for label, value, icon, text_color, bg_color in stats %}
     <div class="bg-gray-900/50 backdrop-blur-md p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all">
@@ -66,6 +66,7 @@
           <option value="Pending" {% if status_filter=='Pending' %}selected{% endif %}>⏳ Pending</option>
           <option value="Approved" {% if status_filter=='Approved' %}selected{% endif %}>✓ Approved</option>
           <option value="Rejected" {% if status_filter=='Rejected' %}selected{% endif %}>✗ Rejected</option>
+          <option value="Canceled" {% if status_filter=='Canceled' %}selected{% endif %}>⊘ Canceled</option>
         </select>
         <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"></i>
       </div>
@@ -148,12 +149,14 @@
               {% set status_styles = {
                 'Approved': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
                 'Pending': 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25',
-                'Rejected': 'bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25'
+                'Rejected': 'bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25',
+                'Canceled': 'bg-gray-500/15 text-gray-400 border-gray-500/30 hover:bg-gray-500/25 line-through'
               } %}
               {% set status_icons = {
                 'Approved': 'fa-check',
                 'Pending': 'fa-clock',
-                'Rejected': 'fa-xmark'
+                'Rejected': 'fa-xmark',
+                'Canceled': 'fa-ban'
               } %}
               <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border 
                          {{ status_styles.get(leave.status, status_styles['Pending']) }} 
@@ -181,12 +184,31 @@
 
             <!-- Actions -->
             <td class="px-6 py-4 text-right">
-              <button type="button" 
-                      class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg"
-                      title="View details"
-                      onclick="showLeaveDetails({{ leave.id }}, '{{ leave.leave_type.name }}', '{{ leave.start_date.strftime('%Y-%m-%d') }}', '{{ leave.end_date.strftime('%Y-%m-%d') }}', '{{ leave.reason|replace("'", "\\'") }}', '{{ leave.status }}')">
-                <i class="fa-solid fa-eye text-sm"></i>
-              </button>
+              <div class="flex items-center justify-end gap-1.5">
+                
+                <!-- View Button -->
+                <button type="button" 
+                        class="p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors"
+                        title="View details"
+                        onclick="showLeaveDetails({{ leave.id }}, '{{ leave.leave_type.name }}', '{{ leave.start_date.strftime('%Y-%m-%d') }}', '{{ leave.end_date.strftime('%Y-%m-%d') }}', '{{ leave.reason|replace("'", "\\'")|replace('"', '&quot;') }}', '{{ leave.status }}')">
+                  <i class="fa-solid fa-eye text-sm"></i>
+                </button>
+
+                <!-- Cancel Button (only for Pending) -->
+                {% if leave.status == 'Pending' %}
+                <form method="POST" 
+                      action="{{ url_for('employee_bp.cancel_leave', leave_id=leave.id) }}" 
+                      class="inline"
+                      onsubmit="return confirmCancel(event, {{ leave.id }})">
+                  <button type="submit"
+                          class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                          title="Cancel request">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                  </button>
+                </form>
+                {% endif %}
+
+              </div>
             </td>
 
           </tr>
@@ -273,7 +295,7 @@
 
 </main>
 
-<!-- Leave Details Modal (Hidden by default) -->
+<!-- Leave Details Modal -->
 <div id="leaveModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
   <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeLeaveModal()"></div>
   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6">
@@ -288,7 +310,7 @@
       <div class="space-y-3 text-sm">
         <div class="flex justify-between">
           <span class="text-gray-400">Type</span>
-          <span class="text-gray-100 font-medium" id="modalType">—</span>
+          <span class="text-gray-100 font-medium" id="modalType" data-id="">—</span>
         </div>
         <div class="flex justify-between">
           <span class="text-gray-400">Date Range</span>
@@ -313,9 +335,14 @@
                 class="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800 transition text-sm font-medium">
           Close
         </button>
-        <button class="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white transition text-sm font-medium">
-          Edit Request
+        
+        <!-- Cancel Button in Modal (only for Pending) -->
+        <button id="modalCancelBtn"
+                class="flex-1 py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 transition text-sm font-medium hidden"
+                onclick="cancelFromModal()">
+          <i class="fa-solid fa-xmark mr-1"></i> Cancel
         </button>
+      
       </div>
     </div>
   </div>
@@ -350,21 +377,84 @@ document.addEventListener('DOMContentLoaded', () => {
   {% endwith %}
 });
 
+// Cancel confirmation for table button
+function confirmCancel(event, leaveId) {
+  event.preventDefault();
+  
+  Swal.fire({
+    title: 'Cancel Leave Request?',
+    text: 'This action cannot be undone. Are you sure you want to cancel this pending leave?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Cancel It',
+    cancelButtonText: 'Keep Request',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    background: '#1f2937',
+    color: '#f3f4f6',
+    reverseButtons: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const form = event.target.closest('form');
+      form.submit();
+    }
+  });
+  
+  return false;
+}
+
+// Cancel from modal
+function cancelFromModal() {
+  const leaveId = document.getElementById('modalType').dataset.id;
+  
+  Swal.fire({
+    title: 'Cancel Leave Request?',
+    text: 'This action cannot be undone.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Cancel',
+    cancelButtonText: 'Keep',
+    confirmButtonColor: '#ef4444',
+    background: '#1f2937',
+    color: '#f3f4f6'
+  }).then((result) => {
+    if (result.isConfirmed && leaveId) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/employee/leaves/${leaveId}/cancel`;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  });
+}
+
 // Modal Functions
 function showLeaveDetails(id, type, start, end, reason, status) {
-  document.getElementById('modalType').textContent = type;
+  const modalType = document.getElementById('modalType');
+  modalType.textContent = type;
+  modalType.dataset.id = id; // Store ID for modal cancel
+  
   document.getElementById('modalDates').textContent = `${start} → ${end}`;
-  document.getElementById('modalDays').textContent = document.querySelector(`[onclick*="${id}"]`).closest('tr').querySelector('td:nth-child(3) span').textContent;
+  document.getElementById('modalDays').textContent = document.querySelector(`[onclick*="${id}"]`)?.closest('tr')?.querySelector('td:nth-child(3) span')?.textContent || '—';
   document.getElementById('modalReason').textContent = reason || 'No reason provided';
   
   const statusEl = document.getElementById('modalStatus');
   const statusStyles = {
     'Approved': 'text-emerald-400',
     'Pending': 'text-amber-400',
-    'Rejected': 'text-red-400'
+    'Rejected': 'text-red-400',
+    'Canceled': 'text-gray-400'
   };
   statusEl.textContent = status;
   statusEl.className = `font-medium ${statusStyles[status] || 'text-gray-400'}`;
+  
+  // Show/hide Cancel button in modal based on status
+  const cancelBtn = document.getElementById('modalCancelBtn');
+  if (status === 'Pending') {
+    cancelBtn.classList.remove('hidden');
+  } else {
+    cancelBtn.classList.add('hidden');
+  }
   
   document.getElementById('leaveModal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';

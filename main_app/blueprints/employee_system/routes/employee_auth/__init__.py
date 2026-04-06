@@ -7,3 +7,4 @@ employee_auth_bp = Blueprint(
 
 
 from . import login
+from . import forgot_password

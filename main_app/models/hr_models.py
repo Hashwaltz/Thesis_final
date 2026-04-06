@@ -253,6 +253,7 @@ class Leave(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     paid_days = db.Column(db.Integer, default=0)
     unpaid_days = db.Column(db.Integer, default=0)
+    canceled_at = db.Column(db.DateTime, nullable=True)
 
 
     employee = db.relationship("Employee", back_populates="leaves")

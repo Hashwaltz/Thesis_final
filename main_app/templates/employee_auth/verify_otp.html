@@ -1,0 +1,196 @@
+{% extends "employee_auth/base.html" %}
+{% block title %}Verify OTP | Employee Portal{% endblock %}
+
+{% block content %}
+<!-- Background Section -->
+<div class="relative w-full min-h-screen flex items-center justify-center bg-cover bg-center px-4"
+     style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');">
+
+  <!-- Blur Overlay -->
+  <div class="absolute inset-0 bg-purple-900/70 backdrop-blur-sm"></div>
+
+  <!-- Verify OTP Card -->
+  <div class="relative z-10 w-full max-w-md bg-white/90 dark:bg-gray-900/90 
+              shadow-xl rounded-2xl p-6 sm:p-8 
+              border border-purple-200 dark:border-gray-700
+              animate-fade-in-up">
+
+    <!-- Logo & Header -->
+    <div class="text-center mb-6">
+      <img src="{{ url_for('static', filename='img/logo2.avif') }}"
+           alt="Logo"
+           class="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full mb-3 shadow-md border border-purple-300">
+
+      <h2 class="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-400">
+        🔐 Verify OTP
+      </h2>
+
+      <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+        Enter the 6-digit code sent to your email
+      </p>
+    </div>
+
+    <!-- Email Display -->
+    <div class="mb-6 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
+      <p class="text-sm text-purple-700 dark:text-purple-300 text-center">
+        <span class="font-semibold">Email:</span> {{ email }}
+      </p>
+    </div>
+
+    <!-- OTP Form -->
+    <form method="POST" class="space-y-5">
+
+      <!-- OTP Input -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+          Enter Verification Code
+        </label>
+        
+        <div class="flex justify-center gap-2 mb-2">
+          <input type="text" 
+                 name="otp" 
+                 id="otpInput"
+                 maxlength="6"
+                 pattern="[0-9]{6}"
+                 placeholder="000000"
+                 required
+                 class="w-48 text-center text-2xl font-bold tracking-[0.5em] 
+                        bg-white text-gray-900 
+                        border-2 border-gray-300 rounded-lg px-3 py-3
+                        focus:ring-2 focus:ring-purple-500 focus:border-purple-500
+                        outline-none transition-all duration-200
+                        dark:bg-gray-800 dark:text-white dark:border-gray-600">
+        </div>
+        
+        <p class="text-xs text-gray-500 dark:text-gray-400 text-center">
+          Enter the 6-digit code from your email
+        </p>
+      </div>
+
+      <!-- Resend OTP -->
+      <div class="text-center">
+        <button type="button" 
+                id="resendBtn"
+                onclick="resendOTP()"
+                class="text-sm text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors">
+          📧 Resend OTP
+        </button>
+        <p id="resendTimer" class="text-xs text-gray-500 dark:text-gray-400 mt-1 hidden">
+          Please wait <span id="countdown">60</span> seconds...
+        </p>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit"
+              class="w-full bg-purple-600 hover:bg-purple-700 active:scale-[0.98]
+                     text-white font-semibold py-2.5 rounded-lg 
+                     shadow-md transition-all duration-200
+                     flex items-center justify-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Verify & Continue
+      </button>
+
+    </form>
+
+    <!-- Helper Text -->
+    <div class="mt-6 text-center">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Didn't receive the code? 
+        <button onclick="resendOTP()" 
+                class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors">
+          Click to resend
+        </button>
+      </p>
+    </div>
+
+    <!-- Security Note -->
+    <div class="mt-4 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
+      <p class="text-xs text-purple-700 dark:text-purple-300 text-center flex items-center justify-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        For security, this code expires in 10 minutes
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- SweetAlert for Flash Messages -->
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Auto-focus OTP input
+document.addEventListener('DOMContentLoaded', () => {
+  const otpInput = document.getElementById('otpInput');
+  otpInput.focus();
+  
+  // Only allow numbers
+  otpInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+  });
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, msg in messages %}
+      Swal.fire({
+        icon: '{{ "error" if category == "error" else "success" }}',
+        title: '{{ "Verification Failed" if category == "error" else "Success" }}',
+        text: '{{ msg }}',
+        timer: 3000,
+        showConfirmButton: false,
+        customClass: { popup: 'dark:bg-gray-800 dark:text-white' }
+      });
+    {% endfor %}
+  {% endwith %}
+});
+
+// Resend OTP functionality
+function resendOTP() {
+  const timer = document.getElementById('resendTimer');
+  const countdown = document.getElementById('countdown');
+  const resendBtn = document.getElementById('resendBtn');
+  
+  // Start countdown
+  let seconds = 60;
+  timer.classList.remove('hidden');
+  resendBtn.disabled = true;
+  resendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  
+  const interval = setInterval(() => {
+    seconds--;
+    countdown.textContent = seconds;
+    
+    if (seconds <= 0) {
+      clearInterval(interval);
+      timer.classList.add('hidden');
+      resendBtn.disabled = false;
+      resendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+  }, 1000);
+  
+  // Show notification
+  Swal.fire({
+    icon: 'info',
+    title: 'OTP Resent',
+    text: 'A new OTP has been sent to your email.',
+    timer: 2000,
+    showConfirmButton: false
+  });
+  
+  // TODO: Add actual resend logic here (AJAX call to backend)
+}
+</script>
+
+<!-- Animation -->
+<style>
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+</style>
+
+{% endblock %}

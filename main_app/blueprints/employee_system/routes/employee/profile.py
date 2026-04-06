@@ -1,14 +1,12 @@
-from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
+from flask import render_template, request, jsonify, current_app
 from flask_login import login_required, current_user
 from datetime import date
 
 from main_app.helpers.decorators import employee_required
 from main_app.models.user import  User
-from main_app.helpers.utils import get_leave_balance, get_attendance_chart_data, get_attendance_summary
 from main_app.extensions import db
 
 from main_app.blueprints.employee_system.routes.employee import employee_bp
-
 
 
 
@@ -78,3 +76,5 @@ def edit_profile():
 
     db.session.commit()
     return jsonify({'status': 'success', 'message': 'Profile updated successfully.'})
+
+

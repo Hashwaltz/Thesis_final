@@ -24,6 +24,7 @@
         ('Present', summary.present, 'fa-check', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'),
         ('Absent', summary.absent, 'fa-xmark', 'bg-red-500/20 text-red-300 border-red-500/30'),
         ('Late', summary.late, 'fa-clock', 'bg-amber-500/20 text-amber-300 border-amber-500/30'),
+        ('Total Hours', '%.2f hrs'|format(summary.total_hours), 'fa-hourglass-half', 'bg-purple-500/20 text-purple-300 border-purple-500/30')
       ] %}
       {% for label, value, icon, classes in stats %}
         <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-800/50 border border-white/10">
@@ -35,9 +36,34 @@
     </div>
   </header>
 
-  <!-- Filter Card -->
+  <!-- Policy Info Banner (for applicable employee types) -->
+  {% if employee.employment_type_id in [1, 3, 5] %}
+  <div class="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-start gap-3">
+    <i class="fa-solid fa-circle-info text-purple-400 mt-0.5"></i>
+    <div class="text-sm text-gray-300">
+      <span class="font-medium text-purple-300">Work Schedule Policy:</span> 
+      Hours are calculated based on 8:00 AM – 5:00 PM schedule. 
+      Time before 8 AM and after 5 PM is not counted. 
+      Lunch break (12:00 PM – 1:00 PM) is excluded from worked hours.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Filter Card (Collapsible for Mobile) -->
   <div class="bg-gray-900/50 backdrop-blur-md p-5 md:p-6 rounded-2xl border border-white/10 shadow-lg">
-    <form method="get" id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Filter Header (Toggle for Mobile) -->
+    <div class="flex items-center justify-between mb-4 md:hidden">
+      <span class="text-sm font-medium text-gray-300 flex items-center gap-2">
+        <i class="fa-solid fa-sliders text-purple-400"></i> Filters
+      </span>
+      <button type="button" id="toggleFilters" class="text-gray-400 hover:text-white transition">
+        <i class="fa-solid fa-chevron-down transition-transform" id="toggleIcon"></i>
+      </button>
+    </div>
+    
+    <!-- Filter Form -->
+    <form method="get" id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="filterFields">
       
       <!-- Start Date -->
       <div class="space-y-1.5">
@@ -69,7 +95,7 @@
           <select name="status_filter" id="statusFilter"
                   class="w-full pl-10 pr-8 py-2.5 rounded-xl border border-gray-700 bg-gray-800 text-gray-100 
                          focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm appearance-none cursor-pointer">
-            <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+            <option value="">All Statuses</option>
             <option value="Present" {% if status_filter=='Present' %}selected{% endif %}>Present</option>
             <option value="Absent" {% if status_filter=='Absent' %}selected{% endif %}>Absent</option>
             <option value="Late" {% if status_filter=='Late' %}selected{% endif %}>Late</option>
@@ -86,15 +112,47 @@
                        rounded-xl font-medium shadow-lg shadow-purple-500/20 transition-all duration-200">
           <i class="fa-solid fa-magnifying-glass"></i> Filter
         </button>
+        {% if start_date_filter or end_date_filter or status_filter %}
         <a href="{{ url_for('employee_bp.attendance') }}" 
            class="px-4 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800 
-                  hover:text-white transition-colors text-sm font-medium"
-           title="Clear filters">
-          <i class="fa-solid fa-rotate-right"></i>
+                  hover:text-white transition-colors text-sm font-medium flex items-center gap-1"
+           title="Clear all filters">
+          <i class="fa-solid fa-rotate-right"></i> Reset
         </a>
+        {% endif %}
       </div>
 
     </form>
+    
+    <!-- Active Filters Indicator -->
+    {% if start_date_filter or end_date_filter or status_filter %}
+    <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-gray-400">Active filters:</span>
+      {% if start_date_filter %}
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-purple-500/20 text-purple-300 text-xs">
+          From: {{ start_date_filter }}
+        </span>
+      {% endif %}
+      {% if end_date_filter %}
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-purple-500/20 text-purple-300 text-xs">
+          To: {{ end_date_filter }}
+        </span>
+      {% endif %}
+      {% if status_filter %}
+        <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-purple-500/20 text-purple-300 text-xs">
+          Status: {{ status_filter }}
+        </span>
+      {% endif %}
+      <a href="{{ url_for('employee_bp.attendance') }}" class="text-xs text-gray-400 hover:text-white underline ml-auto">
+        Clear all
+      </a>
+    </div>
+    {% else %}
+    <p class="mt-4 pt-3 border-t border-white/10 text-xs text-gray-500">
+      <i class="fa-solid fa-circle-info mr-1"></i> Showing all records. Use filters above to narrow results.
+    </p>
+    {% endif %}
+    
   </div>
 
   <!-- Attendance Table -->
@@ -106,7 +164,7 @@
         <i class="fa-solid fa-list text-purple-400"></i> Attendance List
       </h2>
       <div class="text-sm text-gray-400">
-        Showing <span class="text-gray-200 font-medium">{{ attendances.items|length }}</span> of 
+        Showing <span class="text-gray-200 font-medium">{{ attendance_data|length }}</span> of 
         <span class="text-gray-200 font-medium">{{ attendances.total }}</span> records
       </div>
     </div>
@@ -118,13 +176,15 @@
             <th class="px-6 py-3">Date</th>
             <th class="px-6 py-3">Time In</th>
             <th class="px-6 py-3">Time Out</th>
-            <th class="px-6 py-3">Duration</th>
+            <th class="px-6 py-3 text-center">Worked Hours</th>
             <th class="px-6 py-3">Status</th>
           </tr>
         </thead>
 
         <tbody class="divide-y divide-white/5">
-          {% for att in attendances.items %}
+          {% for item in attendance_data %}
+          {% set att = item.record %}
+          {% set hours = item.worked_hours %}
           <tr class="group hover:bg-white/5 transition-colors duration-150">
             
             <td class="px-6 py-4">
@@ -155,15 +215,18 @@
               {% endif %}
             </td>
 
-            <td class="px-6 py-4">
-              {% if att.time_in and att.time_out %}
-                {% set in_seconds = att.time_in.hour * 3600 + att.time_in.minute * 60 + att.time_in.second %}
-                {% set out_seconds = att.time_out.hour * 3600 + att.time_out.minute * 60 + att.time_out.second %}
-                {% set diff = out_seconds - in_seconds %}
-                {% if diff < 0 %}{% set diff = diff + 86400 %}{% endif %} {# Handle overnight shifts #}
-                {% set hours = diff // 3600 %}
-                {% set mins = (diff % 3600) // 60 %}
-                <span class="text-gray-300 text-sm">{{ hours }}h {{ mins }}m</span>
+            <!-- Worked Hours Column -->
+            <td class="px-6 py-4 text-center">
+              {% if hours > 0 %}
+                <span class="inline-flex items-center justify-center w-20 h-8 rounded-lg 
+                           bg-purple-500/20 text-purple-300 font-semibold text-sm border border-purple-500/30"
+                      title="Calculated based on 8 AM - 5 PM schedule">
+                  {{ '%.2f'|format(hours) }}h
+                </span>
+              {% elif att.time_in and att.time_out %}
+                <span class="text-gray-500 text-sm" title="Outside scheduled hours or during lunch">
+                  <i class="fa-solid fa-minus"></i>
+                </span>
               {% else %}
                 <span class="text-gray-600 text-sm">—</span>
               {% endif %}
@@ -197,11 +260,19 @@
                   <i class="fa-regular fa-calendar-xmark text-2xl text-gray-500"></i>
                 </div>
                 <h3 class="text-gray-200 font-medium mb-1">No records found</h3>
-                <p class="text-gray-500 text-sm mb-4">Try adjusting your filters or date range</p>
-                <a href="{{ url_for('employee_bp.attendance') }}" 
+                <p class="text-gray-500 text-sm mb-4">
+                  {% if start_date_filter or end_date_filter or status_filter %}
+                    Try adjusting your filters or <a href="{{ url_for('employee_bp.attendance') }}" class="text-purple-400 hover:underline">clear all</a>
+                  {% else %}
+                    No attendance records available for your account
+                  {% endif %}
+                </p>
+                {% if not (start_date_filter or end_date_filter or status_filter) %}
+                <a href="{{ url_for('employee_bp.request_leave') }}" 
                    class="text-purple-400 hover:text-purple-300 text-sm font-medium inline-flex items-center gap-1">
-                  Clear all filters <i class="fa-solid fa-arrow-right text-xs"></i>
+                  Request Time Off <i class="fa-solid fa-arrow-right text-xs"></i>
                 </a>
+                {% endif %}
               </div>
             </td>
           </tr>
@@ -276,9 +347,26 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Auto-submit on status change
+  
+  // Mobile filter toggle
+  const toggleBtn = document.getElementById('toggleFilters');
+  const filterFields = document.getElementById('filterFields');
+  const toggleIcon = document.getElementById('toggleIcon');
+  
+  if (toggleBtn && filterFields) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = filterFields.classList.contains('hidden');
+      filterFields.classList.toggle('hidden');
+      toggleIcon.classList.toggle('rotate-180');
+    });
+  }
+  
+  // Auto-submit on status change (desktop)
   document.getElementById('statusFilter')?.addEventListener('change', function() {
-    document.getElementById('filterForm')?.submit();
+    // Only auto-submit on desktop (screen width >= 768px)
+    if (window.innerWidth >= 768) {
+      document.getElementById('filterForm')?.submit();
+    }
   });
 
   // Flash Messages with SweetAlert2

@@ -164,7 +164,7 @@
     <div class="flex justify-between items-center mt-4 text-gray-200">
 
       {% if leaves.has_prev %}
-      <a href="{{ url_for('leave_officer.view_leaves',
+      <a href="{{ url_for('leave_officer_bp.view_leaves',
                   page=leaves.prev_num,
                   status=status_filter,
                   department=selected_department) }}"
@@ -179,7 +179,7 @@
       <span>Page {{ leaves.page }} of {{ leaves.pages }}</span>
 
       {% if leaves.has_next %}
-      <a href="{{ url_for('leave_officer.view_leaves',
+      <a href="{{ url_for('leave_officer_bp.view_leaves',
                   page=leaves.next_num,
                   status=status_filter,
                   department=selected_department) }}"

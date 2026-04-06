@@ -20,6 +20,10 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
 
+    otp_code = db.Column(db.String(10), nullable=True)
+    otp_expiry = db.Column(db.DateTime, nullable=True)
+    otp_verified = db.Column(db.Boolean, default=False)
+
     # Relationships
     managed_department = db.relationship(
         "Department",

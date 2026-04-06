@@ -76,14 +76,21 @@
                  dark:bg-gray-800 dark:text-white dark:border-gray-600">
       </div>
 
-      <!-- Show Password -->
-      <div class="flex justify-end items-center">
-        <label class="flex items-center text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+      <!-- Password Actions: Show Password (left) | Forgot Password (right) -->
+      <div class="flex items-center justify-between text-sm">
+        <!-- Show Password - Left -->
+        <label class="flex items-center text-gray-600 dark:text-gray-400 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
           <input type="checkbox"
                  id="showPassword"
-                 class="mr-2 h-4 w-4 text-purple-600 border-gray-300 rounded">
+                 class="mr-2 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
           Show Password
         </label>
+
+        <!-- Forgot Password - Right -->
+        <a href="{{ url_for('employee_auth_bp.forgot_password') }}" 
+           class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors">
+          Forgot Password?
+        </a>
       </div>
 
       <!-- Submit -->
@@ -117,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({
           icon: 'error',
           title: 'Login Failed',
+          text: '{{ msg }}',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      {% elif category == 'success' %}
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
           text: '{{ msg }}',
           timer: 2000,
           showConfirmButton: false
