@@ -2,171 +2,298 @@
 {% block title %}Request Leave | Employee{% endblock %}
 
 {% block content %}
-<main class="p-6 bg-gray-900 min-h-screen flex items-center justify-center">
+<main class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/20 flex items-center justify-center p-4">
 
-  <div class="w-full max-w-3xl bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-gray-700 space-y-6">
+  <div class="w-full max-w-2xl bg-gray-800/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-700/50 overflow-hidden">
+    
+    <!-- Decorative Header Bar -->
+    <div class="h-1.5 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600"></div>
 
-    <!-- Header -->
-    <header class="text-center">
-      <div class="flex justify-center mb-3">
-        <div class="bg-purple-600/20 p-3 rounded-full">
-          <i class="fa-solid fa-calendar-days text-purple-400 text-2xl"></i>
+    <div class="p-6 md:p-8 space-y-6">
+
+      <!-- Header -->
+      <header class="text-center space-y-2">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 mb-2">
+          <i class="fa-solid fa-calendar-check text-purple-400 text-2xl"></i>
         </div>
-      </div>
-      <h1 class="text-2xl font-bold text-white">Request Leave</h1>
-      <p class="text-gray-400 text-sm mt-1">
-        Submit your leave request easily and track its status.
-      </p>
-    </header>
+        <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">Request Leave</h1>
+        <p class="text-gray-400 text-sm max-w-sm mx-auto">
+          Submit your leave request and track its status in real-time.
+        </p>
+      </header>
 
-    <!-- Form -->
-    <form id="leaveForm" method="POST" class="space-y-6">
+      <!-- Form -->
+      <form id="leaveForm" method="POST" class="space-y-5" novalidate>
 
-      <!-- Leave Type -->
-      <div>
-        <label class="text-gray-300 text-sm mb-2 block">Leave Type</label>
-        <div class="relative">
-          <i class="fa-solid fa-list absolute left-3 top-3 text-gray-400"></i>
-          <select name="leave_type" required
-                  class="w-full pl-10 pr-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
-                         focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
-            <option value="">Select Leave Type</option>
-            {% for lt in leave_types %}
-            <option value="{{ lt.id }}">{{ lt.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <!-- Dates -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <!-- Start -->
-        <div>
-          <label class="text-gray-300 text-sm mb-2 block">Start Date</label>
+        <!-- Leave Type -->
+        <div class="group">
+          <label for="leave_type" class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2">
+            <i class="fa-solid fa-list-ul text-purple-400"></i>
+            Leave Type
+            <span class="text-red-400">*</span>
+          </label>
           <div class="relative">
-            <i class="fa-solid fa-calendar absolute left-3 top-3 text-gray-400"></i>
-            <input type="date" name="start_date" id="start_date" required
-                   class="w-full pl-10 pr-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
-                          focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+            <select name="leave_type" id="leave_type" required
+                    class="w-full appearance-none px-4 py-3 bg-gray-700/80 text-white rounded-xl border border-gray-600
+                           focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 outline-none transition-all
+                           placeholder-gray-500 hover:border-gray-500">
+              <option value="" disabled selected>Select a leave type...</option>
+              {% for lt in leave_types %}
+                <option value="{{ lt.id }}">{{ lt.name }}</option>
+              {% endfor %}
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
           </div>
         </div>
 
-        <!-- End -->
-        <div>
-          <label class="text-gray-300 text-sm mb-2 block">End Date</label>
-          <div class="relative">
-            <i class="fa-solid fa-calendar-check absolute left-3 top-3 text-gray-400"></i>
-            <input type="date" name="end_date" id="end_date" required
-                   class="w-full pl-10 pr-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
-                          focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+        <!-- Dates Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Start Date -->
+          <div class="group">
+            <label for="start_date" class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2">
+              <i class="fa-regular fa-calendar text-purple-400"></i>
+              Start Date
+              <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <input type="date" name="start_date" id="start_date" required
+                     class="w-full px-4 py-3 bg-gray-700/80 text-white rounded-xl border border-gray-600
+                            focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 outline-none transition-all
+                            hover:border-gray-500 [color-scheme:dark]">
+            </div>
+          </div>
+
+          <!-- End Date -->
+          <div class="group">
+            <label for="end_date" class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2">
+              <i class="fa-regular fa-calendar-check text-purple-400"></i>
+              End Date
+              <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <input type="date" name="end_date" id="end_date" required
+                     class="w-full px-4 py-3 bg-gray-700/80 text-white rounded-xl border border-gray-600
+                            focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 outline-none transition-all
+                            hover:border-gray-500 [color-scheme:dark]">
+            </div>
           </div>
         </div>
 
-      </div>
+        <!-- Days Preview Card -->
+        <div id="dayPreview" class="hidden animate-fadeIn">
+          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-900/40 to-pink-900/40 
+                      border border-purple-500/30 rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <i class="fa-solid fa-calculator text-purple-400 text-sm"></i>
+              </div>
+              <div>
+                <p class="text-gray-300 text-sm font-medium">Total Leave Days</p>
+                <p class="text-white text-lg font-bold" id="totalDays">0</p>
+              </div>
+            </div>
+            <span id="dateRange" class="text-gray-400 text-xs"></span>
+          </div>
+        </div>
 
-      <!-- Days Preview -->
-      <div id="dayPreview" class="hidden text-sm text-purple-400 bg-purple-900/30 px-4 py-2 rounded-lg">
-        Total Leave Days: <span id="totalDays"></span>
-      </div>
+        <!-- Reason -->
+        <div class="group">
+          <label for="reason" class="flex items-center gap-2 text-gray-300 text-sm font-medium mb-2">
+            <i class="fa-regular fa-message text-purple-400"></i>
+            Reason for Leave
+            <span class="text-red-400">*</span>
+          </label>
+          <textarea name="reason" id="reason" rows="4" required
+                    placeholder="Briefly describe the reason for your leave request..."
+                    maxlength="500"
+                    class="w-full px-4 py-3 bg-gray-700/80 text-white rounded-xl border border-gray-600
+                           focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 outline-none transition-all
+                           placeholder-gray-500 resize-none hover:border-gray-500"></textarea>
+          <div class="flex justify-between mt-1.5">
+            <p class="text-xs text-gray-500">Be concise but informative</p>
+            <p class="text-xs text-gray-500"><span id="charCount">0</span>/500</p>
+          </div>
+        </div>
 
-      <!-- Reason -->
-      <div>
-        <label class="text-gray-300 text-sm mb-2 block">Reason</label>
-        <textarea name="reason" rows="4" required
-                  placeholder="Enter reason for leave..."
-                  class="w-full px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-600
-                         focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"></textarea>
-      </div>
+        <!-- Info Banner -->
+        <div class="flex gap-3 p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl">
+          <i class="fa-solid fa-circle-info text-blue-400 mt-0.5"></i>
+          <p class="text-blue-200 text-sm">
+            Requests submitted before 3 PM are typically processed within 24 hours. 
+            You'll receive an email notification once approved.
+          </p>
+        </div>
 
-      <!-- Submit -->
-      <div class="flex justify-end">
-        <button type="submit" id="submitBtn"
-                class="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700
-                       text-white rounded-xl shadow-lg transition duration-200">
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-700/50">
+          <a href="{{ url_for('employee_bp.dashboard') if url_for else '/employee/dashboard' }}" 
+             class="flex-1 flex items-center justify-center gap-2 px-5 py-3 text-gray-300 
+                    bg-gray-700/50 hover:bg-gray-700 rounded-xl font-medium transition-all
+                    border border-gray-600 hover:border-gray-500">
+            <i class="fa-solid fa-arrow-left"></i>
+            Cancel
+          </a>
+          <button type="submit" id="submitBtn"
+                  class="flex-1 flex items-center justify-center gap-2 px-5 py-3 
+                         bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500
+                         text-white font-semibold rounded-xl shadow-lg shadow-purple-900/30 
+                         transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
+                         active:scale-[0.98]">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span id="btnText">Submit Request</span>
+            <i id="btnLoader" class="fa-solid fa-spinner fa-spin hidden"></i>
+          </button>
+        </div>
 
-          <i class="fa-solid fa-paper-plane"></i>
-          <span id="btnText">Submit Request</span>
+      </form>
 
-        </button>
-      </div>
-
-    </form>
-
+    </div>
   </div>
 
 </main>
 
-<!-- SweetAlert -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
-  const leaveForm = document.getElementById('leaveForm');
+  const form = document.getElementById('leaveForm');
   const startDate = document.getElementById('start_date');
   const endDate = document.getElementById('end_date');
+  const leaveType = document.getElementById('leave_type');
+  const reason = document.getElementById('reason');
+  
   const dayPreview = document.getElementById('dayPreview');
-  const totalDays = document.getElementById('totalDays');
+  const totalDaysEl = document.getElementById('totalDays');
+  const dateRangeEl = document.getElementById('dateRange');
+  const charCount = document.getElementById('charCount');
+  
   const submitBtn = document.getElementById('submitBtn');
   const btnText = document.getElementById('btnText');
+  const btnLoader = document.getElementById('btnLoader');
 
-  // Calculate leave days
+  // Character counter for reason
+  reason.addEventListener('input', () => {
+    charCount.textContent = reason.value.length;
+  });
+
+  // Calculate & validate dates
   function calculateDays() {
-    if (startDate.value && endDate.value) {
-      const start = new Date(startDate.value);
-      const end = new Date(endDate.value);
-
-      if (end >= start) {
-        const diff = (end - start) / (1000 * 60 * 60 * 24) + 1;
-        totalDays.textContent = diff + " day(s)";
-        dayPreview.classList.remove('hidden');
-      } else {
-        dayPreview.classList.add('hidden');
-      }
+    if (!startDate.value || !endDate.value) {
+      dayPreview.classList.add('hidden');
+      return;
     }
+
+    const start = new Date(startDate.value);
+    const end = new Date(endDate.value);
+
+    if (end < start) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Date Range',
+        text: 'End date cannot be before start date',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+      endDate.value = '';
+      dayPreview.classList.add('hidden');
+      return;
+    }
+
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    
+    totalDaysEl.textContent = diffDays;
+    dateRangeEl.textContent = `${startDate.value} → ${endDate.value}`;
+    dayPreview.classList.remove('hidden');
+    
+    // Subtle animation
+    totalDaysEl.classList.add('scale-110');
+    setTimeout(() => totalDaysEl.classList.remove('scale-110'), 150);
   }
 
   startDate.addEventListener('change', calculateDays);
   endDate.addEventListener('change', calculateDays);
 
-  // Submit confirmation
-  leaveForm.addEventListener('submit', function(e) {
+  // Form submission with confirmation
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
 
     Swal.fire({
       title: 'Submit Leave Request?',
-      text: "Please confirm your submission.",
+      html: `
+        <div class="text-left space-y-2 mt-2 text-gray-300">
+          <p><i class="fa-regular fa-calendar mr-2 text-purple-400"></i><strong>Dates:</strong> 
+             ${startDate.value} to ${endDate.value}</p>
+          <p><i class="fa-solid fa-list mr-2 text-purple-400"></i><strong>Type:</strong> 
+             ${leaveType.options[leaveType.selectedIndex]?.text || 'Not selected'}</p>
+          <p><i class="fa-solid fa-calculator mr-2 text-purple-400"></i><strong>Duration:</strong> 
+             ${totalDaysEl.textContent || '1'} day(s)</p>
+        </div>
+      `,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#a855f7',
-      cancelButtonColor: '#ef4444',
-      confirmButtonText: 'Yes, submit'
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '<i class="fa-solid fa-check mr-1"></i>Yes, Submit',
+      cancelButtonText: '<i class="fa-solid fa-xmark mr-1"></i>Cancel',
+      reverseButtons: true,
+      customClass: { popup: 'bg-gray-800 border border-gray-700' }
     }).then((result) => {
       if (result.isConfirmed) {
-
         // Loading state
         submitBtn.disabled = true;
-        btnText.textContent = "Submitting...";
-
-        leaveForm.submit();
+        btnText.textContent = 'Submitting...';
+        btnLoader.classList.remove('hidden');
+        
+        // Submit form
+        form.submit();
       }
     });
   });
 
-  // Flash messages
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, msg in messages %}
-      Swal.fire({
-        icon: "{{ 'success' if category=='success' else 'error' }}",
-        title: "{{ msg }}",
-        timer: 2000,
-        showConfirmButton: false
-      });
-    {% endfor %}
-  {% endwith %}
-
+  // Flash messages via Jinja2
+  {% if get_flashed_messages %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          Swal.fire({
+            icon: "{{ 'success' if category=='success' else category == 'error' and 'error' or 'info' }}",
+            title: "{{ msg }}",
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            customClass: { 
+              popup: 'bg-gray-800 border border-gray-700',
+              title: 'text-white',
+              content: 'text-gray-300'
+            }
+          });
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  {% endif %}
 });
 </script>
 
+<!-- Custom Animations -->
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+</style>
 {% endblock %}

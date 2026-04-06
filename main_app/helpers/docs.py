@@ -12,7 +12,7 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from flask import current_app, send_file
 from datetime import datetime
-from reportlab.lib.units import inch
+from reportlab.lib.units import inch, cm
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib.colors import HexColor
 from reportlab.platypus import (
@@ -23,6 +23,7 @@ from reportlab.platypus import (
     Table,
     TableStyle
 )
+from reportlab.lib.pagesizes import A4
 
 
 from main_app.models.hr_models import Employee
@@ -977,210 +978,231 @@ def export_employees_by_year_of_service(employees):
 
 
 
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
-from io import BytesIO
 
-
-def generate_payslip_excel(payslip):
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Payslip"
-
-    emp = payslip.employee
-    payroll = payslip.payroll
-
-    # ================= STYLES =================
-    bold = Font(bold=True)
-    header_font = Font(bold=True, size=11)
-
-    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    left = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    right = Alignment(horizontal="right", vertical="center")
-
-    green = PatternFill("solid", fgColor="548235")
-    gray = PatternFill("solid", fgColor="D9D9D9")
-
-    thin = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
+def generate_payslip_pdf(payroll):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=1.8*cm,
+        leftMargin=1.8*cm,
+        topMargin=2.0*cm,
+        bottomMargin=1.5*cm
     )
+    
+    styles = getSampleStyleSheet()
+    
+    # 🎨 Custom Styles
+    title_style = ParagraphStyle('Title', parent=styles['Normal'],
+        fontSize=18, textColor=colors.HexColor('#111827'), fontName='Helvetica-Bold',
+        alignment=TA_CENTER, spaceAfter=4)
+    
+    subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'],
+        fontSize=10, textColor=colors.HexColor('#6b7280'), alignment=TA_CENTER, spaceAfter=12)
+    
+    section_style = ParagraphStyle('Section', parent=styles['Normal'],
+        fontSize=11, textColor=colors.HexColor('#0f172a'), fontName='Helvetica-Bold',
+        spaceBefore=16, spaceAfter=8)
+    
+    label_style = ParagraphStyle('Label', parent=styles['Normal'],
+        fontSize=8, textColor=colors.HexColor('#6b7280'), spaceAfter=2)
+    
+    value_style = ParagraphStyle('Value', parent=styles['Normal'],
+        fontSize=10, textColor=colors.HexColor('#111827'), spaceAfter=6)
+    
+    money_style = ParagraphStyle('Money', parent=value_style,
+        fontName='Helvetica', alignment=TA_RIGHT, spaceAfter=6)
+    
+    total_green = ParagraphStyle('TotalGreen', parent=money_style,
+        fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#15803d'))
+    
+    total_red = ParagraphStyle('TotalRed', parent=money_style,
+        fontName='Helvetica-Bold', fontSize=11, textColor=colors.HexColor('#b91c1c'))
+    
+    net_pay_style = ParagraphStyle('NetPay', parent=styles['Normal'],
+        fontSize=20, textColor=colors.HexColor('#15803d'), fontName='Helvetica-Bold',
+        alignment=TA_RIGHT, spaceAfter=0)
+    
+    sig_style = ParagraphStyle('Signature', parent=styles['Normal'],
+        fontSize=9, textColor=colors.HexColor('#374151'), alignment=TA_CENTER, spaceBefore=2)
+    
+    footer_style = ParagraphStyle('Footer', parent=styles['Normal'],
+        fontSize=7, textColor=colors.HexColor('#9ca3af'), alignment=TA_CENTER, spaceBefore=10)
 
-    money_format = '#,##0.00'  # ✅ separator format
+    elements = []
 
-    # ================= COLUMN WIDTH =================
-    widths = [28, 18, 18, 18, 18, 18]
-    for i, w in enumerate(widths, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = w
+    # ── TOP ACCENT BAR ──
+    header_table = Table([['']], colWidths=[A4[0] - 3.6*cm])
+    header_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#15803d')),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+    ]))
+    elements.append(header_table)
+    elements.append(Spacer(1, 8))
 
-    # ================= HEADER =================
-    ws.merge_cells("A1:E3")
-    ws["A1"] = (
-        "MUNICIPALITY OF NORZAGARAY\n"
-        "MUNICIPAL HUMAN RESOURCE MANAGEMENT OFFICE\n"
-        "A. Payumo St., Poblacion, Norzagaray, Bulacan\n"
-        "(044)-919-114"
-    )
-    ws["A1"].alignment = left
-    ws["A1"].font = Font(bold=True, size=9)
+    # ── HEADER ──
+    elements.append(Paragraph("MUNICIPALITY OF NORZAGARAY", title_style))
+    elements.append(Paragraph("Municipal Human Resource Management Office", subtitle_style))
+    
+    # Badge
+    badge_table = Table([["OFFICIAL PAYSLIP"]], colWidths=[3.5*cm], hAlign='RIGHT')
+    badge_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#dcfce7')),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor('#15803d')),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('ALIGNMENT', (0,0), (-1,-1), 'CENTER'),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#86efac')),
+    ]))
+    elements.append(badge_table)
+    elements.append(Spacer(1, 12))
 
-    ws.merge_cells("F1:F3")
-    ws["F1"] = "PAYSLIP"
-    ws["F1"].alignment = center
-    ws["F1"].font = header_font
-    ws["F1"].fill = green
-
-    # ================= EMPLOYEE INFO =================
-    ws.merge_cells("A5:C5")
-    ws["A5"] = "EMPLOYEE INFORMATION"
-    ws["A5"].fill = green
-    ws["A5"].font = bold
-
-    ws.merge_cells("D5:F5")
-    ws["D5"] = "PAY DATE / PAY PERIOD"
-    ws["D5"].fill = green
-    ws["D5"].font = bold
-    ws["D5"].alignment = center
-
-    ws["A6"] = "NAME:"
-    ws["B6"] = emp.get_full_name()
-
-    ws["A7"] = "DESIGNATION / POSITION"
-    ws["B7"] = emp.position.name if emp.position else ""
-
-    ws["A8"] = "OFFICE:"
-    ws["B8"] = emp.department.name if emp.department else ""
-
-    ws["A9"] = "STATUS OF APPOINTMENT"
-    ws["B9"] = emp.employment_type.name if emp.employment_type else ""
-
-    ws["D6"] = payroll.period.pay_date.strftime("%m/%d/%y")
-    ws["E6"] = payroll.period.pay_date.strftime("%m/%d/%y")
-
-    ws["D7"] = payroll.period.period_name
-
-    for row in range(6, 10):
-        for col in range(1, 7):
-            ws.cell(row=row, column=col).border = thin
-
-    # ================= EARNINGS =================
-    ws.merge_cells("A11:F11")
-    ws["A11"] = "EARNINGS"
-    ws["A11"].fill = gray
-    ws["A11"].font = bold
-
-    headers = ["", "Monthly Rate", "", "Semi-Monthly", "", "Amount Earned"]
-    for col, val in enumerate(headers, start=1):
-        cell = ws.cell(row=12, column=col)
-        cell.value = val
-        cell.font = bold
-        cell.alignment = center
-        cell.border = thin
-
-    row = 13
-
-    def add_row(label, monthly=None, semi=None, earned=None):
-        nonlocal row
-
-        ws[f"A{row}"] = label
-
-        if monthly is not None:
-            ws[f"B{row}"] = monthly
-            ws[f"B{row}"].number_format = money_format
-            ws[f"B{row}"].alignment = right
-
-        if semi is not None:
-            ws[f"D{row}"] = semi
-            ws[f"D{row}"].number_format = money_format
-            ws[f"D{row}"].alignment = right
-
-        if earned is not None:
-            ws[f"F{row}"] = earned
-            ws[f"F{row}"].number_format = money_format
-            ws[f"F{row}"].alignment = right
-
-        for col in range(1, 7):
-            ws.cell(row=row, column=col).border = thin
-
-        row += 1
-
-    # Earnings Data
-    basic = payroll.basic_salary or 0
-    allowance = payroll.allowance_total or 0
-
-    add_row("Standard Pay", basic, basic/2, basic)
-    add_row("Allowance (PERA)", allowance, allowance/2, allowance)
-
-    placeholders = [
-        "Subsistence", "Allowance", "Overtime Pay", "Laundry Allowance",
-        "Hazard Pay", "RATA", "Mobile Allowance", "Tax"
+    # ── EMPLOYEE INFO ──
+    emp = payroll.employee
+    period = payroll.period
+    
+    info_data = [
+        [Paragraph("EMPLOYEE INFORMATION", section_style), '', ''],
+        [Paragraph("Full Name", label_style), Paragraph("Position", label_style), Paragraph("Pay Date", label_style)],
+        [Paragraph(emp.get_full_name(), value_style), Paragraph(emp.position.name, value_style), 
+         Paragraph(period.pay_date.strftime('%b %d, %Y') if period.pay_date else '-', value_style)],
+        [Paragraph("Department", label_style), Paragraph("Employment Type", label_style), Paragraph("Coverage Period", label_style)],
+        [Paragraph(emp.department.name, value_style), Paragraph(emp.employment_type.name, value_style), 
+         Paragraph(f"{period.start_date.strftime('%m/%d/%y')} - {period.end_date.strftime('%m/%d/%y')}", value_style)],
     ]
+    
+    info_table = Table(info_data, colWidths=[5.5*cm, 5.5*cm, 3.5*cm])
+    info_table.setStyle(TableStyle([
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#e5e7eb')),
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f8fafc')),
+        ('TOPPADDING', (0,1), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 4),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 16))
 
-    for p in placeholders:
-        add_row(p)
+    # ── EARNINGS ──
+    elements.append(Paragraph("EARNINGS", section_style))
+    
+    earnings_data = [["Description", "Amount"]]
+    earnings_data.append(["Basic Pay", f"₱{(payroll.gross_pay - payroll.allowance_total or 0):,.2f}"])
+    earnings_data.append(["Allowance", f"₱{payroll.allowance_total or 0:,.2f}"])
+    earnings_data.append(["Overtime Pay", f"₱{payroll.overtime_pay or 0:,.2f}"])
+    earnings_data.append([Paragraph("<b>TOTAL EARNINGS</b>", section_style), Paragraph(f"₱{payroll.gross_pay or 0:,.2f}", total_green)])
+    
+    earnings_table = Table(earnings_data, colWidths=[11*cm, 3.5*cm])
+    earnings_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f3f4f6')),
+        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor('#6b7280')),
+        ('TEXTCOLOR', (1,0), (1,0), colors.HexColor('#6b7280')),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 8),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#d1d5db')),
+        ('LINEBELOW', (0,1), (-1,-2), 0.5, colors.HexColor('#e5e7eb')),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#f0fdf4')),
+        ('LINEABOVE', (0,-1), (-1,-1), 1, colors.HexColor('#86efac')),
+        ('ALIGN', (1,1), (1,-1), 'RIGHT'),
+        ('TOPPADDING', (0,1), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 5),
+        ('LEFTPADDING', (0,1), (-1,-1), 8),
+    ]))
+    elements.append(earnings_table)
+    elements.append(Spacer(1, 14))
 
-    # ================= GROSS =================
-    ws[f"E{row}"] = "GROSS PAY"
-    ws[f"F{row}"] = payroll.gross_pay
-    ws[f"F{row}"].font = bold
-    ws[f"F{row}"].number_format = money_format
-    ws[f"F{row}"].alignment = right
-
-    for col in range(1, 7):
-        ws.cell(row=row, column=col).border = thin
-
-    # ================= DEDUCTIONS =================
-    row += 2
-    ws.merge_cells(f"A{row}:F{row}")
-    ws[f"A{row}"] = "DEDUCTIONS"
-    ws[f"A{row}"].fill = gray
-    ws[f"A{row}"].font = bold
-
-    row += 1
-
+    # ── DEDUCTIONS ──
+    elements.append(Paragraph("DEDUCTIONS", section_style))
+    
+    deductions_data = [["Description", "Amount"]]
     for d in payroll.deduction_breakdown:
-        add_row(d.deduction_name, None, None, d.employee_share)
-
+        deductions_data.append([d.deduction_name, f"₱{d.employee_share or 0:,.2f}"])
     for l in payroll.loan_payments:
-        add_row(f"{l.loan.provider} - {l.loan.loan_type}", None, None, l.amount_paid)
+        deductions_data.append([f"{l.loan.provider} - {l.loan.loan_type}", f"₱{l.amount_paid or 0:,.2f}"])
+    
+    if not payroll.deduction_breakdown and not payroll.loan_payments:
+        deductions_data.append(["No deductions for this period", ""])
+        
+    deductions_data.append([Paragraph("<b>TOTAL DEDUCTIONS</b>", section_style), Paragraph(f"₱{payroll.total_deductions or 0:,.2f}", total_red)])
+    
+    deductions_table = Table(deductions_data, colWidths=[11*cm, 3.5*cm])
+    deductions_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f3f4f6')),
+        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor('#6b7280')),
+        ('TEXTCOLOR', (1,0), (1,0), colors.HexColor('#6b7280')),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 8),
+        ('LINEBELOW', (0,0), (-1,0), 1, colors.HexColor('#d1d5db')),
+        ('LINEBELOW', (0,1), (-1,-2), 0.5, colors.HexColor('#e5e7eb')),
+        ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#fef2f2')),
+        ('LINEABOVE', (0,-1), (-1,-1), 1, colors.HexColor('#fca5a5')),
+        ('ALIGN', (1,1), (1,-1), 'RIGHT'),
+        ('TOPPADDING', (0,1), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,1), (-1,-1), 5),
+        ('LEFTPADDING', (0,1), (-1,-1), 8),
+    ]))
+    elements.append(deductions_table)
+    elements.append(Spacer(1, 20))
 
-    # ================= TOTAL DEDUCTIONS =================
-    ws[f"E{row}"] = "TOTAL DEDUCTIONS"
-    ws[f"F{row}"] = payroll.total_deductions
-    ws[f"F{row}"].font = bold
-    ws[f"F{row}"].number_format = money_format
-    ws[f"F{row}"].alignment = right
+    # ── NET PAY ──
+    net_table = Table([["NET TAKE-HOME PAY", f"₱{payroll.net_pay or 0:,.2f}"]], colWidths=[9*cm, 5.5*cm])
+    net_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#f0fdf4')),
+        ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#86efac')),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
+        ('FONTNAME', (0,0), (0,0), 'Helvetica'),
+        ('FONTSIZE', (0,0), (0,0), 10),
+        ('TEXTCOLOR', (0,0), (0,0), colors.HexColor('#374151')),
+        ('ALIGNMENT', (0,0), (0,0), 'LEFT'),
+        ('ALIGNMENT', (1,0), (1,0), 'RIGHT'),
+        ('FONTNAME', (1,0), (1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (1,0), (1,0), 18),
+        ('TEXTCOLOR', (1,0), (1,0), colors.HexColor('#15803d')),
+    ]))
+    elements.append(net_table)
+    elements.append(Spacer(1, 30))
 
-    for col in range(1, 7):
-        ws.cell(row=row, column=col).border = thin
+    # ── SIGNATURES ──
+    sig_data = [
+        [
+            Paragraph("Prepared By:", sig_style),
+            Paragraph("Noted By:", sig_style)
+        ],
+        [
+            Paragraph("__________________________", sig_style),
+            Paragraph("__________________________", sig_style)
+        ],
+        [
+            Paragraph("HR Payroll Staff", sig_style),
+            Paragraph("HR Manager", sig_style)
+        ],
+        [
+            Paragraph("Municipal HRMO", sig_style),
+            Paragraph("Municipal HRMO", sig_style)
+        ]
+    ]
+    
+    sig_table = Table(sig_data, colWidths=[7*cm, 7*cm])
+    sig_table.setStyle(TableStyle([
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('VALIGN', (0,0), (-1,-1), 'BOTTOM'),
+    ]))
+    elements.append(sig_table)
+    
+    # ── FOOTER ──
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph(
+        f"Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')} • Municipality of Norzagaray HRMO • Confidential",
+        footer_style
+    ))
 
-    # ================= NET PAY =================
-    row += 2
-    ws[f"E{row}"] = "NET PAY"
-    ws[f"F{row}"] = payroll.net_pay
-    ws[f"F{row}"].font = Font(bold=True, size=12)
-    ws[f"F{row}"].number_format = money_format
-    ws[f"F{row}"].alignment = right
-
-    for col in range(1, 7):
-        ws.cell(row=row, column=col).border = thin
-
-    # ================= FOOTER =================
-    row += 2
-    ws[f"A{row}"] = "Prepared By:"
-    ws[f"E{row}"] = "Noted By:"
-
-    row += 1
-    ws[f"A{row}"] = "MARIC NEAL B. BERNABE"
-    ws[f"E{row}"] = "FERNANDO DG. CRUZ"
-
-    # ================= SAVE =================
-    file_stream = BytesIO()
-    wb.save(file_stream)
-    file_stream.seek(0)
-
-    return file_stream
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer

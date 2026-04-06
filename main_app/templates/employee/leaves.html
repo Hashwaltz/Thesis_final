@@ -2,166 +2,390 @@
 {% block title %}Leave Records | Employee{% endblock %}
 
 {% block content %}
-<main class="p-6 space-y-8 bg-gray-900 min-h-screen">
+<main class="min-h-screen bg-[#0B0F19] p-4 md:p-8 space-y-8">
 
   <!-- Header -->
-  <header class="flex flex-col md:flex-row justify-between items-center gap-4">
-    <h1 class="text-3xl font-bold text-gray-100 flex items-center gap-2">
-      <i class="fa-solid fa-plane-departure text-purple-400"></i>
-      Leave Records
-    </h1>
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+        <i class="fa-solid fa-plane-departure text-purple-400 text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold text-white">Leave Records</h1>
+        <p class="text-gray-400 text-sm mt-1">Manage and track your time-off requests</p>
+      </div>
+    </div>
 
     <a href="{{ url_for('employee_bp.request_leave') }}"
-       class="px-5 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700 flex items-center gap-2 transition">
-      <i class="fa fa-plus"></i> Request Leave
+       class="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 
+              hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] text-white rounded-xl 
+              font-medium shadow-lg shadow-emerald-500/20 transition-all duration-200">
+      <i class="fa-solid fa-plus transition-transform group-hover:rotate-90"></i>
+      Request Leave
     </a>
   </header>
 
-  <!-- Filter -->
-  <div class="bg-gray-800 p-6 rounded-2xl shadow-md">
-    <form method="get" id="filterForm" class="flex flex-wrap items-center gap-4">
+  <!-- Stats Overview -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {% set stats = [
+      ('Total Requests', leaves.total, 'fa-list', 'text-gray-300', 'bg-gray-500/20'),
+      ('Pending', leaves.items|selectattr('status', 'equalto', 'Pending')|list|length, 'fa-clock', 'text-amber-300', 'bg-amber-500/20'),
+      ('Approved', leaves.items|selectattr('status', 'equalto', 'Approved')|list|length, 'fa-check', 'text-emerald-300', 'bg-emerald-500/20'),
+      ('Rejected', leaves.items|selectattr('status', 'equalto', 'Rejected')|list|length, 'fa-xmark', 'text-red-300', 'bg-red-500/20')
+    ] %}
+    {% for label, value, icon, text_color, bg_color in stats %}
+    <div class="bg-gray-900/50 backdrop-blur-md p-4 rounded-xl border border-white/10 hover:border-white/20 transition-all">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 {{ bg_color }} rounded-lg flex items-center justify-center">
+          <i class="fa-solid {{ icon }} {{ text_color }}"></i>
+        </div>
+        <div>
+          <p class="text-gray-400 text-xs uppercase tracking-wide">{{ label }}</p>
+          <p class="text-white font-bold text-lg">{{ value }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 
-      <label for="statusFilter" class="text-gray-300 font-medium flex items-center gap-2">
+  <!-- Filter Card -->
+  <div class="bg-gray-900/50 backdrop-blur-md p-5 md:p-6 rounded-2xl border border-white/10 shadow-lg">
+    <form method="get" id="filterForm" class="flex flex-wrap items-center gap-4">
+      
+      <label for="statusFilter" class="text-sm font-medium text-gray-300 flex items-center gap-2">
         <i class="fa-solid fa-filter text-purple-400"></i>
         Filter by Status
       </label>
 
-      <select name="status" id="statusFilter"
-              class="bg-gray-700 text-gray-100 px-4 py-2 rounded-lg border border-gray-600
-                     focus:outline-none focus:ring-2 focus:ring-purple-500">
+      <div class="relative">
+        <select name="status" id="statusFilter"
+                class="appearance-none bg-gray-800 text-gray-100 px-4 py-2.5 pr-10 rounded-xl border border-gray-700
+                       focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 
+                       transition-all text-sm cursor-pointer">
+          <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+          <option value="Pending" {% if status_filter=='Pending' %}selected{% endif %}>⏳ Pending</option>
+          <option value="Approved" {% if status_filter=='Approved' %}selected{% endif %}>✓ Approved</option>
+          <option value="Rejected" {% if status_filter=='Rejected' %}selected{% endif %}>✗ Rejected</option>
+        </select>
+        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"></i>
+      </div>
 
-        <option value="" {% if not status_filter %}selected{% endif %}>All</option>
-        <option value="Pending" {% if status_filter=='Pending' %}selected{% endif %}>Pending</option>
-        <option value="Approved" {% if status_filter=='Approved' %}selected{% endif %}>Approved</option>
-        <option value="Rejected" {% if status_filter=='Rejected' %}selected{% endif %}>Rejected</option>
-      </select>
+      {% if status_filter %}
+        <a href="{{ url_for('employee_bp.leaves') }}" 
+           class="ml-auto text-sm text-gray-400 hover:text-gray-200 flex items-center gap-1 transition-colors">
+          <i class="fa-solid fa-xmark"></i> Clear filter
+        </a>
+      {% endif %}
 
     </form>
   </div>
 
-  <!-- Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow-md p-4">
+  <!-- Table Card -->
+  <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg overflow-hidden">
+    
+    <!-- Table Header -->
+    <div class="px-6 py-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-list text-purple-400"></i> Leave Requests
+      </h2>
+      <div class="text-sm text-gray-400">
+        Showing <span class="text-gray-200 font-medium">{{ leaves.items|length }}</span> of 
+        <span class="text-gray-200 font-medium">{{ leaves.total }}</span> requests
+      </div>
+    </div>
 
-    <table class="min-w-full divide-y divide-gray-700">
-      <caption class="text-lg font-semibold text-gray-100 mb-4 text-left">
-        Leave List
-      </caption>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-white/10">
+        <thead class="bg-gray-800/50">
+          <tr class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <th class="px-6 py-3">Leave Type</th>
+            <th class="px-6 py-3">Date Range</th>
+            <th class="px-6 py-3 text-center">Days</th>
+            <th class="px-6 py-3">Status</th>
+            <th class="px-6 py-3">Reason</th>
+            <th class="px-6 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
 
-      <thead>
-        <tr class="text-left text-gray-400 uppercase text-sm">
-          <th class="px-4 py-2">Type</th>
-          <th class="px-4 py-2">Start Date</th>
-          <th class="px-4 py-2">End Date</th>
-          <th class="px-4 py-2">Days</th>
-          <th class="px-4 py-2">Status</th>
-          <th class="px-4 py-2">Reason</th>
-        </tr>
-      </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for leave in leaves.items %}
+          <tr class="group hover:bg-white/5 transition-colors duration-150">
+            
+            <!-- Type -->
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                  <i class="fa-solid fa-tag text-purple-400 text-xs"></i>
+                </div>
+                <span class="text-gray-100 font-medium text-sm">{{ leave.leave_type.name }}</span>
+              </div>
+            </td>
 
-      <tbody class="divide-y divide-gray-700">
-        {% for leave in leaves.items %}
-        <tr class="hover:bg-gray-700 transition text-gray-100">
+            <!-- Date Range -->
+            <td class="px-6 py-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 text-sm text-gray-200">
+                  <i class="fa-regular fa-calendar text-gray-500 text-xs"></i>
+                  {{ leave.start_date.strftime('%b %d') }}
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-400 pl-5">
+                  <i class="fa-solid fa-arrow-right text-gray-600 text-[10px]"></i>
+                  {{ leave.end_date.strftime('%b %d, %Y') }}
+                </div>
+              </div>
+            </td>
 
-          <td class="px-4 py-2 font-medium">
-            {{ leave.leave_type.name }}
-          </td>
+            <!-- Days -->
+            <td class="px-6 py-4 text-center">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl 
+                         bg-gray-800 text-gray-200 font-semibold text-sm border border-white/10">
+                {{ leave.days_requested }}
+              </span>
+            </td>
 
-          <td class="px-4 py-2">
-            {{ leave.start_date.strftime('%Y-%m-%d') }}
-          </td>
+            <!-- Status -->
+            <td class="px-6 py-4">
+              {% set status_styles = {
+                'Approved': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
+                'Pending': 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25',
+                'Rejected': 'bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25'
+              } %}
+              {% set status_icons = {
+                'Approved': 'fa-check',
+                'Pending': 'fa-clock',
+                'Rejected': 'fa-xmark'
+              } %}
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border 
+                         {{ status_styles.get(leave.status, status_styles['Pending']) }} 
+                         transition-colors cursor-default">
+                <i class="fa-solid {{ status_icons.get(leave.status, 'fa-question') }}"></i>
+                {{ leave.status }}
+              </span>
+            </td>
 
-          <td class="px-4 py-2">
-            {{ leave.end_date.strftime('%Y-%m-%d') }}
-          </td>
+            <!-- Reason (truncated with tooltip) -->
+            <td class="px-6 py-4 max-w-xs">
+              <div class="group/reason relative">
+                <p class="text-gray-300 text-sm truncate" title="{{ leave.reason }}">
+                  {{ leave.reason if leave.reason else '—' }}
+                </p>
+                {% if leave.reason and leave.reason|length > 40 %}
+                  <div class="absolute bottom-full left-0 mb-2 hidden group-hover/reason:block 
+                              z-10 w-64 p-3 bg-gray-800 border border-white/10 rounded-xl shadow-xl text-xs text-gray-300">
+                    {{ leave.reason }}
+                    <div class="absolute top-full left-4 w-2 h-2 bg-gray-800 border-r border-b border-white/10 transform rotate-45"></div>
+                  </div>
+                {% endif %}
+              </div>
+            </td>
 
-          <td class="px-4 py-2">
-            {{ leave.days_requested }}
-          </td>
+            <!-- Actions -->
+            <td class="px-6 py-4 text-right">
+              <button type="button" 
+                      class="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg"
+                      title="View details"
+                      onclick="showLeaveDetails({{ leave.id }}, '{{ leave.leave_type.name }}', '{{ leave.start_date.strftime('%Y-%m-%d') }}', '{{ leave.end_date.strftime('%Y-%m-%d') }}', '{{ leave.reason|replace("'", "\\'") }}', '{{ leave.status }}')">
+                <i class="fa-solid fa-eye text-sm"></i>
+              </button>
+            </td>
 
-          <td class="px-4 py-2 font-semibold">
-            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm
-              {% if leave.status == 'Approved' %}bg-green-700/30 text-green-400
-              {% elif leave.status == 'Pending' %}bg-yellow-700/30 text-yellow-400
-              {% else %}bg-red-700/30 text-red-400{% endif %}">
-
-              <i class="fa-solid
-                {% if leave.status == 'Approved' %}fa-check
-                {% elif leave.status == 'Pending' %}fa-clock
-                {% else %}fa-xmark{% endif %}">
-              </i>
-
-              {{ leave.status }}
-            </span>
-          </td>
-
-          <td class="px-4 py-2 truncate max-w-xs">
-            {{ leave.reason }}
-          </td>
-
-        </tr>
-
-        {% else %}
-        <tr>
-          <td colspan="6" class="px-4 py-6 text-center text-gray-400">
-            No leave records found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="px-6 py-16">
+              <div class="text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-800/50 flex items-center justify-center">
+                  <i class="fa-regular fa-calendar-days text-2xl text-gray-500"></i>
+                </div>
+                <h3 class="text-gray-200 font-medium mb-1">No leave requests yet</h3>
+                <p class="text-gray-500 text-sm mb-4">Start by requesting your first time off</p>
+                <a href="{{ url_for('employee_bp.request_leave') }}" 
+                   class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium">
+                  Request Leave <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     <!-- Pagination -->
-    <div class="flex justify-center items-center mt-6 space-x-3 text-gray-300">
+    {% if leaves.pages > 1 %}
+    <div class="px-6 py-4 border-t border-white/10 bg-gray-800/30">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        
+        <div class="text-sm text-gray-400">
+          Page <span class="text-gray-200 font-medium">{{ leaves.page }}</span> of 
+          <span class="text-gray-200 font-medium">{{ leaves.pages }}</span>
+        </div>
 
-      {% if leaves.has_prev %}
-        <a href="{{ url_for('employee_bp.leaves', page=leaves.prev_num, status=status_filter) }}"
-           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-          Previous
-        </a>
-      {% endif %}
+        <div class="flex items-center gap-1.5">
+          {% if leaves.has_prev %}
+            <a href="{{ url_for('employee_bp.leaves', page=leaves.prev_num, status=status_filter) }}"
+               class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-700 text-gray-300 
+                      hover:bg-gray-800 hover:text-white hover:border-gray-600 transition-all">
+              <i class="fa-solid fa-chevron-left text-sm"></i>
+            </a>
+          {% else %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-800 text-gray-600 cursor-not-allowed">
+              <i class="fa-solid fa-chevron-left text-sm"></i>
+            </span>
+          {% endif %}
 
-      <span class="px-3 py-1 bg-gray-700 rounded-lg">
-        {{ leaves.page }} / {{ leaves.pages }}
-      </span>
+          {% for p in leaves.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+            {% if p %}
+              {% if p == leaves.page %}
+                <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-purple-600 text-white font-medium border border-purple-500">
+                  {{ p }}
+                </span>
+              {% else %}
+                <a href="{{ url_for('employee_bp.leaves', page=p, status=status_filter) }}"
+                   class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-700 text-gray-300 
+                          hover:bg-gray-800 hover:text-white hover:border-gray-600 transition-all text-sm">
+                  {{ p }}
+                </a>
+              {% endif %}
+            {% else %}
+              <span class="w-9 h-9 flex items-center justify-center text-gray-600">…</span>
+            {% endif %}
+          {% endfor %}
 
-      {% if leaves.has_next %}
-        <a href="{{ url_for('employee_bp.leaves', page=leaves.next_num, status=status_filter) }}"
-           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-          Next
-        </a>
-      {% endif %}
+          {% if leaves.has_next %}
+            <a href="{{ url_for('employee_bp.leaves', page=leaves.next_num, status=status_filter) }}"
+               class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-700 text-gray-300 
+                      hover:bg-gray-800 hover:text-white hover:border-gray-600 transition-all">
+              <i class="fa-solid fa-chevron-right text-sm"></i>
+            </a>
+          {% else %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-800 text-gray-600 cursor-not-allowed">
+              <i class="fa-solid fa-chevron-right text-sm"></i>
+            </span>
+          {% endif %}
+        </div>
 
+      </div>
     </div>
+    {% endif %}
 
   </div>
 
 </main>
+
+<!-- Leave Details Modal (Hidden by default) -->
+<div id="leaveModal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeLeaveModal()"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-6">
+    <div class="bg-gray-900 rounded-2xl border border-white/10 shadow-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-white">Leave Details</h3>
+        <button onclick="closeLeaveModal()" class="text-gray-400 hover:text-white transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-400">Type</span>
+          <span class="text-gray-100 font-medium" id="modalType">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Date Range</span>
+          <span class="text-gray-100 font-medium" id="modalDates">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Days</span>
+          <span class="text-gray-100 font-medium" id="modalDays">—</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-400">Status</span>
+          <span id="modalStatus" class="font-medium">—</span>
+        </div>
+        <div class="pt-2 border-t border-white/10">
+          <span class="text-gray-400 block mb-1">Reason</span>
+          <p class="text-gray-200" id="modalReason">—</p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeLeaveModal()" 
+                class="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800 transition text-sm font-medium">
+          Close
+        </button>
+        <button class="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white transition text-sm font-medium">
+          Edit Request
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- SweetAlert -->
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
-  // Auto submit filter
-  document.getElementById('statusFilter').addEventListener('change', function() {
-      document.getElementById('filterForm').submit();
+  // Auto-submit filter
+  document.getElementById('statusFilter')?.addEventListener('change', function() {
+    document.getElementById('filterForm')?.submit();
   });
 
-  // Flash Messages
+  // Flash Messages with Toast style
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
       Swal.fire({
         icon: "{{ 'success' if category == 'success' else 'error' }}",
         title: "{{ 'Success' if category == 'success' else 'Error' }}",
         text: "{{ msg }}",
-        timer: 2000,
-        showConfirmButton: false
+        background: "#1f2937",
+        color: "#f3f4f6",
+        confirmButtonColor: "#7c3aed",
+        timer: 2500,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end"
       });
     {% endfor %}
   {% endwith %}
+});
 
+// Modal Functions
+function showLeaveDetails(id, type, start, end, reason, status) {
+  document.getElementById('modalType').textContent = type;
+  document.getElementById('modalDates').textContent = `${start} → ${end}`;
+  document.getElementById('modalDays').textContent = document.querySelector(`[onclick*="${id}"]`).closest('tr').querySelector('td:nth-child(3) span').textContent;
+  document.getElementById('modalReason').textContent = reason || 'No reason provided';
+  
+  const statusEl = document.getElementById('modalStatus');
+  const statusStyles = {
+    'Approved': 'text-emerald-400',
+    'Pending': 'text-amber-400',
+    'Rejected': 'text-red-400'
+  };
+  statusEl.textContent = status;
+  statusEl.className = `font-medium ${statusStyles[status] || 'text-gray-400'}`;
+  
+  document.getElementById('leaveModal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLeaveModal() {
+  document.getElementById('leaveModal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeLeaveModal();
 });
 </script>
 
+<!-- Custom Scrollbar -->
+<style>
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #374151; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+</style>
 {% endblock %}

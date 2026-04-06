@@ -2,123 +2,162 @@
 {% block title %}Job History | Employee{% endblock %}
 
 {% block content %}
+<main class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-blue-900/5 p-4 md:p-8">
+  <div class="max-w-6xl mx-auto space-y-8">
 
-<main class="p-6 space-y-8">
-
-  <!-- HEADER -->
-  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-    <h1 class="text-3xl font-bold text-blue-400 flex items-center gap-3">
-      <i class="fa-solid fa-briefcase"></i>
-      My Job History
-    </h1>
-  </div>
-
-  <!-- EMPLOYEE INFO CARD -->
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-    
-    <div>
-      <p class="text-xl font-semibold text-white">
-        {{ employee.get_full_name() }}
-      </p>
-      <p class="text-sm text-gray-400">
-        Employee ID: <span class="text-gray-200 font-medium">{{ employee.employee_id }}</span>
-      </p>
+    <!-- HEADER -->
+    <div class="bg-gray-800/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center">
+          <i class="fa-solid fa-briefcase text-blue-400 text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">My Job History</h1>
+          <p class="text-gray-400 text-sm mt-0.5">Track your employment journey, promotions, and transfers</p>
+        </div>
+      </div>
     </div>
 
-    <div class="text-sm text-gray-400">
-      Department: 
-      <span class="text-white font-medium">
-        {{ employee.department.name if employee.department else "-" }}
+    <!-- EMPLOYEE INFO CARD -->
+    <div class="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gray-700 to-gray-600 border-2 border-gray-600 flex items-center justify-center">
+            <i class="fa-solid fa-user-tie text-2xl text-gray-300"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-semibold text-white">{{ employee.get_full_name() }}</h2>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400 mt-1">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-id-badge text-gray-500"></i>
+                ID: <span class="text-gray-200 font-medium">{{ employee.employee_id }}</span>
+              </span>
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-building text-gray-500"></i>
+                {{ employee.department.name if employee.department else "Unassigned" }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <span class="text-xs font-medium text-blue-300 uppercase tracking-wide">Employment Timeline</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOB HISTORY TABLE -->
+    <div class="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-300 min-w-[700px]">
+          <thead class="bg-gray-900/80 text-gray-400 uppercase text-xs tracking-wider sticky top-0 z-10">
+            <tr>
+              <th class="px-6 py-4 font-semibold border-b border-gray-700">Effective Date</th>
+              <th class="px-6 py-4 font-semibold border-b border-gray-700">Position</th>
+              <th class="px-6 py-4 font-semibold border-b border-gray-700">Department</th>
+              <th class="px-6 py-4 font-semibold border-b border-gray-700">Status</th>
+              <th class="px-6 py-4 font-semibold border-b border-gray-700">Remarks</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700/50">
+            {% for history in job_history.items %}
+            <tr class="hover:bg-gray-700/30 transition-colors duration-200 group">
+              <td class="px-6 py-4 font-medium text-white tabular-nums whitespace-nowrap">
+                {{ history.effective_date.strftime("%b %d, %Y") if history.effective_date else "-" }}
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-user-tie text-gray-500 text-xs group-hover:text-blue-400 transition-colors"></i>
+                  <span class="text-gray-200">{{ history.position.name if history.position else "-" }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-gray-300">
+                {{ history.department.name if history.department else "-" }}
+              </td>
+              <td class="px-6 py-4">
+                {% set status_class = 'bg-gray-600/30 text-gray-300 border-gray-600/50' %}
+                {% if history.status == 'Active' %}
+                  {% set status_class = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' %}
+                {% elif history.status == 'Transferred' %}
+                  {% set status_class = 'bg-blue-500/15 text-blue-400 border-blue-500/30' %}
+                {% elif history.status == 'Promoted' %}
+                  {% set status_class = 'bg-violet-500/15 text-violet-400 border-violet-500/30' %}
+                {% elif history.status == 'Retired' %}
+                  {% set status_class = 'bg-gray-500/15 text-gray-400 border-gray-500/30' %}
+                {% elif history.status == 'Resigned' %}
+                  {% set status_class = 'bg-amber-500/15 text-amber-400 border-amber-500/30' %}
+                {% elif history.status == 'Fired' %}
+                  {% set status_class = 'bg-red-500/15 text-red-400 border-red-500/30' %}
+                {% endif %}
+                
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border {{ status_class }}">
+                  <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                  {{ history.status }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-gray-400 max-w-[200px] truncate" title="{{ history.remarks or '' }}">
+                {{ history.remarks if history.remarks else "-" }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-12">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-700/50 border border-gray-600 mb-4">
+                  <i class="fa-solid fa-folder-open text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-300 font-medium">No job history records found.</p>
+                <p class="text-gray-500 text-sm mt-1">Your employment timeline will appear here.</p>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGINATION -->
+    {% if job_history.pages > 1 %}
+    <div class="flex flex-wrap items-center justify-center gap-3">
+      {% if job_history.has_prev %}
+      <a href="{{ url_for('employee_bp.employee_job_history', page=job_history.prev_num) }}"
+         class="flex items-center gap-2 px-4 py-2 bg-gray-800/60 border border-gray-700/50 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-600 transition-all">
+        <i class="fa-solid fa-chevron-left text-xs"></i> Previous
+      </a>
+      {% else %}
+      <button disabled class="flex items-center gap-2 px-4 py-2 bg-gray-800/30 border border-gray-700/30 rounded-lg text-sm font-medium text-gray-500 cursor-not-allowed">
+        <i class="fa-solid fa-chevron-left text-xs"></i> Previous
+      </button>
+      {% endif %}
+
+      <span class="px-4 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm font-medium text-gray-200">
+        Page {{ job_history.page }} of {{ job_history.pages }}
       </span>
+
+      {% if job_history.has_next %}
+      <a href="{{ url_for('employee_bp.employee_job_history', page=job_history.next_num) }}"
+         class="flex items-center gap-2 px-4 py-2 bg-gray-800/60 border border-gray-700/50 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white hover:border-gray-600 transition-all">
+        Next <i class="fa-solid fa-chevron-right text-xs"></i>
+      </a>
+      {% else %}
+      <button disabled class="flex items-center gap-2 px-4 py-2 bg-gray-800/30 border border-gray-700/30 rounded-lg text-sm font-medium text-gray-500 cursor-not-allowed">
+        Next <i class="fa-solid fa-chevron-right text-xs"></i>
+      </button>
+      {% endif %}
     </div>
-
-  </div>
-
-  <!-- JOB HISTORY TABLE -->
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl shadow overflow-x-auto">
-
-    <table class="w-full min-w-[700px] text-sm text-left text-gray-300">
-      <thead class="bg-gray-900 text-gray-400 uppercase text-xs tracking-wider">
-        <tr>
-          <th class="px-5 py-3">Effective Date</th>
-          <th class="px-5 py-3">Position</th>
-          <th class="px-5 py-3">Department</th>
-          <th class="px-5 py-3">Status</th>
-          <th class="px-5 py-3">Remarks</th>
-        </tr>
-      </thead>
-      <tbody>
-
-        {% for history in job_history.items %}
-        <tr class="border-t border-gray-700 hover:bg-gray-700/40 transition duration-200 ease-in-out">
-
-          <td class="px-5 py-3 font-medium">
-            {{ history.effective_date.strftime("%B %d, %Y") if history.effective_date else "-" }}
-          </td>
-
-          <td class="px-5 py-3">
-            {{ history.position.name if history.position else "-" }}
-          </td>
-
-          <td class="px-5 py-3">
-            {{ history.department.name if history.department else "-" }}
-          </td>
-
-          <td class="px-5 py-3">
-            <span class="px-3 py-1 rounded-full text-xs font-semibold
-            {% if history.status == 'Active' %} bg-green-500/20 text-green-400
-            {% elif history.status == 'Transferred' %} bg-blue-500/20 text-blue-400
-            {% elif history.status == 'Promoted' %} bg-purple-500/20 text-purple-400
-            {% elif history.status == 'Retired' %} bg-gray-500/20 text-gray-400
-            {% elif history.status == 'Resigned' %} bg-yellow-500/20 text-yellow-400
-            {% elif history.status == 'Fired' %} bg-red-500/20 text-red-400
-            {% else %} bg-gray-600/30 text-gray-300
-            {% endif %}">
-              {{ history.status }}
-            </span>
-          </td>
-
-          <td class="px-5 py-3 text-gray-400">
-            {{ history.remarks if history.remarks else "-" }}
-          </td>
-
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5" class="text-center py-8 text-gray-500 font-medium">
-            No job history records found.
-          </td>
-        </tr>
-        {% endfor %}
-
-      </tbody>
-    </table>
-
-  </div>
-
-  <!-- PAGINATION -->
-  {% if job_history.pages > 1 %}
-  <div class="flex flex-wrap justify-center mt-6 gap-3 items-center">
-    {% if job_history.has_prev %}
-    <a href="{{ url_for('employee_bp.employee_job_history', page=job_history.prev_num) }}"
-       class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-       ← Previous
-    </a>
     {% endif %}
 
-    <span class="px-4 py-2 text-gray-300 font-medium">
-      Page {{ job_history.page }} of {{ job_history.pages }}
-    </span>
-
-    {% if job_history.has_next %}
-    <a href="{{ url_for('employee_bp.employee_job_history', page=job_history.next_num) }}"
-       class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-       Next →
-    </a>
-    {% endif %}
   </div>
-  {% endif %}
-
 </main>
 
+<!-- Staggered Fade-In Animation -->
+<style>
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .space-y-8 > * { animation: slideUp 0.4s ease-out both; }
+  .space-y-8 > *:nth-child(1) { animation-delay: 0.05s; }
+  .space-y-8 > *:nth-child(2) { animation-delay: 0.1s; }
+  .space-y-8 > *:nth-child(3) { animation-delay: 0.15s; }
+  .space-y-8 > *:nth-child(4) { animation-delay: 0.2s; }
+</style>
 {% endblock %}

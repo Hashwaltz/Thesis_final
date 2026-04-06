@@ -2,74 +2,121 @@
 {% block title %}My Payslips | Employee{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
+<main class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-900/10 p-4 md:p-8">
+  <div class="max-w-5xl mx-auto space-y-6">
 
-  <!-- HEADER -->
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-md">
-    <h1 class="text-2xl font-bold text-white">My Payslips</h1>
-    <p class="text-gray-400 text-sm mt-1">
-      View all your payroll records (latest first)
-    </p>
-  </div>
-
-  <!-- LIST -->
-  <div class="space-y-4">
-
-    {% if payrolls %}
-      {% for p in payrolls %}
-      <div class="bg-gray-900 border border-gray-800 rounded-2xl shadow hover:shadow-lg hover:border-green-500 transition duration-200">
-
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between p-5 gap-4">
-
-          <!-- LEFT: Period Info -->
+    <!-- HEADER -->
+    <div class="bg-gray-800/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center">
+            <i class="fa-solid fa-file-invoice-dollar text-emerald-400 text-xl"></i>
+          </div>
           <div>
-            <h2 class="text-lg font-semibold text-white">
-              {{ p.period.period_name }}
-            </h2>
-            <p class="text-sm text-gray-400">
-              {{ p.period.start_date.strftime('%b %d, %Y') }} - {{ p.period.end_date.strftime('%b %d, %Y') }}
-            </p>
-            <p class="text-xs text-gray-500 mt-1">
-              Pay Date: {{ p.period.pay_date.strftime('%b %d, %Y') if p.period.pay_date else 'N/A' }}
-            </p>
+            <h1 class="text-2xl font-bold text-white tracking-tight">My Payslips</h1>
+            <p class="text-gray-400 text-sm mt-0.5">View and download your payroll records</p>
           </div>
-
-          <!-- CENTER: Net Pay -->
-          <div class="text-left md:text-center">
-            <p class="text-gray-400 text-sm">Net Pay</p>
-            <p class="text-2xl font-bold text-green-400">
-              ₱{{ "{:,.2f}".format(p.net_pay or 0) }}
-            </p>
-          </div>
-
-          <!-- RIGHT: Actions -->
-          <div class="flex flex-wrap items-center gap-3 md:justify-end">
-            <span class="px-3 py-1 text-xs rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-              Available
-            </span>
-            <a href="{{ url_for('employee_bp.view_payslip', id=p.id) }}"
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200">
-              View Payslip
-            </a>
-          </div>
-
         </div>
-
+        
+        <!-- Optional: Filter & Export Actions (Remove if not needed) -->
+        <div class="flex gap-3">
+          <button class="px-4 py-2 text-sm text-gray-300 bg-gray-700/50 hover:bg-gray-700 rounded-lg border border-gray-600 transition-all">
+            <i class="fa-solid fa-filter mr-2"></i>Filter
+          </button>
+        </div>
       </div>
-      {% endfor %}
+    </div>
 
-    {% else %}
-      <!-- EMPTY STATE -->
-      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-10 text-center shadow-inner">
-        <h3 class="text-white text-lg font-semibold">
-          No Payslips Found
-        </h3>
-        <p class="text-gray-400 text-sm mt-2">
-          Your payroll records will appear here once processed.
-        </p>
-      </div>
-    {% endif %}
+    <!-- PAYSLIP LIST -->
+    <div class="space-y-4">
+      {% if payrolls %}
+        {% for p in payrolls %}
+        <div class="group relative bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-900/20 transition-all duration-300 overflow-hidden">
+          <!-- Subtle Hover Gradient Border -->
+          <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+
+          <div class="relative flex flex-col md:flex-row md:items-center md:justify-between p-5 gap-4">
+            
+            <!-- LEFT: Period Info -->
+            <div class="space-y-1.5">
+              <h2 class="text-lg font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                {{ p.period.period_name }}
+              </h2>
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
+                <span class="flex items-center gap-1.5">
+                  <i class="fa-regular fa-calendar text-gray-500"></i>
+                  {{ p.period.start_date.strftime('%b %d, %Y') }} - {{ p.period.end_date.strftime('%b %d, %Y') }}
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                Pay Date: {{ p.period.pay_date.strftime('%b %d, %Y') if p.period.pay_date else 'Pending' }}
+              </p>
+            </div>
+
+            <!-- CENTER: Net Pay -->
+            <div class="text-left md:text-center flex flex-row md:flex-col items-center md:items-start gap-2 md:gap-0">
+              <span class="text-gray-400 text-sm font-medium">Net Pay</span>
+              <div class="flex items-baseline gap-0.5">
+                <span class="text-emerald-400 font-semibold text-lg md:text-xl">₱</span>
+                <span class="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                  {{ "{:,.2f}".format(p.net_pay or 0) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- RIGHT: Status & Actions -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:justify-end">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 self-start sm:self-auto">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Available
+              </span>
+              <div class="flex gap-2">
+                <a href="{{ url_for('employee_bp.view_payslip', id=p.id) }}"
+                   class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-md shadow-emerald-900/30 transition-all active:scale-95">
+                  <i class="fa-regular fa-eye"></i>
+                  View
+                </a>
+                 <a href="{{ url_for('employee_bp.download_payslip_pdf', id=p.id) }}"
+                   class="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-300 bg-gray-700/50 hover:bg-gray-700 rounded-lg border border-gray-600 hover:border-gray-500 transition-all"
+                   aria-label="Download PDF">
+                  <i class="fa-solid fa-file-pdf"></i>
+                </a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+
+      {% else %}
+        <!-- EMPTY STATE -->
+        <div class="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-12 text-center shadow-inner">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-700/50 border border-gray-600 mb-4">
+            <i class="fa-regular fa-file-lines text-gray-400 text-2xl"></i>
+          </div>
+          <h3 class="text-white text-lg font-semibold">No Payslips Available Yet</h3>
+          <p class="text-gray-400 text-sm mt-2 max-w-md mx-auto">
+            Your payroll records will appear here once processed by the finance department. 
+            Check back after your next pay cycle.
+          </p>
+        </div>
+      {% endif %}
+    </div>
 
   </div>
-</div>
+</main>
+
+<!-- Optional: Staggered Fade-In Animation for Cards -->
+<style>
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .group:nth-child(1) { animation: slideUp 0.4s ease-out both; }
+  .group:nth-child(2) { animation: slideUp 0.4s ease-out 0.05s both; }
+  .group:nth-child(3) { animation: slideUp 0.4s ease-out 0.1s both; }
+  .group:nth-child(4) { animation: slideUp 0.4s ease-out 0.15s both; }
+  .group:nth-child(n+5) { animation: slideUp 0.4s ease-out 0.2s both; }
+</style>
 {% endblock %}

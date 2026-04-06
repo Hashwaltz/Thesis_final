@@ -2,193 +2,206 @@
 {% block title %}Dashboard | Employee{% endblock %}
 
 {% block content %}
-<div class="p-4 md:p-6 bg-gray-950 min-h-screen space-y-6">
+<div class="min-h-screen bg-[#0B0F19] p-4 md:p-8 space-y-8 text-gray-100">
 
   <!-- HEADER / GREETING -->
-  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-gray-900 p-6 rounded-2xl shadow border border-gray-800">
-
-    <div>
-      <h1 class="text-2xl md:text-3xl font-bold text-white">
-        Welcome, {{ employee.get_full_name() }} 👋
-      </h1>
-      <p class="text-gray-400 mt-1">
-        {{ employee.position.name if employee.position else 'Employee' }}
-        • {{ employee.department.name if employee.department else 'No Department' }}
-      </p>
+  <header class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-gray-800 border border-white/10 p-6 md:p-8 shadow-2xl">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+      <div>
+        <h1 class="text-2xl md:text-4xl font-bold tracking-tight text-white">
+          Welcome back, {{ employee.get_full_name() }} 👋
+        </h1>
+        <p class="mt-2 text-gray-400 text-sm md:text-base flex items-center gap-2 flex-wrap">
+          <span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-full text-xs font-medium border border-purple-500/30">
+            {{ employee.position.name if employee.position else 'Employee' }}
+          </span>
+          <span class="text-gray-500">•</span>
+          <span>{{ employee.department.name if employee.department else 'No Department' }}</span>
+        </p>
+      </div>
+      <div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10 backdrop-blur-sm">
+        <i class="fa-regular fa-calendar text-gray-400"></i>
+        <span class="text-sm font-medium text-gray-200">{{ today.strftime('%A, %B %d, %Y') }}</span>
+      </div>
     </div>
-
-    <div class="text-sm text-gray-400">
-      {{ today.strftime('%A, %B %d, %Y') }}
-    </div>
-
-  </div>
+  </header>
 
   <!-- QUICK STATS -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
-      <p class="text-gray-400 text-sm">Days Recorded</p>
-      <h2 class="text-xl font-bold text-white">{{ total_days }}</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    {% set stats = [
+      ('Days Recorded', total_days, 'fa-calendar-days', 'text-blue-400', 'bg-blue-500/10'),
+      ('Present', present_days, 'fa-check-circle', 'text-emerald-400', 'bg-emerald-500/10'),
+      ('Late', late_days, 'fa-clock', 'text-amber-400', 'bg-amber-500/10'),
+      ('Leave Types', leave_summary|length, 'fa-umbrella-beach', 'text-purple-400', 'bg-purple-500/10')
+    ] %}
+    {% for label, value, icon, text_color, bg_color in stats %}
+    <div class="group bg-gray-900/50 backdrop-blur-md p-5 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/20">
+      <div class="flex items-start justify-between mb-3">
+        <span class="text-gray-400 text-sm font-medium">{{ label }}</span>
+        <div class="w-9 h-9 {{ bg_color }} rounded-lg flex items-center justify-center">
+          <i class="fa-solid {{ icon }} {{ text_color }}"></i>
+        </div>
+      </div>
+      <h2 class="text-2xl font-bold text-white group-hover:scale-105 transition-transform duration-300 origin-left">{{ value }}</h2>
     </div>
-
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
-      <p class="text-gray-400 text-sm">Present</p>
-      <h2 class="text-xl font-bold text-green-400">{{ present_days }}</h2>
-    </div>
-
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
-      <p class="text-gray-400 text-sm">Late</p>
-      <h2 class="text-xl font-bold text-yellow-400">{{ late_days }}</h2>
-    </div>
-
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 text-center">
-      <p class="text-gray-400 text-sm">Leave Types</p>
-      <h2 class="text-xl font-bold text-purple-400">{{ leave_summary|length }}</h2>
-    </div>
-
+    {% endfor %}
   </div>
 
   <!-- MAIN GRID -->
   <div class="grid lg:grid-cols-3 gap-6">
 
     <!-- ATTENDANCE -->
-    <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800 hover:shadow-xl transition">
-
-      <div class="flex items-center gap-3 mb-4">
-        <i class="fa-solid fa-calendar-check text-purple-400 text-2xl"></i>
-        <h2 class="text-lg font-semibold text-white">Attendance Summary</h2>
+    <div class="bg-gray-900/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-chart-pie text-purple-400 text-xl"></i>
+          <h2 class="text-lg font-semibold text-white">Attendance</h2>
+        </div>
+        <span class="text-xs font-medium px-2 py-1 bg-gray-800 rounded-md text-gray-400 border border-gray-700">
+          {{ today.strftime('%B %Y') }}
+        </span>
       </div>
 
-      <p class="text-gray-400 mb-3 text-sm">
-        {{ today.strftime('%B %Y') }}
-      </p>
+      {% set total = total_days or 1 %}
+      {% set present_pct = (present_days / total * 100) | round(0) %}
+      {% set late_pct = (late_days / total * 100) | round(0) %}
 
-      <ul class="space-y-2 text-gray-200 text-sm">
-        <li class="flex justify-between">
-          <span>Total Days</span>
-          <span class="font-semibold">{{ total_days }}</span>
-        </li>
-        <li class="flex justify-between">
-          <span>Present</span>
-          <span class="text-green-400 font-semibold">{{ present_days }}</span>
-        </li>
-        <li class="flex justify-between">
-          <span>Late</span>
-          <span class="text-yellow-400 font-semibold">{{ late_days }}</span>
-        </li>
-      </ul>
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-300">Present</span>
+            <span class="text-emerald-400 font-medium">{{ present_pct }}%</span>
+          </div>
+          <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700" style="width: {{ present_pct }}%"></div>
+          </div>
+        </div>
 
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-300">Late</span>
+            <span class="text-amber-400 font-medium">{{ late_pct }}%</span>
+          </div>
+          <div class="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-700" style="width: {{ late_pct }}%"></div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-white/10 grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-gray-500">Total Days</p>
+            <p class="text-white font-semibold text-lg">{{ total_days }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-gray-500">Attendance Rate</p>
+            <p class="text-white font-semibold text-lg">{{ present_pct }}%</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- LEAVE -->
-    <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800 hover:shadow-xl transition">
-
-      <div class="flex items-center gap-3 mb-4">
-        <i class="fa-solid fa-plane-departure text-purple-400 text-2xl"></i>
+    <div class="bg-gray-900/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+      <div class="flex items-center gap-3 mb-5">
+        <i class="fa-solid fa-suitcase text-purple-400 text-xl"></i>
         <h2 class="text-lg font-semibold text-white">Leave Balances</h2>
       </div>
 
-      <ul class="space-y-2 text-sm text-gray-200 max-h-48 overflow-y-auto pr-2">
+      <div class="space-y-3 max-h-56 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
         {% for leave_name, balance in leave_summary.items() %}
-          <li class="flex justify-between items-center">
-            <span>{{ leave_name }}</span>
-            <span class="text-purple-400 font-semibold">
-              {{ balance | round(2) }} d
-            </span>
-          </li>
+          <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full bg-purple-400"></div>
+              <span class="text-gray-200 text-sm">{{ leave_name }}</span>
+            </div>
+            <span class="text-purple-300 font-semibold text-sm">{{ balance | round(2) }} days</span>
+          </div>
         {% else %}
-          <li class="text-gray-400">No leave records found.</li>
+          <div class="text-center py-8 text-gray-500 text-sm">
+            <i class="fa-regular fa-folder-open text-2xl mb-2 opacity-50"></i>
+            <p>No leave records found.</p>
+          </div>
         {% endfor %}
-      </ul>
-
+      </div>
     </div>
 
     <!-- PAYSLIP -->
-    <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800 hover:shadow-xl transition">
-
-      <div class="flex items-center gap-3 mb-4">
-        <i class="fa-solid fa-file-invoice text-purple-400 text-2xl"></i>
-        <h2 class="text-lg font-semibold text-white">Latest Payslip</h2>
+    <div class="bg-gray-900/50 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-file-invoice-dollar text-purple-400 text-xl"></i>
+          <h2 class="text-lg font-semibold text-white">Latest Payslip</h2>
+        </div>
+        {% if latest_payslip %}
+          <span class="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-300 rounded-md border border-emerald-500/30">Paid</span>
+        {% endif %}
       </div>
 
       {% if latest_payslip %}
-        <ul class="space-y-2 text-sm text-gray-200">
+        <div class="space-y-4">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400">Pay Period</span>
+            <span class="text-gray-200">{{ latest_payslip.generated_at.strftime('%b %Y') }}</span>
+          </div>
 
-          <li class="flex justify-between">
-            <span>Pay Date</span>
-            <span>{{ latest_payslip.generated_at.strftime('%b %d, %Y') }}</span>
-          </li>
+          <div class="p-4 bg-white/5 rounded-xl border border-white/5 space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Gross Pay</span>
+              <span class="text-emerald-400 font-medium">₱{{ "%.2f"|format(latest_payslip.gross_pay or 0) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Deductions</span>
+              <span class="text-red-400 font-medium">-₱{{ "%.2f"|format(latest_payslip.total_deductions or 0) }}</span>
+            </div>
+            <div class="pt-2 mt-2 border-t border-white/10 flex justify-between font-semibold">
+              <span class="text-white">Net Pay</span>
+              <span class="text-purple-300">₱{{ "%.2f"|format(latest_payslip.net_pay or 0) }}</span>
+            </div>
+          </div>
 
-          <li class="flex justify-between">
-            <span>Gross</span>
-            <span class="text-green-400">₱{{ latest_payslip.gross_pay or 0 }}</span>
-          </li>
-
-          <li class="flex justify-between">
-            <span>Deductions</span>
-            <span class="text-red-400">₱{{ latest_payslip.total_deductions or 0 }}</span>
-          </li>
-
-          <li class="flex justify-between font-semibold">
-            <span>Net Pay</span>
-            <span class="text-purple-400">₱{{ latest_payslip.net_pay or 0 }}</span>
-          </li>
-
-        </ul>
-
-        <a href="#"
-           class="mt-4 w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition">
-          <i class="fa-solid fa-eye"></i> View Payslip
-        </a>
-
+          <a href="#" class="w-full mt-2 flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white py-2.5 rounded-xl transition-all duration-200 font-medium shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30">
+            <i class="fa-solid fa-eye text-sm"></i> View Full Payslip
+          </a>
+        </div>
       {% else %}
-        <p class="text-gray-400 text-sm">No payslip available yet.</p>
+        <div class="text-center py-10 text-gray-500">
+          <i class="fa-regular fa-file text-3xl mb-3 opacity-50"></i>
+          <p class="text-sm">No payslip generated yet.</p>
+        </div>
       {% endif %}
-
     </div>
-
   </div>
 
   <!-- QUICK ACTIONS -->
-  <div class="bg-gray-900 p-6 rounded-2xl shadow border border-gray-800">
-
-    <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">
-      <i class="fa-solid fa-bolt text-purple-400"></i> Quick Actions
+  <div class="bg-gray-900/50 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+    <h2 class="text-lg font-semibold mb-5 text-white flex items-center gap-2">
+      <i class="fa-solid fa-bolt text-amber-400"></i> Quick Actions
     </h2>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-      <a href="{{url_for('employee_bp.request_leave')}}"
-         class="flex flex-col items-center justify-center bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-xl transition hover:-translate-y-1">
-
-        <i class="fa-solid fa-plane-departure text-xl mb-2"></i>
-        <span class="text-sm">Request Leave</span>
-      </a>
-
-      <a href="{{url_for('employee_bp.attendance')}}"
-         class="flex flex-col items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-xl transition hover:-translate-y-1">
-
-        <i class="fa-solid fa-calendar-check text-xl mb-2"></i>
-        <span class="text-sm">Attendance</span>
-      </a>
-
-      <a href="#"
-         class="flex flex-col items-center justify-center bg-green-600 hover:bg-green-700 text-white p-4 rounded-xl transition hover:-translate-y-1">
-
-        <i class="fa-solid fa-file-invoice text-xl mb-2"></i>
-        <span class="text-sm">Payslips</span>
-      </a>
-
-      <a href="{{url_for('employee_bp.profile')}}"
-         class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-xl transition hover:-translate-y-1">
-
-        <i class="fa-solid fa-user-pen text-xl mb-2"></i>
-        <span class="text-sm">Profile</span>
-      </a>
-
+      {% set actions = [
+        ('Request Leave', 'employee_bp.request_leave', 'fa-plane-departure', 'from-blue-600 to-blue-500'),
+        ('View Attendance', 'employee_bp.attendance', 'fa-calendar-check', 'from-emerald-600 to-emerald-500'),
+        ('Browse Payslips', '#', 'fa-file-invoice', 'from-purple-600 to-purple-500'),
+        ('Edit Profile', 'employee_bp.profile', 'fa-user-pen', 'from-gray-700 to-gray-600')
+      ] %}
+      {% for label, route, icon, gradient in actions %}
+        <a href="{{ url_for(route) if route != '#' else '#' }}"
+           class="group flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-gradient-to-br {{ gradient }} hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-lg">
+          <i class="fa-solid {{ icon }} text-2xl text-white/90 group-hover:scale-110 transition-transform"></i>
+          <span class="text-sm font-medium text-white/90">{{ label }}</span>
+        </a>
+      {% endfor %}
     </div>
-
   </div>
 
 </div>
+
+<!-- Optional: Custom scrollbar for Webkit -->
+<style>
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #374151; border-radius: 999px; }
+</style>
 {% endblock %}

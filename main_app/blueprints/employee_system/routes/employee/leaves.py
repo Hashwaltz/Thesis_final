@@ -79,4 +79,6 @@ def request_leave():
         return redirect(url_for('employee_bp.leaves'))
 
     leave_types = LeaveType.query.all()
-    return render_template('employee/request_leave.html', leave_types=leave_types)
+    return render_template('employee/request_leave.html',
+                            leave_types=leave_types,
+                            today=datetime.today())

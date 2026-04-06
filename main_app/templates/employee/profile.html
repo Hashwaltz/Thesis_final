@@ -2,238 +2,372 @@
 {% block title %}Employee Profile | Employee{% endblock %}
 
 {% block content %}
+<main class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-blue-900/5 p-4 md:p-8">
+  <div class="max-w-5xl mx-auto space-y-8">
 
-<div class="max-w-5xl mx-auto p-6 bg-gray-800 rounded-2xl shadow-xl text-gray-100">
+    <!-- HEADER CARD -->
+    <div class="bg-gray-800/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+      <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+        
+        <!-- Avatar with Status Ring -->
+        <div class="relative group">
+          <div class="w-28 h-28 rounded-full bg-gray-700 border-4 border-gray-600 flex items-center justify-center overflow-hidden shadow-lg">
+            {% if employee and employee.photo %}
+            <img src="{{ url_for('static', filename=employee.photo) }}" 
+                 alt="{{ employee.get_full_name() }}" 
+                 class="w-full h-full object-cover"
+                 onerror="this.parentElement.innerHTML='<i class=\'fa-solid fa-user text-4xl text-gray-400\'></i>'">
+            {% else %}
+            <i class="fa-solid fa-user text-4xl text-gray-400"></i>
+            {% endif %}
+          </div>
+          {% if employee and employee.status == 'Active' %}
+          <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-gray-800 rounded-full" title="Active"></span>
+          {% endif %}
+        </div>
 
-  <!-- ================= HEADER ================= -->
-  <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
+        <!-- Name & Actions -->
+        <div class="flex-1 flex flex-col md:flex-row md:justify-between md:items-start gap-4 w-full">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">
+              {{ employee.get_full_name() if employee else "Employee Name" }}
+            </h1>
+            <div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-gray-400">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 text-xs font-medium">
+                <i class="fa-solid fa-briefcase"></i>
+                {{ employee.position.name if employee and employee.position else 'Position not assigned' }}
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/15 text-teal-300 border border-teal-500/30 text-xs font-medium">
+                <i class="fa-solid fa-building"></i>
+                {{ employee.department.name if employee and employee.department else 'No department' }}
+              </span>
+            </div>
+          </div>
 
-    <!-- Avatar -->
-    <div class="w-28 h-28 rounded-full bg-cover bg-center ring-4 ring-gray-600 overflow-hidden flex-shrink-0"
-         style="background-image: url('{{ url_for('static', filename=employee.photo) if employee and employee.photo else url_for('static', filename='img/default-avatar.png') }}')">
+          <div class="flex flex-col items-start md:items-end gap-3">
+            <!-- Copy ID Button -->
+            <button onclick="navigator.clipboard.writeText('{{ employee.employee_id if employee else '' }}'); Swal.fire({icon:'success',title:'Copied!',text:'Employee ID copied to clipboard',timer:1500,showConfirmButton:false})"
+                    class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-300 bg-gray-700/50 hover:bg-gray-700 rounded-lg border border-gray-600 hover:border-gray-500 transition-all cursor-pointer"
+                    title="Copy Employee ID">
+              <i class="fa-regular fa-copy"></i>
+              <span class="tabular-nums">{{ employee.employee_id if employee else '-' }}</span>
+            </button>
+
+            <!-- Change Password -->
+            <button id="changePasswordBtn"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-xl shadow-lg shadow-blue-900/20 transition-all duration-200 hover:-translate-y-0.5 active:scale-95">
+              <i class="fa-solid fa-key"></i> Change Password
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Name & Action -->
-    <div class="flex-1 flex flex-col md:flex-row md:justify-between md:items-start gap-4 w-full">
+    <!-- DETAILS GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- PERSONAL INFO -->
+      <div class="space-y-6">
+        <div class="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-700/50">
+            <i class="fa-regular fa-id-card text-blue-400"></i>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Personal Information</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Full Name</p>
+              <p class="font-medium text-white">{{ employee.get_full_name() if employee else '-' }}</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Birthdate</p>
+              <p class="font-medium text-white">{{ employee.date_of_birth.strftime('%B %d, %Y') if employee and employee.date_of_birth else '-' }}</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Gender</p>
+              <p class="font-medium text-white">{{ employee.gender if employee else '-' }}</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Civil Status</p>
+              <p class="font-medium text-white">{{ employee.marital_status if employee else '-' }}</p>
+            </div>
+          </div>
+        </div>
 
-      <div>
-        <h1 class="text-3xl font-bold">{{ employee.get_full_name() if employee else "Employee Name" }}</h1>
-        <p class="text-sm text-gray-400 mt-1">
-          {{ employee.position.name if employee and employee.position else 'Position not assigned' }} •
-          {{ employee.department.name if employee and employee.department else 'No department' }}
-        </p>
+        <!-- CONTACT -->
+        <div class="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-700/50">
+            <i class="fa-solid fa-address-book text-teal-400"></i>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Contact Details</h3>
+          </div>
+          
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <i class="fa-solid fa-phone text-gray-500 mt-1"></i>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Mobile</p>
+                <p class="font-medium text-white">{{ employee.phone if employee else '-' }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fa-solid fa-envelope text-gray-500 mt-1"></i>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Email</p>
+                <p class="font-medium text-white break-all">{{ employee.email if employee else '-' }}</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fa-solid fa-location-dot text-gray-500 mt-1"></i>
+              <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Address</p>
+                <p class="font-medium text-white">{{ employee.get_full_address() if employee else '-' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="flex flex-col md:items-end gap-3">
-        <button id="changePasswordBtn"
-                class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-2xl shadow-md transition transform hover:scale-105">
-          <i class="fa-solid fa-key"></i> Change Password
-        </button>
+      <!-- EMPLOYMENT DETAILS -->
+      <div class="space-y-6">
+        <div class="bg-gray-800/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-lg">
+          <div class="flex items-center gap-2 mb-5 pb-3 border-b border-gray-700/50">
+            <i class="fa-solid fa-briefcase text-emerald-400"></i>
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-300">Employment Details</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Department</p>
+              <p class="font-medium text-white">{{ employee.department.name if employee and employee.department else '-' }}</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Position</p>
+              <p class="font-medium text-white">{{ employee.position.name if employee and employee.position else '-' }}</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Employment Type</p>
+              <p class="font-medium text-white">{{ employee.employment_type.name if employee and employee.employment_type else '-' }}</p>
+            </div>
+            <div class="space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Date Hired</p>
+              <p class="font-medium text-white">{{ employee.date_hired.strftime('%B %d, %Y') if employee and employee.date_hired else '-' }}</p>
+            </div>
+            <div class="sm:col-span-2 space-y-1">
+              <p class="text-xs text-gray-400 uppercase tracking-wide">Years of Service</p>
+              <div class="flex items-center gap-2">
+                <i class="fa-regular fa-calendar-check text-emerald-400"></i>
+                <p class="font-semibold text-emerald-300">{{ working_duration if working_duration else '-' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <div class="text-right">
-          <p class="text-sm text-gray-400">Employee ID</p>
-          <p class="font-semibold text-lg">{{ employee.employee_id if employee else '-' }}</p>
+        <!-- QUICK STATS -->
+        <div class="bg-gradient-to-br from-blue-600/10 to-cyan-600/10 border border-blue-500/20 rounded-2xl p-6">
+          <h4 class="text-sm font-semibold text-blue-300 mb-4">Profile Completion</h4>
+          <div class="flex items-center gap-4">
+            <div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full" style="width: 85%"></div>
+            </div>
+            <span class="text-sm font-bold text-white">85%</span>
+          </div>
+          <p class="text-xs text-gray-400 mt-2">Keep your profile updated for accurate records</p>
         </div>
       </div>
 
     </div>
 
   </div>
-
-  <hr class="my-6 border-gray-700">
-
-  <!-- ================= DETAILS GRID ================= -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-    <!-- PERSONAL INFO -->
-    <div class="space-y-4">
-      <div class="p-6 bg-gray-700 rounded-2xl border border-gray-600 shadow-inner">
-        <h3 class="text-sm text-gray-400 font-semibold">Personal Information</h3>
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span class="text-gray-400">Full Name</span>
-            <div class="font-medium">{{ employee.get_full_name() if employee else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Birthdate</span>
-            <div class="font-medium">{{ employee.date_of_birth.strftime('%B %d, %Y') if employee and employee.date_of_birth else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Gender</span>
-            <div class="font-medium">{{ employee.gender if employee else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Civil Status</span>
-            <div class="font-medium">{{ employee.marital_status if employee else '-' }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONTACT -->
-      <div class="p-6 bg-gray-700 rounded-2xl border border-gray-600 shadow-inner">
-        <h3 class="text-sm text-gray-400 font-semibold">Contact</h3>
-        <div class="mt-4 space-y-3 text-sm">
-          <div>
-            <span class="text-gray-400">Mobile</span>
-            <div class="font-medium">{{ employee.phone if employee else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Email</span>
-            <div class="font-medium">{{ employee.email if employee else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Address</span>
-            <div class="font-medium">{{ employee.get_full_address() if employee else '-' }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- EMPLOYMENT DETAILS -->
-    <div class="space-y-4">
-      <div class="p-6 bg-gray-700 rounded-2xl border border-gray-600 shadow-inner">
-        <h3 class="text-sm text-gray-400 font-semibold">Employment Details</h3>
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span class="text-gray-400">Department</span>
-            <div class="font-medium">{{ employee.department.name if employee and employee.department else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Position</span>
-            <div class="font-medium">{{ employee.position.name if employee and employee.position else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Employment Type</span>
-            <div class="font-medium">{{ employee.employment_type.name if employee and employee.employment_type else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Date Hired</span>
-            <div class="font-medium">{{ employee.date_hired.strftime('%B %d, %Y') if employee and employee.date_hired else '-' }}</div>
-          </div>
-          <div>
-            <span class="text-gray-400">Years of Service</span>
-            <div class="font-medium text-gray-200">{{ working_duration if working_duration else '-' }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-</div>
+</main>
 
 <!-- ================= CHANGE PASSWORD MODAL ================= -->
-<div id="changePasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 z-50">
-
-  <div class="bg-gray-700 rounded-2xl w-full max-w-md p-6 relative transform scale-95 transition-all duration-300">
-
+<div id="changePasswordModal" 
+     class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 z-50">
+  
+  <div class="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-md p-6 relative transform scale-95 transition-transform duration-300 shadow-2xl">
+    
     <!-- Modal Header -->
-    <h2 class="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-      <i class="fa-solid fa-key"></i> Change Password
-    </h2>
-
-    <!-- Close Button -->
-    <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-700">
+      <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+        <i class="fa-solid fa-key text-blue-400"></i> Change Password
+      </h2>
+      <button id="closeModalBtn" class="text-gray-400 hover:text-white text-2xl font-bold transition-colors">&times;</button>
+    </div>
 
     <!-- Form -->
     <form id="changePasswordForm" class="space-y-5">
-
       <div>
-        <label class="block text-gray-300 text-sm mb-1">Current Password</label>
-        <input type="password" name="current_password" required
-               class="w-full px-4 py-3 rounded-2xl bg-gray-600 text-white border border-gray-500 focus:ring-2 focus:ring-gray-400 focus:outline-none placeholder-gray-300"
-               placeholder="Enter current password">
+        <label class="block text-gray-300 text-sm mb-2 font-medium">Current Password</label>
+        <div class="relative">
+          <input type="password" name="current_password" required
+                 class="w-full px-4 py-3 pl-10 rounded-xl bg-gray-700/50 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none placeholder-gray-400 transition-all"
+                 placeholder="••••••••">
+          <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        </div>
       </div>
 
       <div>
-        <label class="block text-gray-300 text-sm mb-1">New Password</label>
-        <input type="password" name="new_password"
-               class="w-full px-4 py-3 rounded-2xl bg-gray-600 text-white border border-gray-500 focus:ring-2 focus:ring-gray-400 focus:outline-none placeholder-gray-300"
-               placeholder="Enter new password">
+        <label class="block text-gray-300 text-sm mb-2 font-medium">New Password</label>
+        <div class="relative">
+          <input type="password" name="new_password" id="newPassword"
+                 class="w-full px-4 py-3 pl-10 rounded-xl bg-gray-700/50 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none placeholder-gray-400 transition-all"
+                 placeholder="••••••••" minlength="8">
+          <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
       </div>
 
       <div>
-        <label class="block text-gray-300 text-sm mb-1">Confirm Password</label>
-        <input type="password" name="confirm_password"
-               class="w-full px-4 py-3 rounded-2xl bg-gray-600 text-white border border-gray-500 focus:ring-2 focus:ring-gray-400 focus:outline-none placeholder-gray-300"
-               placeholder="Confirm new password">
+        <label class="block text-gray-300 text-sm mb-2 font-medium">Confirm Password</label>
+        <div class="relative">
+          <input type="password" name="confirm_password" id="confirmPassword"
+                 class="w-full px-4 py-3 pl-10 rounded-xl bg-gray-700/50 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 focus:outline-none placeholder-gray-400 transition-all"
+                 placeholder="••••••••">
+          <i class="fa-solid fa-lock-check absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        </div>
+        <p id="matchHint" class="text-xs mt-1 hidden"></p>
       </div>
 
-      <button type="submit"
-              class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-3 rounded-2xl w-full flex items-center justify-center gap-2 font-semibold transition-shadow shadow-md hover:shadow-lg">
+      <button type="submit" id="submitBtn"
+              class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-4 py-3 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all shadow-lg shadow-blue-900/20 hover:shadow-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed">
         <i class="fa-solid fa-floppy-disk"></i> Update Password
       </button>
-
     </form>
 
   </div>
-
 </div>
 
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   const modal = document.getElementById('changePasswordModal');
+  const modalContent = modal.querySelector('div');
   const openBtn = document.getElementById('changePasswordBtn');
   const closeBtn = document.getElementById('closeModalBtn');
+  const newPassword = document.getElementById('newPassword');
+  const confirmPassword = document.getElementById('confirmPassword');
+  const matchHint = document.getElementById('matchHint');
+  const submitBtn = document.getElementById('submitBtn');
 
   // Open Modal
   openBtn.addEventListener('click', () => {
     modal.classList.remove('opacity-0', 'pointer-events-none');
-    modal.querySelector('div').classList.add('scale-100');
+    modalContent.classList.remove('scale-95');
+    modalContent.classList.add('scale-100');
+    document.body.style.overflow = 'hidden';
   });
 
   // Close Modal
-  closeBtn.addEventListener('click', () => {
+  function closeModal() {
     modal.classList.add('opacity-0', 'pointer-events-none');
-    modal.querySelector('div').classList.remove('scale-100');
-  });
+    modalContent.classList.remove('scale-100');
+    modalContent.classList.add('scale-95');
+    document.body.style.overflow = '';
+    document.getElementById('changePasswordForm').reset();
+    matchHint.classList.add('hidden');
+  }
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !modal.classList.contains('opacity-0')) closeModal(); });
 
-  // Click outside to close
-  modal.addEventListener('click', (e) => {
-    if(e.target === modal){
-      modal.classList.add('opacity-0', 'pointer-events-none');
-      modal.querySelector('div').classList.remove('scale-100');
+  // Password Match Validation
+  function checkMatch() {
+    if(!newPassword.value || !confirmPassword.value) {
+      matchHint.classList.add('hidden');
+      return;
     }
-  });
+    if(newPassword.value === confirmPassword.value) {
+      matchHint.textContent = '✓ Passwords match';
+      matchHint.className = 'text-xs text-emerald-400 mt-1';
+    } else {
+      matchHint.textContent = '✗ Passwords do not match';
+      matchHint.className = 'text-xs text-red-400 mt-1';
+    }
+    matchHint.classList.remove('hidden');
+  }
+  newPassword.addEventListener('input', checkMatch);
+  confirmPassword.addEventListener('input', checkMatch);
 
-  // Change Password Submission
+  // Form Submission
   document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-
-    if(data.new_password !== data.confirm_password){
+    
+    if(newPassword.value !== confirmPassword.value) {
       return Swal.fire('Mismatch', 'New password and confirm password do not match.', 'error');
     }
+    if(newPassword.value.length < 8) {
+      return Swal.fire('Too Short', 'New password must be at least 8 characters.', 'warning');
+    }
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
 
     const result = await Swal.fire({
       title: 'Confirm Password Change',
       text: 'Are you sure you want to update your password?',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#4B5563',
-      cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Yes, update it'
+      confirmButtonColor: '#2563eb',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, update it',
+      background: '#1f2937',
+      color: '#fff'
     });
 
-    if(result.isConfirmed){
-      try{
+    if(result.isConfirmed) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+      
+      try {
         const response = await fetch('{{ url_for("employee_bp.edit_profile") }}', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(data)
         });
         const resData = await response.json();
-        if(resData.status === 'success'){
-          Swal.fire('Updated!', resData.message, 'success').then(() => location.reload());
+        
+        if(resData.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Updated!',
+            text: resData.message,
+            background: '#1f2937',
+            color: '#fff'
+          }).then(() => location.reload());
         } else {
-          Swal.fire('Error', resData.message, 'error');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: resData.message,
+            background: '#1f2937',
+            color: '#fff'
+          });
         }
-      } catch(err){
-        Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+      } catch(err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Something went wrong. Please try again.',
+          background: '#1f2937',
+          color: '#fff'
+        });
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update Password';
       }
     }
   });
 </script>
 
+<!-- Staggered Fade-In Animation -->
+<style>
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  main > div > * { animation: slideUp 0.4s ease-out both; }
+  main > div > *:nth-child(1) { animation-delay: 0.05s; }
+  main > div > *:nth-child(2) { animation-delay: 0.1s; }
+  main > div > *:nth-child(3) { animation-delay: 0.15s; }
+</style>
 {% endblock %}

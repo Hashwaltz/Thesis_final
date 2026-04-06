@@ -2,148 +2,271 @@
 {% block title %}Attendance | Employee{% endblock %}
 
 {% block content %}
-<main class="p-6 space-y-8 bg-gray-900 min-h-screen">
+<main class="min-h-screen bg-[#0B0F19] p-4 md:p-8 space-y-8">
 
   <!-- Header / Summary -->
-  <header class="mb-6">
-    <h1 class="text-3xl font-bold text-gray-100 mb-2 flex items-center gap-2">
-      <i class="fa-solid fa-calendar-days text-purple-400"></i>
-      Attendance Records
-    </h1>
+  <header class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+          <i class="fa-solid fa-calendar-days text-purple-400"></i>
+        </div>
+        Attendance Records
+      </h1>
+      <p class="text-gray-400 mt-2 text-sm md:text-base">
+        Track your daily check-ins, status, and monthly summary
+      </p>
+    </div>
 
-    <p class="text-gray-400">
-      <span class="font-semibold">Summary for this Month:</span>
-      Present: <span class="text-green-400">{{ summary.present }}</span> |
-      Absent: <span class="text-red-400">{{ summary.absent }}</span> |
-      Late: <span class="text-yellow-400">{{ summary.late }}</span> |
-      Half Day: <span class="text-purple-400">{{ summary.half_day }}</span>
-    </p>
+    <!-- Summary Badges -->
+    <div class="flex flex-wrap gap-2">
+      {% set stats = [
+        ('Present', summary.present, 'fa-check', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'),
+        ('Absent', summary.absent, 'fa-xmark', 'bg-red-500/20 text-red-300 border-red-500/30'),
+        ('Late', summary.late, 'fa-clock', 'bg-amber-500/20 text-amber-300 border-amber-500/30'),
+      ] %}
+      {% for label, value, icon, classes in stats %}
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-800/50 border border-white/10">
+          <i class="fa-solid {{ icon }} {{ classes.split(' ')[1] }}"></i>
+          <span class="text-gray-400 text-sm">{{ label }}:</span>
+          <span class="font-semibold {{ classes.split(' ')[1] }}">{{ value }}</span>
+        </div>
+      {% endfor %}
+    </div>
   </header>
 
-  <!-- Filter Form -->
-  <div class="bg-gray-800 p-6 rounded-2xl shadow-md">
-    <form method="get" id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-
+  <!-- Filter Card -->
+  <div class="bg-gray-900/50 backdrop-blur-md p-5 md:p-6 rounded-2xl border border-white/10 shadow-lg">
+    <form method="get" id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
       <!-- Start Date -->
-      <div>
-        <label class="text-gray-400 mb-1 block">Start Date</label>
-        <input type="date" name="start_date" value="{{ start_date_filter }}" 
-               class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100 focus:ring-2 focus:ring-purple-500">
+      <div class="space-y-1.5">
+        <label class="text-xs font-medium text-gray-400 uppercase tracking-wide">Start Date</label>
+        <div class="relative">
+          <i class="fa-regular fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+          <input type="date" name="start_date" value="{{ start_date_filter }}" 
+                 class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-700 bg-gray-800 text-gray-100 
+                        focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm">
+        </div>
       </div>
 
       <!-- End Date -->
-      <div>
-        <label class="text-gray-400 mb-1 block">End Date</label>
-        <input type="date" name="end_date" value="{{ end_date_filter }}" 
-               class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100 focus:ring-2 focus:ring-purple-500">
+      <div class="space-y-1.5">
+        <label class="text-xs font-medium text-gray-400 uppercase tracking-wide">End Date</label>
+        <div class="relative">
+          <i class="fa-regular fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+          <input type="date" name="end_date" value="{{ end_date_filter }}" 
+                 class="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-700 bg-gray-800 text-gray-100 
+                        focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm">
+        </div>
       </div>
 
-      <!-- Status -->
-      <div>
-        <label class="text-gray-400 mb-1 block">Status</label>
-        <select name="status_filter" id="statusFilter"
-                class="w-full p-2 rounded-lg border border-gray-600 bg-gray-700 text-gray-100 focus:ring-2 focus:ring-purple-500">
-          <option value="" {% if not status_filter %}selected{% endif %}>All</option>
-          <option value="Present" {% if status_filter=='Present' %}selected{% endif %}>Present</option>
-          <option value="Absent" {% if status_filter=='Absent' %}selected{% endif %}>Absent</option>
-          <option value="Late" {% if status_filter=='Late' %}selected{% endif %}>Late</option>
-          <option value="Half Day" {% if status_filter=='Half Day' %}selected{% endif %}>Half Day</option>
-        </select>
+      <!-- Status Filter -->
+      <div class="space-y-1.5">
+        <label class="text-xs font-medium text-gray-400 uppercase tracking-wide">Status</label>
+        <div class="relative">
+          <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+          <select name="status_filter" id="statusFilter"
+                  class="w-full pl-10 pr-8 py-2.5 rounded-xl border border-gray-700 bg-gray-800 text-gray-100 
+                         focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 transition-all text-sm appearance-none cursor-pointer">
+            <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+            <option value="Present" {% if status_filter=='Present' %}selected{% endif %}>Present</option>
+            <option value="Absent" {% if status_filter=='Absent' %}selected{% endif %}>Absent</option>
+            <option value="Late" {% if status_filter=='Late' %}selected{% endif %}>Late</option>
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs"></i>
+        </div>
       </div>
 
-      <!-- Button -->
+      <!-- Actions -->
       <div class="flex items-end gap-2">
         <button type="submit"
-                class="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow transition">
+                class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-purple-500 
+                       hover:from-purple-500 hover:to-purple-400 active:scale-[0.98] text-white px-4 py-2.5 
+                       rounded-xl font-medium shadow-lg shadow-purple-500/20 transition-all duration-200">
           <i class="fa-solid fa-magnifying-glass"></i> Filter
         </button>
+        <a href="{{ url_for('employee_bp.attendance') }}" 
+           class="px-4 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800 
+                  hover:text-white transition-colors text-sm font-medium"
+           title="Clear filters">
+          <i class="fa-solid fa-rotate-right"></i>
+        </a>
       </div>
 
     </form>
   </div>
 
   <!-- Attendance Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow-md p-4">
+  <div class="bg-gray-900/50 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg overflow-hidden">
+    
+    <!-- Table Header -->
+    <div class="px-6 py-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+        <i class="fa-solid fa-list text-purple-400"></i> Attendance List
+      </h2>
+      <div class="text-sm text-gray-400">
+        Showing <span class="text-gray-200 font-medium">{{ attendances.items|length }}</span> of 
+        <span class="text-gray-200 font-medium">{{ attendances.total }}</span> records
+      </div>
+    </div>
 
-    <table class="min-w-full divide-y divide-gray-700">
-      <caption class="text-lg font-semibold text-gray-100 mb-4">Attendance List</caption>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-white/10">
+        <thead class="bg-gray-800/50">
+          <tr class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <th class="px-6 py-3">Date</th>
+            <th class="px-6 py-3">Time In</th>
+            <th class="px-6 py-3">Time Out</th>
+            <th class="px-6 py-3">Duration</th>
+            <th class="px-6 py-3">Status</th>
+          </tr>
+        </thead>
 
-      <thead>
-        <tr class="text-left text-gray-400 uppercase text-sm">
-          <th class="px-4 py-2">Date</th>
-          <th class="px-4 py-2">Time In</th>
-          <th class="px-4 py-2">Time Out</th>
-          <th class="px-4 py-2">Status</th>
-        </tr>
-      </thead>
+        <tbody class="divide-y divide-white/5">
+          {% for att in attendances.items %}
+          <tr class="group hover:bg-white/5 transition-colors duration-150">
+            
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-xs font-medium text-gray-400">
+                  {{ att.date.strftime('%d') }}
+                </div>
+                <div>
+                  <div class="text-sm font-medium text-gray-100">{{ att.date.strftime('%b %d, %Y') }}</div>
+                  <div class="text-xs text-gray-500">{{ att.date.strftime('%A') }}</div>
+                </div>
+              </div>
+            </td>
 
-      <tbody class="divide-y divide-gray-700">
-        {% for att in attendances.items %}
-        <tr class="text-gray-100 hover:bg-gray-700 transition">
+            <td class="px-6 py-4">
+              {% if att.time_in %}
+                <span class="text-emerald-400 font-mono text-sm">{{ att.time_in.strftime('%I:%M %p') }}</span>
+              {% else %}
+                <span class="text-gray-600 text-sm">—</span>
+              {% endif %}
+            </td>
 
-          <td class="px-4 py-2">
-            {{ att.date.strftime('%Y-%m-%d') }}
-          </td>
+            <td class="px-6 py-4">
+              {% if att.time_out %}
+                <span class="text-emerald-400 font-mono text-sm">{{ att.time_out.strftime('%I:%M %p') }}</span>
+              {% else %}
+                <span class="text-gray-600 text-sm">—</span>
+              {% endif %}
+            </td>
 
-          <td class="px-4 py-2">
-            {{ att.time_in.strftime('%H:%M') if att.time_in else '---' }}
-          </td>
+            <td class="px-6 py-4">
+              {% if att.time_in and att.time_out %}
+                {% set in_seconds = att.time_in.hour * 3600 + att.time_in.minute * 60 + att.time_in.second %}
+                {% set out_seconds = att.time_out.hour * 3600 + att.time_out.minute * 60 + att.time_out.second %}
+                {% set diff = out_seconds - in_seconds %}
+                {% if diff < 0 %}{% set diff = diff + 86400 %}{% endif %} {# Handle overnight shifts #}
+                {% set hours = diff // 3600 %}
+                {% set mins = (diff % 3600) // 60 %}
+                <span class="text-gray-300 text-sm">{{ hours }}h {{ mins }}m</span>
+              {% else %}
+                <span class="text-gray-600 text-sm">—</span>
+              {% endif %}
+            </td>
 
-          <td class="px-4 py-2">
-            {{ att.time_out.strftime('%H:%M') if att.time_out else '---' }}
-          </td>
+            <td class="px-6 py-4">
+              {% set status_styles = {
+                'Present': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25',
+                'Late': 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25',
+                'Absent': 'bg-red-500/15 text-red-300 border-red-500/30 hover:bg-red-500/25'
+              } %}
+              {% set status_icons = {
+                'Present': 'fa-check',
+                'Late': 'fa-clock',
+                'Absent': 'fa-xmark'
+              } %}
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border 
+                         {{ status_styles.get(att.status, status_styles['Absent']) }} 
+                         transition-colors cursor-default">
+                <i class="fa-solid {{ status_icons.get(att.status, 'fa-question') }}"></i>
+                {{ att.status }}
+              </span>
+            </td>
 
-          <td class="px-4 py-2 font-semibold">
-            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm
-              {% if att.status == 'Present' %}bg-green-700/30 text-green-400
-              {% elif att.status == 'Late' %}bg-yellow-700/30 text-yellow-400
-              {% elif att.status == 'Half Day' %}bg-purple-700/30 text-purple-400
-              {% else %}bg-red-700/30 text-red-400{% endif %}">
-
-              <i class="fa-solid
-                {% if att.status == 'Present' %}fa-check
-                {% elif att.status == 'Late' %}fa-clock
-                {% elif att.status == 'Half Day' %}fa-adjust
-                {% else %}fa-xmark{% endif %}">
-              </i>
-
-              {{ att.status }}
-            </span>
-          </td>
-
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="px-4 py-6 text-center text-gray-400">
-            No attendance records found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="px-6 py-16">
+              <div class="text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-800/50 flex items-center justify-center">
+                  <i class="fa-regular fa-calendar-xmark text-2xl text-gray-500"></i>
+                </div>
+                <h3 class="text-gray-200 font-medium mb-1">No records found</h3>
+                <p class="text-gray-500 text-sm mb-4">Try adjusting your filters or date range</p>
+                <a href="{{ url_for('employee_bp.attendance') }}" 
+                   class="text-purple-400 hover:text-purple-300 text-sm font-medium inline-flex items-center gap-1">
+                  Clear all filters <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
     <!-- Pagination -->
-    <div class="flex justify-center items-center mt-6 text-gray-400 space-x-3">
+    {% if attendances.pages > 1 %}
+    <div class="px-6 py-4 border-t border-white/10 bg-gray-800/30">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        
+        <div class="text-sm text-gray-400">
+          Page <span class="text-gray-200 font-medium">{{ attendances.page }}</span> of 
+          <span class="text-gray-200 font-medium">{{ attendances.pages }}</span>
+        </div>
 
-      {% if attendances.has_prev %}
-        <a href="{{ url_for('employee_bp.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
-           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">
-           Previous
-        </a>
-      {% endif %}
+        <div class="flex items-center gap-1.5">
+          {% if attendances.has_prev %}
+            <a href="{{ url_for('employee_bp.attendance', page=attendances.prev_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
+               class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-700 text-gray-300 
+                      hover:bg-gray-800 hover:text-white hover:border-gray-600 transition-all">
+              <i class="fa-solid fa-chevron-left text-sm"></i>
+            </a>
+          {% else %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-800 text-gray-600 cursor-not-allowed">
+              <i class="fa-solid fa-chevron-left text-sm"></i>
+            </span>
+          {% endif %}
 
-      <span class="px-3 py-1 bg-gray-700 rounded-lg">
-        {{ attendances.page }} / {{ attendances.pages }}
-      </span>
+          {% for p in attendances.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+            {% if p %}
+              {% if p == attendances.page %}
+                <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-purple-600 text-white font-medium border border-purple-500">
+                  {{ p }}
+                </span>
+              {% else %}
+                <a href="{{ url_for('employee_bp.attendance', page=p, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
+                   class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-700 text-gray-300 
+                          hover:bg-gray-800 hover:text-white hover:border-gray-600 transition-all text-sm">
+                  {{ p }}
+                </a>
+              {% endif %}
+            {% else %}
+              <span class="w-9 h-9 flex items-center justify-center text-gray-600">…</span>
+            {% endif %}
+          {% endfor %}
 
-      {% if attendances.has_next %}
-        <a href="{{ url_for('employee_bp.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
-           class="px-3 py-1 bg-gray-700 rounded-lg hover:bg-gray-600">
-           Next
-        </a>
-      {% endif %}
+          {% if attendances.has_next %}
+            <a href="{{ url_for('employee_bp.attendance', page=attendances.next_num, start_date=start_date_filter, end_date=end_date_filter, status_filter=status_filter) }}"
+               class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-700 text-gray-300 
+                      hover:bg-gray-800 hover:text-white hover:border-gray-600 transition-all">
+              <i class="fa-solid fa-chevron-right text-sm"></i>
+            </a>
+          {% else %}
+            <span class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-800 text-gray-600 cursor-not-allowed">
+              <i class="fa-solid fa-chevron-right text-sm"></i>
+            </span>
+          {% endif %}
+        </div>
 
+      </div>
     </div>
+    {% endif %}
 
   </div>
 
@@ -151,29 +274,38 @@
 
 <!-- SweetAlert -->
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
   // Auto-submit on status change
-  document.getElementById('statusFilter').addEventListener('change', function() {
-      document.getElementById('filterForm').submit();
+  document.getElementById('statusFilter')?.addEventListener('change', function() {
+    document.getElementById('filterForm')?.submit();
   });
 
-  // Flash Messages
+  // Flash Messages with SweetAlert2
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
       Swal.fire({
         icon: "{{ 'success' if category == 'success' else 'error' }}",
         title: "{{ 'Success' if category == 'success' else 'Error' }}",
         text: "{{ msg }}",
-        timer: 2000,
-        showConfirmButton: false
+        background: "#1f2937",
+        color: "#f3f4f6",
+        confirmButtonColor: "#7c3aed",
+        timer: 2500,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end"
       });
     {% endfor %}
   {% endwith %}
-
 });
 </script>
 
+<!-- Custom Scrollbar -->
+<style>
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #374151; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+</style>
 {% endblock %}
