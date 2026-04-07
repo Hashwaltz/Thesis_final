@@ -31,9 +31,9 @@ def view_leaves():
     if leave_type_filter:
         query = query.filter(Leave.leave_type_id == leave_type_filter)
 
-    leaves = query.order_by(Leave.created_at.desc()).paginate(
-        page=page, per_page=20, error_out=False
-    )
+    leaves = query.filter(Leave.status != "Canceled")\
+        .order_by(Leave.created_at.desc())\
+        .paginate(page=page, per_page=20, error_out=False)
 
     return render_template(
         'hr/admin/leaves/view_leaves.html',

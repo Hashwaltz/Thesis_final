@@ -2,10 +2,56 @@ from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
 
 from main_app.extensions import db
-from main_app.models.hr_models import LeaveType
+from main_app.models.hr_models import LeaveType, Employee, Leave, Department
 from main_app.helpers.decorators import leave_officer_required
 
 from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
+
+
+
+
+# ===============================
+# VIEW LEAVE REQUESTS
+# ===============================
+@leave_officer_bp.route("/leave-requests")
+@login_required
+@leave_officer_required
+def view_leaves():
+    page = request.args.get("page", 1, type=int)
+    status_filter = request.args.get("status", "")
+    department_filter = request.args.get("department", "")
+    search = request.args.get("search", "")
+
+    query = Leave.query.join(Employee)
+
+    # Exclude canceled leaves
+    query = query.filter(Leave.status != "Canceled")
+
+    if search:
+        query = query.filter(
+            (Employee.first_name.ilike(f"%{search}%")) |
+            (Employee.last_name.ilike(f"%{search}%")) |
+            (Employee.employee_id.ilike(f"%{search}%"))
+        )
+
+    if status_filter:
+        query = query.filter(Leave.status == status_filter)
+
+    if department_filter:
+        query = query.filter(Employee.department_id == department_filter)
+
+    query = query.order_by(Leave.created_at.desc())
+    leaves = query.paginate(page=page, per_page=10, error_out=False)
+    departments = Department.query.all()
+
+    return render_template(
+        "hr/leave_officer/leave_requests.html",
+        leaves=leaves,
+        status_filter=status_filter,
+        selected_department=department_filter,
+        search=search,
+        departments=departments
+    )
 
 
 # ======================================================

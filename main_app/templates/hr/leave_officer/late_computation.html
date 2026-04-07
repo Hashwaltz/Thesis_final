@@ -33,19 +33,47 @@
       </div>
 
       <!-- Employee -->
-      <div class="flex flex-col">
-        <label class="text-sm text-gray-400 flex items-center gap-1">
-          <i class="fa-solid fa-user text-gray-300"></i> Employee
-        </label>
-        <select name="employee_id" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200">
-          <option value="">-- Select Employee --</option>
-          {% for emp in employees %}
-            <option value="{{ emp.id }}" {% if emp.id == selected_employee_id %}selected{% endif %}>
-              {{ emp.get_full_name() }} ({{ emp.employment_type.name if emp.employment_type else '-' }})
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+      <!-- Employee Search + Dropdown -->
+<div class="flex flex-col min-w-[200px]">
+  <label class="text-sm text-gray-400 flex items-center gap-1">
+    <i class="fa-solid fa-magnifying-glass text-gray-300"></i> Search Employee
+  </label>
+  <div class="flex gap-2 mt-1">
+    <input 
+      type="text" 
+      name="employee_search" 
+      value="{{ employee_search or '' }}"
+      placeholder="Type name to filter..." 
+      class="px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none flex-1"
+    >
+    <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1" title="Search">
+      <i class="fa-solid fa-search"></i>
+    </button>
+    {% if employee_search %}
+      <a href="{{ url_for(request.endpoint, month=month, year=year) }}" 
+         class="bg-gray-600 px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-1" title="Clear search">
+        <i class="fa-solid fa-xmark"></i>
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+    <!-- Employee Dropdown (filtered by search) -->
+    <div class="flex flex-col min-w-[250px]">
+      <label class="text-sm text-gray-400 flex items-center gap-1">
+        <i class="fa-solid fa-user text-gray-300"></i> Select Employee
+      </label>
+      <select name="employee_id" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none">
+        <option value="">-- Select Employee --</option>
+        {% for emp in employees %}
+          <option value="{{ emp.id }}" {% if emp.id == selected_employee_id %}selected{% endif %}>
+            {{ emp.get_full_name() }} ({{ emp.employment_type.name if emp.employment_type else '-' }})
+          </option>
+        {% else %}
+          <option disabled>No employees found{% if employee_search %} for "{{ employee_search }}"{% endif %}</option>
+        {% endfor %}
+      </select>
+    </div>
 
       <button type="submit" class="bg-blue-600 px-5 py-2 rounded-xl hover:bg-blue-700 flex items-center gap-2">
         <i class="fa-solid fa-filter"></i>

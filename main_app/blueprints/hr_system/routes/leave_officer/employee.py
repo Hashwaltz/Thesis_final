@@ -445,42 +445,6 @@ def edit_leave_credit(employee_id):
     flash("Leave credits updated successfully (and history synced).", "success")
     return redirect(url_for("leave_officer_bp.view_employee", employee_id=employee.id))
 
-# ===============================
-# VIEW LEAVE REQUESTS
-# ===============================
-@leave_officer_bp.route("/leave-requests")
-@login_required
-@leave_officer_required
-def view_leaves():
-    page = request.args.get("page", 1, type=int)
-    status_filter = request.args.get("status", "")
-    department_filter = request.args.get("department", "")
-    search = request.args.get("search", "")
 
-    query = Leave.query.join(Employee)
 
-    if search:
-        query = query.filter(
-            (Employee.first_name.ilike(f"%{search}%")) |
-            (Employee.last_name.ilike(f"%{search}%")) |
-            (Employee.employee_id.ilike(f"%{search}%"))
-        )
 
-    if status_filter:
-        query = query.filter(Leave.status == status_filter)
-
-    if department_filter:
-        query = query.filter(Employee.department_id == department_filter)
-
-    query = query.order_by(Leave.created_at.desc())
-    leaves = query.paginate(page=page, per_page=10, error_out=False)
-    departments = Department.query.all()
-
-    return render_template(
-        "hr/leave_officer/leave_requests.html",
-        leaves=leaves,
-        status_filter=status_filter,
-        selected_department=department_filter,
-        search=search,
-        departments=departments
-    )

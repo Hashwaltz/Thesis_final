@@ -7,23 +7,22 @@
 
     <!-- HEADER -->
     <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-lg">
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <a href="{{ url_for('payroll_staff_bp.select_department', period_id=period.id) }}"
-                class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm">
-                    ← Back
+               class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm transition">
+               ← Back
             </a>
-        </div>
-        <div class="flex justify-between items-center">
-            <div>
-                <h3 class="text-xs text-gray-400 tracking-wider">LGU MUNICIPALITY OF NORZAGARAY</h3>
-                <h1 class="text-2xl font-bold text-gray-300">{{ department.name }} </h1>
-            </div>
             <div class="text-right">
                 <p class="text-xs text-gray-400">Payroll No.</p>
-                <p class="text-lg font-semibold text-blue-300">
+                <p class="text-lg font-semibold text-blue-300 font-mono">
                     {{ period.start_date.month }}-{{ period.start_date.strftime('%y') }}-002
                 </p>
             </div>
+        </div>
+
+        <div class="text-center mb-4">
+            <h3 class="text-xs text-gray-400 tracking-wider">LGU MUNICIPALITY OF NORZAGARAY</h3>
+            <h1 class="text-2xl font-bold text-gray-200 mt-1">{{ department.name }}</h1>
         </div>
 
         <div class="text-center border-y border-gray-700 py-3 my-4">
@@ -31,7 +30,7 @@
         </div>
 
         <div class="text-center">
-            <p class="text-lg font-medium">
+            <p class="text-lg font-medium text-gray-300 font-mono">
                 {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
             </p>
         </div>
@@ -49,178 +48,155 @@
              data-rate="{{ rate }}">
 
             <!-- EMPLOYEE -->
-            <div>
-                <h3 class="text-lg font-bold text-gray-300">
-                    ({{data.employee.employee_id}}) {{ data.employee.get_full_name() }}
-                </h3>
-                <p class="text-sm text-gray-400">{{ data.employee.position.name }}</p>
+            <div class="flex items-center justify-between border-b border-gray-700 pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-200">
+                        ({{data.employee.employee_id}}) {{ data.employee.get_full_name() }}
+                    </h3>
+                    <p class="text-sm text-gray-400">{{ data.employee.position.name }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-400">Daily Rate</p>
+                    <p class="text-xl font-bold text-emerald-400 font-mono">₱ {{ '{:,.2f}'.format(rate) }}</p>
+                </div>
             </div>
 
             <div class="grid md:grid-cols-2 gap-6">
-
                 <!-- EARNINGS -->
-                <div class="bg-gray-900 p-4 rounded-xl space-y-3">
-                    <h4 class="text-blue-300 font-semibold">Earnings</h4>
-
+                <div class="bg-gray-900 p-4 rounded-xl space-y-3 border border-gray-800">
+                    <h4 class="text-blue-300 font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-coins text-sm"></i> Earnings
+                    </h4>
                     <div>
-                        <label class="text-xs text-gray-400">Days Worked</label>
-                        <input type="number"
-                               name="days_worked_{{ data.employee.id }}"
-                               value="{{ payroll.days_worked or 0 }}"
-                               class="days w-full p-2 bg-gray-800 text-right rounded">
+                        <label class="text-xs text-gray-400 block mb-1">Days Worked</label>
+                        <input type="number" name="days_worked_{{ data.employee.id }}" value="{{ payroll.days_worked or 0 }}"
+                               class="days w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none">
                     </div>
-
                     <div>
-                        <label class="text-xs text-gray-400">Rate</label>
-                        <input type="text"
-                               value="₱ {{ '{:,.2f}'.format(rate) }}"
-                               readonly
-                               class="w-full p-2 bg-gray-800 text-right rounded">
+                        <label class="text-xs text-gray-400 block mb-1">Allowance</label>
+                        <input type="number" name="allowance_total_{{ data.employee.id }}" value="{{ payroll.allowance_total or 0 }}"
+                               class="allowance w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none">
                     </div>
-
                     <div>
-                        <label class="text-xs text-gray-400">Basic Pay</label>
-                        <input type="text"
-                               readonly
-                               class="basic w-full p-2 bg-gray-800 text-right rounded">
+                        <label class="text-xs text-gray-400 block mb-1">Overtime</label>
+                        <input type="number" name="overtime_pay_{{ data.employee.id }}" value="0"
+                               class="overtime w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none">
                     </div>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Allowance</label>
-                        <input type="number"
-                               name="allowance_total_{{ data.employee.id }}"
-                               value="{{ payroll.allowance_total or 0 }}"
-                               class="allowance w-full p-2 bg-gray-800 text-right rounded">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Overtime</label>
-                        <input type="number"
-                               name="overtime_pay_{{ data.employee.id }}"
-                               value="0"
-                               class="overtime w-full p-2 bg-gray-800 text-right rounded">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Gross Pay</label>
-                        <input type="text"
-                               readonly
-                               class="gross w-full p-2 bg-gray-800 text-right rounded font-semibold text-green-300">
-                    </div>
-
-                    <!-- 🔥 NEW: Monthly Salary -->
-                    <div>
-                        <label class="text-xs text-gray-400">Monthly Equivalent (×2)</label>
-                        <input type="text"
-                               readonly
-                               class="monthly w-full p-2 bg-gray-800 text-right rounded text-yellow-300 font-semibold">
+                    
+                    <div class="pt-2 border-t border-gray-700 mt-2 space-y-2">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Basic Pay</label>
+                            <input type="text" readonly class="basic w-full p-2 bg-gray-800/50 border border-gray-700 rounded text-right font-mono text-gray-300">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Gross Pay</label>
+                            <input type="text" readonly class="gross w-full p-2 bg-blue-900/20 border border-blue-700/30 rounded text-right font-mono font-semibold text-blue-300">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Monthly Equivalent (×2)</label>
+                            <input type="text" readonly class="monthly w-full p-2 bg-yellow-900/10 border border-yellow-700/30 rounded text-right font-mono font-semibold text-yellow-300">
+                        </div>
                     </div>
                 </div>
 
                 <!-- DEDUCTIONS -->
-                <div class="bg-gray-900 p-4 rounded-xl space-y-3">
-                    <h4 class="text-red-300 font-semibold">Deductions</h4>
+                <div class="bg-gray-900 p-4 rounded-xl space-y-3 border border-gray-800">
+                    <h4 class="text-red-300 font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-minus-circle text-sm"></i> Deductions
+                    </h4>
 
                     {% for ded in data.deductions %}
+                        {% if ded.name == "SSS" %}
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">SSS</label>
+                            <input type="number" name="sss_{{ data.employee.id }}" value="{{ ded.employee_share or 0 }}"
+                                   class="employee-share w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-red-500/30 focus:border-red-500 outline-none">
+                            <p class="text-[10px] text-gray-500 mt-1 text-right">Gov't Share: ₱ {{ '{:,.2f}'.format(ded.employer_share or 0) }}</p>
+                        </div>
 
-                    {% if ded.name == "SSS" %}
-                    <div>
-                        <label class="text-xs text-gray-400">SSS</label>
-                        <input type="number"
-                               name="sss_{{ data.employee.id }}"
-                               value="{{ ded.employee_share or 0 }}"
-                               class="employee-share w-full p-2 bg-gray-800 text-right rounded">
+                        {% elif ded.name == "Pag-IBIG" %}
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Pag-IBIG</label>
+                            <input type="number" name="pagibig_{{ data.employee.id }}" value="{{ ded.employee_share or 0 }}"
+                                   class="employee-share w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-red-500/30 focus:border-red-500 outline-none">
+                            <p class="text-[10px] text-gray-500 mt-1 text-right">Gov't Share: ₱ {{ '{:,.2f}'.format(ded.employer_share or 0) }}</p>
+                        </div>
 
-                        <input type="text"
-                               value="Gov: ₱ {{ '{:,.2f}'.format(ded.employer_share) }}"
-                               readonly
-                               class="w-full mt-1 p-2 bg-gray-700 text-right rounded">
-                    </div>
+                        {% elif ded.key == "awop" %}
+                        <!-- AWOP: Always starts at 0, but shows calculation for reference -->
+                        <div class="bg-amber-900/10 border border-amber-700/30 rounded-lg p-3 space-y-2 mt-1">
+                            <label class="text-xs font-medium text-amber-300 flex items-center gap-1">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Absence Without Pay
+                            </label>
+                            <!-- Context Info -->
+                            <div class="grid grid-cols-3 gap-1 text-[10px] text-gray-400">
+                                <span>Absent: {{ ded.total_absent }}d</span>
+                                <span>Credits: {{ ded.credits_used }}d</span>
+                                <span>Uncovered: {{ ded.uncovered_days }}d</span>
+                            </div>
+                            
+                            <!-- Input Default: 0 -->
+                            <input type="number" name="awop_{{ data.employee.id }}" value="0"
+                                   class="employee-share w-full p-2 bg-gray-800 border border-amber-600/50 rounded text-right font-mono text-amber-300 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 outline-none">
+                            
+                            <!-- Suggested Value Display (Uses calculated value from backend) -->
+                            <p class="text-[10px] text-gray-500 text-right">
+                                Suggested: ₱ {{ '{:,.2f}'.format(ded.employee_share or 0) }}
+                            </p>
+                        </div>
 
-                    {% elif ded.name == "Pag-IBIG" %}
-                    <div>
-                        <label class="text-xs text-gray-400">Pag-IBIG</label>
-                        <input type="number"
-                               name="pagibig_{{ data.employee.id }}"
-                               value="{{ ded.employee_share or 0 }}"
-                               class="employee-share w-full p-2 bg-gray-800 text-right rounded">
-
-                        <input type="text"
-                               value="Gov: ₱ {{ '{:,.2f}'.format(ded.employer_share) }}"
-                               readonly
-                               class="w-full mt-1 p-2 bg-gray-700 text-right rounded">
-                    </div>
-
-                    {% else %}
-                    <div>
-                        <label class="text-xs text-gray-400">
-                            {{ ded.name }}
-                        </label>
-
-                        <input type="number"
-                               name="loan_{{ ded.loan_id }}"
-                               value="{{ ded.employee_share or 0 }}"
-                               class="employee-share w-full p-2 bg-gray-800 text-right rounded">
-                    </div>
-                    {% endif %}
-
+                        {% else %}
+                        <!-- LOANS -->
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">{{ ded.name }}</label>
+                            <input type="number" name="loan_{{ ded.loan_id }}" value="{{ ded.employee_share or 0 }}"
+                                   class="employee-share w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-red-500/30 focus:border-red-500 outline-none">
+                        </div>
+                        {% endif %}
                     {% endfor %}
 
-                    <div class="pt-3 border-t border-gray-700">
-                        <label class="text-sm text-gray-400">Total Deduction</label>
-                        <input type="text"
-                               readonly
-                               class="total-deduction w-full p-2 bg-gray-800 text-right rounded text-red-300 font-semibold">
+                    <div class="pt-3 border-t border-gray-700 mt-2">
+                        <label class="text-sm text-gray-400 block mb-1">Total Deduction</label>
+                        <input type="text" readonly class="total-deduction w-full p-2 bg-red-900/20 border border-red-700/30 rounded text-right font-mono font-semibold text-red-300">
                     </div>
-
                 </div>
             </div>
 
             <!-- NET PAY -->
-            <div class="bg-gray-900 p-4 rounded-xl">
-                <label class="text-sm text-gray-400">Net Pay</label>
-                <input type="text"
-                       readonly
-                       class="net-pay w-full p-3 bg-gray-800 text-right rounded font-bold text-green-400 text-lg">
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-800">
+                <label class="text-sm text-gray-400 block mb-1">Net Pay</label>
+                <input type="text" readonly class="net-pay w-full p-3 bg-emerald-900/20 border border-emerald-700/30 rounded text-right font-mono font-bold text-emerald-400 text-lg">
             </div>
 
         </div>
         {% endfor %}
 
         <div class="text-right mt-6">
-            <button class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl font-semibold">
-                Process Payroll
+            <button class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 px-8 py-3 rounded-xl font-semibold transition shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-check mr-2"></i> Process Payroll
             </button>
         </div>
-
     </form>
 </div>
 
 <script>
 document.querySelectorAll('.employee-card').forEach(card => {
-
     const rate = parseFloat(card.dataset.rate) || 0;
-
     const days = card.querySelector('.days');
     const allowance = card.querySelector('.allowance');
     const overtime = card.querySelector('.overtime');
-
     const basicEl = card.querySelector('.basic');
     const grossEl = card.querySelector('.gross');
     const monthlyEl = card.querySelector('.monthly');
     const totalDedEl = card.querySelector('.total-deduction');
     const netEl = card.querySelector('.net-pay');
-
     const deductions = card.querySelectorAll('.employee-share');
 
-    function format(n){
-        return "₱ " + (n || 0).toLocaleString(undefined,{
-            minimumFractionDigits:2,
-            maximumFractionDigits:2
-        });
+    function format(n) {
+        return "₱ " + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function compute(){
+    function compute() {
         let d = parseFloat(days.value) || 0;
         let a = parseFloat(allowance.value) || 0;
         let o = parseFloat(overtime.value) || 0;
@@ -240,9 +216,10 @@ document.querySelectorAll('.employee-card').forEach(card => {
         netEl.value = format(gross - totalDed);
     }
 
-    card.querySelectorAll('input').forEach(i =>
-        i.addEventListener('input', compute)
-    );
+    card.querySelectorAll('input').forEach(i => {
+        i.addEventListener('input', compute);
+        i.addEventListener('change', compute);
+    });
 
     compute();
 });

@@ -75,7 +75,15 @@ def leaves():
         ).all()
     ]
 
-    query = Leave.query.filter(Leave.employee_id.in_(department_employee_ids))
+    query = Leave.query
+
+    if department_employee_ids:
+        query = query.filter(Leave.employee_id.in_(department_employee_ids))
+    else:
+        query = query.filter(False)  # forces empty result safely
+
+    # ✅ ALWAYS EXCLUDE "Canceled" leaves
+    query = query.filter(Leave.status != 'Canceled')
 
     if status_filter:
         query = query.filter_by(status=status_filter)
@@ -83,7 +91,6 @@ def leaves():
     leaves = query.order_by(Leave.created_at.desc()).paginate(page=page, per_page=20, error_out=False)
 
     return render_template('hr/head/leaves.html', leaves=leaves, status_filter=status_filter)
-
 
 @hr_head_bp.route('/leaves/<int:leave_id>/approve', methods=['POST'])
 @login_required

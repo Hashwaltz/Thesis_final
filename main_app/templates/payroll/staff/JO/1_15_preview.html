@@ -3,170 +3,312 @@
 {% block title %}JO Payroll Preview - 1–15{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-4 sm:p-6 space-y-8 text-gray-100">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-100">
 
-    <!-- HEADER -->
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-md space-y-4">
-
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <!-- ================= HEADER ================= -->
+    <header class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+            
+            <!-- Back Button -->
             <a href="{{ url_for('payroll_staff_bp.jo_select_department', period_id=period.id) }}"
-               class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded-lg text-sm">
-                ← Back
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700/60 hover:bg-slate-600/80 
+                      text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-600 
+                      hover:border-slate-500 hover:shadow-lg">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back to Departments</span>
             </a>
 
+            <!-- Center Title -->
             <div class="text-center flex-1">
-                <h3 class="text-xs text-gray-400 tracking-wider">
-                    LGU MUNICIPALITY OF NORZAGARAY
-                </h3>
-                <h1 class="text-2xl sm:text-3xl font-bold text-emerald-400">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                    LGU Municipality of Norzagaray
+                </p>
+                <h1 class="text-2xl lg:text-3xl font-bold text-white mt-1">
                     {{ department.name }}
                 </h1>
+                <p class="text-sm text-emerald-400 font-medium mt-1">
+                    Job Order Payroll • 1st Half (Days 1–15)
+                </p>
             </div>
 
-            <div class="text-right">
-                <p class="text-xs text-gray-400">Payroll No.</p>
-                <p class="text-lg font-semibold text-emerald-400">
+            <!-- Payroll Reference -->
+            <div class="text-right bg-slate-900/60 px-5 py-3 rounded-xl border border-slate-700/60 min-w-[180px]">
+                <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Payroll Reference</p>
+                <p class="text-lg font-bold text-emerald-400 font-mono tracking-tight">
                     {{ period.start_date.month }}-{{ period.start_date.strftime('%y') }}-JO
                 </p>
             </div>
         </div>
 
-        <div class="text-center border-y border-gray-700 py-3">
-            <h2 class="text-xl sm:text-2xl font-bold text-emerald-400">
-                JOB ORDER PAYROLL (1ST HALF - 1–15)
-            </h2>
+        <!-- Period Banner -->
+        <div class="mt-6 pt-4 border-t border-slate-700/50">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="text-sm font-medium text-slate-300">Pay Period:</span>
+                </div>
+                <p class="text-lg font-semibold text-white font-mono tabular-nums">
+                    {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
+                </p>
+            </div>
         </div>
+    </header>
 
-        <div class="text-center">
-            <p class="text-lg font-medium text-gray-300">
-                {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
-            </p>
-        </div>
-
-    </div>
-
-    <!-- FORM -->
+    <!-- ================= PAYROLL FORM ================= -->
     <form method="POST"
           action="{{ url_for('payroll_staff_bp.process_jo_payroll', period_id=period.id, department_id=department.id) }}"
-          class="space-y-8">
+          class="space-y-6">
 
         {% for data in payroll_data %}
         {% set payroll = data.payroll %}
         {% set rate = (data.employee.salary or 0) | float %}
 
-        <div class="employee-card bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-6 shadow-md"
-             data-rate="{{ rate }}">
+        <!-- Employee Card -->
+        <article class="employee-card bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-700/60 
+                       shadow-lg hover:shadow-xl transition-shadow duration-200"
+                 data-rate="{{ rate }}"
+                 data-employee-id="{{ data.employee.id }}">
 
-            <!-- EMPLOYEE INFO -->
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-300">
-                        ({{ data.employee.employee_id }}) {{ data.employee.get_full_name() }}
-                    </h3>
-                    <p class="text-sm text-gray-400">
-                        {{ data.employee.position.name }}
+            <!-- Card Header -->
+            <div class="px-6 py-5 border-b border-slate-700/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 
+                               flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        {{ data.employee.get_full_name().split()|first|first|upper }}
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white leading-tight">
+                            <span class="text-emerald-400/90 font-mono text-sm">#{{ data.employee.employee_id }}</span>
+                            {{ data.employee.get_full_name() }}
+                        </h3>
+                        <p class="text-sm text-slate-400 mt-0.5">
+                            {{ data.employee.position.name }}
+                        </p>
+                        {% if data.employee.employment_type %}
+                        <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-medium 
+                                   bg-slate-700/60 text-slate-300 rounded-md border border-slate-600">
+                            {{ data.employee.employment_type.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daily Rate</p>
+                    <p class="text-xl font-bold text-emerald-400 font-mono tabular-nums">
+                        ₱ {{ '{:,.2f}'.format(rate) }}
                     </p>
                 </div>
-                <div class="text-right sm:text-left mt-2 sm:mt-0">
-                    <p class="text-sm text-gray-400">Rate: <span class="text-emerald-400">₱ {{ '{:,.2f}'.format(rate) }}</span></p>
+            </div>
+
+            <!-- Card Body: Earnings & Deductions -->
+            <div class="p-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                <!-- EARNINGS SECTION -->
+                <section class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/40 space-y-5">
+                    <div class="flex items-center gap-2 pb-3 border-b border-slate-700/40">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center">
+                            <i class="fa-solid fa-coins text-emerald-400 text-sm"></i>
+                        </div>
+                        <h4 class="font-semibold text-emerald-400">Earnings</h4>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <i class="fa-regular fa-calendar-days"></i> Days Worked
+                            </label>
+                            <input type="number"
+                                   name="days_worked_{{ data.employee.id }}"
+                                   value="{{ payroll.days_worked or 0 }}"
+                                   min="0"
+                                   max="15"
+                                   class="days w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                          rounded-lg text-right font-mono tabular-nums text-white
+                                          focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
+                                          outline-none transition-all placeholder-slate-500">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <i class="fa-solid fa-clock"></i> Overtime Pay
+                            </label>
+                            <input type="number"
+                                   name="overtime_{{ data.employee.id }}"
+                                   value="{{ payroll.overtime_pay or 0 }}"
+                                   min="0"
+                                   step="0.01"
+                                   class="overtime w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                          rounded-lg text-right font-mono tabular-nums text-white
+                                          focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
+                                          outline-none transition-all placeholder-slate-500">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-3 border-t border-slate-700/40">
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-sm font-medium text-slate-300">Basic Pay</span>
+                            <input type="text" readonly 
+                                   class="basic w-40 px-3 py-1.5 bg-slate-800/60 border border-slate-600/60 
+                                          rounded text-right font-mono tabular-nums text-slate-200 text-sm">
+                        </div>
+                        <div class="flex justify-between items-center py-2 bg-emerald-900/15 rounded-lg px-3">
+                            <span class="text-sm font-semibold text-emerald-300">Gross Pay</span>
+                            <input type="text" readonly 
+                                   class="gross w-40 px-3 py-1.5 bg-emerald-900/30 border border-emerald-700/40 
+                                          rounded text-right font-mono tabular-nums font-bold text-emerald-400 text-sm">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- DEDUCTIONS SECTION (NO SCROLL) -->
+                <section class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/40 space-y-5">
+                    <div class="flex items-center gap-2 pb-3 border-b border-slate-700/40">
+                        <div class="w-8 h-8 rounded-lg bg-red-600/20 flex items-center justify-center">
+                            <i class="fa-solid fa-minus-circle text-red-400 text-sm"></i>
+                        </div>
+                        <h4 class="font-semibold text-red-400">Deductions</h4>
+                    </div>
+
+                    <!-- Deductions Grid - All Visible -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for ded in data.deductions %}
+                            {% if ded.name == "SSS" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                    <i class="fa-solid fa-hand-holding-dollar"></i> SSS Contribution
+                                </label>
+                                <input type="number"
+                                       name="sss_{{ data.employee.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       class="employee-share w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-red-500/40 focus:border-red-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="statutory">
+                            </div>
+                            {% elif ded.name == "PhilHealth" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-heart-pulse"></i> PhilHealth</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">2.5%</span>
+                                </label>
+                                <input type="number"
+                                       name="philhealth_{{ data.employee.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       class="employee-share w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-red-500/40 focus:border-red-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="statutory">
+                            </div>
+                            {% else %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> {{ ded.name }}
+                                </label>
+                                <input type="number"
+                                       name="loan_{{ ded.loan_id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       class="employee-share w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-red-500/40 focus:border-red-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="loan">
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Absence Without Pay -->
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                <span><i class="fa-regular fa-calendar-xmark"></i> Absence Without Pay</span>
+                                <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Optional</span>
+                            </label>
+                            <input type="number"
+                                   name="awop_{{ data.employee.id }}"
+                                   value="0"
+                                   min="0"
+                                   step="0.01"
+                                   placeholder="0.00"
+                                   class="awop w-full px-4 py-2.5 bg-amber-900/10 border border-amber-700/40 
+                                          rounded-lg text-right font-mono tabular-nums text-white
+                                          focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                          outline-none transition-all placeholder-slate-500"
+                                   data-deduction-type="awop">
+                        </div>
+                    </div>
+
+                    <!-- Total Deductions -->
+                    <div class="pt-4 border-t border-slate-700/40">
+                        <label class="text-sm font-semibold text-slate-300 block mb-2">Total Deductions</label>
+                        <input type="text" readonly 
+                               class="total-deduction w-full px-4 py-3 bg-red-900/20 border border-red-700/40 
+                                      rounded-lg text-right font-mono tabular-nums font-bold text-red-400 text-lg">
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- NET PAY FOOTER -->
+            <div class="px-6 py-4 bg-gradient-to-r from-emerald-900/40 via-slate-900/40 to-slate-900/40 
+                       border-t border-emerald-700/30 rounded-b-2xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h5 class="text-sm font-semibold text-white">Net Payable</h5>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Gross Pay <span class="text-slate-500">−</span> Total Deductions
+                        </p>
+                    </div>
+                    <input type="text" readonly 
+                           class="net-pay w-full sm:w-56 px-5 py-3 bg-emerald-900/50 border-2 border-emerald-600/50 
+                                  rounded-xl text-right font-mono tabular-nums font-bold text-emerald-300 text-2xl 
+                                  shadow-inner focus:outline-none">
                 </div>
             </div>
 
-            <!-- EARNINGS & DEDUCTIONS -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                <!-- EARNINGS -->
-                <div class="bg-gray-900 p-4 rounded-xl space-y-3 shadow-inner">
-                    <h4 class="text-emerald-400 font-semibold">Earnings</h4>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Days Worked</label>
-                        <input type="number"
-                               name="days_worked_{{ data.employee.id }}"
-                               value="{{ payroll.days_worked or 0 }}"
-                               class="days w-full p-2 bg-gray-800 text-right rounded focus:ring-emerald-400 focus:border-emerald-400">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Basic Pay</label>
-                        <input type="text" readonly class="basic w-full p-2 bg-gray-800 text-right rounded">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Gross Pay</label>
-                        <input type="text" readonly class="gross w-full p-2 bg-gray-800 text-right rounded font-semibold text-green-300">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-gray-400">Overtime Pay</label>
-                        <input type="number"
-                               name="overtime_{{ data.employee.id }}"
-                               value="{{ payroll.overtime_pay or 0 }}"
-                               class="overtime w-full p-2 bg-gray-800 text-right rounded focus:ring-emerald-400 focus:border-emerald-400">
-                    </div>
-                </div>
-
-                <!-- DEDUCTIONS -->
-                <div class="bg-gray-900 p-4 rounded-xl space-y-3 shadow-inner">
-                    <h4 class="text-red-400 font-semibold">Deductions</h4>
-
-                    {% for ded in data.deductions %}
-                        {% if ded.name == "SSS" %}
-                        <div>
-                            <label class="text-xs text-gray-400">SSS</label>
-                            <input type="number"
-                                   name="sss_{{ data.employee.id }}"
-                                   value="{{ ded.employee_share or 0 }}"
-                                   class="employee-share w-full p-2 bg-gray-800 text-right rounded focus:ring-red-400 focus:border-red-400">
-                        </div>
-                        {% elif ded.name == "PhilHealth" %}
-                        <div>
-                            <label class="text-xs text-gray-400">PhilHealth</label>
-                            <input type="number"
-                                   name="philhealth_{{ data.employee.id }}"
-                                   value="{{ ded.employee_share or 0 }}"
-                                   class="employee-share w-full p-2 bg-gray-800 text-right rounded focus:ring-red-400 focus:border-red-400">
-                        </div>
-                        {% else %}
-                        <div>
-                            <label class="text-xs text-gray-400">{{ ded.name }}</label>
-                            <input type="number"
-                                   name="loan_{{ ded.loan_id }}"
-                                   value="{{ ded.employee_share or 0 }}"
-                                   class="employee-share w-full p-2 bg-gray-800 text-right rounded focus:ring-red-400 focus:border-red-400">
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-
-                    <div class="pt-3 border-t border-gray-700">
-                        <label class="text-sm text-gray-400">Total Deduction</label>
-                        <input type="text" readonly class="total-deduction w-full p-2 bg-gray-800 text-right rounded text-red-300 font-semibold">
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- NET PAY -->
-            <div class="bg-gray-900 p-4 rounded-xl shadow-inner">
-                <label class="text-sm text-gray-400">Net Pay</label>
-                <input type="text" readonly class="net-pay w-full p-3 bg-gray-800 text-right rounded font-bold text-green-400 text-lg">
-            </div>
-
-        </div>
+        </article>
         {% endfor %}
 
-        <div class="text-right mt-6">
-            <button class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-xl font-semibold transition">
-                Process JO Payroll
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-5 pt-6 border-t border-slate-700/50">
+            <div class="flex items-start gap-3 text-sm text-slate-400">
+                <i class="fa-solid fa-circle-info text-emerald-400/80 mt-0.5"></i>
+                <p>
+                    Statutory deductions (SSS, PhilHealth) are computed from <strong class="text-slate-200">Gross Pay</strong>. 
+                    All amounts are in Philippine Peso (₱).
+                </p>
+            </div>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-7 py-3.5 font-semibold text-white rounded-xl
+                           bg-gradient-to-r from-emerald-600 to-emerald-700 
+                           hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
+                           transition-all shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>Process & Submit Payroll</span>
             </button>
         </div>
 
     </form>
+
+    <!-- Footer Note -->
+    <footer class="text-center pt-4 pb-8">
+        <p class="text-xs text-slate-500">
+            <i class="fa-solid fa-shield-halved mr-1"></i>
+            Payroll data is encrypted and compliant with Data Privacy Act of 2012
+        </p>
+    </footer>
+
 </div>
 
+<!-- Enhanced JavaScript for Calculations -->
 <script>
 document.querySelectorAll('.employee-card').forEach(card => {
-
+    const empId = card.dataset.employeeId;
     const rate = parseFloat(card.dataset.rate) || 0;
 
     const days = card.querySelector('.days');
@@ -175,34 +317,48 @@ document.querySelectorAll('.employee-card').forEach(card => {
     const grossEl = card.querySelector('.gross');
     const totalDedEl = card.querySelector('.total-deduction');
     const netEl = card.querySelector('.net-pay');
-    const deductions = card.querySelectorAll('.employee-share');
+    
+    // All deduction inputs
+    const deductions = card.querySelectorAll('[data-deduction-type]');
 
-    function format(n){
-        return "₱ " + (n || 0).toLocaleString(undefined,{
-            minimumFractionDigits:2,
-            maximumFractionDigits:2
+    function format(n) {
+        return "₱ " + (n || 0).toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     }
 
-    function compute(){
-        let d = parseFloat(days.value) || 0;
-        let ot = parseFloat(overtime.value) || 0;
-        let basic = d * rate;
-        let gross = basic + ot;
+    function compute() {
+        // 1. Compute earnings
+        const d = parseFloat(days.value) || 0;
+        const ot = parseFloat(overtime.value) || 0;
+        const basic = d * rate;
+        const gross = basic + ot;
 
         basicEl.value = format(basic);
         grossEl.value = format(gross);
 
-        // sum all deductions (including editable PhilHealth)
+        // 2. Compute total deductions
         let totalDed = 0;
-        deductions.forEach(x => totalDed += parseFloat(x.value) || 0);
+        deductions.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            totalDed += val;
+        });
         totalDedEl.value = format(totalDed);
 
-        // net pay
-        netEl.value = format(gross - totalDed);
+        // 3. Net Pay = Gross - Total Deductions (prevent negative)
+        const net = Math.max(gross - totalDed, 0);
+        netEl.value = format(net);
     }
 
-    card.querySelectorAll('input').forEach(i => i.addEventListener('input', compute));
+    // Attach listeners to all inputs
+    card.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', compute);
+        input.addEventListener('change', compute);
+        input.addEventListener('blur', compute); // ensure update on focus loss
+    });
+
+    // Initial compute on load
     compute();
 });
 </script>

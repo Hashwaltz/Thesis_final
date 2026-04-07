@@ -3,73 +3,99 @@
 {% block title %}Regular Payroll - Select Department{% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-6 text-gray-200 max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-100">
 
-  <!-- HEADER -->
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-    <h2 class="text-3xl font-bold text-purple-500 flex items-center gap-3">
-      <i class="fa-solid fa-users-gear text-3xl"></i>
-      Regular Payroll - Select Department
-    </h2>
+    <!-- ================= HEADER ================= -->
+    <header class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            
+            <!-- Title Section -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 
+                           flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-building-columns text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Regular Payroll - Select Department</h1>
+                    <p class="text-sm text-slate-400 mt-0.5">Choose a department to begin processing for this period</p>
+                </div>
+            </div>
 
-    <p class="mt-2 md:mt-0 text-gray-400">
-      Payroll Period:
-      <span class="text-gray-300">
-        {{ period.start_date }} – {{ period.end_date }}
-      </span>
-    </p>
-  </div>
+            <!-- Period Badge -->
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-lg border border-slate-700/60">
+                <i class="fa-regular fa-calendar text-emerald-400"></i>
+                <span class="text-slate-300 text-sm font-mono tabular-nums">
+                    {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
+                </span>
+            </div>
+        </div>
+    </header>
 
-  <!-- INFO BADGE -->
-  <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-gray-300">
-    <p>
-      💡 Regular Payroll Rules:
-      <span class="text-purple-400 font-semibold">Monthly salary-based</span>,
-      <span class="text-purple-400 font-semibold">adjustment pay (1–15 cutoff)</span>,
-      <span class="text-purple-400 font-semibold">CTW (5% / 10%)</span>,
-      <span class="text-purple-400 font-semibold">GMP-PT (2%)</span>,
-      full government deductions + loans.
-    </p>
-  </div>
+    <!-- ================= RULES / INFO CARD ================= -->
+    <section class="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-5">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i class="fa-solid fa-circle-info text-amber-400"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-slate-200 mb-1">Regular Payroll Computation Rules</h3>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    <span class="text-emerald-400 font-medium">Monthly salary-based</span> computation with 
+                    <span class="text-emerald-400 font-medium">adjustment pay (1–15 cutoff)</span>, 
+                    <span class="text-emerald-400 font-medium">CTW (5% / 10%)</span>, 
+                    <span class="text-emerald-400 font-medium">GMP-PT (2%)</span>, 
+                    full statutory deductions (SSS, PhilHealth, Pag-IBIG, Withholding Tax), and active loan amortizations.
+                </p>
+            </div>
+        </div>
+    </section>
 
-  <!-- DEPARTMENT CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- ================= DEPARTMENT CARDS ================= -->
+    <section>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for dept in departments %}
+            <article class="group bg-slate-800/70 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-6 flex flex-col justify-between 
+                           hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 relative overflow-hidden">
+                
+                <!-- Subtle gradient overlay on hover -->
+                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
-    {% for dept in departments %}
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 flex flex-col justify-between
-                hover:scale-105 hover:shadow-2xl transition-all duration-300 relative overflow-hidden text-center">
+                <div class="relative z-10">
+                    <!-- Icon -->
+                    <div class="w-14 h-14 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center 
+                               text-emerald-400 mb-4 group-hover:bg-emerald-600/20 group-hover:border-emerald-500/30 transition-all duration-300">
+                        <i class="fa-solid fa-building-user text-2xl"></i>
+                    </div>
 
-      <!-- PURPLE OVERLAY -->
-      <div class="absolute inset-0 opacity-0 hover:opacity-15 transition-opacity rounded-2xl bg-purple-500"></div>
+                    <!-- Department Name -->
+                    <h3 class="text-lg font-semibold text-slate-100 mb-1 group-hover:text-emerald-300 transition-colors truncate">
+                        {{ dept.name }}
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">Regular Payroll Processing</p>
+                </div>
 
-      <!-- ICON -->
-      <div class="text-6xl mb-4 relative z-10 text-purple-400">
-        <i class="fa-solid fa-users-gear"></i>
-      </div>
+                <!-- Action Button -->
+                <a href="{{ url_for('payroll_staff_bp.preview_regular_payroll', period_id=period.id, department_id=dept.id) }}"
+                   class="relative z-10 mt-4 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white
+                          bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg
+                          hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
+                          transition-all shadow-sm hover:shadow-emerald-500/25 group-hover:-translate-y-0.5">
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                    <span>Process Payroll</span>
+                </a>
+            </article>
+            {% else %}
+            <!-- Empty State -->
+            <div class="col-span-full text-center py-12 bg-slate-800/30 border border-slate-700/40 rounded-2xl">
+                <div class="w-16 h-16 rounded-2xl bg-slate-900/40 flex items-center justify-center mx-auto mb-3 border border-slate-700/40">
+                    <i class="fa-regular fa-building text-2xl text-slate-400"></i>
+                </div>
+                <p class="text-lg font-medium text-slate-300">No Departments Available</p>
+                <p class="text-sm text-slate-500 mt-1">Contact your administrator to configure departments for regular payroll.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
 
-      <!-- Department Name -->
-      <h3 class="text-xl font-semibold text-white mb-2 relative z-10">
-        {{ dept.name }}
-      </h3>
-
-      <!-- LABEL -->
-      <p class="text-xs text-gray-400 mb-4 relative z-10">
-        Regular Payroll Processing
-      </p>
-
-      <!-- BUTTON -->
-      <a href="{{ url_for('payroll_staff_bp.preview_regular_payroll', period_id=period.id, department_id=dept.id) }}"
-         class="px-6 py-2 font-medium rounded-lg transition relative z-10
-                bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600
-                hover:from-purple-500 hover:via-purple-600 hover:to-purple-700
-                hover:shadow-lg hover:scale-105 text-white">
-        Process Regular Payroll
-      </a>
-
-    </div>
-    {% endfor %}
-
-  </div>
-
-</section>
+</div>
 {% endblock %}

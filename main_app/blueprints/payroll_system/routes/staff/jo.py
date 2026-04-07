@@ -88,7 +88,6 @@ def preview_jo_payroll(period_id, department_id):
 
     second_half = is_second_half(period)
     payroll_data = []
-
     for emp in employees:
 
         attendances = Attendance.query.filter(
@@ -101,7 +100,15 @@ def preview_jo_payroll(period_id, department_id):
 
         daily_rate = emp.salary or 0
         basic_pay = worked_days * daily_rate
-        gross_pay = basic_pay  # NO allowance for JO
+        
+        # ✅ FETCH EXISTING OVERTIME (from saved payroll or default to 0)
+        existing_payroll = Payroll.query.filter_by(
+            employee_id=emp.id,
+            payroll_period_id=period.id
+        ).first()
+        
+        overtime_pay = existing_payroll.overtime_pay if existing_payroll and existing_payroll.overtime_pay else 0
+        gross_pay = basic_pay + overtime_pay
 
         deductions = []
         total_deductions = 0
@@ -110,9 +117,8 @@ def preview_jo_payroll(period_id, department_id):
         # 1–15 HALF
         # ======================================================
         if not second_half:
-
             sss = getattr(emp, "sss_rss", 0) or 0
-            phic_emp, phic_gov = compute_philhealth(gross_pay)  # auto-compute from gross pay
+            phic_emp, phic_gov = compute_philhealth(gross_pay)
 
             deductions.append({
                 "key": "sss",
@@ -125,22 +131,22 @@ def preview_jo_payroll(period_id, department_id):
             deductions.append({
                 "key": "philhealth",
                 "name": "PhilHealth",
-                "employee_share": phic_emp,  # auto-computed
+                "employee_share": phic_emp,
                 "employer_share": 0,
-                "editable": True  # still editable
+                "editable": True
             })
 
             total_deductions += sss + phic_emp
-
             allowed_loans = ALLOWED_LOAN_1_15
 
         # ======================================================
         # 16–END HALF
         # ======================================================
         else:
-            sss = safe_float(request.form.get(f"sss_{emp.id}"))
+            # ✅ Get SSS from form if editing existing, else from employee record
+            sss = safe_float(request.form.get(f"sss_{emp.id}")) if existing_payroll else (getattr(emp, "sss_rss", 0) or 0)
             phic_emp, phic_gov = compute_philhealth(gross_pay)
-            # GET 1–15 PERIOD (same month/year)
+            
             first_half_period = PayrollPeriod.query.filter(
                 extract('month', PayrollPeriod.start_date) == period.start_date.month,
                 extract('year', PayrollPeriod.start_date) == period.start_date.year,
@@ -155,12 +161,10 @@ def preview_jo_payroll(period_id, department_id):
                     payroll_period_id=first_half_period.id
                 ).first()
 
-            # COMPUTE TAXES
             current_tax = compute_withholding_tax(gross_pay)
-
             previous_gross = previous_payroll.gross_pay if previous_payroll else 0
             previous_tax = compute_withholding_tax(previous_gross)
-            # SSS
+
             if sss > 0:
                 deductions.append({
                     "key": "sss",
@@ -171,7 +175,6 @@ def preview_jo_payroll(period_id, department_id):
                 })
                 total_deductions += sss
 
-            # PHILHEALTH
             if phic_emp > 0:
                 deductions.append({
                     "key": "philhealth",
@@ -182,7 +185,6 @@ def preview_jo_payroll(period_id, department_id):
                 })
                 total_deductions += phic_emp
 
-           # PREVIOUS TAX (1–15)
             if previous_tax > 0:
                 deductions.append({
                     "key": "tax_prev",
@@ -193,7 +195,6 @@ def preview_jo_payroll(period_id, department_id):
                 })
                 total_deductions += previous_tax
 
-            # CURRENT TAX (16–END)
             if current_tax > 0:
                 deductions.append({
                     "key": "tax_curr",
@@ -221,9 +222,9 @@ def preview_jo_payroll(period_id, department_id):
                 "loan_id": loan.id,
                 "editable": True
             })
-
             total_deductions += loan.monthly_payment or 0
 
+        # ✅ BUILD PAYROLL OBJECT WITH OVERTIME
         payroll = Payroll()
         payroll.days_worked = worked_days
         payroll.basic_salary = basic_pay
@@ -232,9 +233,9 @@ def preview_jo_payroll(period_id, department_id):
         payroll_data.append({
             "employee": emp,
             "payroll": payroll,
-            "deductions": deductions
+            "deductions": deductions,
+            "overtime_pay": overtime_pay
         })
-
     template = (
         "payroll/staff/jo/16_end_preview.html"
         if second_half else
@@ -269,9 +270,11 @@ def process_jo_payroll(period_id, department_id):
     for emp in employees:
 
         days_worked = safe_float(request.form.get(f"days_worked_{emp.id}"))
-
+        overtime_pay = safe_float(request.form.get(f"overtime_{emp.id}"))
         daily_rate = emp.salary or 0
-        gross_pay = days_worked * daily_rate
+        basic_pay = days_worked * daily_rate
+        gross_pay = basic_pay + overtime_pay
+
 
         payroll = Payroll(
             employee_id=emp.id,
@@ -315,6 +318,17 @@ def process_jo_payroll(period_id, department_id):
                     deduction_name="PhilHealth",
                     employee_share=phic_emp
                 ))
+            
+
+            awop = safe_float(request.form.get(f"awop_{emp.id}"))
+            if awop > 0:
+                total_deductions += awop
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="Absence Without Pay",
+                    employee_share=awop
+                ))
+
 
             allowed_loans = ALLOWED_LOAN_1_15
 
@@ -381,6 +395,15 @@ def process_jo_payroll(period_id, department_id):
                     payroll_id=payroll.id,
                     deduction_name="Withholding Tax (16–End)",
                     employee_share=current_tax
+                ))
+
+            awop = safe_float(request.form.get(f"awop_{emp.id}"))
+            if awop > 0:
+                total_deductions += awop
+                db.session.add(PayrollDeduction(
+                    payroll_id=payroll.id,
+                    deduction_name="Absence Without Pay",
+                    employee_share=awop
                 ))
 
             allowed_loans = ALLOWED_LOAN_16_END

@@ -3,88 +3,219 @@
 {% block title %}Regular Payroll{% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-6 text-gray-200">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-100">
 
-  <!-- HEADER -->
-  <div class="flex items-center justify-between">
-    <h2 class="text-2xl font-semibold text-purple-400 flex items-center gap-3">
-      <i class="fa-solid fa-calendar-check text-3xl"></i>
-      Regular Payroll
-    </h2>
-    <p class="text-sm text-gray-400">
-      Select a payroll period then choose a department for processing
-    </p>
-  </div>
+    <!-- ================= HEADER ================= -->
+    <header class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            
+            <!-- Title Section -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 
+                           flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-calendar-check text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Regular Payroll</h1>
+                    <p class="text-sm text-slate-400 mt-0.5">
+                        Select a payroll period to begin processing
+                    </p>
+                </div>
+            </div>
 
-  <!-- TABLE CARD -->
-  <div class="bg-gray-800 border border-gray-700 rounded-2xl overflow-x-auto mt-4">
+            <!-- Quick Stats -->
+            <div class="flex items-center gap-4 text-sm">
+                <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-lg border border-slate-700/60">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-slate-300">{{ periods|selectattr('status', 'equalto', 'Open')|list|length }} Open Periods</span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-lg border border-slate-700/60">
+                    <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+                    <span class="text-slate-400">{{ periods|selectattr('status', 'equalto', 'Closed')|list|length }} Closed</span>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    <table class="min-w-full divide-y divide-gray-700">
+    <!-- ================= PAYROLL PERIODS TABLE ================= -->
+    <section class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/60 rounded-2xl shadow-lg overflow-hidden">
+        
+        <!-- Table Header -->
+        <div class="px-6 py-4 border-b border-slate-700/50 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+                <i class="fa-solid fa-list text-emerald-400"></i>
+                Payroll Periods
+            </h2>
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Click "Select Department" to process an open period</span>
+            </div>
+        </div>
 
-      <!-- HEADER -->
-      <thead class="bg-gray-900 text-gray-400 uppercase text-xs tracking-wider">
-        <tr>
-          <th class="px-6 py-3 text-left font-semibold">Period</th>
-          <th class="px-6 py-3 text-left font-semibold">Start Date</th>
-          <th class="px-6 py-3 text-left font-semibold">End Date</th>
-          <th class="px-6 py-3 text-left font-semibold">Status</th>
-          <th class="px-6 py-3 text-right font-semibold">Action</th>
-        </tr>
-      </thead>
+        <!-- Table Container -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-700/50">
 
-      <!-- BODY -->
-      <tbody class="divide-y divide-gray-700">
+                <!-- Table Head -->
+                <thead class="bg-slate-900/60">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            Period Name
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            Start Date
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            End Date
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
 
-        {% for p in periods %}
-        <tr class="hover:bg-gray-700/40 transition">
+                <!-- Table Body -->
+                <tbody class="divide-y divide-slate-700/30 bg-slate-800/30">
+                    {% for p in periods %}
+                    <tr class="group hover:bg-slate-700/30 transition-all duration-200">
+                        
+                        <!-- Period Name -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 
+                                           flex items-center justify-center text-slate-300 font-mono text-sm border border-slate-600">
+                                    {{ loop.index }}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-200">{{ p.period_name }}</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">
+                                        {{ p.start_date.strftime('%b') }} – {{ p.end_date.strftime('%b %Y') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
 
-          <td class="px-6 py-4 text-gray-200 font-medium">
-            {{ p.period_name }}
-          </td>
+                        <!-- Start Date -->
+                        <td class="px-6 py-4">
+                            <p class="text-slate-300 font-mono text-sm">
+                                {{ p.start_date.strftime('%B %d, %Y') }}
+                            </p>
+                        </td>
 
-          <td class="px-6 py-4 text-gray-400">
-            {{ p.start_date }}
-          </td>
+                        <!-- End Date -->
+                        <td class="px-6 py-4">
+                            <p class="text-slate-300 font-mono text-sm">
+                                {{ p.end_date.strftime('%B %d, %Y') }}
+                            </p>
+                        </td>
 
-          <td class="px-6 py-4 text-gray-400">
-            {{ p.end_date }}
-          </td>
+                        <!-- Status Badge -->
+                        <td class="px-6 py-4">
+                            {% if p.status == "Closed" %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold 
+                                           rounded-full bg-red-500/10 text-red-400 border border-red-500/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    Closed
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold 
+                                           rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Open
+                                </span>
+                            {% endif %}
+                        </td>
 
-          <td class="px-6 py-4">
-            {% if p.status == "Closed" %}
-              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-700/20 text-red-400">
-                Closed
-              </span>
-            {% else %}
-              <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-600/20 text-purple-400">
-                Open
-              </span>
-            {% endif %}
-          </td>
+                        <!-- Actions -->
+                        <td class="px-6 py-4 text-right">
+                            {% if p.status == "Closed" %}
+                                <span class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium 
+                                           text-slate-500 bg-slate-900/40 rounded-lg border border-slate-700/40 cursor-not-allowed">
+                                    <i class="fa-solid fa-lock"></i>
+                                    Processing Closed
+                                </span>
+                            {% else %}
+                                <a href="{{ url_for('payroll_staff_bp.regular_select_department', period_id=p.id) }}"
+                                   class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white 
+                                          bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg 
+                                          hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
+                                          transition-all shadow-md hover:shadow-emerald-500/25 hover:-translate-y-0.5
+                                          border border-emerald-500/30">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                    Select Department
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <!-- Empty State -->
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3 text-slate-400">
+                                <div class="w-16 h-16 rounded-2xl bg-slate-900/40 flex items-center justify-center border border-slate-700/40">
+                                    <i class="fa-regular fa-calendar-xmark text-2xl"></i>
+                                </div>
+                                <p class="text-lg font-medium text-slate-300">No Payroll Periods Found</p>
+                                <p class="text-sm">Contact your administrator to create new payroll periods.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-          <td class="px-6 py-4 text-right">
+        <!-- Table Footer -->
+        <div class="px-6 py-4 border-t border-slate-700/50 bg-slate-900/30 flex items-center justify-between text-xs text-slate-400">
+            <p>
+                <i class="fa-solid fa-shield-halved mr-1"></i>
+                All payroll data is encrypted and access-logged
+            </p>
+            <p>
+                Total: <span class="text-slate-200 font-medium">{{ periods|length }}</span> period(s)
+            </p>
+        </div>
+    </section>
 
-            {% if p.status == "Closed" %}
-              <span class="text-gray-400 text-sm">Payroll Closed</span>
+    <!-- ================= HELP SECTION ================= -->
+    <section class="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-6">
+        <h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4">
+            <i class="fa-regular fa-circle-question text-amber-400"></i>
+            How to Process Regular Payroll
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">1</span>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200 text-sm">Select Period</p>
+                    <p class="text-xs text-slate-400 mt-1">Choose an open payroll period from the table above.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">2</span>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200 text-sm">Choose Department</p>
+                    <p class="text-xs text-slate-400 mt-1">Select the department you want to process payroll for.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">3</span>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200 text-sm">Review & Process</p>
+                    <p class="text-xs text-slate-400 mt-1">Verify employee data, adjust if needed, then submit.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-            {% else %}
-              <!-- 🔥 CHANGE HERE: go to department selection -->
-              <a href="{{ url_for('payroll_staff_bp.regular_select_department', period_id=p.id) }}"
-                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition">
-                 Select Department
-              </a>
-            {% endif %}
-
-          </td>
-
-        </tr>
-        {% endfor %}
-
-      </tbody>
-
-    </table>
-
-  </div>
-
-</section>
+</div>
 {% endblock %}

@@ -6,56 +6,91 @@
 <section class="p-6 space-y-6 text-gray-200">
 
   <!-- HEADER -->
-  <h2 class="text-2xl sm:text-3xl font-semibold text-emerald-400 flex items-center gap-3">
-    <i class="fa-solid fa-warehouse text-3xl sm:text-4xl"></i>
-    Payroll Departments
-  </h2>
+  <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+        <i class="fa-solid fa-warehouse text-emerald-400"></i>
+        Department Payrolls
+      </h1>
+      <p class="text-gray-400 text-sm mt-1.5">Overview of payroll distribution across municipal departments.</p>
+    </div>
+    <span class="text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+      {{ department_rows|length }} Department{{ 's' if department_rows|length != 1 else '' }}
+    </span>
+  </header>
 
   <!-- FILTER -->
-  <form method="get" class="mt-4 flex gap-4 flex-wrap items-center">
-    <select name="period_id"
-            onchange="this.form.submit()"
-            class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 flex-1 min-w-[180px] sm:min-w-[200px]">
-      {% for p in payroll_periods %}
-      <option value="{{ p.id }}" {% if selected_period and p.id==selected_period.id %}selected{% endif %}>
-        {{ p.period_name }} ({{ p.start_date }} - {{ p.end_date }})
-      </option>
-      {% endfor %}
-    </select>
+  <form method="get" class="bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50 flex flex-col sm:flex-row items-center gap-4 shadow-lg">
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs text-gray-400 mb-1.5 font-medium">Select Pay Period</label>
+      <select name="period_id"
+              onchange="this.form.submit()"
+              class="w-full px-4 py-2.5 rounded-xl bg-gray-900/80 border border-gray-700 text-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer">
+        {% for p in payroll_periods %}
+        <option value="{{ p.id }}" {% if selected_period and p.id==selected_period.id %}selected{% endif %}>
+          {{ p.period_name }} ({{ p.start_date }} - {{ p.end_date }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
   </form>
 
   <!-- TOTAL MUNICIPAL PAYROLL -->
-  <div class="bg-emerald-900/20 border border-emerald-700 rounded-xl p-6 mt-4">
-    <p class="text-gray-400 text-sm">Total Municipal Payroll</p>
-    <p class="text-3xl sm:text-4xl font-bold text-emerald-400">
-      ₱ {{ "{:,.2f}".format(municipality_total) }}
-    </p>
+  <div class="relative overflow-hidden bg-gradient-to-br from-emerald-900/30 to-gray-800/50 border border-emerald-700/30 rounded-2xl p-6 mt-4">
+    <div class="absolute -top-6 -right-6 opacity-10">
+      <i class="fa-solid fa-landmark text-9xl text-emerald-400"></i>
+    </div>
+    <div class="relative z-10">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fa-solid fa-coins text-emerald-400/80"></i>
+        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Total Municipal Payroll</p>
+      </div>
+      <p class="text-3xl sm:text-4xl font-bold text-emerald-400 tracking-tight tabular-nums">
+        ₱ {{ "{:,.2f}".format(municipality_total) }}
+      </p>
+      {% if selected_period %}
+      <p class="text-xs text-gray-500 mt-2">For period: {{ selected_period.period_name }}</p>
+      {% endif %}
+    </div>
   </div>
 
   <!-- DEPARTMENT CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-6">
     {% for dept in department_rows %}
     <div onclick="goToDepartmentPayroll({{ dept.id }})"
-         class="cursor-pointer bg-gray-800 border border-gray-700 rounded-2xl p-5 flex flex-col gap-3
-                hover:bg-gray-700/50 hover:-translate-y-1 hover:shadow-xl transition-all duration-200">
+         class="cursor-pointer group bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-5 flex flex-col gap-4
+                hover:bg-gray-700/40 hover:border-emerald-500/30 hover:-translate-y-1 hover:shadow-xl transition-all duration-200"
+         tabindex="0" role="button" aria-label="View payroll details for {{ dept.name }}"
+         onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
 
-      <div class="flex items-center gap-4">
-        <div class="p-4 bg-emerald-600/20 rounded-full flex items-center justify-center">
-          <i class="fa-solid fa-warehouse text-emerald-400 text-3xl sm:text-4xl"></i>
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors shrink-0">
+          <i class="fa-solid fa-warehouse text-emerald-400 text-xl"></i>
         </div>
-        <div class="truncate">
-          <h4 class="text-lg sm:text-xl font-semibold text-white truncate">{{ dept.name }}</h4>
-          <p class="text-sm sm:text-base text-gray-400">{{ dept.employee_count }} Employees</p>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-lg font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">{{ dept.name }}</h4>
+          <div class="flex items-center gap-1.5 mt-1 text-sm text-gray-400">
+            <i class="fa-solid fa-users text-xs opacity-60"></i>
+            <span>{{ dept.employee_count }} Employee{{ 's' if dept.employee_count != 1 else '' }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="mt-2 text-right">
-        <p class="text-gray-400 text-sm sm:text-base">Total Payroll</p>
-        <p class="text-emerald-400 font-semibold text-xl sm:text-2xl">
-          ₱ {{ "{:,.2f}".format(dept.total) }}
-        </p>
+      <div class="mt-auto pt-4 border-t border-gray-700/40 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wider">Total Payroll</p>
+          <p class="text-emerald-400 font-bold text-xl mt-0.5 tabular-nums">₱ {{ "{:,.2f}".format(dept.total) }}</p>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-gray-700/50 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+          <i class="fa-solid fa-arrow-right text-gray-400 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all"></i>
+        </div>
       </div>
 
+    </div>
+    {% else %}
+    <div class="col-span-full px-6 py-12 text-center text-gray-500 bg-gray-800/30 rounded-2xl border border-gray-700/30">
+      <i class="fa-regular fa-folder-open text-3xl mb-3 block opacity-50"></i>
+      No departments found for this period.
     </div>
     {% endfor %}
   </div>

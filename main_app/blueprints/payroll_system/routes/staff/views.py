@@ -1,7 +1,7 @@
 from sqlalchemy.orm import  joinedload 
 from flask import render_template, request
-from flask_login import login_required
-from datetime import date
+from flask_login import login_required, current_user
+from datetime import date, datetime
 from calendar import monthrange
 from sqlalchemy import func, case, or_
 import calendar
@@ -27,20 +27,42 @@ def get_current_payroll_period():
 @login_required
 @staff_required
 def staff_dashboard():
-
     today = date.today()
+
+    # =====================================================
+    # HELPER: Get date range for metrics (Period-aware)
+    # =====================================================
+    
+    current_period = PayrollPeriod.query.filter_by(
+        status="Open"
+    ).order_by(
+        PayrollPeriod.start_date.desc()
+    ).first()
+    
+    has_open_period = current_period is not None
+    
+    # Use period dates if available, fallback to calendar month
+    if has_open_period and current_period:
+        metric_start = current_period.start_date
+        metric_end = current_period.end_date
+        period_label = f"{current_period.start_date.strftime('%b %d')}–{current_period.end_date.strftime('%b %d')}"
+    else:
+        metric_start = today.replace(day=1)
+        metric_end = today.replace(day=monthrange(today.year, today.month)[1])
+        period_label = today.strftime('%B %Y')
 
     # =====================================================
     # EMPLOYEE SUMMARY
     # =====================================================
-
     total_employees = Employee.query.filter_by(status="Active").count()
     total_departments = Department.query.count()
+    
+    # Get total locations (fixes undefined variable)
+    total_locations = db.session.query(func.count(func.distinct(Employee.department_id))).scalar() or 1
 
     # =====================================================
     # PAYROLL PIPELINE STATUS
     # =====================================================
-
     pending_payrolls = Payroll.query.filter_by(status="Draft").count()
     processing_payrolls = Payroll.query.filter_by(status="Processing").count()
     completed_payrolls = Payroll.query.filter_by(status="Completed").count()
@@ -51,21 +73,8 @@ def staff_dashboard():
     payroll_queue_size = pending_payrolls + processing_payrolls
 
     # =====================================================
-    # PERIOD MONITORING
-    # =====================================================
-
-    current_period = PayrollPeriod.query.filter_by(
-        status="Open"
-    ).order_by(
-        PayrollPeriod.start_date.desc()
-    ).first()
-
-    has_open_period = current_period is not None
-
-    # =====================================================
     # FINANCIAL SUMMARY (SAFE AGGREGATION)
     # =====================================================
-
     total_disbursed = db.session.scalar(
         db.select(func.coalesce(func.sum(Payslip.net_pay), 0))
     ) or 0
@@ -76,39 +85,28 @@ def staff_dashboard():
 
     # ✅ Compute allowance total safely in Python layer
     total_allowances = 0
-
-    payroll_ids = db.session.scalars(
-        db.select(Payroll.id)
-    ).all()
-
+    payroll_ids = db.session.scalars(db.select(Payroll.id)).all()
+    
     if payroll_ids:
-        payroll_records = Payroll.query.filter(
-            Payroll.id.in_(payroll_ids)
-        ).all()
-
-        total_allowances = sum(
-            p.allowance_total for p in payroll_records
-        )
+        payroll_records = Payroll.query.filter(Payroll.id.in_(payroll_ids)).all()
+        total_allowances = sum(p.allowance_total or 0 for p in payroll_records)
 
     # =====================================================
-    # MONTHLY PROCESSING PERFORMANCE
+    # PERIOD-AWARE MONTHLY PROCESSING PERFORMANCE ✅ FIXED
     # =====================================================
-
-    month_start = today.replace(day=1)
-
+    
     monthly_completed_payrolls = Payroll.query.filter(
-        Payroll.created_at >= month_start,
+        Payroll.created_at.between(metric_start, metric_end),
         Payroll.status == "Completed"
     ).count()
 
     monthly_generated_payslips = Payslip.query.filter(
-        Payslip.generated_at >= month_start
+        Payslip.generated_at.between(metric_start, metric_end)
     ).count()
 
     # =====================================================
     # RECENT WORKFLOW ACTIVITY
     # =====================================================
-
     recent_payrolls = Payroll.query.order_by(
         Payroll.updated_at.desc() if hasattr(Payroll, 'updated_at')
         else Payroll.created_at.desc()
@@ -121,7 +119,6 @@ def staff_dashboard():
     # =====================================================
     # PENDING TASK LIST
     # =====================================================
-
     unclaimed_payslips = Payslip.query.filter(
         Payslip.status == "Generated"
     ).order_by(
@@ -133,30 +130,29 @@ def staff_dashboard():
     ).count()
 
     # =====================================================
-    # ATTENDANCE ANALYTICS
+    # DEPARTMENT DATA FOR DISTRIBUTION CARD
     # =====================================================
+    departments = Department.query.all()
+    dept_data = []
+    for dept in departments:
+        emp_count = Employee.query.filter_by(department_id=dept.id, status="Active").count()
+        payroll_status = "Active" if emp_count > 0 else "Inactive"
+        dept_data.append({
+            'name': dept.name,
+            'employee_count': emp_count,
+            'payroll_status': payroll_status
+        })
 
-    month_end = today.replace(
-        day=monthrange(today.year, today.month)[1]
-    )
-
+    # =====================================================
+    # ATTENDANCE ANALYTICS (Period-aware)
+    # =====================================================
     attendance_query = db.session.query(
         Attendance.date.label("date"),
-
-        func.sum(
-            case((Attendance.status == "Present", 1), else_=0)
-        ).label("present_count"),
-
-        func.sum(
-            case((Attendance.status == "Absent", 1), else_=0)
-        ).label("absent_count"),
-
-        func.sum(
-            case((Attendance.status == "Late", 1), else_=0)
-        ).label("late_count")
-
+        func.sum(case((Attendance.status == "Present", 1), else_=0)).label("present_count"),
+        func.sum(case((Attendance.status == "Absent", 1), else_=0)).label("absent_count"),
+        func.sum(case((Attendance.status == "Late", 1), else_=0)).label("late_count")
     ).filter(
-        Attendance.date.between(month_start, month_end)
+        Attendance.date.between(metric_start, metric_end)
     ).group_by(
         Attendance.date
     ).order_by(
@@ -173,44 +169,59 @@ def staff_dashboard():
     # =====================================================
     # RENDER TEMPLATE
     # =====================================================
-
     return render_template(
         'payroll/staff/views/staff_dashboard.html',
-
+        
+        # Core metrics
         total_employees=total_employees,
         total_departments=total_departments,
-
+        total_locations=total_locations,
+        
+        # Pipeline status
         pending_payrolls=pending_payrolls,
         processing_payrolls=processing_payrolls,
         completed_payrolls=completed_payrolls,
-
+        
+        # Payslip status
         generated_payslips=generated_payslips,
         claimed_payslips=claimed_payslips,
-
         payroll_queue_size=payroll_queue_size,
-
+        
+        # Financials
         total_disbursed=total_disbursed,
         total_deductions=total_deductions,
         total_allowances=round(total_allowances, 2),
-
+        
+        # Period info
         has_open_period=has_open_period,
         current_period=current_period,
-
+        period_label=period_label,  # ✅ NEW: For UI display
+        
+        # Period-aware monthly metrics ✅ FIXED
         monthly_completed_payrolls=monthly_completed_payrolls,
         monthly_generated_payslips=monthly_generated_payslips,
-
+        
+        # Recent activity
         recent_payrolls=recent_payrolls,
         recent_payslips=recent_payslips,
-
+        
+        # Pending tasks
         unclaimed_payslips=unclaimed_payslips,
         unclaimed_count=unclaimed_count,
-
+        
+        # Department distribution
+        departments=dept_data,
+        
+        # Attendance analytics
         monthly_dates=monthly_dates,
         monthly_present_counts=monthly_present_counts,
         monthly_absent_counts=monthly_absent_counts,
-        monthly_late_counts=monthly_late_counts
+        monthly_late_counts=monthly_late_counts,
+        
+        # Context
+        current_date=datetime.now(),
+        current_user=current_user
     )
-
 
 
 @payroll_staff_bp.route('/payrolls')

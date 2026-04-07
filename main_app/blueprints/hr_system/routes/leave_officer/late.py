@@ -11,6 +11,7 @@ from main_app.blueprints.hr_system.routes.leave_officer import leave_officer_bp
 HOUR_TO_DAY = 0.125
 MINUTE_TO_DAY = 0.002
 
+
 @leave_officer_bp.route("/late-computation", methods=["GET"])
 @login_required
 @leave_officer_required
@@ -18,8 +19,22 @@ def late_computation():
     month = request.args.get("month", type=int, default=datetime.now().month)
     year = request.args.get("year", type=int, default=datetime.now().year)
     days_in_month = calendar.monthrange(year, month)[1]
-
-    employees = Employee.query.order_by(Employee.last_name).all()
+    
+    # Employee search filter
+    employee_search = request.args.get("employee_search", type=str, default="").strip()
+    
+    # Filter employees by search query if provided
+    employees_query = Employee.query
+    if employee_search:
+        employees_query = employees_query.filter(
+            db.or_(
+                Employee.first_name.ilike(f"%{employee_search}%"),
+                Employee.last_name.ilike(f"%{employee_search}%"),
+                Employee.middle_name.ilike(f"%{employee_search}%") if hasattr(Employee, 'middle_name') else False
+            )
+        )
+    employees = employees_query.order_by(Employee.last_name).all()
+    
     selected_employee_id = request.args.get("employee_id", type=int)
 
     summary = {}
@@ -119,6 +134,7 @@ def late_computation():
         "hr/leave_officer/late_computation.html",
         employees=employees,
         selected_employee_id=selected_employee_id,
+        employee_search=employee_search,  # Pass search term to template
         month=month,
         year=year,
         days_in_month=days_in_month,

@@ -2,116 +2,121 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#065f46">
 
 <title>{% block title %}Payroll Staff{% endblock %}</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        screens: {
+          'xs': '320px',
+          'sm': '640px',
+          'md': '768px',
+          'lg': '1024px',
+          'xl': '1280px',
+          '2xl': '1536px',
+        }
+      }
+    }
+  }
+</script>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
 <link rel="icon" href="{{ url_for('static', filename='img/favicon.avif') }}">
-
 </head>
 
-<body class="bg-gray-900 text-gray-200">
+<body class="bg-gray-900 text-gray-200 antialiased">
 
-<!-- ===== Layout Grid (Fix Gap Problem) ===== -->
-<div class="grid grid-cols-[18rem,1fr] min-h-screen">
-
-<!-- ================= SIDEBAR ================= -->
-<aside id="sidebar" class="bg-gray-800 flex flex-col h-screen">
-
-<div class="p-6 border-b border-gray-700">
-
-<h2 class="text-xl font-bold">GovHRPay</h2>
-<p class="text-sm text-green-400">Payroll Staff</p>
-
-<p class="text-xs text-gray-400 mt-2">
-Welcome,
-<b>{{ current_user.first_name }} {{ current_user.last_name }}</b>
-</p>
-
-</div>
-
-<!-- Navigation -->
-<nav class="flex-1 overflow-y-auto px-4 py-4">
-
-{% set menu = {
-"Employee Payroll": [
-("fa-solid fa-gauge-high","Dashboard","payroll_staff_bp.staff_dashboard"),
-("fa-solid fa-file-invoice-dollar","View Payrolls","payroll_staff_bp.view_payrolls"),
-("fa-solid fa-building-user","Department Payrolls","payroll_staff_bp.payroll_departments")
-],
-
-"Payroll Processing": [
-("fa-solid fa-user-clock","JO Payroll","payroll_staff_bp.jo_select_period"),
-("fa-solid fa-users-gear","Regular Payroll","payroll_staff_bp.regular_select_period"),
-("fa-solid fa-wallet","Casual Payroll","payroll_staff_bp.casual_select_period"),
-("fa-solid fa-user-tie","Part Time Payroll","payroll_staff_bp.parttimer_select_period")
-]
-} %}
-
-{% for section, links in menu.items() %}
-
-<div class="mb-6">
-
-<h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">
-{{ section }}
-</h3>
-
-<ul class="space-y-1">
-
-{% for icon,label,endpoint in links %}
-
-<li>
-<a href="{{ url_for(endpoint) if endpoint != '#' else '#' }}"
-class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-green-700/40 transition">
-
-<i class="{{ icon }} text-green-400 w-5"></i>
-<span>{{ label }}</span>
-
-</a>
-</li>
-
-{% endfor %}
-
-</ul>
-
-</div>
-
-{% endfor %}
-
-</nav>
-
-<!-- Logout -->
-<div class="p-4 border-t border-gray-700">
-
-<button id="logoutBtn"
-class="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 p-3 rounded-lg">
-
-<i class="fa-solid fa-right-from-bracket"></i>
-Logout
+<!-- ===== Mobile Header Toggle ===== -->
+<button id="mobileMenuBtn" class="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 rounded-lg text-gray-200 hover:bg-gray-700 transition">
+  <i class="fa-solid fa-bars text-lg"></i>
 </button>
 
-</div>
+<!-- ===== Layout Grid ===== -->
+<div class="grid grid-cols-1 lg:grid-cols-[18rem,1fr] min-h-screen">
+
+<!-- ================= SIDEBAR ================= -->
+<aside id="sidebar" class="bg-gray-800 flex flex-col h-screen lg:h-screen fixed lg:static inset-y-0 left-0 z-40 w-64 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out border-r border-gray-700">
+
+  <!-- Sidebar Header -->
+  <div class="p-6 border-b border-gray-700">
+    <h2 class="text-xl font-bold">GovHRPay</h2>
+    <p class="text-sm text-green-400">Payroll Staff</p>
+    <p class="text-xs text-gray-400 mt-2">
+      Welcome,<br>
+      <b>{{ current_user.first_name }} {{ current_user.last_name }}</b>
+    </p>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar">
+    {% set menu = {
+      "Employee Payroll": [
+        ("fa-solid fa-gauge-high","Dashboard","payroll_staff_bp.staff_dashboard"),
+        ("fa-solid fa-file-invoice-dollar","View Payrolls","payroll_staff_bp.view_payrolls"),
+        ("fa-solid fa-building-user","Department Payrolls","payroll_staff_bp.payroll_departments")
+      ],
+      "Payroll Processing": [
+        ("fa-solid fa-user-clock","JO Payroll","payroll_staff_bp.jo_select_period"),
+        ("fa-solid fa-users-gear","Regular Payroll","payroll_staff_bp.regular_select_period"),
+        ("fa-solid fa-wallet","Casual Payroll","payroll_staff_bp.casual_select_period"),
+        ("fa-solid fa-user-tie","Part Time Payroll","payroll_staff_bp.parttimer_select_period")
+      ]
+    } %}
+
+    {% for section, links in menu.items() %}
+    <div class="mb-6">
+      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider px-3">{{ section }}</h3>
+      <ul class="space-y-1">
+        {% for icon,label,endpoint in links %}
+        <li>
+          <a href="{{ url_for(endpoint) if endpoint != '#' else '#' }}"
+             class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-green-700/40 transition text-sm lg:text-base">
+            <i class="{{ icon }} text-green-400 w-5 flex-shrink-0"></i>
+            <span class="truncate">{{ label }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </nav>
+
+  <!-- Logout -->
+  <div class="p-4 border-t border-gray-700">
+    <button id="logoutBtn"
+            class="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 p-3 rounded-lg text-sm lg:text-base transition">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <span class="hidden sm:inline">Logout</span>
+    </button>
+  </div>
 
 </aside>
 
+<!-- Overlay for mobile sidebar -->
+<div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+
 <!-- ================= MAIN CONTENT ================= -->
-<main class="p-6 overflow-y-auto h-screen">
+<main class="p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen lg:h-screen">
 
-<header class="bg-green-800 text-white p-4 rounded-lg shadow mb-6 flex justify-between">
+  <!-- Mobile Spacer for Toggle Button -->
+  <div class="lg:hidden h-12"></div>
 
-<h1 class="text-lg font-semibold">
-{% block page_title %}Payroll Management System{% endblock %}
-</h1>
+  <header class="bg-green-800 text-white p-4 rounded-lg shadow mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <h1 class="text-lg sm:text-xl font-semibold">
+      {% block page_title %}Payroll Management System{% endblock %}
+    </h1>
+    <!-- Optional: Add mobile actions here -->
+  </header>
 
+  {% block content %}{% endblock %}
 
-</header>
-
-{% block content %}
-{% endblock %}
+  <!-- Footer spacing for mobile -->
+  <div class="h-4 lg:hidden"></div>
 
 </main>
 
@@ -119,30 +124,67 @@ Logout
 
 <!-- ===== Scripts ===== -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
+// Mobile Sidebar Toggle
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-function confirmLogout(){
-
-Swal.fire({
-title:"Logout?",
-text:"You will be logged out of the system.",
-icon:"warning",
-showCancelButton:true,
-confirmButtonColor:"#16a34a",
-cancelButtonColor:"#dc2626",
-confirmButtonText:"Yes, logout"
-}).then(result=>{
-if(result.isConfirmed){
-window.location.href="{{ url_for('payroll_auth_bp.logout') }}";
+function toggleSidebar() {
+  sidebar.classList.toggle('-translate-x-full');
+  sidebarOverlay.classList.toggle('hidden');
+  document.body.style.overflow = sidebar.classList.contains('-translate-x-full') ? '' : 'hidden';
 }
+
+mobileMenuBtn?.addEventListener('click', toggleSidebar);
+sidebarOverlay?.addEventListener('click', toggleSidebar);
+
+// Close sidebar on escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !sidebar.classList.contains('-translate-x-full')) {
+    toggleSidebar();
+  }
 });
 
+// Logout Confirmation
+function confirmLogout(){
+  Swal.fire({
+    title:"Logout?",
+    text:"You will be logged out of the system.",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonColor:"#16a34a",
+    cancelButtonColor:"#dc2626",
+    confirmButtonText:"Yes, logout"
+  }).then(result=>{
+    if(result.isConfirmed){
+      window.location.href="{{ url_for('payroll_auth_bp.logout') }}";
+    }
+  });
 }
-
 document.getElementById("logoutBtn")?.addEventListener("click",confirmLogout);
 
+// Prevent zoom on input focus (mobile UX)
+document.querySelectorAll('input, select, textarea').forEach(el => {
+  el.addEventListener('focus', () => {
+    if (window.innerWidth < 768) {
+      const viewport = document.querySelector('meta[name="viewport"]');
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    }
+  });
+});
 </script>
+
+<!-- Custom Scrollbar -->
+<style>
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(55,65,81,0.3); border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(107,114,128,0.6); border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(107,114,128,0.9); }
+@media (max-width: 640px) {
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+}
+</style>
 
 </body>
 </html>

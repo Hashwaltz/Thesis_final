@@ -3,97 +3,171 @@
 {% block title %}Select Department{% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-6 text-gray-200 max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-100">
 
-  <!-- HEADER -->
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-    <h2 class="text-3xl font-bold text-emerald-500 flex items-center gap-3">
-      <i class="fa-solid fa-building text-3xl"></i>
-      Select Department
-    </h2>
-    <p class="mt-2 md:mt-0 text-gray-400">
-      Payroll Period: <span class="text-gray-300">{{ period.start_date }} – {{ period.end_date }}</span>
-    </p>
-  </div>
+    <!-- ================= HEADER ================= -->
+    <header class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            
+            <!-- Title Section -->
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 
+                           flex items-center justify-center text-white shadow-lg">
+                    <i class="fa-solid fa-building-columns text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Select Department</h1>
+                    <p class="text-sm text-slate-400 mt-0.5">
+                        Choose a department to process payroll for this period
+                    </p>
+                </div>
+            </div>
 
-  <!-- DEPARTMENT CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for dept in departments %}
+            <!-- Period Badge -->
+            <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-lg border border-slate-700/60">
+                <i class="fa-regular fa-calendar text-emerald-400"></i>
+                <span class="text-slate-300 text-sm font-mono tabular-nums">
+                    {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
+                </span>
+            </div>
+        </div>
+    </header>
 
-    {% set is_processed = department_status.get(dept.id, False) %}
+    <!-- ================= DEPARTMENT CARDS ================= -->
+    <section>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for dept in departments %}
+            {% set is_processed = department_status.get(dept.id, False) %}
+            
+            <article class="group bg-slate-800/70 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-6 flex flex-col justify-between 
+                           {% if not is_processed %}hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10 cursor-pointer{% else %}opacity-70{% endif %}
+                           transition-all duration-300 relative overflow-hidden"
+                     {% if not is_processed %}
+                     onclick="window.location.href='{{ url_for('payroll_staff_bp.preview_department_payroll', period_id=period.id, department_id=dept.id) }}'"
+                     {% endif %}>
+                
+                <!-- Subtle gradient overlay on hover (only for unprocessed) -->
+                {% if not is_processed %}
+                <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                {% endif %}
 
-    <div
-         class="bg-gray-800 border border-gray-700 rounded-2xl p-6 flex flex-col justify-between
-                transition-all duration-300 relative overflow-hidden text-center
-                {% if not is_processed %}cursor-pointer hover:scale-105 hover:shadow-2xl{% else %}opacity-70{% endif %}"
-         {% if not is_processed %}
-         onclick="goToPayroll({{ dept.id }})"
-         {% endif %}
-    >
+                <div class="relative z-10">
+                    <!-- Status Badge -->
+                    <div class="absolute top-3 right-3 z-20">
+                        {% if is_processed %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold 
+                                       rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                <i class="fa-solid fa-check text-[10px]"></i>
+                                Processed
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold 
+                                       rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                                <i class="fa-solid fa-clock text-[10px]"></i>
+                                Pending
+                            </span>
+                        {% endif %}
+                    </div>
 
-      <!-- Accent overlay -->
-      <div class="absolute inset-0 opacity-0 hover:opacity-15 transition-opacity rounded-2xl"
-           style="background: {% if dept.name == 'HR' %}#34D399{% elif dept.name == 'Finance' %}#FBBF24{% elif dept.name == 'IT' %}#60A5FA{% elif dept.name == 'Marketing' %}#F472B6{% else %}#22D3EE{% endif %};"></div>
+                    <!-- Icon with Department-Specific Color -->
+                    <div class="w-14 h-14 rounded-xl bg-slate-700/50 border border-slate-600/50 flex items-center justify-center 
+                               mb-4 group-hover:bg-emerald-600/20 group-hover:border-emerald-500/30 transition-all duration-300"
+                         style="color: {% if dept.name == 'HR' %}#34D399{% elif dept.name == 'Finance' %}#FBBF24{% elif dept.name == 'IT' %}#60A5FA{% elif dept.name == 'Marketing' %}#F472B6{% else %}#94A3B8{% endif %};">
+                        {% if dept.name == 'HR' %}
+                            <i class="fa-solid fa-users text-2xl"></i>
+                        {% elif dept.name == 'Finance' %}
+                            <i class="fa-solid fa-money-bill-wave text-2xl"></i>
+                        {% elif dept.name == 'IT' %}
+                            <i class="fa-solid fa-laptop-code text-2xl"></i>
+                        {% elif dept.name == 'Marketing' %}
+                            <i class="fa-solid fa-bullhorn text-2xl"></i>
+                        {% else %}
+                            <i class="fa-solid fa-building-user text-2xl"></i>
+                        {% endif %}
+                    </div>
 
-      <!-- STATUS BADGE -->
-      <div class="absolute top-3 right-3 z-20">
-        {% if is_processed %}
-          <span class="px-3 py-1 text-xs rounded-full bg-green-600 text-white shadow">
-            ✔ Processed
-          </span>
-        {% else %}
-          <span class="px-3 py-1 text-xs rounded-full bg-yellow-500 text-black shadow">
-            ⏳ Not Processed
-          </span>
-        {% endif %}
-      </div>
+                    <!-- Department Name -->
+                    <h3 class="text-lg font-semibold text-slate-100 mb-1 group-hover:text-emerald-300 transition-colors truncate">
+                        {{ dept.name }}
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">
+                        {% if is_processed %}Payroll already processed{% else %}Ready for processing{% endif %}
+                    </p>
+                </div>
 
-      <!-- Icon -->
-      <div class="text-6xl mb-4 relative z-10"
-           style="color: {% if dept.name == 'HR' %}#34D399{% elif dept.name == 'Finance' %}#FBBF24{% elif dept.name == 'IT' %}#60A5FA{% elif dept.name == 'Marketing' %}#F472B6{% else %}#22D3EE{% endif %};">
-        {% if dept.name == 'HR' %}
-          <i class="fa-solid fa-users"></i>
-        {% elif dept.name == 'Finance' %}
-          <i class="fa-solid fa-money-bill-wave"></i>
-        {% elif dept.name == 'IT' %}
-          <i class="fa-solid fa-laptop-code"></i>
-        {% elif dept.name == 'Marketing' %}
-          <i class="fa-solid fa-bullhorn"></i>
-        {% else %}
-          <i class="fa-solid fa-building"></i>
-        {% endif %}
-      </div>
+                <!-- Action Button -->
+                {% if is_processed %}
+                    <button type="button"
+                            class="relative z-10 mt-4 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-400
+                                   bg-slate-900/40 rounded-lg border border-slate-700/40 cursor-not-allowed">
+                        <i class="fa-solid fa-lock text-xs"></i>
+                        <span>Locked</span>
+                    </button>
+                {% else %}
+                    <a href="{{ url_for('payroll_staff_bp.preview_department_payroll', period_id=period.id, department_id=dept.id) }}"
+                       class="relative z-10 mt-4 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white
+                              bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg
+                              hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
+                              transition-all shadow-sm hover:shadow-emerald-500/25 group-hover:-translate-y-0.5">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                        <span>Process Payroll</span>
+                    </a>
+                {% endif %}
+            </article>
+            {% else %}
+            <!-- Empty State -->
+            <div class="col-span-full text-center py-12 bg-slate-800/30 border border-slate-700/40 rounded-2xl">
+                <div class="w-16 h-16 rounded-2xl bg-slate-900/40 flex items-center justify-center mx-auto mb-3 border border-slate-700/40">
+                    <i class="fa-regular fa-building text-2xl text-slate-400"></i>
+                </div>
+                <p class="text-lg font-medium text-slate-300">No Departments Available</p>
+                <p class="text-sm text-slate-500 mt-1">Contact your administrator to configure departments for payroll processing.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
 
-      <!-- Department Name -->
-      <h3 class="text-xl font-semibold text-white mb-3 relative z-10">{{ dept.name }}</h3>
+    <!-- ================= HELP / GUIDANCE SECTION ================= -->
+    <section class="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-6">
+        <h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4">
+            <i class="fa-regular fa-circle-question text-amber-400"></i>
+            How to Process Department Payroll
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">1</span>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200 text-sm">Select Department</p>
+                    <p class="text-xs text-slate-400 mt-1">Click on a department card that shows "Pending" status.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">2</span>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200 text-sm">Review Employee Data</p>
+                    <p class="text-xs text-slate-400 mt-1">Verify attendance, allowances, and deductions for each employee.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">3</span>
+                </div>
+                <div>
+                    <p class="font-medium text-slate-200 text-sm">Submit for Processing</p>
+                    <p class="text-xs text-slate-400 mt-1">Click "Process Payroll" to finalize and generate payslips.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-      <!-- Action Button -->
-      {% if is_processed %}
-        <button
-          class="px-6 py-2 font-medium rounded-lg bg-gray-600 text-gray-300 cursor-not-allowed relative z-10">
-          Locked
-        </button>
-      {% else %}
-        <a href="{{ url_for('payroll_staff_bp.preview_department_payroll', period_id=period.id, department_id=dept.id) }}"
-           class="px-6 py-2 font-medium rounded-lg transition relative z-10
-                  bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600
-                  hover:from-emerald-500 hover:via-emerald-600 hover:to-emerald-700
-                  hover:shadow-lg hover:scale-105 text-white">
-           Process Payroll
-        </a>
-      {% endif %}
+</div>
 
-    </div>
-    {% endfor %}
-  </div>
-
-</section>
-
+<!-- Optional: Remove the old JS since we're using direct href links now -->
 <script>
-function goToPayroll(deptId) {
-  const url = "{{ url_for('payroll_staff_bp.preview_department_payroll', period_id=period.id, department_id=0) }}";
-  window.location.href = url.replace('0', deptId);
-}
+// No custom JS needed - using direct href links for better accessibility and SEO
 </script>
-
 {% endblock %}
