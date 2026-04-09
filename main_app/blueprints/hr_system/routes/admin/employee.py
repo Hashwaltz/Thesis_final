@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from flask_mail import Message
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from datetime import datetime, date
 
 from main_app.helpers.decorators import admin_required
@@ -16,7 +17,41 @@ from main_app.helpers.docs import generate_moa_excel, generate_excel_employees, 
 
 
 from main_app.blueprints.hr_system.routes.admin import hr_admin_bp
+import re
 
+def is_valid_email(email):
+    """
+    Validate email format per RFC 5321 basics.
+    Returns True if valid, False otherwise.
+    """
+    if not email:
+        return False
+    
+    email = email.strip().lower()
+    
+    # Basic RFC 5321 pattern: local@domain.tld
+    # - Local part: letters, numbers, dots, underscores, %, +, -
+    # - @ symbol required
+    # - Domain: letters, numbers, dots, hyphens
+    # - TLD: at least 2 letters
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    
+    if not re.match(pattern, email):
+        return False
+    
+    # Additional checks
+    if email.count('@') != 1:
+        return False
+    
+    local, domain = email.split('@')
+    if not local or not domain:
+        return False
+    if domain.startswith(('.', '-')) or domain.endswith(('.', '-')):
+        return False
+    if '..' in email:
+        return False
+        
+    return True
 
 @hr_admin_bp.route('/employees')
 @admin_required
@@ -80,61 +115,93 @@ def view_employees():
 
 
 
-
-
 @hr_admin_bp.route('/employees/add', methods=['POST'])
 @login_required
 @admin_required
 def add_employee():
     try:
-        # --- 1. Get form data ---
-        department_id = request.form['department_id']
+        # --- 1. Get and validate form data ---
+        
+        # ✅ Validate email FIRST before any DB operations
+        email = request.form.get('email', '').strip().lower()
+        if not is_valid_email(email):
+            flash('Invalid email address format. Please use: user@domain.com', 'error')
+            return redirect(url_for('hr_admin_bp.view_employees'))
+        
+        # Validate other required fields
+        if not request.form.get('first_name') or not request.form.get('last_name'):
+            flash('First name and last name are required.', 'error')
+            return redirect(url_for('hr_admin_bp.view_employees'))
+        
+        department_id = request.form.get('department_id')
+        if not department_id:
+            flash('Department is required.', 'error')
+            return redirect(url_for('hr_admin_bp.view_employees'))
+            
         new_employee_id = generate_employee_id(department_id)
 
         # Parse dates safely
         date_hired = parse_date(request.form['date_hired'], "Date Hired")
         date_of_birth = parse_date(request.form['date_of_birth'], "Date of Birth")
         if not date_hired or not date_of_birth:
-            flash("Invalid date format!", "danger")
+            flash("Invalid date format! Please use YYYY-MM-DD", "error")
+            return redirect(url_for('hr_admin_bp.view_employees'))
+
+        # Validate date logic (can't be hired before birth, etc.)
+        if date_of_birth >= date_hired:
+            flash("Date of Birth must be before Date Hired.", "error")
             return redirect(url_for('hr_admin_bp.view_employees'))
 
         # Parse salary
         salary_str = request.form.get('salary', '').strip()
         try:
             salary = float(salary_str) if salary_str else 0.0
+            if salary < 0:
+                raise ValueError("Negative salary")
         except ValueError:
-            flash("Invalid salary value!", "danger")
+            flash("Invalid salary value! Please enter a valid number.", "error")
             return redirect(url_for('hr_admin_bp.view_employees'))
 
-        # Address
+        # Address fields (optional but validated if provided)
         street = request.form.get('street_address', '').strip()
         barangay = request.form.get('barangay', '').strip()
         municipality = request.form.get('municipality', '').strip()
         province = request.form.get('province', '').strip()
         postal_code = request.form.get('postal_code', '').strip()
 
-        # --- 2. Create User ---
+        # --- 2. Check for duplicate email BEFORE creating user ---
+        existing_user = User.query.filter(func.lower(User.email) == email).first()
+        if existing_user:
+            flash(f"Email '{email}' is already registered to another account.", "error")
+            return redirect(url_for('hr_admin_bp.view_employees'))
+            
+        existing_employee = Employee.query.filter(func.lower(Employee.email) == email).first()
+        if existing_employee:
+            flash(f"Email '{email}' is already assigned to another employee.", "error")
+            return redirect(url_for('hr_admin_bp.view_employees'))
+
+        # --- 3. Create User ---
         default_password = generate_password(12)
         user = User(
-            email=request.form['email'],
-            first_name=request.form['first_name'],
-            last_name=request.form['last_name'],
+            email=email,  # ✅ Use validated, lowercased email
+            first_name=request.form['first_name'].strip(),
+            last_name=request.form['last_name'].strip(),
             role="employee",
             password=default_password
         )
         db.session.add(user)
         db.session.flush()  # get user.id
 
-        # --- 3. Create Employee ---
+        # --- 4. Create Employee ---
         employment_type_id = int(request.form['employment_type_id'])
         employee = Employee(
             employee_id=new_employee_id,
             user_id=user.id,
-            first_name=request.form['first_name'],
-            last_name=request.form['last_name'],
-            middle_name=request.form.get('middle_name'),
-            email=request.form['email'],
-            phone=request.form['phone'],
+            first_name=request.form['first_name'].strip(),
+            last_name=request.form['last_name'].strip(),
+            middle_name=request.form.get('middle_name', '').strip(),
+            email=email,  # ✅ Use validated email
+            phone=request.form.get('phone', '').strip(),
             street_address=street,
             barangay=barangay,
             municipality=municipality,
@@ -148,15 +215,13 @@ def add_employee():
             date_of_birth=date_of_birth,
             gender=request.form['gender'],
             marital_status=request.form['marital_status'],
-            emergency_contact=request.form['emergency_contact'],
+            emergency_contact=request.form.get('emergency_contact', '').strip(),
             status='Active'
         )
         db.session.add(employee)
-        db.session.flush()  # get employee.id for leave credits
+        db.session.flush()
 
-
-        
-         # --- 5. Create initial JobHistory entry ---
+        # --- 5. Create initial JobHistory entry ---
         job_entry = JobHistory(
             employee_id=employee.id,
             effective_date=date_hired,
@@ -169,15 +234,15 @@ def add_employee():
         )
         db.session.add(job_entry)
 
-        # --- 5. Commit everything together ---
+        # --- 6. Commit everything together ---
         db.session.commit()
 
-        # --- 6. Send Gmail notification ---
+        # --- 7. Send Gmail notification (with error handling) ---
         try:
             msg = Message(
                 subject="Your govHRPay Account Details",
-                sender=("GovHRPay Admin", "natanielashleyrodelas@gmail.com"),  # system email
-                recipients=[user.email]
+                sender=("GovHRPay Admin", "natanielashleyrodelas@gmail.com"),
+                recipients=[email]  # ✅ Use validated email
             )
             msg.body = f"""
 Hello {user.first_name} {user.last_name},
@@ -186,35 +251,43 @@ Your govHRPay account has been created successfully!
 
 Login credentials:
 Email: {user.email}
-Password: {default_password}
+Temporary Password: {default_password}
 
 Please log in at: http://127.0.0.1:5000/hr/auth/login
 
-For security, you should change your password after first login.
+⚠️ For security, please change your password after first login.
 
 Thank you,
-GovHRPay Admin
+GovHRPay Admin Team
 """
             mail.send(msg)
-        except Exception as mail_err:
-            current_app.logger.error(f"Failed to send account email to {user.email}: {mail_err}")
-            flash("Employee created, but failed to send email notification.", "warning")
-        else:
             flash("Employee and user account created successfully! Email sent with login details.", "success")
+            
+        except Exception as mail_err:
+            # Log error but don't fail the whole operation
+            current_app.logger.error(f"Failed to send account email to {email}: {mail_err}")
+            flash(
+                f"Employee created successfully! ⚠️ Failed to send email to '{email}'. "
+                f"Please manually provide credentials or check SMTP settings.", 
+                "warning"
+            )
 
         return redirect(url_for('hr_admin_bp.view_employees'))
 
     except IntegrityError as e:
         db.session.rollback()
-        flash(f"Error: Employee or User already exists! ({str(e)})", "danger")
+        # Check if it's a unique constraint violation on email
+        if 'email' in str(e).lower() or 'unique' in str(e).lower():
+            flash("Error: An employee or user with this email already exists!", "error")
+        else:
+            flash(f"Database error: {str(e)}", "error")
         return redirect(url_for('hr_admin_bp.view_employees'))
 
     except Exception as e:
         db.session.rollback()
-        flash(f"Unexpected error: {str(e)}", "danger")
+        current_app.logger.error(f"Unexpected error in add_employee: {e}", exc_info=True)
+        flash(f"Unexpected error: {str(e)}", "error")
         return redirect(url_for('hr_admin_bp.view_employees'))
-
-
 
 
     

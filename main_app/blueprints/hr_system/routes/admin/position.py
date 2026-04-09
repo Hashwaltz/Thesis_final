@@ -63,25 +63,31 @@ def add_position():
 
 
 
-
-
 @hr_admin_bp.route("/position/<int:position_id>/edit", methods=["GET", "POST"])
 @login_required
 @admin_required
 def edit_position(position_id):
     position = Position.query.get_or_404(position_id)
-    departments = Department.query.all()
-
+    
+    # AJAX GET: Return JSON for modal
+    if request.method == "GET" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({
+            "id": position.id,
+            "name": position.name,
+            "description": position.description or "",
+            "department_id": position.department_id
+        })
+    
+    # POST: Handle update (AJAX or regular)
     if request.method == "POST":
         try:
-            position.name = request.form.get("name") or position.name
-            position.description = request.form.get("description") or position.description
+            position.name = request.form.get("name", "").strip() or position.name
+            position.description = request.form.get("description", "").strip() or position.description
             dept_id = request.form.get("department_id")
-            position.department_id = int(dept_id) if dept_id else position.department_id
+            position.department_id = int(dept_id) if dept_id and dept_id.isdigit() else position.department_id
 
             db.session.commit()
 
-            # For AJAX request
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify({"status": "success", "message": "Position updated successfully!"})
 
@@ -91,15 +97,13 @@ def edit_position(position_id):
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error updating position {position_id}: {e}")
-
+            
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return jsonify({"status": "error", "message": "Error updating position. Please try again."})
+                return jsonify({"status": "error", "message": "Error updating position. Please try again."}), 400
 
             flash("Error updating position. Please try again.", "error")
-
-    # Render form
-    return render_template(
-        "hr/admin/position/edit_position.html",
-        position=position,
-        departments=departments
-    )
+            return redirect(url_for("hr_admin_bp.edit_position", position_id=position_id))
+    
+    # Fallback: Full page render (non-JS users)
+    departments = Department.query.all()
+    return render_template("hr/admin/position/edit_position.html", position=position, departments=departments)

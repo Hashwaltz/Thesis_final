@@ -2,172 +2,207 @@
 {% block title %}Employees | HR Officer {% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-6 space-y-6">
+<main class="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
 
   <!-- Page Header -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+  <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-800 to-slate-900 p-5 rounded-2xl shadow-xl border border-slate-700/50 backdrop-blur-sm">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-400 flex items-center gap-3">
+        <i class="fa-solid fa-id-badge text-3xl drop-shadow-md"></i>
+        Employee Records
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">Search, filter, and export workforce data</p>
+    </div>
 
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-id-badge text-3xl"></i>
-      Employee Records
-    </h1>
-
-    <!-- Export Button -->
-    <a href="{{ url_for('hr_officer_bp.export_employees_years_of_service',
-                         search=search,
-                         department=selected_department,
-                         years_service=years_service,
+    <a href="{{ url_for('hr_officer_bp.export_employees_years_of_service', 
+                         search=search, 
+                         department=selected_department, 
+                         years_service=years_service, 
                          barangay=barangay) }}"
-       class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl
-              flex items-center gap-2 transition shadow">
-
+       class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-5 py-2.5 rounded-xl 
+              flex items-center gap-2 transition shadow-lg hover:shadow-green-500/20 font-medium whitespace-nowrap">
       <i class="fa-solid fa-file-excel"></i>
-      Export Employees Excel
+      Export to Excel
     </a>
-
   </header>
-<!-- Search + Filters -->
-<form method="get"
-      class="flex flex-col md:flex-row gap-4 items-start md:items-end
-             bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
 
-  <!-- Search -->
-  <div class="flex flex-col gap-2 w-full md:flex-1">
-    <label class="text-gray-400">Search</label>
-    <input type="text"
-           name="search"
-           value="{{ search }}"
-           placeholder="Search employees..."
-           class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                  focus:outline-none focus:ring-2 focus:ring-blue-400">
-  </div>
+  <!-- Search + Filters -->
+  <form method="GET" 
+        class="bg-slate-900/70 backdrop-blur-md p-5 rounded-2xl shadow-xl border border-slate-700/50 space-y-4">
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Search -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Search</label>
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="text" name="search" value="{{ search }}" autocomplete="off"
+                 placeholder="Name, email, ID..."
+                 class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl pl-9 pr-4 py-2.5 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-slate-500">
+        </div>
+      </div>
 
-  <!-- Department -->
-  <div class="flex flex-col gap-2 w-full md:w-64">
-    <label class="text-gray-400">Department</label>
-    <select name="department"
-            class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                   focus:outline-none focus:ring-2 focus:ring-blue-400">
-      <option value="">All Departments</option>
-      {% for dept in departments %}
-        <option value="{{ dept.id }}"
-                {% if dept.id|string == selected_department %}selected{% endif %}>
-          {{ dept.name }}
-        </option>
-      {% endfor %}
-    </select>
-  </div>
+      <!-- Department -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Department</label>
+        <select name="department"
+                class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-right-3 bg-[length:1rem] pr-9">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>{{ dept.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-  <!-- Barangay -->
-  <div class="flex flex-col gap-2 w-full md:w-64">
-    <label class="text-gray-400">Barangay</label>
-    <input type="text"
-           name="barangay"
-           value="{{ barangay }}"
-           placeholder="Enter barangay..."
-           class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                  focus:outline-none focus:ring-2 focus:ring-blue-400">
-  </div>
+      <!-- Barangay -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Barangay</label>
+        <input type="text" name="barangay" value="{{ barangay }}"
+               placeholder="Enter barangay..."
+               class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
+                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-slate-500">
+      </div>
 
-  <!-- Years of Service -->
-  <div class="flex flex-col gap-2 w-full md:w-64">
-    <label class="text-gray-400">Years of Service</label>
-    <select name="years_service"
-            class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                   focus:outline-none focus:ring-2 focus:ring-blue-400">
-      <option value="">All</option>
-      <option value="5"  {% if years_service == '5' %}selected{% endif %}>5 Years</option>
-      <option value="10" {% if years_service == '10' %}selected{% endif %}>10 Years</option>
-      <option value="15" {% if years_service == '15' %}selected{% endif %}>15 Years</option>
-      <option value="20" {% if years_service == '20' %}selected{% endif %}>20 Years</option>
-      <option value="25" {% if years_service == '25' %}selected{% endif %}>25 Years</option>
-      <option value="30" {% if years_service == '30' %}selected{% endif %}>30 Years</option>
-    </select>
-  </div>
+      <!-- Years of Service -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Years of Service</label>
+        <select name="years_service"
+                class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-right-3 bg-[length:1rem] pr-9">
+          <option value="">All</option>
+          {% for yrs in ['5', '10', '15', '20', '25', '30'] %}
+            <option value="{{ yrs }}" {% if years_service == yrs %}selected{% endif %}>{{ yrs }}+ Years</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
 
-  <!-- Buttons -->
-  <div class="flex gap-2 mt-2 md:mt-0">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-slate-700/50">
+      <span class="text-sm text-slate-400">
+        Showing <span class="font-medium text-slate-200">{{ employees.total if employees else 0 }}</span> record(s)
+      </span>
+      <div class="flex gap-3 w-full sm:w-auto">
+        <a href="{{ url_for('hr_officer_bp.employees') }}" 
+           class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-slate-200 px-5 py-2.5 rounded-xl 
+                  flex items-center justify-center gap-2 transition font-medium">
+          <i class="fa-solid fa-rotate-right"></i> Reset
+        </a>
+        <button type="submit" id="filterBtn"
+                class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-5 py-2.5 rounded-xl 
+                       flex items-center justify-center gap-2 transition shadow-lg shadow-blue-500/20 font-medium">
+          <i class="fa-solid fa-magnifying-glass"></i> Apply Filters
+          <span id="filterSpinner" class="hidden ml-1"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+        </button>
+      </div>
+    </div>
+  </form>
 
-    <!-- Search Button -->
-    <button type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2
-                   rounded-xl flex items-center gap-2 transition">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <span class="hidden sm:inline">Search</span>
-    </button>
-
-    <!-- Clear Filters Button -->
-    <a href="{{ url_for('hr_officer_bp.employees') }}"
-       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2
-              rounded-xl flex items-center gap-2 transition">
-      <i class="fa-solid fa-eraser"></i>
-      <span class="hidden sm:inline">Clear Filters</span>
-    </a>
-
-  </div>
-
-</form>
   <!-- Employee Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
-    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
-      <thead class="bg-gray-900 text-gray-400">
-        <tr>
-          <th class="px-4 py-3 text-left">Full Name</th>
-          <th class="px-4 py-3 text-left">Email</th>
-          <th class="px-4 py-3 text-left">Department</th>
-          <th class="px-4 py-3 text-left">Position</th>
-          <th class="px-4 py-3 text-left">Date Hired</th>
-          <th class="px-4 py-3 text-left">Years of Service</th>
-          <th class="px-4 py-3 text-left">Barangay</th>
-        </tr>
-      </thead>
-
-      <tbody class="divide-y divide-gray-700 text-gray-200">
-        {% for employee in employees.items %}
-        <tr class="hover:bg-gray-700 transition">
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.get_full_name() }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.email }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.department.name if employee.department else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.position.name if employee.position else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.get_working_duration() }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ employee.barangay or '-' }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="8" class="px-4 py-3 text-center text-gray-400">
-            No employees found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-xl border border-slate-700/50 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-700/50">
+        <thead class="bg-slate-800/80 text-slate-400 text-xs uppercase tracking-wider">
+          <tr>
+            <th class="px-5 py-4 text-left font-semibold">Full Name</th>
+            <th class="px-5 py-4 text-left font-semibold">Email</th>
+            <th class="px-5 py-4 text-left font-semibold">Department</th>
+            <th class="px-5 py-4 text-left font-semibold">Position</th>
+            <th class="px-5 py-4 text-left font-semibold">Date Hired</th>
+            <th class="px-5 py-4 text-left font-semibold">Tenure</th>
+            <th class="px-5 py-4 text-left font-semibold">Barangay</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700/50 text-sm">
+          {% for employee in employees.items %}
+          <tr class="hover:bg-slate-800/60 transition duration-150 group">
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30 shrink-0">
+                  {{ employee.get_full_name()[0:2].upper() if employee.get_full_name() else '?' }}
+                </div>
+                <span class="font-medium text-slate-200">{{ employee.get_full_name() }}</span>
+              </div>
+            </td>
+            <td class="px-5 py-3.5 whitespace-nowrap text-slate-400">{{ employee.email }}</td>
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300 border border-slate-600/50">
+                {{ employee.department.name if employee.department else '-' }}
+              </span>
+            </td>
+            <td class="px-5 py-3.5 whitespace-nowrap text-slate-300">{{ employee.position.name if employee.position else '-' }}</td>
+            <td class="px-5 py-3.5 whitespace-nowrap text-slate-400 font-mono text-xs">{{ employee.date_hired.strftime('%b %d, %Y') if employee.date_hired else '-' }}</td>
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              <span class="text-green-400 font-medium">{{ employee.get_working_duration() }}</span>
+            </td>
+            <td class="px-5 py-3.5 whitespace-nowrap text-slate-300">{{ employee.barangay or '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="px-5 py-12 text-center">
+              <div class="flex flex-col items-center justify-center text-slate-500">
+                <i class="fa-solid fa-user-slash text-4xl mb-3 opacity-50"></i>
+                <p class="text-lg font-medium">No employees found</p>
+                <p class="text-sm mt-1">Try adjusting your search or filters</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Pagination -->
-  <div class="flex justify-center gap-4 text-gray-400">
+  {% if employees.pages > 1 %}
+  <nav class="flex justify-center items-center gap-2 mt-4" aria-label="Pagination">
     {% if employees.has_prev %}
-      <a href="{{ url_for('hr_officer_bp.employees',
-                          page=employees.prev_num,
-                          search=search,
-                          department=selected_department,
-                          years_service=years_service,
-                          barangay=barangay) }}"
-         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Previous</a>
+      <a href="{{ url_for('hr_officer_bp.employees', page=employees.prev_num, search=search, department=selected_department, years_service=years_service, barangay=barangay) }}"
+         class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition border border-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-chevron-left text-xs"></i> Prev
+      </a>
+    {% else %}
+      <span class="px-4 py-2 bg-slate-800/50 text-slate-600 rounded-xl cursor-not-allowed border border-slate-700/50 flex items-center gap-2">
+        <i class="fa-solid fa-chevron-left text-xs"></i> Prev
+      </span>
     {% endif %}
 
-    <span class="px-4 py-2">Page {{ employees.page }} of {{ employees.pages }}</span>
+    <div class="flex items-center gap-1.5 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
+      <span class="text-slate-400 text-sm">Page</span>
+      <span class="text-blue-400 font-bold">{{ employees.page }}</span>
+      <span class="text-slate-500">of</span>
+      <span class="text-slate-300">{{ employees.pages }}</span>
+    </div>
 
     {% if employees.has_next %}
-      <a href="{{ url_for('hr_officer_bp.employees',
-                          page=employees.next_num,
-                          search=search,
-                          department=selected_department,
-                          years_service=years_service,
-                          barangay=barangay) }}"
-         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Next</a>
+      <a href="{{ url_for('hr_officer_bp.employees', page=employees.next_num, search=search, department=selected_department, years_service=years_service, barangay=barangay) }}"
+         class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition border border-slate-700 flex items-center gap-2">
+        Next <i class="fa-solid fa-chevron-right text-xs"></i>
+      </a>
+    {% else %}
+      <span class="px-4 py-2 bg-slate-800/50 text-slate-600 rounded-xl cursor-not-allowed border border-slate-700/50 flex items-center gap-2">
+        Next <i class="fa-solid fa-chevron-right text-xs"></i>
+      </span>
     {% endif %}
-  </div>
+  </nav>
+  {% endif %}
 
 </main>
+
+<!-- UX Enhancement Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form[method='GET']");
+    const btn = document.getElementById("filterBtn");
+    const spinner = document.getElementById("filterSpinner");
+
+    if (form && btn && spinner) {
+      form.addEventListener("submit", function () {
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+      });
+    }
+  });
+</script>
 {% endblock %}

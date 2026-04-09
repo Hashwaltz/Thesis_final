@@ -2,154 +2,317 @@
 {% block title %}HR Admin - Leave Report{% endblock %}
 
 {% block content %}
-<main class="p-6 text-gray-100">
-  <header class="mb-6">
-    <h1 class="text-3xl font-bold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-calendar-days"></i> Leave Reports
-    </h1>
-    <p class="text-gray-400">View all leaves and insights for the selected period.</p>
-  </header>
+<main class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 text-slate-200 p-4 md:p-6 lg:p-8">
+  <div class="max-w-7xl mx-auto space-y-6 animate-fade-in" x-data="{ loading: false }">
+    
+    <!-- ================== Header ================== -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-chart-pie"></i> HR Analytics
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-300">
+          Leave Reports
+        </h1>
+        <p class="text-slate-400 mt-1">View, filter, and export leave request analytics.</p>
+      </div>
+      <div class="flex items-center gap-3 text-sm text-slate-500 bg-slate-800/40 px-4 py-2 rounded-xl border border-slate-700/50">
+        <i class="fa-regular fa-calendar"></i>
+        <span>{{ start_date }} → {{ end_date }}</span>
+      </div>
+    </header>
 
-  <!-- Filter -->
-  <form method="get" class="flex flex-wrap gap-4 mb-6 items-center">
-    <input type="date" name="start_date" value="{{ start_date }}" class="px-3 py-2 rounded-xl bg-[#0f172a] border border-gray-700 text-gray-100">
-    <input type="date" name="end_date" value="{{ end_date }}" class="px-3 py-2 rounded-xl bg-[#0f172a] border border-gray-700 text-gray-100">
-    <select name="department_id" class="px-3 py-2 rounded-xl bg-[#0f172a] border border-gray-700 text-gray-100">
-      <option value="">All Departments</option>
-      {% for d in departments %}
-        <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit" class="px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-700 flex items-center gap-2 transition text-white">
-      <i class="fa-solid fa-filter"></i> Filter
-    </button>
-    <a href="{{ url_for('hr_admin_bp.leave_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
-       class="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700 transition flex items-center gap-2 text-white">
-      <i class="fa-solid fa-file-arrow-down"></i> Export Word
-    </a>
-  </form>
+    <!-- ================== Filters & Actions ================== -->
+    <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-4 md:p-5 overflow-visible relative">
+      <form method="get" id="filterForm" class="flex flex-wrap gap-3 items-end w-full">
+        
+        <!-- Date Range -->
+        <div class="space-y-1 min-w-[140px]">
+          <label for="start_date" class="text-xs text-slate-500 ml-1">Start Date</label>
+          <input type="date" id="start_date" name="start_date" value="{{ start_date }}" 
+                 max="{{ end_date }}" class="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+        </div>
+        <div class="space-y-1 min-w-[140px]">
+          <label for="end_date" class="text-xs text-slate-500 ml-1">End Date</label>
+          <input type="date" id="end_date" name="end_date" value="{{ end_date }}" 
+                 min="{{ start_date }}" class="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+        </div>
 
-  <!-- Table -->
-  <div class="overflow-x-auto bg-[#1e293b] p-4 rounded-2xl shadow-xl">
-    <table class="w-full border-collapse table-auto">
-      <thead>
-        <tr class="text-blue-400 font-semibold">
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-user"></i> Employee</th>
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-building"></i> Department</th>
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-clipboard-list"></i> Leave Type</th>
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-calendar-plus"></i> Start Date</th>
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-calendar-minus"></i> End Date</th>
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-clock"></i> Days</th>
-          <th class="px-4 py-2 text-left"><i class="fa-solid fa-hourglass-half"></i> Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for lv in leave_data %}
-        <tr class="border-t border-gray-700">
-          <td class="px-4 py-2">{{ lv.employee.get_full_name() }}</td>
-          <td class="px-4 py-2">{{ lv.employee.department.name if lv.employee.department else "N/A" }}</td>
-          <td class="px-4 py-2">{{ lv.leave_type.name if lv.leave_type else "N/A" }}</td>
-          <td class="px-4 py-2">{{ lv.start_date }}</td>
-          <td class="px-4 py-2">{{ lv.end_date }}</td>
-          <td class="px-4 py-2">{{ lv.days_requested }}</td>
-          <td class="px-4 py-2">{{ lv.status }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7" class="text-center text-gray-400 py-4">No leaves found</td>
-        </tr>
+        <!-- Department Filter -->
+        <div class="space-y-1 min-w-[180px]">
+          <label for="department_id" class="text-xs text-slate-500 ml-1">Department</label>
+          <select id="department_id" name="department_id" class="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+            <option value="">All Departments</option>
+            {% for d in departments %}
+              <option value="{{ d.id }}" {% if department_id == d.id %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="space-y-1 min-w-[140px]">
+          <label for="status" class="text-xs text-slate-500 ml-1">Status</label>
+          <select id="status" name="status" class="w-full px-3 py-2 rounded-xl bg-slate-900/60 border border-slate-700 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+            <option value="">All Statuses</option>
+            <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>⏳ Pending</option>
+            <option value="Approved" {% if status_filter == 'Approved' %}selected{% endif %}>✓ Approved</option>
+            <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>✗ Rejected</option>
+          </select>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-2 pt-5 ml-auto">
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium flex items-center gap-2 transition shadow-lg shadow-blue-500/20">
+            <i class="fa-solid fa-filter"></i> Apply
+          </button>
+          <a href="{{ url_for('hr_admin_bp.leave_report') }}" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-medium flex items-center gap-2 transition">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </a>
+        </div>
+
+        <!-- Export Button - Single DOCX Option (Simplified) -->
+        <div class="flex items-end pt-5">
+          <a href="{{ url_for('hr_admin_bp.leave_report_word', **request.args) }}" 
+             class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl text-white font-medium transition shadow-lg shadow-emerald-500/20">
+            <i class="fa-solid fa-file-word"></i> Export as Word
+          </a>
+        </div>
+        
+      </form>
+    </section>
+
+    <!-- ================== KPI Summary Cards ================== -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total Requests -->
+      <div class="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-5 hover:border-blue-500/40 transition">
+        <div class="flex justify-between items-start">
+          <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400"><i class="fa-solid fa-calendar-check"></i></div>
+          <span class="text-xs text-slate-500 bg-slate-700/50 px-2 py-0.5 rounded-full">Volume</span>
+        </div>
+        <p class="text-slate-400 text-sm mt-2">Total Requests</p>
+        <p class="text-2xl font-bold text-white">{{ total_leaves }}</p>
+      </div>
+
+      <!-- Avg Days -->
+      <div class="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-5 hover:border-emerald-500/40 transition">
+        <div class="flex justify-between items-start">
+          <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400"><i class="fa-solid fa-business-time"></i></div>
+          <span class="text-xs text-slate-500 bg-slate-700/50 px-2 py-0.5 rounded-full">Duration</span>
+        </div>
+        <p class="text-slate-400 text-sm mt-2">Avg. Days/Request</p>
+        <p class="text-2xl font-bold text-emerald-400">{{ avg_days_per_leave }}</p>
+      </div>
+
+      <!-- Most Common Type -->
+      <div class="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-5 hover:border-amber-500/40 transition">
+        <div class="flex justify-between items-start">
+          <div class="p-2 bg-amber-500/10 rounded-lg text-amber-400"><i class="fa-solid fa-star"></i></div>
+          <span class="text-xs text-slate-500 bg-slate-700/50 px-2 py-0.5 rounded-full">Trend</span>
+        </div>
+        <p class="text-slate-400 text-sm mt-2">Most Common Leave</p>
+        <p class="text-lg font-bold text-amber-400 truncate" title="{{ most_common_leave_type }}">{{ most_common_leave_type }}</p>
+      </div>
+
+      <!-- Approval Rate -->
+      <div class="bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-5 hover:border-purple-500/40 transition">
+        <div class="flex justify-between items-start">
+          <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400"><i class="fa-solid fa-circle-check"></i></div>
+          <span class="text-xs text-slate-500 bg-slate-700/50 px-2 py-0.5 rounded-full">Status</span>
+        </div>
+        <p class="text-slate-400 text-sm mt-2">Approval Rate</p>
+        <p class="text-2xl font-bold text-purple-400">
+          {% if total_leaves > 0 %}{{ ((approved_count / total_leaves) * 100)|round(1) }}%{% else %}0%{% endif %}
+        </p>
+      </div>
+    </section>
+
+    <!-- ================== Leave Records Table ================== -->
+    <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl">
+      <!-- Table Header with Pagination Info -->
+      <div class="px-5 py-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-900/40">
+        <p class="text-slate-400 text-sm">
+          Showing <span class="font-semibold text-slate-200">{{ pagination.per_page * (pagination.page - 1) + 1 }}</span> to 
+          <span class="font-semibold text-slate-200">{{ [pagination.per_page * pagination.page, pagination.total]|min }}</span> of 
+          <span class="font-semibold text-slate-200">{{ pagination.total }}</span> records
+        </p>
+        <!-- Per Page Selector -->
+        <form method="get" class="flex items-center gap-2" id="perPageForm">
+          {% for key, value in current_filters.items() %}
+            {% if value %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+          {% endfor %}
+          <label class="text-xs text-slate-500">Show:</label>
+          <select name="per_page" onchange="document.getElementById('perPageForm').submit()" class="px-2 py-1 rounded bg-slate-900/60 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+            {% for option in [10, 25, 50, 100] %}
+              <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-700/50 text-sm md:text-base">
+          <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider">
+            <tr>
+              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur cursor-pointer hover:text-blue-400" onclick="sortTable(0)">Employee ⇅</th>
+              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Department</th>
+              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Leave Type</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Start</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">End</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Days</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700/50">
+            {% for lv in leave_data %}
+            <tr class="hover:bg-slate-700/30 transition-colors group">
+              <td class="px-5 py-4 font-medium text-slate-100">{{ lv.employee.get_full_name() }}</td>
+              <td class="px-5 py-4 text-slate-400">{{ lv.employee.department.name if lv.employee.department else "N/A" }}</td>
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-700/60 text-slate-300 text-xs">
+                  <i class="fa-solid fa-tag text-[10px]"></i> {{ lv.leave_type.name if lv.leave_type else "N/A" }}
+                </span>
+              </td>
+              <td class="px-5 py-4 text-center font-mono text-slate-300">{{ lv.start_date }}</td>
+              <td class="px-5 py-4 text-center font-mono text-slate-300">{{ lv.end_date }}</td>
+              <td class="px-5 py-4 text-center font-semibold text-amber-400">{{ lv.days_requested }}</td>
+              <td class="px-5 py-4 text-center">
+                {% set status = lv.status|lower %}
+                {% if status == 'approved' %}
+                  <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">✓ Approved</span>
+                {% elif status == 'pending' %}
+                  <span class="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">⏳ Pending</span>
+                {% elif status == 'rejected' %}
+                  <span class="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/20">✗ Rejected</span>
+                {% else %}
+                  <span class="px-3 py-1 rounded-full bg-slate-700 text-slate-300 text-xs font-medium">{{ lv.status }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-12 text-slate-500">
+                <i class="fa-regular fa-folder-open text-4xl mb-3 block opacity-50"></i>
+                <p class="text-lg font-medium text-slate-300">No leave records found</p>
+                <p class="text-sm mt-1">Try adjusting your filters or date range</p>
+                <a href="{{ url_for('hr_admin_bp.leave_report') }}" class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition">
+                  <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if pagination.pages > 1 %}
+      <div class="px-5 py-4 border-t border-slate-700/50 flex justify-center">
+        <nav class="flex items-center gap-1">
+          {% if pagination.has_prev %}
+            <a href="{{ url_for('hr_admin_bp.leave_report', page=pagination.prev_num, **request.args) }}" class="px-3 py-1.5 rounded-lg hover:bg-slate-700 transition text-slate-300">
+              <i class="fa-solid fa-chevron-left"></i>
+            </a>
+          {% endif %}
+          
+          {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+            {% if page_num %}
+              {% if page_num == pagination.page %}
+                <span class="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-medium">{{ page_num }}</span>
+              {% else %}
+                <a href="{{ url_for('hr_admin_bp.leave_report', page=page_num, **request.args) }}" class="px-3 py-1.5 rounded-lg hover:bg-slate-700 transition text-slate-300">{{ page_num }}</a>
+              {% endif %}
+            {% else %}
+              <span class="px-2 text-slate-600">…</span>
+            {% endif %}
+          {% endfor %}
+          
+          {% if pagination.has_next %}
+            <a href="{{ url_for('hr_admin_bp.leave_report', page=pagination.next_num, **request.args) }}" class="px-3 py-1.5 rounded-lg hover:bg-slate-700 transition text-slate-300">
+              <i class="fa-solid fa-chevron-right"></i>
+            </a>
+          {% endif %}
+        </nav>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ================== Department Breakdown ================== -->
+    {% if dept_summary %}
+    <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 md:p-6 shadow-xl">
+      <h3 class="text-xl font-semibold text-slate-100 flex items-center gap-2 mb-5">
+        <i class="fa-solid fa-building text-blue-400"></i> Department Breakdown
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for dept, data in dept_summary.items()|sort(attribute='1.total', reverse=true) %}
+        <div class="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600 transition group">
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="font-semibold text-slate-200 group-hover:text-blue-400 transition">{{ dept }}</h4>
+            <i class="fa-solid fa-sitemap text-slate-600"></i>
+          </div>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm text-slate-400">
+              <span>Total Leaves</span>
+              <span class="font-mono font-semibold text-white">{{ data.total }}</span>
+            </div>
+            <div class="flex justify-between text-sm text-slate-400">
+              <span>Avg. Days</span>
+              <span class="font-mono font-semibold text-emerald-400">{{ data.avg_days }}</span>
+            </div>
+            <div class="flex justify-between text-sm text-slate-400">
+              <span>Total Days</span>
+              <span class="font-mono font-semibold text-amber-400">{{ data.total_days }}</span>
+            </div>
+            <div class="h-2 w-full bg-slate-700 rounded-full overflow-hidden mt-3">
+              <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500" 
+                   style="width: {{ (data.total / total_leaves * 100)|int if total_leaves > 0 else 0 }}%"></div>
+            </div>
+          </div>
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-<!-- Insights -->
-<div class="mt-8 space-y-6">
-
-  <!-- TITLE -->
-  <div>
-    <h2 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-chart-line"></i>
-      Leave Insights Dashboard
-    </h2>
-    <p class="text-gray-400 text-sm">Summary of leave trends and department performance</p>
-  </div>
-
-  <!-- KPI CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-    <!-- Total Leaves -->
-    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5 shadow-lg hover:scale-[1.02] transition">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-400 text-sm">Total Leave Requests</p>
-          <h3 class="text-3xl font-bold text-blue-400">{{ total_leaves }}</h3>
-        </div>
-        <i class="fa-solid fa-calendar-check text-3xl text-blue-500"></i>
       </div>
-    </div>
+    </section>
+    {% endif %}
 
-    <!-- Avg Days -->
-    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5 shadow-lg hover:scale-[1.02] transition">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-400 text-sm">Average Days / Leave</p>
-          <h3 class="text-3xl font-bold text-green-400">{{ avg_days_per_leave }}</h3>
-        </div>
-        <i class="fa-solid fa-clock text-3xl text-green-500"></i>
-      </div>
-    </div>
-
-    <!-- Most Common -->
-    <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-5 shadow-lg hover:scale-[1.02] transition">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-400 text-sm">Most Common Leave</p>
-          <h3 class="text-lg font-bold text-yellow-400">
-            {{ most_common_leave_type }}
-          </h3>
-        </div>
-        <i class="fa-solid fa-star text-3xl text-yellow-400"></i>
-      </div>
-    </div>
-
+    <!-- ================== Footer ================== -->
+    <footer class="text-center text-slate-500 text-sm pt-6 border-t border-slate-800/50">
+      HR Admin Portal • Municipality of Norzagaray • Leave Management System
+    </footer>
   </div>
-
-  <!-- DEPARTMENT BREAKDOWN -->
-  <div class="bg-[#1e293b] border border-gray-700 rounded-2xl p-6 shadow-lg">
-
-    <h3 class="text-xl font-bold text-blue-400 flex items-center gap-2 mb-4">
-      <i class="fa-solid fa-building"></i>
-      Department Breakdown
-    </h3>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-      {% for dept, data in dept_summary.items() %}
-      <div class="bg-[#0f172a] border border-gray-700 rounded-xl p-4 hover:bg-[#111c33] transition">
-
-        <div class="flex justify-between items-center mb-2">
-          <h4 class="font-semibold text-blue-300">{{ dept }}</h4>
-          <i class="fa-solid fa-sitemap text-gray-400"></i>
-        </div>
-
-        <p class="text-sm text-gray-400">
-          Total Leaves:
-          <span class="text-white font-semibold">{{ data.total }}</span>
-        </p>
-
-        <p class="text-sm text-gray-400">
-          Avg Days:
-          <span class="text-white font-semibold">{{ data.avg_days }}</span>
-        </p>
-
-      </div>
-      {% endfor %}
-
-    </div>
-  </div>
-
-</div>
-
 </main>
+
+<!-- ================== Scripts ================== -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    startDate.addEventListener('change', () => endDate.min = startDate.value);
+    endDate.addEventListener('change', () => startDate.max = endDate.value);
+  });
+
+  function sortTable(columnIndex) {
+    console.log(`Sort by column ${columnIndex} - implement with backend sorting for large datasets`);
+  }
+</script>
+
+<!-- ================== Styles ================== -->
+<style>
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media print {
+    @page { margin: 1.2cm; size: A4; }
+    body { background: white !important; color: #111 !important; font-family: system-ui, -apple-system, sans-serif; }
+    main { background: transparent !important; padding: 0 !important; }
+    header, footer, h1, h2, h3, h4 { color: #000 !important; }
+    .bg-slate-800\/50, .bg-slate-800\/40, .bg-slate-900\/60 { background: transparent !important; border: 1px solid #e2e8f0 !important; box-shadow: none !important; }
+    table, th, td { color: #000 !important; border-color: #cbd5e1 !important; }
+    .sticky { position: static !important; backdrop-filter: none !important; }
+    button, a, .no-print, [x-data] { display: none !important; }
+    .text-blue-400, .text-cyan-300 { color: #0056b3 !important; }
+    .text-emerald-400 { color: #047857 !important; }
+    .text-amber-400 { color: #b45309 !important; }
+    .text-slate-400, .text-slate-500 { color: #4b5563 !important; }
+    .bg-gradient-to-r { background: none !important; }
+    .animate-pulse { animation: none !important; }
+  }
+</style>
 {% endblock %}

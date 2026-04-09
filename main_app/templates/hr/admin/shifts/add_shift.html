@@ -2,81 +2,387 @@
 {% block title %}Create Shift | HR Admin{% endblock %}
 
 {% block content %}
-<main class="p-6 md:p-10 space-y-6 text-white">
+<main class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-blue-900/30 py-8 px-4 sm:px-6 lg:px-8">
+  
+  <div class="max-w-2xl mx-auto">
+    
+    <!-- ===== PAGE HEADER ===== -->
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg shadow-blue-500/20 mb-4">
+        <i class="fa-solid fa-calendar-day text-white text-2xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-white">Create New Shift</h1>
+      <p class="text-gray-400 mt-2 text-sm max-w-md mx-auto">
+        Define work schedules for employees. Shifts can be assigned to departments or individual staff.
+      </p>
+    </header>
 
-  <!-- Page Header -->
-  <header class="mb-6">
-     <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-calendar-day text-3xl"></i>
-      Create Shift  
-    </h1>
-  </header>
-
-  <!-- Add Shift Form -->
-  <section class="bg-gray-800 rounded-2xl p-6 shadow-lg max-w-md mx-auto">
-    <h2 class="text-xl font-semibold mb-4">Shift Details</h2>
-    <form method="POST" class="space-y-6">
-
-      <!-- Shift Name -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Shift Name <span class="text-red-500">*</span></label>
-        <input type="text" name="name" placeholder="Enter shift name" required
-               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+    <!-- ===== SHIFT FORM CARD ===== -->
+    <section class="bg-gray-800/60 backdrop-blur-sm rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-700/50">
+      
+      <!-- Form Header -->
+      <div class="flex items-center gap-3 pb-6 border-b border-gray-700/50 mb-6">
+        <div class="p-2 bg-blue-600/20 rounded-lg">
+          <i class="fa-solid fa-clock text-blue-400"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-white">Shift Details</h2>
+          <p class="text-gray-400 text-sm">Fill in the information below to create a new shift schedule</p>
+        </div>
       </div>
 
-      <!-- Start Time -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Start Time <span class="text-red-500">*</span></label>
-        <input type="time" name="start_time" required
-               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
-      </div>
+      <form method="POST" class="space-y-6" id="shiftForm">
 
-      <!-- End Time -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">End Time <span class="text-red-500">*</span></label>
-        <input type="time" name="end_time" required
-               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
-      </div>
+        <!-- Shift Name -->
+        <div class="space-y-2">
+          <label for="name" class="flex items-center gap-2 text-sm font-medium text-gray-300">
+            <i class="fa-solid fa-tag text-blue-400"></i>
+            Shift Name <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="name"
+              name="name" 
+              placeholder="e.g., Morning Shift, Night Duty, Weekend Rotation" 
+              required
+              pattern="^[A-Za-z0-9\s\-_]{3,50}$"
+              title="3-50 characters, letters, numbers, spaces, hyphens or underscores only"
+              class="w-full bg-gray-900/80 text-white rounded-xl px-4 py-3 pl-11 
+                     border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                     outline-none transition-all placeholder-gray-500"
+            >
+            <i class="fa-solid fa-font absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+          </div>
+          <p class="text-[11px] text-gray-500 flex items-center gap-1">
+            <i class="fa-solid fa-circle-info"></i>
+            Use clear, descriptive names for easy identification
+          </p>
+        </div>
 
-      <!-- Form Actions -->
-      <div class="flex justify-end gap-2 mt-4">
-        <a href="{{ url_for('hr_admin_bp.list_shifts') }}"
-           class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded text-white">Cancel</a>
-        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white">Add Shift</button>
-      </div>
+        <!-- Time Range -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          
+          <!-- Start Time -->
+          <div class="space-y-2">
+            <label for="start_time" class="flex items-center gap-2 text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-arrow-right-to-bracket text-emerald-400"></i>
+              Start Time <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input 
+                type="time" 
+                id="start_time"
+                name="start_time" 
+                required
+                class="w-full bg-gray-900/80 text-white rounded-xl px-4 py-3 pl-11 
+                       border border-gray-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 
+                       outline-none transition-all [color-scheme:dark]"
+              >
+              <i class="fa-regular fa-clock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            </div>
+          </div>
 
-    </form>
-  </section>
+          <!-- End Time -->
+          <div class="space-y-2">
+            <label for="end_time" class="flex items-center gap-2 text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-arrow-up-from-bracket text-amber-400"></i>
+              End Time <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input 
+                type="time" 
+                id="end_time"
+                name="end_time" 
+                required
+                class="w-full bg-gray-900/80 text-white rounded-xl px-4 py-3 pl-11 
+                       border border-gray-600 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30 
+                       outline-none transition-all [color-scheme:dark] invalid:border-red-500"
+              >
+              <i class="fa-regular fa-clock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            </div>
+            <p id="timeWarning" class="text-[11px] text-amber-400 hidden flex items-center gap-1">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              End time should be after start time (unless overnight shift)
+            </p>
+          </div>
+        </div>
+
+        <!-- Duration Preview -->
+        <div class="bg-gray-900/40 rounded-xl p-4 border border-gray-700/40">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-400">Estimated Duration</span>
+            <span id="durationPreview" class="text-lg font-semibold text-blue-400">-- hours</span>
+          </div>
+          <div class="mt-2 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div id="durationBar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-700/50">
+          <a href="{{ url_for('hr_admin_bp.list_shifts') }}"
+             class="inline-flex items-center justify-center gap-2 px-5 py-2.5 
+                    bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium 
+                    transition-all border border-gray-600 hover:border-gray-500">
+            <i class="fa-solid fa-xmark"></i>
+            Cancel
+          </a>
+          <button type="submit" 
+                  id="submitBtn"
+                  class="inline-flex items-center justify-center gap-2 px-6 py-2.5 
+                         bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 
+                         text-white rounded-xl text-sm font-semibold transition-all 
+                         shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+            <i class="fa-solid fa-plus"></i>
+            <span>Create Shift</span>
+            <i class="fa-solid fa-arrow-right ml-1 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ===== HELPER TIPS ===== -->
+    <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-lightbulb text-yellow-400"></i>
+          <span class="text-sm font-medium text-gray-300">Pro Tip</span>
+        </div>
+        <p class="text-xs text-gray-400">Use 24-hour format for clarity. Midnight is 00:00, noon is 12:00.</p>
+      </div>
+      <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-shield-check text-emerald-400"></i>
+          <span class="text-sm font-medium text-gray-300">Validation</span>
+        </div>
+        <p class="text-xs text-gray-400">System auto-checks for overlapping shifts when assigning to employees.</p>
+      </div>
+      <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-users text-blue-400"></i>
+          <span class="text-sm font-medium text-gray-300">Assignment</span>
+        </div>
+        <p class="text-xs text-gray-400">After creation, assign this shift to departments or individual staff.</p>
+      </div>
+    </div>
+
+  </div>
 </main>
 
-<!-- SweetAlert -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  
+  // ===== TIME VALIDATION & DURATION CALCULATOR =====
+  const startTime = document.getElementById('start_time');
+  const endTime = document.getElementById('end_time');
+  const durationPreview = document.getElementById('durationPreview');
+  const durationBar = document.getElementById('durationBar');
+  const timeWarning = document.getElementById('timeWarning');
+  const form = document.getElementById('shiftForm');
+  const submitBtn = document.getElementById('submitBtn');
+
+  function calculateDuration(start, end) {
+    if (!start || !end) return null;
+    
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    
+    let startMinutes = startH * 60 + startM;
+    let endMinutes = endH * 60 + endM;
+    
+    // Handle overnight shifts
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60;
+    }
+    
+    const diffMinutes = endMinutes - startMinutes;
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    
+    return { hours, minutes, totalMinutes: diffMinutes };
+  }
+
+  function updateDuration() {
+    const result = calculateDuration(startTime.value, endTime.value);
+    
+    if (result) {
+      const display = result.hours > 0 
+        ? `${result.hours}h ${result.minutes}m` 
+        : `${result.minutes}m`;
+      
+      durationPreview.textContent = display;
+      
+      // Update progress bar (max 12 hours = 100%)
+      const percentage = Math.min((result.totalMinutes / (12 * 60)) * 100, 100);
+      durationBar.style.width = `${percentage}%`;
+      
+      // Show warning if end <= start (potential overnight)
+      if (endTime.value <= startTime.value && startTime.value && endTime.value) {
+        timeWarning.classList.remove('hidden');
+      } else {
+        timeWarning.classList.add('hidden');
+      }
+    } else {
+      durationPreview.textContent = '-- hours';
+      durationBar.style.width = '0%';
+    }
+  }
+
+  startTime.addEventListener('change', updateDuration);
+  endTime.addEventListener('change', updateDuration);
+
+  // ===== FORM SUBMISSION WITH LOADING STATE =====
+  form.addEventListener('submit', function(e) {
+    // Basic validation
+    if (startTime.value && endTime.value) {
+      const result = calculateDuration(startTime.value, endTime.value);
+      if (result.totalMinutes < 30) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Shift Too Short',
+          text: 'Minimum shift duration is 30 minutes. Please adjust the times.',
+          confirmButtonColor: '#3b82f6'
+        });
+        return;
+      }
+      if (result.totalMinutes > 16 * 60) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Shift Too Long',
+          text: 'Maximum shift duration is 16 hours. Please adjust the times.',
+          confirmButtonColor: '#3b82f6'
+        });
+        return;
+      }
+    }
+
+    // Show loading state
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Creating...</span>
+    `;
+  });
+
+  // ===== SWEETALERT FLASH MESSAGES =====
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
         {% if category == 'success' %}
           Swal.fire({
             icon: 'success',
-            title: 'Success',
+            title: '✓ Shift Created!',
             text: '{{ message }}',
+            background: '#1e293b',
+            color: '#f1f5f9',
+            confirmButtonColor: '#10b981',
             showConfirmButton: false,
-            timer: 1000,
+            timer: 1500,
             timerProgressBar: true,
-            willClose: () => { window.location.href = "{{ url_for('hr_admin_bp.list_shifts') }}"; }
+            willClose: () => { 
+              window.location.href = "{{ url_for('hr_admin_bp.list_shifts') }}"; 
+            }
           });
         {% elif category == 'error' %}
           Swal.fire({
             icon: 'error',
-            title: 'Error',
+            title: '⚠ Error',
             text: '{{ message }}',
-            confirmButtonColor: '#e74a3b'
+            background: '#1e293b',
+            color: '#f1f5f9',
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Try Again'
+          });
+        {% elif category == 'warning' %}
+          Swal.fire({
+            icon: 'warning',
+            title: '⚡ Notice',
+            text: '{{ message }}',
+            background: '#1e293b',
+            color: '#f1f5f9',
+            confirmButtonColor: '#f59e0b'
+          });
+        {% else %}
+          Swal.fire({
+            icon: 'info',
+            title: 'ℹ Info',
+            text: '{{ message }}',
+            background: '#1e293b',
+            color: '#f1f5f9',
+            timer: 2000,
+            showConfirmButton: false
           });
         {% endif %}
       {% endfor %}
     {% endif %}
   {% endwith %}
+
+  // ===== INPUT FOCUS ANIMATIONS =====
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement?.querySelector('i')?.classList.add('text-blue-400');
+    });
+    input.addEventListener('blur', function() {
+      this.parentElement?.querySelector('i')?.classList.remove('text-blue-400');
+    });
+  });
+
+  // ===== KEYBOARD NAVIGATION ENHANCEMENT =====
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+      const inputs = Array.from(form.querySelectorAll('input'));
+      const currentIndex = inputs.indexOf(e.target);
+      if (currentIndex < inputs.length - 1) {
+        e.preventDefault();
+        inputs[currentIndex + 1].focus();
+      }
+    }
+  });
+
 });
 </script>
+
+<!-- Custom Styles for Time Input -->
+<style>
+/* Dark mode time picker styling */
+input[type="time"] {
+  color-scheme: dark;
+}
+
+/* Custom scrollbar for any overflow */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Smooth focus transition */
+input:focus {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Button hover micro-interaction */
+button[type="submit"]:hover i.fa-arrow-right {
+  transform: translateX(2px);
+}
+</style>
 {% endblock %}

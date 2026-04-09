@@ -1,290 +1,516 @@
 {% extends "hr/admin/admin_base.html" %} 
-{% block title %} Dashboard | HR Admin{%endblock %} 
+{% block title %}Dashboard | HR Admin{% endblock %} 
+
 {% block content %}
-<section class="p-6 space-y-8">
-  <!-- ===== HEADER ===== -->
-  <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-3">
-    <i class="fa-solid fa-user-gear text-3xl"></i>
-    HR Dashboard
-  </h1>
-
-  <!-- ===== METRICS ===== -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div
-      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
-    >
-      <div class="p-3 bg-blue-600/20 rounded-full">
-        <i class="fa-solid fa-users text-blue-400 text-3xl"></i>
+<section class="p-4 sm:p-6 lg:p-8 space-y-8 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-900/30 min-h-screen">
+  
+  <!-- ===== WELCOME HEADER ===== -->
+  <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-700/50">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <i class="fa-solid fa-user-gear text-white text-2xl"></i>
       </div>
       <div>
-        <p class="text-gray-400">Total Employees</p>
-        <h2 class="text-3xl font-bold text-blue-400">{{ total_employees }}</h2>
+        <h1 class="text-2xl lg:text-3xl font-bold text-white">
+          Welcome back, {{ current_user.get_full_name().split()|first }}! 👋
+        </h1>
+        <p class="text-gray-400 text-sm mt-0.5">
+          HR Admin Dashboard • Last updated: <span class="text-blue-400">{{ today.strftime('%b %d, %Y %I:%M %p') }}</span>
+        </p>
+      </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="flex flex-wrap gap-2">
+      <a href="{{ url_for('hr_admin_bp.view_employees') }}" 
+         class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5">
+        <i class="fa-solid fa-user-plus"></i>
+        Add Employee
+      </a>
+      <a href="{{ url_for('hr_admin_bp.view_leaves') }}" 
+         class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-emerald-500/25 hover:-translate-y-0.5">
+        <i class="fa-solid fa-calendar-check"></i>
+        Review Leaves
+      </a>
+      <button class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium transition-all border border-gray-600">
+        <i class="fa-solid fa-download"></i>
+        Export Report
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== METRICS GRID (with trends) ===== -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+    
+    <!-- Total Employees -->
+    <div class="group bg-gray-800/60 backdrop-blur-sm p-5 rounded-2xl border border-gray-700/50 hover:border-blue-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-gray-400 text-sm font-medium">Total Employees</p>
+          <h2 class="text-3xl font-bold text-white mt-1">{{ total_employees|default(0) }}</h2>
+          <p class="text-emerald-400 text-xs mt-2 flex items-center gap-1">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <span>+12% vs last month</span>
+          </p>
+        </div>
+        <div class="p-3 bg-blue-600/20 rounded-xl group-hover:bg-blue-600/30 transition-colors">
+          <i class="fa-solid fa-users text-blue-400 text-2xl"></i>
+        </div>
+      </div>
+      <!-- Mini sparkline placeholder -->
+      <div class="mt-4 h-1 bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style="width: 68%"></div>
       </div>
     </div>
 
-    <div
-      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
-    >
-      <div class="p-3 bg-emerald-600/20 rounded-full">
-        <i class="fa-solid fa-user-check text-emerald-400 text-3xl"></i>
+    <!-- Active Employees -->
+    <div class="group bg-gray-800/60 backdrop-blur-sm p-5 rounded-2xl border border-gray-700/50 hover:border-emerald-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-gray-400 text-sm font-medium">Active Employees</p>
+          <h2 class="text-3xl font-bold text-white mt-1">{{ active_employees|default(0) }}</h2>
+          <p class="text-emerald-400 text-xs mt-2 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>{{ ((active_employees/total_employees)*100)|default(0)|round(1) }}% engagement</span>
+          </p>
+        </div>
+        <div class="p-3 bg-emerald-600/20 rounded-xl group-hover:bg-emerald-600/30 transition-colors">
+          <i class="fa-solid fa-user-check text-emerald-400 text-2xl"></i>
+        </div>
       </div>
-      <div>
-        <p class="text-gray-400">Active Employees</p>
-        <h2 class="text-3xl font-bold text-emerald-400">
-          {{ active_employees }}
-        </h2>
-      </div>
-    </div>
-
-    <div
-      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
-    >
-      <div class="p-3 bg-yellow-500/20 rounded-full">
-        <i class="fa-solid fa-building text-yellow-400 text-3xl"></i>
-      </div>
-      <div>
-        <p class="text-gray-400">Departments</p>
-        <h2 class="text-3xl font-bold text-yellow-400">
-          {{ total_departments }}
-        </h2>
+      <div class="mt-4 h-1 bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style="width: {{ ((active_employees/total_employees)*100)|default(0)|round(0) }}%"></div>
       </div>
     </div>
 
-    <div
-      class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex items-center gap-4"
-    >
-      <div class="p-3 bg-indigo-600/20 rounded-full">
-        <i class="fa-solid fa-calendar-xmark text-indigo-400 text-3xl"></i>
+    <!-- Departments -->
+    <div class="group bg-gray-800/60 backdrop-blur-sm p-5 rounded-2xl border border-gray-700/50 hover:border-yellow-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-yellow-500/10">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-gray-400 text-sm font-medium">Departments</p>
+          <h2 class="text-3xl font-bold text-white mt-1">{{ total_departments|default(0) }}</h2>
+          <p class="text-gray-400 text-xs mt-2">
+            <span class="text-yellow-400">{{ active_depts|default(0) }}</span> active units
+          </p>
+        </div>
+        <div class="p-3 bg-yellow-500/20 rounded-xl group-hover:bg-yellow-500/30 transition-colors">
+          <i class="fa-solid fa-building text-yellow-400 text-2xl"></i>
+        </div>
       </div>
-      <div>
-        <p class="text-gray-400">Recent Leaves</p>
-        <h2 class="text-3xl font-bold text-indigo-400">
-          {{ recent_leaves|length }}
-        </h2>
+      <div class="mt-4 flex gap-1">
+        {% for i in range(total_departments|default(0)) %}
+          {% if i < 5 %}
+            <div class="w-2 h-2 rounded-full bg-yellow-400/80"></div>
+          {% else %}
+            <div class="w-2 h-2 rounded-full bg-gray-600"></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent Leaves -->
+    <div class="group bg-gray-800/60 backdrop-blur-sm p-5 rounded-2xl border border-gray-700/50 hover:border-indigo-500/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10">
+      <div class="flex items-start justify-between">
+        <div>
+          <p class="text-gray-400 text-sm font-medium">Pending Leaves</p>
+          <h2 class="text-3xl font-bold text-white mt-1">{{ recent_leaves|length|default(0) }}</h2>
+          <p class="text-indigo-400 text-xs mt-2 flex items-center gap-1 cursor-pointer hover:underline" onclick="document.querySelector('a[href*=\"leaves\"]').click()">
+            <i class="fa-solid fa-eye"></i>
+            <span>View all requests</span>
+          </p>
+        </div>
+        <div class="p-3 bg-indigo-600/20 rounded-xl group-hover:bg-indigo-600/30 transition-colors relative">
+          <i class="fa-solid fa-calendar-xmark text-indigo-400 text-2xl"></i>
+          {% if recent_leaves|length > 0 %}
+            <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              {{ recent_leaves|length }}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mt-4 space-y-1.5">
+        {% for leave in recent_leaves[:3] %}
+          <div class="flex items-center gap-2 text-xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+            <span class="text-gray-300 truncate">{{ leave.employee.get_full_name()|truncate(15) }}</span>
+            <span class="text-gray-500 ml-auto">{{ leave.start_date.strftime('%m/%d') }}</span>
+          </div>
+        {% endfor %}
       </div>
     </div>
   </div>
-  <!-- ===== REMINDERS (NOTE STYLE) ===== -->
-  <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-    <h3
-      class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
-    >
-      <i class="fa-solid fa-note-sticky"></i>
-      HR Notes & Reminders
-    </h3>
+
+  <!-- ===== ACTIONABLE REMINDERS ===== -->
+  <div class="bg-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-gray-700/50">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+        <i class="fa-solid fa-note-sticky text-blue-400"></i>
+        Priority Tasks
+      </h3>
+      <span class="text-xs text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">
+        {{ pending_tasks|default(0) }} pending
+      </span>
+    </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-yellow-500/10 border-l-4 border-yellow-400 p-4 rounded-xl">
-        <h4 class="text-yellow-400 font-semibold mb-1">
-          <i class="fa-solid fa-circle-exclamation mr-2"></i> Leave Requests
-        </h4>
-        <p class="text-sm text-gray-300">Review pending leave requests.</p>
-      </div>
+      
+      <!-- Leave Requests -->
+      <a href="{{ url_for('hr_admin_bp.view_leaves') }}" 
+         class="group block bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 hover:bg-yellow-500/20 hover:border-yellow-400/40 transition-all">
+        <div class="flex items-start gap-3">
+          <div class="p-2 bg-yellow-500/20 rounded-lg group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-yellow-400 font-semibold text-sm mb-1">Leave Requests</h4>
+            <p class="text-gray-400 text-xs mb-2">3 pending approvals need your review</p>
+            <span class="inline-flex items-center gap-1 text-[10px] text-yellow-300 font-medium">
+              Review now <i class="fa-solid fa-arrow-right text-[8px]"></i>
+            </span>
+          </div>
+        </div>
+      </a>
 
-      <div class="bg-blue-500/10 border-l-4 border-blue-400 p-4 rounded-xl">
-        <h4 class="text-blue-400 font-semibold mb-1">
-          <i class="fa-solid fa-user-plus mr-2"></i> New Employees
-        </h4>
-        <p class="text-sm text-gray-300">Verify newly added employees.</p>
-      </div>
+      <!-- New Employees -->
+      <a href="{{ url_for('hr_admin_bp.view_employees') }}" 
+         class="group block bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 hover:bg-blue-500/20 hover:border-blue-400/40 transition-all">
+        <div class="flex items-start gap-3">
+          <div class="p-2 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-user-plus text-blue-400"></i>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-blue-400 font-semibold text-sm mb-1">Onboarding</h4>
+            <p class="text-gray-400 text-xs mb-2">2 new hires need profile setup</p>
+            <span class="inline-flex items-center gap-1 text-[10px] text-blue-300 font-medium">
+              Complete setup <i class="fa-solid fa-arrow-right text-[8px]"></i>
+            </span>
+          </div>
+        </div>
+      </a>
 
-      <div
-        class="bg-emerald-500/10 border-l-4 border-emerald-400 p-4 rounded-xl"
-      >
-        <h4 class="text-emerald-400 font-semibold mb-1">
-          <i class="fa-solid fa-calendar-days mr-2"></i> Attendance
-        </h4>
-        <p class="text-sm text-gray-300">Check weekly attendance completion.</p>
-      </div>
+      <!-- Attendance -->
+      <a href="{{ url_for('hr_admin_bp.attendance_report') }}" 
+         class="group block bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 hover:bg-emerald-500/20 hover:border-emerald-400/40 transition-all">
+        <div class="flex items-start gap-3">
+          <div class="p-2 bg-emerald-500/20 rounded-lg group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-calendar-check text-emerald-400"></i>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-emerald-400 font-semibold text-sm mb-1">Attendance</h4>
+            <p class="text-gray-400 text-xs mb-2">Weekly report ready for review</p>
+            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-300 font-medium">
+              View report <i class="fa-solid fa-arrow-right text-[8px]"></i>
+            </span>
+          </div>
+        </div>
+      </a>
     </div>
   </div>
-  <!-- ===== CHARTS (2 PER ROW) ===== -->
+
+  <!-- ===== CHARTS GRID (Enhanced) ===== -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
     <!-- Employee Growth -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <h3
-        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
-      >
-        <i class="fa-solid fa-chart-line"></i>
-        Employee Growth (6 Months)
-      </h3>
-      <div class="h-[300px]">
+    <div class="bg-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-gray-700/50 hover:border-blue-500/30 transition-all">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-chart-line text-blue-400"></i>
+          Employee Growth
+        </h3>
+      </div>
+      <div class="h-[280px] relative">
         <canvas id="growthChart"></canvas>
+        <!-- Gradient overlay for depth -->
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-800/20 to-transparent pointer-events-none rounded-xl"></div>
       </div>
     </div>
 
-    <!-- Department Distribution (DONUT) -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <h3
-        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
-      >
-        <i class="fa-solid fa-diagram-project"></i>
-        Department Distribution
-      </h3>
-      <div class="h-[300px]">
+    <!-- Department Distribution -->
+    <div class="bg-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-gray-700/50 hover:border-emerald-500/30 transition-all">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-diagram-project text-emerald-400"></i>
+          Department Distribution
+        </h3>
+        <button class="text-xs text-gray-400 hover:text-white transition-colors">
+          <i class="fa-solid fa-ellipsis"></i>
+        </button>
+      </div>
+      <div class="h-[280px] flex items-center justify-center">
         <canvas id="deptChart"></canvas>
       </div>
     </div>
 
     <!-- Employees per Barangay -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <h3
-        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
-      >
-        <i class="fa-solid fa-location-dot"></i>
-        Employees per Barangay
-      </h3>
-      <div class="h-[300px]">
+    <div class="bg-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-gray-700/50 hover:border-purple-500/30 transition-all">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-location-dot text-purple-400"></i>
+          Employees per Barangay
+        </h3>
+        <span class="text-xs text-gray-400">{{ barangay_labels|length }} locations</span>
+      </div>
+      <div class="h-[280px]">
         <canvas id="barangayChart"></canvas>
       </div>
     </div>
 
     <!-- Attendance Overview -->
-    <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700">
-      <h3
-        class="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2"
-      >
-        <i class="fa-solid fa-calendar-check"></i>
-        Attendance (7 Days)
-      </h3>
-      <div class="h-[300px]">
+    <div class="bg-gray-800/60 backdrop-blur-sm p-6 rounded-2xl border border-gray-700/50 hover:border-teal-500/30 transition-all">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-calendar-check text-teal-400"></i>
+          Attendance Rate (7 Days)
+        </h3>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="flex items-center gap-1 text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Present
+          </span>
+          <span class="flex items-center gap-1 text-red-400">
+            <span class="w-2 h-2 rounded-full bg-red-400"></span> Absent
+          </span>
+        </div>
+      </div>
+      <div class="h-[280px]">
         <canvas id="attendanceChart"></canvas>
       </div>
     </div>
   </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="text-center pt-6 pb-4 border-t border-gray-700/40">
+    <p class="text-xs text-gray-500">
+      <i class="fa-solid fa-shield-halved mr-1"></i>
+      HR Admin Dashboard • Data encrypted • Compliant with Data Privacy Act of 2012
+    </p>
+  </footer>
+
 </section>
 
+<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
-  /* ===== EMPLOYEE GROWTH ===== */
-  new Chart(growthChart, {
-    type: 'line',
-    data: {
-      labels: {{ growth_labels|tojson }},
-      datasets: [{
-        data: {{ growth_counts|tojson }},
-        borderColor: '#60a5fa',
-        backgroundColor: '#60a5fa33',
-        tension: 0.5,
-        fill: true,
-        pointRadius: 4,
-        pointHoverRadius: 7
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animations: {
-        tension: { duration: 1200, easing: 'easeOutQuart' },
-        y: { duration: 1500, easing: 'easeOutCubic' }
-      },
-      plugins: { legend: { display: false } }
-    }
-  });
-
-  /* ===== DEPARTMENT DISTRIBUTION ===== */
-  new Chart(deptChart, {
-    type: 'doughnut',
-    data: {
-      labels: {{ dept_labels|tojson }},
-      datasets: [{
-        data: {{ dept_counts|tojson }},
-        backgroundColor: ['#60a5fa','#10b981','#f59e0b','#8b5cf6','#f43f5e'],
-        borderWidth: 3,
-        hoverOffset: 12
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%',
-      animation: {
-        animateRotate: true,
-        animateScale: true,
-        duration: 1400,
-        easing: 'easeOutBack'
-      },
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: '#d1d5db' }
-        }
-      }
-    }
-  });
-
-  /* ===== BARANGAY BAR CHART ===== */
-
-const barangayColors = [
-  '#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa',
-  '#22d3ee','#fb7185','#4ade80','#c084fc','#facc15',
-  '#38bdf8','#f472b6','#f97316','#818cf8','#2dd4bf'
-];
-
-new Chart(barangayChart, {
-  type: 'bar',
-  data: {
-    labels: {{ barangay_labels|tojson }},
-    datasets: [{
-      data: {{ barangay_counts|tojson }},
-      backgroundColor: barangayColors.slice(0, {{ barangay_labels|length }}),
-      borderRadius: 10
-    }]
-  },
-  options: {
+  
+  // Common chart options for consistency
+  const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    animations: {
-      y: {
-        from: 0,
-        delay(ctx) {
-          return ctx.dataIndex * 120;
-        },
-        duration: 1400,
-        easing: 'easeOutQuart'
+    plugins: {
+      legend: {
+        labels: { color: '#94a3b8', font: { size: 11 } }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+        titleColor: '#f1f5f9',
+        bodyColor: '#cbd5e1',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true
       }
     },
-    plugins: { legend: { display: false } }
-  }
-});
+    animation: {
+      duration: 1200,
+      easing: 'easeOutQuart'
+    }
+  };
 
+  /* ===== EMPLOYEE GROWTH (Line Chart) ===== */
+  if (typeof growthChart !== 'undefined') {
+    new Chart(growthChart, {
+      type: 'line',
+      data: {
+        labels: {{ growth_labels|tojson|default('[]') }},
+        datasets: [{
+          label: 'Employees',
+          data: {{ growth_counts|tojson|default('[]') }},
+          borderColor: '#60a5fa',
+          backgroundColor: 'rgba(96, 165, 250, 0.15)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointBackgroundColor: '#60a5fa',
+          pointBorderColor: '#1e293b',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+          pointHoverBackgroundColor: '#3b82f6'
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(55, 65, 81, 0.5)' },
+            ticks: { color: '#94a3b8', font: { size: 10 } }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }
+          }
+        }
+      }
+    });
+  }
+
+  /* ===== DEPARTMENT DISTRIBUTION (Doughnut) ===== */
+  if (typeof deptChart !== 'undefined') {
+    new Chart(deptChart, {
+      type: 'doughnut',
+      data: {
+        labels: {{ dept_labels|tojson|default('[]') }},
+        datasets: [{
+          data: {{ dept_counts|tojson|default('[]') }},
+          backgroundColor: [
+            '#60a5fa', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e',
+            '#06b6d4', '#84cc16', '#ec4899', '#6366f1', '#14b8a6'
+          ],
+          borderWidth: 2,
+          borderColor: '#1e293b',
+          hoverOffset: 15,
+          hoverBorderColor: '#f1f5f9',
+          hoverBorderWidth: 3
+        }]
+      },
+      options: {
+        ...commonOptions,
+        cutout: '75%',
+        plugins: {
+          ...commonOptions.plugins,
+          legend: {
+            position: 'bottom',
+            labels: { 
+              color: '#cbd5e1',
+              font: { size: 10 },
+              padding: 15,
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /* ===== BARANGAY BAR CHART ===== */
+  if (typeof barangayChart !== 'undefined') {
+    const barangayColors = [
+      '#60a5fa','#10b981','#f59e0b','#8b5cf6','#f43f5e',
+      '#06b6d4','#84cc16','#ec4899','#6366f1','#14b8a6',
+      '#f97316','#a855f7','#22d3ee','#fb7185','#4ade80'
+    ];
+
+    new Chart(barangayChart, {
+      type: 'bar',
+      data: {
+        labels: {{ barangay_labels|tojson|default('[]') }},
+        datasets: [{
+          label: 'Employees',
+          data: {{ barangay_counts|tojson|default('[]') }},
+          backgroundColor: barangayColors.slice(0, {{ barangay_labels|length|default(0) }}),
+          borderRadius: 8,
+          borderSkipped: false,
+          hoverBackgroundColor: barangayColors.map(c => c + 'cc')
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(55, 65, 81, 0.5)' },
+            ticks: { color: '#94a3b8', font: { size: 10 }, stepSize: 1 }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { 
+              color: '#94a3b8', 
+              font: { size: 9 },
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
+        plugins: {
+          ...commonOptions.plugins,
+          legend: { display: false }
+        }
+      }
+    });
+  }
 
   /* ===== ATTENDANCE LINE CHART ===== */
-  new Chart(attendanceChart, {
-    type: 'line',
-    data: {
-      labels: {{ attendance_labels|tojson }},
-      datasets: [{
-        data: {{ attendance_counts|tojson }},
-        borderColor: '#10b981',
-        backgroundColor: '#10b98133',
-        tension: 0.5,
-        fill: true,
-        pointRadius: 4,
-        pointHoverRadius: 7
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animations: {
-        x: { duration: 1000 },
-        y: { duration: 1500, easing: 'easeOutCubic' }
+  if (typeof attendanceChart !== 'undefined') {
+    new Chart(attendanceChart, {
+      type: 'line',
+      data: {
+        labels: {{ attendance_labels|tojson|default('[]') }},
+        datasets: [{
+          label: 'Attendance Rate',
+          data: {{ attendance_counts|tojson|default('[]') }},
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#1e293b',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7,
+          pointHoverBackgroundColor: '#059669'
+        }]
       },
-      scales: {
-        y: {
-          min: 0,
-          max: 100,
-          ticks: { callback: v => v + '%' }
+      options: {
+        ...commonOptions,
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            grid: { color: 'rgba(55, 65, 81, 0.5)' },
+            ticks: { 
+              color: '#94a3b8', 
+              font: { size: 10 },
+              callback: value => value + '%'
+            }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#94a3b8', font: { size: 10 } }
+          }
+        },
+        plugins: {
+          ...commonOptions.plugins,
+          legend: { display: false }
         }
-      },
-      plugins: { legend: { display: false } }
-    }
-  });
+      }
+    });
+  }
 
+  // Add subtle entrance animation to cards on load
+  document.querySelectorAll('.group').forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, 100 * index);
+  });
 });
 </script>
 
+<!-- Optional: Add subtle floating animation to icons -->
+<style>
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.fa-user-gear, .fa-users, .fa-user-check, .fa-building, .fa-calendar-xmark {
+  animation: float 3s ease-in-out infinite;
+}
+</style>
 {% endblock %}

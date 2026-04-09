@@ -1,158 +1,885 @@
-
- <!-- Add Employee Modal -->
-  <div id="addEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden z-50">
-    <div class="bg-gray-800 rounded-2xl shadow-xl w-full max-w-3xl p-6 relative">
-
-      <!-- Close Button -->
-      <button id="closeAddEmployeeModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-200">
-         <i class="fa-solid fa-xmark text-lg"></i>
+<!-- Add Employee Modal -->
+<div 
+  id="addEmployeeModal" 
+  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="addEmployeeModalTitle"
+>
+  <!-- Modal Container with Blur-Resistant Background -->
+  <div class="bg-gray-900/95 backdrop-blur-xl rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-700/50 flex flex-col">
+    
+    <!-- Modal Header (Sticky) -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <div class="bg-green-500/20 p-2.5 rounded-xl">
+          <i class="fa-solid fa-user-plus text-green-400 text-lg"></i>
+        </div>
+        <div>
+          <h2 id="addEmployeeModalTitle" class="text-xl font-semibold text-white">Add New Employee</h2>
+          <p class="text-sm text-gray-400">Complete all steps to register a new team member</p>
+        </div>
+      </div>
+      <button
+        id="closeAddEmployeeModal"
+        class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-xl transition-colors"
+        aria-label="Close modal"
+      >
+        <i class="fa-solid fa-xmark text-lg"></i>
       </button>
+    </div>
 
-      <h2 class="text-2xl font-semibold text-blue-400 mb-4">Add Employee</h2>
+    <!-- Progress Indicator -->
+    <div class="px-6 py-4 border-b border-gray-700/50 bg-gray-900/50">
+      <div class="flex items-center justify-between max-w-2xl mx-auto">
+        <!-- Step 1 -->
+        <div class="flex flex-col items-center gap-2 flex-1">
+          <div id="progressStep1" class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-semibold transition-all">
+            <i class="fa-solid fa-check hidden"></i>
+            <span id="progressNum1">1</span>
+          </div>
+          <span class="text-xs text-gray-400 text-center">Personal</span>
+        </div>
+        
+        <!-- Connector -->
+        <div class="flex-1 h-0.5 bg-gray-700 mx-2">
+          <div id="progressLine1" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="flex flex-col items-center gap-2 flex-1">
+          <div id="progressStep2" class="w-8 h-8 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-sm font-semibold transition-all">
+            <i class="fa-solid fa-check hidden"></i>
+            <span id="progressNum2">2</span>
+          </div>
+          <span class="text-xs text-gray-400 text-center">Contact</span>
+        </div>
+        
+        <!-- Connector -->
+        <div class="flex-1 h-0.5 bg-gray-700 mx-2">
+          <div id="progressLine2" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="flex flex-col items-center gap-2 flex-1">
+          <div id="progressStep3" class="w-8 h-8 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-sm font-semibold transition-all">
+            <i class="fa-solid fa-check hidden"></i>
+            <span id="progressNum3">3</span>
+          </div>
+          <span class="text-xs text-gray-400 text-center">Employment</span>
+        </div>
+        
+        <!-- Connector -->
+        <div class="flex-1 h-0.5 bg-gray-700 mx-2">
+          <div id="progressLine3" class="h-full bg-green-500 w-0 transition-all duration-300"></div>
+        </div>
+        
+        <!-- Step 4 -->
+        <div class="flex flex-col items-center gap-2 flex-1">
+          <div id="progressStep4" class="w-8 h-8 rounded-full bg-gray-700 text-gray-400 flex items-center justify-center text-sm font-semibold transition-all">
+            <i class="fa-solid fa-check hidden"></i>
+            <span id="progressNum4">4</span>
+          </div>
+          <span class="text-xs text-gray-400 text-center">Preview</span>
+        </div>
+      </div>
+    </div>
 
-      <form id="employeeForm" method="POST" action="{{ url_for('hr_admin_bp.add_employee') }}">
-        <!-- Step 1: Personal Details -->
-        <div class="step" data-step="1">
-          <h3 class="text-xl font-semibold text-gray-300 mb-4">Step 1: Personal Details</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="text-gray-400">First Name *</label>
-              <input type="text" name="first_name" placeholder="First Name" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+    <!-- Scrollable Form Content -->
+    <div class="overflow-y-auto p-6 space-y-6">
+      
+      <form id="employeeForm" method="POST" action="{{ url_for('hr_admin_bp.add_employee') }}" class="space-y-8" novalidate>
+        
+        <!-- ========================= -->
+        <!-- STEP 1: PERSONAL DETAILS -->
+        <!-- ========================= -->
+        <div class="step active" data-step="1">
+          <div class="flex items-center gap-2 pb-3 border-b border-gray-700/50">
+            <i class="fa-regular fa-id-badge text-green-400"></i>
+            <h3 class="text-lg font-semibold text-white">Personal Details</h3>
+            <span class="text-xs text-gray-500 ml-auto">Step 1 of 4</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <!-- First Name -->
+            <div class="space-y-1.5">
+              <label for="first_name" class="block text-sm font-medium text-gray-300">
+                First Name <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  id="first_name"
+                  name="first_name"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Enter first name"
+                  required
+                  pattern="^[A-Za-z\s'-]+$"
+                  title="Letters, spaces, hyphens, and apostrophes only"
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Middle Name</label>
-              <input type="text" name="middle_name" placeholder="Middle Name" class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Middle Name -->
+            <div class="space-y-1.5">
+              <label for="middle_name" class="block text-sm font-medium text-gray-300">Middle Name</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  id="middle_name"
+                  name="middle_name"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Enter middle name"
+                  pattern="^[A-Za-z\s'-]*$"
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Last Name *</label>
-              <input type="text" name="last_name" placeholder="Last Name" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Last Name -->
+            <div class="space-y-1.5">
+              <label for="last_name" class="block text-sm font-medium text-gray-300">
+                Last Name <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  id="last_name"
+                  name="last_name"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Enter last name"
+                  required
+                  pattern="^[A-Za-z\s'-]+$"
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Date of Birth *</label>
-              <input type="date" name="date_of_birth" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Date of Birth -->
+            <div class="space-y-1.5">
+              <label for="date_of_birth" class="block text-sm font-medium text-gray-300">
+                Date of Birth <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-calendar"></i>
+                </span>
+                <input
+                  type="date"
+                  id="date_of_birth"
+                  name="date_of_birth"
+                  max="2008-12-31"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Gender *</label>
-              <select name="gender" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200">
-                <option disabled selected>Select gender</option>
-                <option>Male</option>
-                <option>Female</option>
-              </select>
+
+            <!-- Gender -->
+            <div class="space-y-1.5">
+              <label for="gender" class="block text-sm font-medium text-gray-300">
+                Gender <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-venus-mars"></i>
+                </span>
+                <select
+                  id="gender"
+                  name="gender"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled selected>Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Prefer not to say</option>
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Civil Status *</label>
-              <select name="marital_status" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200">
-                <option disabled selected>Select status</option>
-                <option>Single</option>
-                <option>Married</option>
-                <option>Separated</option>
-                <option>Divorced</option>
-                <option>Widowed</option>
-              </select>
+
+            <!-- Civil Status -->
+            <div class="space-y-1.5">
+              <label for="marital_status" class="block text-sm font-medium text-gray-300">
+                Civil Status <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-ring"></i>
+                </span>
+                <select
+                  id="marital_status"
+                  name="marital_status"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled selected>Select status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Widowed">Widowed</option>
+                  <option value="Separated">Separated</option>
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: Contact Details (Split Address) -->
+        <!-- ========================= -->
+        <!-- STEP 2: CONTACT DETAILS  -->
+        <!-- ========================= -->
         <div class="step hidden" data-step="2">
-          <h3 class="text-xl font-semibold text-gray-300 mb-4">Step 2: Contact Details</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="text-gray-400">Email *</label>
-              <input type="email" name="email" placeholder="Email" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+          <div class="flex items-center gap-2 pb-3 border-b border-gray-700/50">
+            <i class="fa-solid fa-address-book text-green-400"></i>
+            <h3 class="text-lg font-semibold text-white">Contact Details</h3>
+            <span class="text-xs text-gray-500 ml-auto">Step 2 of 4</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <!-- Email -->
+            <div class="space-y-1.5 md:col-span-2">
+              <label for="email" class="block text-sm font-medium text-gray-300">
+                Email Address <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-envelope"></i>
+                </span>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="employee@company.com"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Mobile Number *</label>
-              <input type="text" name="phone" placeholder="Mobile Number" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Phone -->
+            <div class="space-y-1.5">
+              <label for="phone" class="block text-sm font-medium text-gray-300">
+                Mobile Number <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-phone"></i>
+                </span>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="+63 9XX XXX XXXX"
+                  required
+                  pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                  title="Enter a valid Philippine mobile number"
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Street Address *</label>
-              <input type="text" name="street_address" placeholder="Street Address" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Emergency Contact -->
+            <div class="space-y-1.5">
+              <label for="emergency_contact" class="block text-sm font-medium text-gray-300">
+                Emergency Contact <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-phone-volume"></i>
+                </span>
+                <input
+                  type="text"
+                  id="emergency_contact"
+                  name="emergency_contact"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Name & number (e.g., Juan 09123456789)"
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Barangay *</label>
-              <input type="text" name="barangay" placeholder="Barangay" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
-            </div>
-            <div>
-              <label class="text-gray-400">Municipality *</label>
-              <input type="text" name="municipality" placeholder="Municipality" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
-            </div>
-            <div>
-              <label class="text-gray-400">Province *</label>
-              <input type="text" name="province" placeholder="Province" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
-            </div>
-            <div>
-              <label class="text-gray-400">Postal Code *</label>
-              <input type="text" name="postal_code" placeholder="Postal Code" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
-            </div>
-            <div>
-              <label class="text-gray-400">Emergency Contact Name *</label>
-              <input type="text" name="emergency_contact" placeholder="Emergency Contact" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+          </div>
+
+          <!-- Address Section -->
+          <div class="pt-4 mt-2 border-t border-gray-700/50">
+            <h4 class="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-location-dot text-green-400"></i>
+              Address Information
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label for="street_address" class="block text-sm font-medium text-gray-300 mb-1">
+                  Street Address <span class="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="street_address"
+                  name="street_address"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="House/Building, Street, Subdivision"
+                  required
+                />
+              </div>
+              <div>
+                <label for="barangay" class="block text-sm font-medium text-gray-300 mb-1">
+                  Barangay <span class="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="barangay"
+                  name="barangay"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Barangay"
+                  required
+                />
+              </div>
+              <div>
+                <label for="municipality" class="block text-sm font-medium text-gray-300 mb-1">
+                  City/Municipality <span class="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="municipality"
+                  name="municipality"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="City or Municipality"
+                  required
+                />
+              </div>
+              <div>
+                <label for="province" class="block text-sm font-medium text-gray-300 mb-1">
+                  Province <span class="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="province"
+                  name="province"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Province"
+                  required
+                />
+              </div>
+              <div>
+                <label for="postal_code" class="block text-sm font-medium text-gray-300 mb-1">
+                  Postal Code <span class="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="postal_code"
+                  name="postal_code"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="1234"
+                  maxlength="4"
+                  pattern="\d{4}"
+                  required
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Step 3: Employment Details -->
+        <!-- ========================= -->
+        <!-- STEP 3: EMPLOYMENT DETAILS -->
+        <!-- ========================= -->
         <div class="step hidden" data-step="3">
-          <h3 class="text-xl font-semibold text-gray-300 mb-4">Step 3: Employment Details</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="text-gray-400">Department *</label>
-              <select name="department_id" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200">
-                <option disabled selected>Select department</option>
-                {% for dept in departments %}
+          <div class="flex items-center gap-2 pb-3 border-b border-gray-700/50">
+            <i class="fa-solid fa-briefcase text-green-400"></i>
+            <h3 class="text-lg font-semibold text-white">Employment Details</h3>
+            <span class="text-xs text-gray-500 ml-auto">Step 3 of 4</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <!-- Department -->
+            <div class="space-y-1.5">
+              <label for="department_id" class="block text-sm font-medium text-gray-300">
+                Department <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-building"></i>
+                </span>
+                <select
+                  id="department_id"
+                  name="department_id"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled selected>Select department</option>
+                  {% for dept in departments %}
                   <option value="{{ dept.id }}">{{ dept.name }}</option>
-                {% endfor %}
-              </select>
+                  {% endfor %}
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Position *</label>
-              <select name="position_id" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200">
-                <option disabled selected>Select position</option>
-                {% for pos in positions %}
+
+            <!-- Position -->
+            <div class="space-y-1.5">
+              <label for="position_id" class="block text-sm font-medium text-gray-300">
+                Position <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-user-tie"></i>
+                </span>
+                <select
+                  id="position_id"
+                  name="position_id"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled selected>Select position</option>
+                  {% for pos in positions %}
                   <option value="{{ pos.id }}">{{ pos.name }}</option>
-                {% endfor %}
-              </select>
+                  {% endfor %}
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Employment Type *</label>
-              <select name="employment_type_id" id="employmentTypeSelectModal" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200">
-                <option disabled selected>Select type</option>
-                {% for etype in employment_types %}
+
+            <!-- Employment Type -->
+            <div class="space-y-1.5">
+              <label for="employment_type_id" class="block text-sm font-medium text-gray-300">
+                Employment Type <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-file-contract"></i>
+                </span>
+                <select
+                  id="employment_type_id"
+                  name="employment_type_id"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" disabled selected>Select type</option>
+                  {% for etype in employment_types %}
                   <option value="{{ etype.id }}">{{ etype.name }}</option>
-                {% endfor %}
-              </select>
+                  {% endfor %}
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
             </div>
-            <div>
-              <label class="text-gray-400">Salary *</label>
-              <input type="number" id="salaryInput" name="salary" placeholder="Enter salary" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Salary -->
+            <div class="space-y-1.5">
+              <label for="salary" class="block text-sm font-medium text-gray-300">
+                Salary (₱) <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-peso-sign"></i>
+                </span>
+                <input
+                  type="number"
+                  id="salary"
+                  name="salary"
+                  step="0.01"
+                  min="0"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <p class="text-xs text-gray-500 mt-1" id="salaryHint">Enter amount based on employment type</p>
             </div>
-            <div>
-              <label class="text-gray-400">Date Hired *</label>
-              <input type="date" name="date_hired" required class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"/>
+
+            <!-- Date Hired -->
+            <div class="space-y-1.5">
+              <label for="date_hired" class="block text-sm font-medium text-gray-300">
+                Date Hired <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </span>
+                <input
+                  type="date"
+                  id="date_hired"
+                  name="date_hired"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all"
+                  required
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Step 4: Preview -->
+        <!-- ========================= -->
+        <!-- STEP 4: PREVIEW          -->
+        <!-- ========================= -->
         <div class="step hidden" data-step="4">
-          <h3 class="text-xl font-semibold text-gray-300 mb-4">Preview Details</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-200" id="previewContainer"></div>
-        </div>
+          <div class="flex items-center gap-2 pb-3 border-b border-gray-700/50">
+            <i class="fa-regular fa-circle-check text-green-400"></i>
+            <h3 class="text-lg font-semibold text-white">Review & Submit</h3>
+            <span class="text-xs text-gray-500 ml-auto">Step 4 of 4</span>
+          </div>
 
-        <!-- Navigation -->
-        <div class="flex justify-between mt-6">
-          <button type="button" id="prevBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl hidden">Previous</button>
-          <button type="button" id="nextBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Next</button>
-          <button type="submit" id="submitBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl hidden">Submit</button>
+          <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+            <p class="text-sm text-gray-400 mb-4">
+              <i class="fa-regular fa-circle-info mr-1"></i>
+              Please review all details before submitting. You can go back to edit any information.
+            </p>
+            
+            <!-- Preview Container - Populated by JS -->
+            <div id="previewContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <!-- Dynamic content inserted here -->
+            </div>
+          </div>
         </div>
 
       </form>
     </div>
+
+    <!-- Modal Footer (Sticky) -->
+    <div class="flex items-center justify-between p-5 border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky bottom-0 z-10">
+      <button
+        type="button"
+        id="prevBtn"
+        class="px-5 py-2.5 text-gray-300 hover:text-white bg-gray-700/80 hover:bg-gray-700 rounded-xl transition-all duration-200 border border-gray-600 hidden"
+      >
+        <i class="fa-solid fa-arrow-left mr-1"></i>
+        Previous
+      </button>
+      
+      <div class="flex items-center gap-3 ml-auto">
+        <button
+          type="button"
+          id="cancelAddEmployeeModal"
+          class="px-5 py-2.5 text-gray-300 hover:text-white hover:bg-gray-700 rounded-xl transition-all duration-200"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          id="nextBtn"
+          class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/40"
+        >
+          Next Step
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <button
+          type="submit"
+          form="employeeForm"
+          id="submitBtn"
+          class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 hidden"
+        >
+          <i class="fa-solid fa-check"></i>
+          Submit Employee
+        </button>
+      </div>
+    </div>
+
   </div>
-  <script>
-  setTimeout(() => {
-    const flashContainer = document.getElementById('flashMessages');
-    if(flashContainer) flashContainer.innerHTML = '';
-  }, 50000); // hides after 5 seconds
+</div>
+
+<!-- CSS Fallback for backdrop-blur -->
+<style>
+@supports not (backdrop-filter: blur(12px)) {
+  #addEmployeeModal {
+    background: rgba(0, 0, 0, 0.85);
+  }
+  #addEmployeeModal > div {
+    background: #111827;
+  }
+}
+</style>
+
+<script>
+// ===== Modal Toggle with Blur Effect =====
+const toggleAddModal = (show) => {
+  const modal = document.getElementById('addEmployeeModal');
+  if (!modal) return;
+  
+  if (show) {
+    modal.classList.remove('hidden');
+    // Trigger reflow for transition
+    void modal.offsetWidth;
+    modal.style.opacity = '1';
+    document.body.style.overflow = 'hidden';
+    // Reset to step 1 when opening
+    resetFormSteps();
+  } else {
+    modal.style.opacity = '0';
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }, 300);
+  }
+};
+
+// Close handlers
+document.getElementById('closeAddEmployeeModal')?.addEventListener('click', () => toggleAddModal(false));
+document.getElementById('cancelAddEmployeeModal')?.addEventListener('click', () => toggleAddModal(false));
+document.getElementById('addEmployeeModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'addEmployeeModal') toggleAddModal(false);
+});
+
+// Escape key to close
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('addEmployeeModal');
+    if (modal && !modal.classList.contains('hidden')) toggleAddModal(false);
+  }
+});
+
+// ===== Multi-Step Form Logic =====
+const steps = document.querySelectorAll('.step');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const submitBtn = document.getElementById('submitBtn');
+const previewContainer = document.getElementById('previewContainer');
+let currentStep = 0;
+
+function updateProgress(step) {
+  // Update step circles
+  for (let i = 1; i <= 4; i++) {
+    const circle = document.getElementById(`progressStep${i}`);
+    const num = document.getElementById(`progressNum${i}`);
+    const check = circle?.querySelector('.fa-check');
+    const line = document.getElementById(`progressLine${i}`);
+    
+    if (i < step) {
+      // Completed
+      circle?.classList.remove('bg-gray-700', 'text-gray-400');
+      circle?.classList.add('bg-green-600', 'text-white');
+      num?.classList.add('hidden');
+      check?.classList.remove('hidden');
+      line?.classList.add('w-full');
+    } else if (i === step) {
+      // Current
+      circle?.classList.remove('bg-gray-700', 'text-gray-400', 'bg-green-600', 'text-white');
+      circle?.classList.add('bg-green-500', 'text-white', 'ring-4', 'ring-green-500/30');
+      num?.classList.remove('hidden');
+      check?.classList.add('hidden');
+      if (i > 1) document.getElementById(`progressLine${i-1}`)?.classList.add('w-full');
+    } else {
+      // Upcoming
+      circle?.classList.remove('bg-green-600', 'text-white', 'ring-4', 'ring-green-500/30');
+      circle?.classList.add('bg-gray-700', 'text-gray-400');
+      num?.classList.remove('hidden');
+      check?.classList.add('hidden');
+      line?.classList.remove('w-full');
+    }
+  }
+}
+
+function showStep(n) {
+  steps.forEach((s, i) => {
+    s.classList.toggle('hidden', i !== n);
+    s.classList.toggle('active', i === n);
+  });
+  
+  // Button visibility
+  prevBtn.classList.toggle('hidden', n === 0);
+  nextBtn.classList.toggle('hidden', n === steps.length - 1);
+  submitBtn.classList.toggle('hidden', n !== steps.length - 1);
+  
+  // Update progress indicator
+  updateProgress(n + 1);
+  
+  // Populate preview on final step
+  if (n === steps.length - 1) populatePreview();
+  
+  currentStep = n;
+}
+
+function populatePreview() {
+  if (!previewContainer) return;
+  previewContainer.innerHTML = '';
+  
+  const form = document.getElementById('employeeForm');
+  const fields = [
+    { name: 'first_name', label: 'First Name' },
+    { name: 'middle_name', label: 'Middle Name' },
+    { name: 'last_name', label: 'Last Name' },
+    { name: 'email', label: 'Email' },
+    { name: 'phone', label: 'Phone' },
+    { name: 'gender', label: 'Gender' },
+    { name: 'marital_status', label: 'Civil Status' },
+    { name: 'date_of_birth', label: 'Date of Birth', format: (v) => v ? new Date(v).toLocaleDateString() : '' },
+    { name: 'date_hired', label: 'Date Hired', format: (v) => v ? new Date(v).toLocaleDateString() : '' },
+    { name: 'emergency_contact', label: 'Emergency Contact' },
+    { name: 'salary', label: 'Salary', format: (v) => v ? `₱${parseFloat(v).toLocaleString()}` : '' },
+  ];
+  
+  // Address fields combined
+  const addr = [
+    form.querySelector('[name="street_address"]')?.value,
+    form.querySelector('[name="barangay"]')?.value,
+    form.querySelector('[name="municipality"]')?.value,
+    form.querySelector('[name="province"]')?.value,
+    form.querySelector('[name="postal_code"]')?.value
+  ].filter(Boolean).join(', ');
+  
+  if (addr) {
+    previewContainer.innerHTML += `
+      <div class="md:col-span-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700/50">
+        <p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Full Address</p>
+        <p class="text-white font-medium">${addr}</p>
+      </div>`;
+  }
+  
+  fields.forEach(({ name, label, format }) => {
+    const input = form.querySelector(`[name="${name}"]`);
+    if (!input) return;
+    let value = input.value;
+    if (input.tagName === 'SELECT') {
+      value = input.options[input.selectedIndex]?.text;
+    }
+    if (format) value = format(value);
+    if (value && value !== 'Select gender' && value !== 'Select status' && value !== 'Select department' && value !== 'Select position' && value !== 'Select type') {
+      previewContainer.innerHTML += `
+        <div class="p-3 bg-gray-900/50 rounded-lg border border-gray-700/50">
+          <p class="text-gray-400 text-xs uppercase tracking-wide mb-1">${label}</p>
+          <p class="text-white font-medium">${value}</p>
+        </div>`;
+    }
+  });
+}
+
+function validateStep(n) {
+  const step = steps[n];
+  const required = step?.querySelectorAll('input[required], select[required]') || [];
+  
+  for (let input of required) {
+    if (!input.value.trim()) {
+      input.classList.add('border-red-500', 'focus:ring-red-500/30');
+      input.classList.remove('border-gray-700', 'focus:ring-green-500/30');
+      
+      // Show error tooltip
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'warning',
+        title: `Please fill "${input.previousElementSibling?.innerText || input.name}"`,
+        showConfirmButton: false,
+        timer: 2500,
+        background: '#1f2937',
+        color: '#fff'
+      });
+      
+      input.focus();
+      return false;
+    }
+    // Remove error styling if valid
+    input.classList.remove('border-red-500', 'focus:ring-red-500/30');
+    input.classList.add('border-gray-700', 'focus:ring-green-500/30');
+  }
+  return true;
+}
+
+function resetFormSteps() {
+  currentStep = 0;
+  showStep(0);
+  // Reset progress indicator
+  for (let i = 1; i <= 4; i++) {
+    const circle = document.getElementById(`progressStep${i}`);
+    const num = document.getElementById(`progressNum${i}`);
+    const check = circle?.querySelector('.fa-check');
+    const line = document.getElementById(`progressLine${i}`);
+    
+    if (i === 1) {
+      circle?.classList.add('bg-green-600', 'text-white');
+      num?.classList.remove('hidden');
+      check?.classList.add('hidden');
+    } else {
+      circle?.classList.remove('bg-green-600', 'text-white');
+      circle?.classList.add('bg-gray-700', 'text-gray-400');
+      num?.classList.remove('hidden');
+      check?.classList.add('hidden');
+    }
+    line?.classList.remove('w-full');
+  }
+}
+
+// Navigation buttons
+nextBtn?.addEventListener('click', () => {
+  if (validateStep(currentStep)) {
+    showStep(currentStep + 1);
+  }
+});
+
+prevBtn?.addEventListener('click', () => {
+  if (currentStep > 0) showStep(currentStep - 1);
+});
+
+// Salary placeholder based on employment type
+const salaryInput = document.getElementById('salary');
+const salaryHint = document.getElementById('salaryHint');
+const empTypeSelect = document.getElementById('employment_type_id');
+
+empTypeSelect?.addEventListener('change', function() {
+  const text = this.options[this.selectedIndex]?.text.toLowerCase();
+  const placeholders = {
+    'casual': { placeholder: 'Daily rate with leave credits', hint: 'Enter daily rate (₱)' },
+    'regular': { placeholder: 'Monthly salary with benefits', hint: 'Enter monthly salary (₱)' },
+    'part-time': { placeholder: 'Hourly rate', hint: 'Enter hourly rate (₱)' },
+    'job order': { placeholder: 'Daily rate (no benefits)', hint: 'Enter daily rate (₱)' },
+    'contractual': { placeholder: 'Contract period rate', hint: 'Enter contract rate (₱)' }
+  };
+  
+  const match = Object.keys(placeholders).find(k => text.includes(k));
+  if (match && salaryInput) {
+    salaryInput.placeholder = placeholders[match].placeholder;
+    if (salaryHint) salaryHint.textContent = placeholders[match].hint;
+  } else {
+    salaryInput.placeholder = 'Enter salary amount';
+    if (salaryHint) salaryHint.textContent = 'Enter amount based on employment type';
+  }
+});
+
+// Form submit with confirmation
+document.getElementById('employeeForm')?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  Swal.fire({
+    title: 'Confirm Submission',
+    text: 'Add this new employee to the system?',
+    icon: 'question',
+    background: '#1f2937',
+    color: '#fff',
+    showCancelButton: true,
+    confirmButtonText: '✅ Yes, Add Employee',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#22c55e',
+    cancelButtonColor: '#6b7280',
+    reverseButtons: true
+  }).then(result => {
+    if (result.isConfirmed) {
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+      this.submit();
+    }
+  });
+});
+
+// Clear error styling on input
+document.querySelectorAll('#employeeForm input, #employeeForm select').forEach(field => {
+  field.addEventListener('input', function() {
+    this.classList.remove('border-red-500', 'focus:ring-red-500/30');
+    this.classList.add('border-gray-700', 'focus:ring-green-500/30');
+  });
+});
+
+// Initialize
+if (steps.length) showStep(0);  
 </script>

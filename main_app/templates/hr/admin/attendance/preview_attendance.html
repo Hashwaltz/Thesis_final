@@ -2,160 +2,455 @@
 {% block title %}Preview Attendance | HR Admin{% endblock %}
 
 {% block content %}
-<main class="p-6 space-y-6 max-w-5xl mx-auto">
-
-  <!-- Card Container -->
-  <div class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6">
-
-    <!-- Header with Actions -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-      <h2 class="text-xl font-semibold text-blue-400">Preview Attendance Data</h2>
-      <div class="flex flex-wrap gap-2">
-        <form action="{{ url_for('hr_admin_bp.confirm_attendance') }}" method="POST" class="flex gap-2 flex-wrap">
+<main class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-900/20 py-8 px-4 sm:px-6 lg:px-8">
+  
+  <div class="max-w-7xl mx-auto space-y-6">
+    
+    <!-- ===== PAGE HEADER ===== -->
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div>
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg shadow-blue-500/20 mb-3">
+          <i class="fa-solid fa-eye text-white text-lg"></i>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white">Review Attendance Records</h1>
+        <p class="text-gray-400 mt-1 text-sm">Verify data before importing to database</p>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap gap-3">
+        <a href="{{ url_for('hr_admin_bp.import_attendance') }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium transition-all border border-gray-600 hover:border-gray-500">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span class="hidden sm:inline">Re-upload</span>
+        </a>
+        
+        <form method="POST" action="{{ url_for('hr_admin_bp.confirm_attendance') }}" class="inline">
+          <!-- 🔑 CSRF TOKEN - REQUIRED -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+          
           <button type="submit"
-                  class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
-            <i class="fas fa-check"></i> Confirm Import
+                  class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg hover:shadow-emerald-500/25 hover:-translate-y-0.5">
+            <i class="fa-solid fa-check"></i>
+            Confirm Import
+            <span class="bg-white/20 px-2 py-0.5 rounded-full text-xs">{{ attendance_data|length }}</span>
           </button>
-          <a href="{{ url_for('hr_admin_bp.import_attendance') }}"
-             class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
-            <i class="fas fa-times"></i> Cancel
-          </a>
         </form>
       </div>
-    </div>
+    </header>
 
-    <!-- Info Banner -->
-    <div class="mb-4 p-3 bg-blue-900/30 border border-blue-700 rounded-lg text-blue-200 text-sm">
-      <i class="fas fa-info-circle mr-2"></i>
-      <strong>Preview Mode:</strong> Data is sorted by date ascending. Time In = first punch, Time Out = last punch per day.
-    </div>
-
-    <!-- Responsive Table -->
-    <div class="overflow-x-auto">
-      <table class="min-w-full table-auto divide-y divide-slate-700 text-gray-200">
-        <thead class="bg-slate-900 text-gray-400">
-          <tr>
-            <th class="px-4 py-2 text-left cursor-pointer hover:text-blue-400" onclick="sortTable(0)">
-              Date <i class="fas fa-sort ml-1 text-xs"></i>
-            </th>
-            <th class="px-4 py-2 text-left cursor-pointer hover:text-blue-400" onclick="sortTable(1)">
-              User ID <i class="fas fa-sort ml-1 text-xs"></i>
-            </th>
-            <th class="px-4 py-2 text-left">Employee Name</th>
-            <th class="px-4 py-2 text-left">Department</th>
-            <th class="px-4 py-2 text-left">Time In</th>
-            <th class="px-4 py-2 text-left">Time Out</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-700" id="attendanceTableBody">
-          {% for record in attendance_data %}
-          <tr class="hover:bg-slate-700 transition" data-date="{{ record.date_display }}">
-            <td class="px-4 py-2 whitespace-nowrap font-mono text-sm">{{ record.date_display }}</td>
-            <td class="px-4 py-2 whitespace-nowrap">
-              <span class="bg-slate-700 px-2 py-1 rounded text-xs">{{ record.user_id }}</span>
-            </td>
-            <td class="px-4 py-2 whitespace-nowrap font-medium text-white">{{ record.employee_name }}</td>
-            <td class="px-4 py-2 whitespace-nowrap text-slate-400">{{ record.department }}</td>
-            <!-- Time In Column -->
-            <td class="px-4 py-2 whitespace-nowrap">
-              {% if record.time_in and record.time_in not in ['None', '', '00:00'] %}
-                {% if record.time_in is string %}
-                  <!-- Handle ISO string format "21:36:00" -->
-                  {% set t = record.time_in[:5].split(':') %}
-                  {% set h = t[0]|int %}
-                  {% set m = t[1] %}
-                  {% set ampm = 'AM' if h < 12 else 'PM' %}
-                  {% set h12 = h % 12 if h % 12 != 0 else 12 %}
-                  <span class="text-green-400 font-mono">
-                    {{ "%02d"|format(h12) }}:{{ m }} {{ ampm }}
-                  </span>
-                {% else %}
-                  <!-- Handle time object -->
-                  <span class="text-green-400 font-mono">
-                    {{ record.time_in.strftime('%I:%M %p') }}
-                  </span>
-                {% endif %}
-              {% else %}
-                <!-- No time in = absent -->
-                <span class="text-slate-500 font-mono">00:00</span>
-              {% endif %}
-            </td>
-
-            <!-- Time Out Column -->
-            <td class="px-4 py-2 whitespace-nowrap">
-              {% if record.time_out and record.time_out not in ['None', '', '00:00'] %}
-                {% if record.time_out is string %}
-                  <!-- Handle ISO string format "17:00:00" -->
-                  {% set t = record.time_out[:5].split(':') %}
-                  {% set h = t[0]|int %}
-                  {% set m = t[1] %}
-                  {% set ampm = 'AM' if h < 12 else 'PM' %}
-                  {% set h12 = h % 12 if h % 12 != 0 else 12 %}
-                  <span class="text-red-400 font-mono">
-                    {{ "%02d"|format(h12) }}:{{ m }} {{ ampm }}
-                  </span>
-                {% else %}
-                  <!-- Handle time object -->
-                  <span class="text-red-400 font-mono">
-                    {{ record.time_out.strftime('%I:%M %p') }}
-                  </span>
-                {% endif %}
-              {% else %}
-                <!-- Show 5:00 PM as default when time_in exists but no time_out -->
-                {% if record.time_in and record.time_in not in ['None', '', '00:00'] %}
-                  <span class="text-amber-400 font-mono">05:00 PM</span>
-                {% else %}
-                  <!-- No attendance at all -->
-                  <span class="text-slate-500 font-mono">00:00</span>
-                {% endif %}
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Footer Stats -->
-    <div class="mt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-sm">
-      <p class="text-slate-400">
-        <i class="fas fa-database mr-1"></i>
-        Total Records: <span class="text-white font-semibold">{{ attendance_data|length }}</span>
-      </p>
-      <div class="flex items-center gap-4 text-slate-400">
-        <span><i class="fas fa-sign-in-alt text-green-400 mr-1"></i> First punch = Time In</span>
-        <span><i class="fas fa-sign-out-alt text-red-400 mr-1"></i> Last punch = Time Out</span>
+    <!-- ===== INFO BANNER ===== -->
+    <div class="bg-blue-900/30 border border-blue-700/50 rounded-xl p-4 flex items-start gap-3">
+      <div class="p-2 bg-blue-600/20 rounded-lg shrink-0">
+        <i class="fa-solid fa-circle-info text-blue-400"></i>
+      </div>
+      <div class="text-sm text-blue-200">
+        <p class="font-medium mb-1">Preview Mode • Data Processing Rules</p>
+        <ul class="text-blue-300/80 space-y-1 text-xs">
+          <li>• Records sorted by <strong>Employee ID → Date</strong> ascending</li>
+          <li>• <strong>Time In</strong> = First punch of the day | <strong>Time Out</strong> = Last punch</li>
+          <li>• Missing Time Out defaults to <strong>5:00 PM</strong> if Time In exists</li>
+          <li>• No Time In = Marked as <strong>Absent</strong></li>
+        </ul>
       </div>
     </div>
+
+    <!-- ===== STATS CARDS ===== -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {% set present_count = attendance_data|selectattr('time_in', 'defined')|selectattr('time_in', 'none')|reject|list|length %}
+      {% set absent_count = attendance_data|length - present_count %}
+      
+      <div class="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 text-center hover:border-blue-500/50 transition-colors">
+        <p class="text-2xl font-bold text-white">{{ attendance_data|length }}</p>
+        <p class="text-gray-400 text-xs mt-1">Total Records</p>
+      </div>
+      <div class="bg-emerald-900/30 rounded-2xl p-4 border border-emerald-700/40 text-center hover:border-emerald-500/50 transition-colors">
+        <p class="text-2xl font-bold text-emerald-400">
+          {{ attendance_data|selectattr('has_time_in')|list|length }}
+        </p>
+        <p class="text-gray-400 text-xs mt-1">Present</p>
+      </div>
+      <div class="bg-red-900/30 rounded-2xl p-4 border border-red-700/40 text-center hover:border-red-500/50 transition-colors">
+        <p class="text-2xl font-bold text-red-400">
+          {{ attendance_data|rejectattr('has_time_in')|list|length }}
+        </p>
+        <p class="text-gray-400 text-xs mt-1">Absent</p>
+      </div>
+      <div class="bg-indigo-900/30 rounded-2xl p-4 border border-indigo-700/40 text-center hover:border-indigo-500/50 transition-colors">
+        <p class="text-2xl font-bold text-indigo-400">
+          {{ attendance_data|map(attribute='user_id')|unique|list|length }}
+        </p>
+        <p class="text-gray-400 text-xs mt-1">Employees</p>
+      </div>
+    </div>
+
+    <!-- ===== DATA TABLE ===== -->
+    <section class="bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-700/50 overflow-hidden">
+      
+      <!-- Table Header with Search/Sort -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border-b border-gray-700/50">
+        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+          <i class="fa-solid fa-table-list text-blue-400"></i>
+          Parsed Records
+        </h2>
+        
+        <div class="flex items-center gap-3">
+          <!-- Search Input -->
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+            <input type="text" 
+                   id="tableSearch"
+                   placeholder="Search employee..." 
+                   class="pl-8 pr-3 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 w-48">
+          </div>
+          
+          <!-- Sort Toggle -->
+          <button onclick="toggleSort()" 
+                  class="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg text-xs font-medium transition-colors">
+            <i class="fa-solid fa-arrow-down-wide-short" id="sortIcon"></i>
+            <span id="sortLabel">Date ↑</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Responsive Table Container -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-400 uppercase bg-gray-900/60">
+            <tr>
+              <th class="px-4 py-3 cursor-pointer hover:text-blue-400 transition-colors" onclick="sortBy('date')">
+                <div class="flex items-center gap-1">
+                  Date
+                  <i class="fa-solid fa-sort text-gray-600 sort-indicator" data-col="date"></i>
+                </div>
+              </th>
+              <th class="px-4 py-3 cursor-pointer hover:text-blue-400 transition-colors" onclick="sortBy('user_id')">
+                <div class="flex items-center gap-1">
+                  User ID
+                  <i class="fa-solid fa-sort text-gray-600 sort-indicator" data-col="user_id"></i>
+                </div>
+              </th>
+              <th class="px-4 py-3">Employee</th>
+              <th class="px-4 py-3 hidden md:table-cell">Department</th>
+              <th class="px-4 py-3">Time In</th>
+              <th class="px-4 py-3">Time Out</th>
+              <th class="px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700/50" id="attendanceTableBody">
+            {% for record in attendance_data %}
+            <tr class="hover:bg-gray-700/30 transition-colors group" 
+                data-employee="{{ record.employee_name|lower }}"
+                data-user-id="{{ record.user_id }}"
+                data-date="{{ record.date_display }}">
+              
+              <!-- Date -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="font-mono text-gray-300">{{ record.date_display }}</span>
+              </td>
+              
+              <!-- User ID -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-700/60 text-gray-300">
+                  #{{ record.user_id }}
+                </span>
+              </td>
+              
+              <!-- Employee Name -->
+              <td class="px-4 py-3">
+                <div class="font-medium text-white">{{ record.employee_name }}</div>
+                <div class="text-xs text-gray-500 md:hidden">{{ record.department }}</div>
+              </td>
+              
+              <!-- Department (Desktop) -->
+              <td class="px-4 py-3 hidden md:table-cell">
+                <span class="text-gray-400">{{ record.department }}</span>
+              </td>
+              
+              <!-- Time In - ✅ SAFE JINJA2 SYNTAX -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                {% if record.time_in and record.time_in != none and record.time_in != '' and record.time_in != '00:00' and record.time_in != '00:00:00' %}
+                  {% if record.time_in is string %}
+                    <span class="text-emerald-400 font-mono text-xs">
+                      {{ record.time_in[:5]|format_time_12 }}
+                    </span>
+                  {% else %}
+                    <span class="text-emerald-400 font-mono text-xs">
+                      {{ record.time_in.strftime('%I:%M %p') }}
+                    </span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-gray-600 font-mono text-xs italic">—</span>
+                {% endif %}
+              </td>
+              
+              <!-- Time Out - ✅ SAFE JINJA2 SYNTAX -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                {% if record.time_out and record.time_out != none and record.time_out != '' and record.time_out != '00:00' and record.time_out != '00:00:00' %}
+                  {% if record.time_out is string %}
+                    <span class="text-blue-400 font-mono text-xs">
+                      {{ record.time_out[:5]|format_time_12 }}
+                    </span>
+                  {% else %}
+                    <span class="text-blue-400 font-mono text-xs">
+                      {{ record.time_out.strftime('%I:%M %p') }}
+                    </span>
+                  {% endif %}
+                {% elif record.time_in and record.time_in != none and record.time_in != '' %}
+                  <!-- Default 5 PM when time_in exists but no time_out -->
+                  <span class="text-amber-400 font-mono text-xs">05:00 PM</span>
+                {% else %}
+                  <span class="text-gray-600 font-mono text-xs italic">—</span>
+                {% endif %}
+              </td>
+              
+              <!-- Status Badge -->
+              <td class="px-4 py-3 whitespace-nowrap">
+                {% if record.time_in and record.time_in != none and record.time_in != '' and record.time_in != '00:00' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                    <i class="fa-solid fa-check mr-1"></i>Present
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/30">
+                    <i class="fa-solid fa-xmark mr-1"></i>Absent
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="px-4 py-12 text-center">
+                <div class="flex flex-col items-center gap-3 text-gray-500">
+                  <i class="fa-regular fa-folder-open text-3xl"></i>
+                  <p>No attendance records to preview</p>
+                  <a href="{{ url_for('hr_admin_bp.import_attendance') }}" 
+                     class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                    Upload a file to get started →
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Table Footer -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-t border-gray-700/50 text-xs text-gray-400">
+        <p>
+          Showing <span class="text-white font-medium">{{ attendance_data|length }}</span> records
+          {% if attendance_data %}
+            • Range: <span class="text-gray-300">{{ attendance_data|first|attr('date_display') }}</span> to <span class="text-gray-300">{{ attendance_data|last|attr('date_display') }}</span>
+          {% endif %}
+        </p>
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1">
+            <i class="fa-solid fa-circle text-emerald-500 text-[10px]"></i> Present
+          </span>
+          <span class="flex items-center gap-1">
+            <i class="fa-solid fa-circle text-red-500 text-[10px]"></i> Absent
+          </span>
+          <span class="flex items-center gap-1">
+            <i class="fa-solid fa-circle text-amber-500 text-[10px]"></i> Default Out
+          </span>
+        </div>
+      </div>
+    </section>
 
   </div>
 </main>
 
-<!-- Simple Table Sort Script -->
+<!-- ===== INTERACTIVE SCRIPTS ===== -->
 <script>
-function sortTable(columnIndex) {
-  const table = document.querySelector('#attendanceTableBody').closest('table');
-  const tbody = document.getElementById('attendanceTableBody');
-  const rows = Array.from(tbody.querySelectorAll('tr'));
+document.addEventListener("DOMContentLoaded", function() {
   
-  rows.sort((a, b) => {
-    const aText = a.children[columnIndex].textContent.trim();
-    const bText = b.children[columnIndex].textContent.trim();
+  // ===== TABLE SEARCH =====
+  const searchInput = document.getElementById('tableSearch');
+  const tableBody = document.getElementById('attendanceTableBody');
+  
+  if (searchInput && tableBody) {
+    searchInput.addEventListener('input', function(e) {
+      const term = e.target.value.toLowerCase().trim();
+      const rows = tableBody.querySelectorAll('tr[data-employee]');
+      
+      rows.forEach(row => {
+        const employee = row.dataset.employee || '';
+        const userId = row.dataset.userId || '';
+        const date = row.dataset.date || '';
+        const department = row.querySelector('td:nth-child(4)')?.textContent.toLowerCase() || '';
+        
+        const match = employee.includes(term) || 
+                     userId.includes(term) || 
+                     date.includes(term) ||
+                     department.includes(term);
+        
+        row.style.display = match ? '' : 'none';
+      });
+    });
+  }
+  
+  // ===== TABLE SORTING =====
+  let sortState = { column: 'date', direction: 'asc' };
+  
+  window.sortBy = function(column) {
+    const rows = Array.from(tableBody.querySelectorAll('tr[data-date]'));
+    if (rows.length === 0) return;
     
-    // Special handling for date column (index 0)
-    if (columnIndex === 0) {
-      return new Date(aText) - new Date(bText);
+    // Toggle direction if same column
+    if (sortState.column === column) {
+      sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortState.column = column;
+      sortState.direction = 'asc';
     }
-    // Numeric handling for User ID
-    if (columnIndex === 1) {
-      return parseInt(aText) - parseInt(bText);
-    }
-    // Default string comparison
-    return aText.localeCompare(bText);
-  });
+    
+    // Sort rows
+    rows.sort((a, b) => {
+      let aVal, bVal;
+      
+      if (column === 'date') {
+        aVal = new Date(a.dataset.date);
+        bVal = new Date(b.dataset.date);
+      } else if (column === 'user_id') {
+        aVal = parseInt(a.dataset.userId) || 0;
+        bVal = parseInt(b.dataset.userId) || 0;
+      } else {
+        aVal = a.querySelector(`[data-col="${column}"]`)?.textContent.trim() || '';
+        bVal = b.querySelector(`[data-col="${column}"]`)?.textContent.trim() || '';
+        return sortState.direction === 'asc' 
+          ? aVal.localeCompare(bVal) 
+          : bVal.localeCompare(aVal);
+      }
+      
+      return sortState.direction === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+    
+    // Re-append sorted rows
+    rows.forEach(row => tableBody.appendChild(row));
+    
+    // Update UI indicators
+    updateSortIndicators();
+  };
   
-  // Re-append sorted rows
-  rows.forEach(row => tbody.appendChild(row));
-}
+  function updateSortIndicators() {
+    document.querySelectorAll('.sort-indicator').forEach(icon => {
+      const col = icon.dataset.col;
+      if (col === sortState.column) {
+        icon.className = `fa-solid fa-sort-${sortState.direction === 'asc' ? 'up' : 'down'} text-blue-400`;
+      } else {
+        icon.className = 'fa-solid fa-sort text-gray-600';
+      }
+    });
+    
+    const sortLabel = document.getElementById('sortLabel');
+    if (sortLabel) {
+      const labels = { date: 'Date', user_id: 'User ID' };
+      const arrow = sortState.direction === 'asc' ? '↑' : '↓';
+      sortLabel.textContent = `${labels[sortState.column] || sortState.column} ${arrow}`;
+    }
+  }
+  
+  // Initialize sort indicators
+  updateSortIndicators();
+  
+  // ===== SWEETALERT CONFIRMATION =====
+  const confirmForm = document.querySelector('form[action*="confirm-attendance"]');
+  if (confirmForm) {
+    confirmForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const total = {{ attendance_data|length }};
+      const present = {{ attendance_data|selectattr('time_in', 'defined')|selectattr('time_in', 'none')|reject|list|length }};
+      
+      Swal.fire({
+        title: 'Confirm Import?',
+        html: `
+          <div class="text-left text-sm text-gray-300">
+            <p class="mb-3">Import <strong class="text-white">${total}</strong> attendance records?</p>
+            <div class="bg-gray-800/60 rounded-lg p-3 space-y-2 text-xs">
+              <div class="flex justify-between">
+                <span>✅ Present:</span>
+                <strong class="text-emerald-400">${present}</strong>
+              </div>
+              <div class="flex justify-between">
+                <span>⚪ Absent:</span>
+                <strong class="text-red-400">${total - present}</strong>
+              </div>
+            </div>
+            <p class="mt-3 text-amber-400/90 text-xs">
+              <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+              Records will be saved to database. Existing entries for same date/employee will be updated.
+            </p>
+          </div>
+        `,
+        icon: 'warning',
+        background: '#1e293b',
+        color: '#f1f5f9',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Import Now',
+        cancelButtonText: 'Review Again',
+        customClass: { popup: 'rounded-2xl' }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Show processing state
+          const btn = confirmForm.querySelector('button[type="submit"]');
+          const originalContent = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Importing...';
+          
+          confirmForm.submit();
+        }
+      });
+    });
+  }
+});
 </script>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Custom Styles -->
+<style>
+/* Smooth transitions */
+tr { transition: background-color 0.15s ease; }
+.sort-indicator { transition: all 0.2s ease; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #1e293b; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Focus states for accessibility */
+button:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Mobile table optimization */
+@media (max-width: 768px) {
+  table thead { display: none; }
+  table tbody tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid #374151;
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+  }
+  table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #374151/50;
+  }
+  table tbody td:last-child { border-bottom: none; }
+  table tbody td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #9ca3af;
+    margin-right: 1rem;
+  }
+}
+</style>
 {% endblock %}

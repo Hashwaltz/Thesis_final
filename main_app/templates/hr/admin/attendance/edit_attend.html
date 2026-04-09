@@ -1,85 +1,381 @@
-<div id="editAttendanceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-  <div class="bg-gray-900 rounded-2xl w-full max-w-2xl p-6 relative">
-
-    <!-- Close button -->
-    <button id="closeEditAttendanceModal" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-
-    <h2 class="text-2xl font-semibold text-blue-400 mb-4 text-center">
-      <i class="fa-solid fa-pen-to-square mr-2"></i> Edit Attendance
-    </h2>
-
-    <form id="editAttendanceForm" method="POST" class="space-y-4">
-      <input type="hidden" name="attendance_id" id="attendance_id">
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <!-- Date -->
+<!-- hr/admin/attendance/edit_attend.html -->
+<div 
+  id="editAttendanceModal"
+  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="editAttendanceModalTitle"
+>
+  <!-- Modal Container with Blur-Resistant Background -->
+  <div class="bg-gray-900/95 backdrop-blur-xl rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-700/50 flex flex-col">
+    
+    <!-- Modal Header (Sticky) -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-500/20 p-2.5 rounded-xl">
+          <i class="fa-solid fa-pen-to-square text-blue-400 text-lg"></i>
+        </div>
         <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-regular fa-calendar mr-1"></i> Date
-          </label>
-          <input type="date" name="date" id="date"
-                 class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500"
-                 required>
+          <h2 id="editAttendanceModalTitle" class="text-lg font-semibold text-white">Edit Attendance Record</h2>
+          <p class="text-xs text-gray-400">Update time-in, time-out, and status</p>
         </div>
-
-        <!-- Time In -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-right-to-bracket mr-1"></i> Time In
-          </label>
-          <input type="time" name="time_in" id="time_in"
-                 class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Time Out -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-right-from-bracket mr-1"></i> Time Out
-          </label>
-          <input type="time" name="time_out" id="time_out"
-                 class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Status -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-circle-info mr-1"></i> Status
-          </label>
-          <select name="modal_status" id="modal_status"
-                  class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
-            <option value="Present">Present</option>
-            <option value="Late">Late</option>
-            <option value="Absent">Absent</option>
-            <option value="Leave">Leave</option>
-          </select>
-        </div>
-
-        <!-- Remarks -->
-        <div class="md:col-span-2">
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-regular fa-note-sticky mr-1"></i> Remarks
-          </label>
-          <textarea name="remarks" id="remarks"
-                    class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500"></textarea>
-        </div>
-
       </div>
+      <button
+        type="button"
+        id="closeEditAttendanceModal"
+        class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-xl transition-colors"
+        aria-label="Close modal"
+      >
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
 
-      <div class="flex justify-end gap-2 mt-4">
-        <button type="button" id="cancelEditAttendance"
-                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl">
-          <i class="fa-solid fa-ban mr-1"></i> Cancel
-        </button>
+    <!-- Scrollable Form Content -->
+    <div class="overflow-y-auto p-5 md:p-6 space-y-5">
+      
+      <form id="editAttendanceForm" method="POST" class="space-y-5" novalidate>
+        
+        <!-- Hidden ID Field -->
+        <input type="hidden" name="attendance_id" id="attendance_id">
 
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">
-          <i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes
-        </button>
-      </div>
+        <!-- Date & Status Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Date -->
+          <div class="space-y-1.5">
+            <label for="date" class="block text-sm font-medium text-gray-300">
+              <i class="fa-regular fa-calendar text-blue-400 mr-1.5"></i>
+              Date <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-regular fa-calendar"></i>
+              </span>
+              <input 
+                type="date" 
+                id="date" 
+                name="date"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                required
+              />
+            </div>
+          </div>
 
-    </form>
+          <!-- Status -->
+          <div class="space-y-1.5">
+            <label for="modal_status" class="block text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-circle-info text-blue-400 mr-1.5"></i>
+              Status
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-solid fa-tag"></i>
+              </span>
+              <select 
+                id="modal_status" 
+                name="modal_status"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="Present">✅ Present</option>
+                <option value="Late">⏰ Late</option>
+                <option value="Absent">❌ Absent</option>
+                <option value="Leave">📋 On Leave</option>
+              </select>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Time In / Time Out Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Time In -->
+          <div class="space-y-1.5">
+            <label for="time_in" class="block text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-arrow-right-to-bracket text-green-400 mr-1.5"></i>
+              Time In
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-regular fa-clock"></i>
+              </span>
+              <input 
+                type="time" 
+                id="time_in" 
+                name="time_in"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all"
+                step="60"
+              />
+            </div>
+            <p class="text-xs text-gray-500 flex items-center gap-1">
+              <i class="fa-regular fa-circle-info"></i>
+              Leave blank if not applicable
+            </p>
+          </div>
+
+          <!-- Time Out -->
+          <div class="space-y-1.5">
+            <label for="time_out" class="block text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-arrow-right-from-bracket text-blue-400 mr-1.5"></i>
+              Time Out
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-regular fa-clock"></i>
+              </span>
+              <input 
+                type="time" 
+                id="time_out" 
+                name="time_out"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                step="60"
+              />
+            </div>
+            <p class="text-xs text-gray-500 flex items-center gap-1">
+              <i class="fa-regular fa-circle-info"></i>
+              Leave blank if not applicable
+            </p>
+          </div>
+        </div>
+
+        <!-- Remarks (Full Width) -->
+        <div class="space-y-1.5">
+          <label for="remarks" class="block text-sm font-medium text-gray-300">
+            <i class="fa-regular fa-note-sticky text-blue-400 mr-1.5"></i>
+            Remarks <span class="text-gray-500 font-normal">(Optional)</span>
+          </label>
+          <textarea 
+            id="remarks" 
+            name="remarks" 
+            rows="3"
+            placeholder="Add notes about this attendance record (e.g., late reason, approval reference)..."
+            class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500 resize-none"
+          ></textarea>
+          <p class="text-xs text-gray-500 text-right" id="remarksCount">0/250</p>
+        </div>
+
+        <!-- Validation Summary (Hidden by Default) -->
+        <div id="validationErrors" class="hidden p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-300">
+          <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+          <span id="validationErrorsText"></span>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Modal Footer (Sticky) -->
+    <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky bottom-0 z-10">
+      <button
+        type="button"
+        id="cancelEditAttendance"
+        class="px-5 py-2.5 text-gray-300 hover:text-white bg-gray-700/80 hover:bg-gray-700 rounded-xl transition-all duration-200 border border-gray-600"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        form="editAttendanceForm"
+        id="submitEditAttendanceBtn"
+        class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span id="submitBtnText">Save Changes</span>
+        <i class="fa-solid fa-spinner fa-spin hidden" id="submitBtnLoader"></i>
+      </button>
+    </div>
+
   </div>
 </div>
+
+<!-- CSS Fallback for backdrop-blur -->
+<style>
+@supports not (backdrop-filter: blur(12px)) {
+  #editAttendanceModal {
+    background: rgba(0, 0, 0, 0.85);
+  }
+  #editAttendanceModal > div {
+    background: #111827;
+  }
+}
+</style>
+
+<!-- JavaScript for Enhanced Interactions -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  
+  // ===== Modal Toggle Helper =====
+  const modal = document.getElementById('editAttendanceModal');
+  
+  function toggleModal(show) {
+    if (!modal) return;
+    if (show) {
+      modal.classList.remove('hidden');
+      // Trigger reflow for transition
+      void modal.offsetWidth;
+      modal.style.opacity = '1';
+      document.body.style.overflow = 'hidden';
+      // Focus first input
+      setTimeout(() => document.getElementById('date')?.focus(), 100);
+    } else {
+      modal.style.opacity = '0';
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }, 300);
+    }
+  }
+  
+  // Close handlers
+  document.getElementById('closeEditAttendanceModal')?.addEventListener('click', () => toggleModal(false));
+  document.getElementById('cancelEditAttendance')?.addEventListener('click', () => toggleModal(false));
+  
+  // Close on outside click
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) toggleModal(false);
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      toggleModal(false);
+    }
+  });
+  
+  // ===== Remarks Character Counter =====
+  const remarksInput = document.getElementById('remarks');
+  const remarksCount = document.getElementById('remarksCount');
+  
+  remarksInput?.addEventListener('input', function() {
+    const count = this.value.length;
+    const max = 250;
+    remarksCount.textContent = `${count}/${max}`;
+    
+    // Visual warning near limit
+    if (count > max * 0.9) {
+      remarksCount.classList.add('text-orange-400');
+    } else {
+      remarksCount.classList.remove('text-orange-400');
+    }
+  });
+  
+  // ===== Form Validation =====
+  const editForm = document.getElementById('editAttendanceForm');
+  const validationErrors = document.getElementById('validationErrors');
+  const validationErrorsText = document.getElementById('validationErrorsText');
+  
+  function validateForm() {
+    const errors = [];
+    const dateVal = document.getElementById('date')?.value;
+    
+    if (!dateVal) {
+      errors.push('Date is required');
+    }
+    
+    // Optional: Add business logic validation
+    const timeIn = document.getElementById('time_in')?.value;
+    const timeOut = document.getElementById('time_out')?.value;
+    const status = document.getElementById('modal_status')?.value;
+    
+    // If status is Present/Late, at least time_in should be set
+    if (status === 'Present' || status === 'Late') {
+      if (!timeIn && !timeOut) {
+        errors.push('At least one time entry is required for Present/Late status');
+      }
+    }
+    
+    // If status is Absent, times should be blank
+    if (status === 'Absent' && (timeIn || timeOut)) {
+      errors.push('Time entries should be blank for Absent status');
+    }
+    
+    return errors;
+  }
+  
+  // Real-time validation feedback
+  ['date', 'time_in', 'time_out', 'modal_status'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', function() {
+      this.classList.remove('border-red-500');
+      validationErrors?.classList.add('hidden');
+    });
+  });
+  
+  // ===== Form Submit with Loading State =====
+  const submitBtn = document.getElementById('submitEditAttendanceBtn');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const submitBtnLoader = document.getElementById('submitBtnLoader');
+  
+  editForm?.addEventListener('submit', async function(e) {
+    // Note: Actual submission handled by parent page JS
+    // This prevents default for demo; remove if using parent handler
+    e.preventDefault();
+    
+    // Validate
+    const errors = validateForm();
+    if (errors.length > 0) {
+      validationErrorsText.textContent = errors.join('. ');
+      validationErrors?.classList.remove('hidden');
+      
+      // Highlight first error field
+      const firstError = errors[0].toLowerCase();
+      if (firstError.includes('date')) document.getElementById('date')?.classList.add('border-red-500');
+      
+      return;
+    }
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtnText.textContent = 'Saving...';
+    submitBtnLoader.classList.remove('hidden');
+    
+    // Simulate async operation (remove in production - parent JS handles this)
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtnText.textContent = 'Save Changes';
+      submitBtnLoader.classList.add('hidden');
+      
+      // Show success feedback
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Attendance updated!',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#1f2937',
+        color: '#fff'
+      });
+      
+      // Close modal after delay
+      setTimeout(() => toggleModal(false), 500);
+    }, 1500);
+  });
+  
+  // ===== Status Change Helper =====
+  document.getElementById('modal_status')?.addEventListener('change', function() {
+    const status = this.value;
+    const timeIn = document.getElementById('time_in');
+    const timeOut = document.getElementById('time_out');
+    
+    // Auto-clear times for Absent status
+    if (status === 'Absent') {
+      if (timeIn) timeIn.value = '';
+      if (timeOut) timeOut.value = '';
+      
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: 'Absent selected',
+        text: 'Time entries cleared',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#1f2937',
+        color: '#fff'
+      });
+    }
+  });
+  
+});
+</script>

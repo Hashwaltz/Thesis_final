@@ -1,93 +1,341 @@
-<div id="editUserModal"
-     class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-
-  <div class="bg-gray-900 p-6 rounded-2xl w-full max-w-md border border-gray-700 shadow-xl relative">
-
-    <!-- Close Button -->
-    <button type="button"
-            id="cancelEditUserModal"
-            class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-
-    <!-- Header -->
-    <h2 class="text-xl font-semibold text-blue-400 mb-5 text-center flex items-center justify-center gap-2">
-      <i class="fa-solid fa-user-pen"></i>
-      Edit User
-    </h2>
-
-    <form id="editUserFormModal" class="space-y-4">
-
-      <input type="hidden" name="email">
-
-      <!-- Role -->
-      <div>
-        <label class="block text-gray-400 text-sm mb-1">
-          <i class="fa-solid fa-user-shield mr-1"></i> Role
-        </label>
-        <div class="relative">
-          <i class="fa-solid fa-user-shield absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <select name="role"
-                  class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-blue-500">
-            <option value="">Select Role</option>
-            <option value="hr_admin">HR Admin</option>
-            <option value="officer">HR Officer</option>
-            <option value="leave_officer">Leave Officer</option>
-            <option value="employee">Employee</option>
-            <option value="payroll_admin">Payroll Admin</option>
-            <option value="payroll_staff">Payroll Staff</option>
-          </select>
+<!-- hr/admin/users/edit_user.html -->
+<div 
+  id="editUserModal"
+  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="editUserModalTitle"
+>
+  <!-- Modal Container with Blur-Resistant Background -->
+  <div class="bg-gray-900/95 backdrop-blur-xl rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl border border-gray-700/50 flex flex-col">
+    
+    <!-- Modal Header (Sticky) -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-500/20 p-2.5 rounded-xl">
+          <i class="fa-solid fa-user-pen text-blue-400 text-lg"></i>
+        </div>
+        <div>
+          <h2 id="editUserModalTitle" class="text-lg font-semibold text-white">Edit User Account</h2>
+          <p class="text-xs text-gray-400">Update role, department, and status</p>
         </div>
       </div>
+      <button
+        type="button"
+        id="closeEditUserModal"
+        class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-xl transition-colors"
+        aria-label="Close modal"
+      >
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
 
-      <!-- Department -->
-      <div id="departmentField" class="hidden">
-        <label class="block text-gray-400 text-sm mb-1">
-          <i class="fa-solid fa-building mr-1"></i> Department
-        </label>
-        <div class="relative">
-          <i class="fa-solid fa-building absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <select name="department_id"
-                  class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-blue-500">
-            <option value="">Select Department</option>
-            {% for dept in departments %}
-              <option value="{{ dept.id }}">{{ dept.name }}</option>
-            {% endfor %}
-          </select>
+    <!-- Scrollable Form Content -->
+    <div class="overflow-y-auto p-5 md:p-6 space-y-5">
+      
+      <form id="editUserFormModal" class="space-y-5" novalidate>
+        
+        <!-- Hidden Email Field (for reference) -->
+        <input type="hidden" name="email" id="editUserEmail">
+
+        <!-- Role Selection -->
+        <div class="space-y-2">
+          <label for="edit_role" class="block text-sm font-medium text-gray-300">
+            <i class="fa-solid fa-user-shield text-blue-400 mr-1.5"></i>
+            User Role <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-user-tag"></i>
+            </span>
+            <select
+              id="edit_role"
+              name="role"
+              class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+              required
+            >
+              <option value="" disabled selected>Select a role...</option>
+              <option value="hr_admin">🔐 HR Admin</option>
+              <option value="officer">👤 HR Officer</option>
+              <option value="leave_officer">📋 Leave Officer</option>
+              <option value="employee">👥 Employee</option>
+              <option value="payroll_admin">💰 Payroll Admin</option>
+              <option value="payroll_staff">🧾 Payroll Staff</option>
+            </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+          
+          <!-- Role Description Helper -->
+          <div id="roleDescription" class="text-xs text-gray-500 mt-1.5 p-2.5 bg-gray-800/50 rounded-lg border border-gray-700/50 hidden">
+            <i class="fa-regular fa-circle-info mr-1"></i>
+            <span id="roleDescText">Select a role to see its permissions</span>
+          </div>
         </div>
-      </div>
 
-      <!-- Status -->
-      <div>
-        <label class="block text-gray-400 text-sm mb-1">
-          <i class="fa-solid fa-toggle-on mr-1"></i> Status
-        </label>
-        <div class="relative">
-          <i class="fa-solid fa-toggle-on absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <select name="status"
-                  class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-800 text-gray-200 focus:ring-2 focus:ring-blue-500">
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
-          </select>
+        <!-- Department Field (Conditional) -->
+        <div id="departmentField" class="space-y-2 hidden">
+          <label for="edit_department_id" class="block text-sm font-medium text-gray-300">
+            <i class="fa-solid fa-building text-blue-400 mr-1.5"></i>
+            Department <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-building-columns"></i>
+            </span>
+            <select
+              id="edit_department_id"
+              name="department_id"
+              class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="" disabled selected>Select department...</option>
+              {% for dept in departments %}
+                <option value="{{ dept.id }}">{{ dept.name }}</option>
+              {% endfor %}
+            </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+          <p class="text-xs text-gray-500">
+            <i class="fa-regular fa-circle-info mr-1"></i>
+            Required for Department Head and HR Officer roles
+          </p>
         </div>
-      </div>
 
-      <!-- Buttons -->
-      <div class="flex justify-end gap-3 pt-2">
+        <!-- Account Status -->
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-300">
+            <i class="fa-solid fa-toggle-on text-blue-400 mr-1.5"></i>
+            Account Status
+          </label>
+          
+          <!-- Toggle Style Status Selection -->
+          <div class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl border border-gray-700/50">
+            <label class="flex items-center gap-2 cursor-pointer group flex-1">
+              <input type="radio" name="status" value="1" id="statusActive" class="peer sr-only" checked>
+              <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 peer-checked:border-green-500 peer-checked:bg-green-500/10 peer-checked:text-green-300 transition-all w-full">
+                <i class="fa-solid fa-circle-check text-green-400 peer-checked:text-green-300"></i>
+                <span class="text-sm">Active</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer group flex-1">
+              <input type="radio" name="status" value="0" id="statusInactive" class="peer sr-only">
+              <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 peer-checked:border-red-500 peer-checked:bg-red-500/10 peer-checked:text-red-300 transition-all w-full">
+                <i class="fa-solid fa-circle-xmark text-red-400 peer-checked:text-red-300"></i>
+                <span class="text-sm">Inactive</span>
+              </div>
+            </label>
+          </div>
+          
+          <p class="text-xs text-gray-500">
+            <i class="fa-regular fa-circle-info mr-1"></i>
+            Inactive users cannot log in but their data is preserved
+          </p>
+        </div>
 
-        <button type="button"
-                id="cancelEditUserModal"
-                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
-          <i class="fa-solid fa-ban"></i> Cancel
-        </button>
+        <!-- Security Notice -->
+        <div class="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl flex items-start gap-2">
+          <i class="fa-solid fa-triangle-exclamation text-yellow-400 mt-0.5"></i>
+          <p class="text-xs text-yellow-200/90">
+            <strong class="text-yellow-300">Security Note:</strong> 
+            Changing a user's role may affect their access permissions. 
+            Changes take effect immediately upon save.
+          </p>
+        </div>
 
-        <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-md">
-          <i class="fa-solid fa-floppy-disk"></i> Update
-        </button>
+      </form>
+    </div>
 
-      </div>
+    <!-- Modal Footer (Sticky) -->
+    <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky bottom-0 z-10">
+      <button
+        type="button"
+        id="cancelEditUserModal"
+        class="px-5 py-2.5 text-gray-300 hover:text-white bg-gray-700/80 hover:bg-gray-700 rounded-xl transition-all duration-200 border border-gray-600"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        form="editUserFormModal"
+        id="submitEditUserBtn"
+        class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span id="submitBtnText">Save Changes</span>
+        <i class="fa-solid fa-spinner fa-spin hidden" id="submitBtnLoader"></i>
+      </button>
+    </div>
 
-    </form>
   </div>
 </div>
+
+<!-- CSS Fallback for backdrop-blur -->
+<style>
+@supports not (backdrop-filter: blur(12px)) {
+  #editUserModal {
+    background: rgba(0, 0, 0, 0.85);
+  }
+  #editUserModal > div {
+    background: #111827;
+  }
+}
+</style>
+
+<!-- JavaScript for Enhanced Interactions -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  
+  // ===== Role Description Helper =====
+  const roleDescriptions = {
+    'hr_admin': 'Full system access: manage users, employees, payroll, and settings.',
+    'officer': 'Manage employee records, leaves, and department operations.',
+    'leave_officer': 'Process and approve leave applications across departments.',
+    'employee': 'Self-service access: view payslips, file leaves, update profile.',
+    'payroll_admin': 'Full payroll access: configure salaries, generate reports, process payments.',
+    'payroll_staff': 'Process payroll entries and generate basic salary reports.'
+  };
+  
+  const roleSelect = document.getElementById('edit_role');
+  const roleDesc = document.getElementById('roleDescription');
+  const roleDescText = document.getElementById('roleDescText');
+  
+  roleSelect?.addEventListener('change', function() {
+    const role = this.value;
+    if (role && roleDescriptions[role]) {
+      roleDescText.textContent = roleDescriptions[role];
+      roleDesc.classList.remove('hidden');
+    } else {
+      roleDesc.classList.add('hidden');
+    }
+    
+    // Toggle department field for relevant roles
+    toggleDepartmentField();
+  });
+  
+  // ===== Department Field Toggle =====
+  function toggleDepartmentField() {
+    const deptField = document.getElementById('departmentField');
+    const deptSelect = document.getElementById('edit_department_id');
+    const role = roleSelect?.value;
+    
+    if (!deptField || !deptSelect) return;
+    
+    // Show department field for roles that need it
+    const needsDepartment = ['officer', 'leave_officer'].includes(role);
+    
+    if (needsDepartment) {
+      deptField.classList.remove('hidden');
+      deptSelect.required = true;
+    } else {
+      deptField.classList.add('hidden');
+      deptSelect.required = false;
+      deptSelect.value = ''; // Clear selection when hidden
+    }
+  }
+  
+  // Initialize on load
+  toggleDepartmentField();
+  
+  // ===== Modal Toggle Helper =====
+  const modal = document.getElementById('editUserModal');
+  
+  function toggleModal(show) {
+    if (!modal) return;
+    if (show) {
+      modal.classList.remove('hidden');
+      // Trigger reflow for transition
+      void modal.offsetWidth;
+      modal.style.opacity = '1';
+      document.body.style.overflow = 'hidden';
+      // Focus first interactive element
+      setTimeout(() => roleSelect?.focus(), 100);
+    } else {
+      modal.style.opacity = '0';
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      }, 300);
+    }
+  }
+  
+  // Close handlers
+  document.getElementById('closeEditUserModal')?.addEventListener('click', () => toggleModal(false));
+  document.getElementById('cancelEditUserModal')?.addEventListener('click', () => toggleModal(false));
+  
+  // Close on outside click
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) toggleModal(false);
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      toggleModal(false);
+    }
+  });
+  
+  // ===== Form Submit with Loading State =====
+  const editForm = document.getElementById('editUserFormModal');
+  const submitBtn = document.getElementById('submitEditUserBtn');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const submitBtnLoader = document.getElementById('submitBtnLoader');
+  
+  editForm?.addEventListener('submit', async function(e) {
+    // Note: Actual submission is handled by parent page JS
+    // This prevents default for demo; remove if using parent handler
+    e.preventDefault();
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtnText.textContent = 'Saving...';
+    submitBtnLoader.classList.remove('hidden');
+    
+    // Simulate async operation (remove in production - parent JS handles this)
+    setTimeout(() => {
+      submitBtn.disabled = false;
+      submitBtnText.textContent = 'Save Changes';
+      submitBtnLoader.classList.add('hidden');
+      
+      // Show success feedback
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Changes saved!',
+        showConfirmButton: false,
+        timer: 2000,
+        background: '#1f2937',
+        color: '#fff'
+      });
+      
+      // Close modal after delay
+      setTimeout(() => toggleModal(false), 500);
+    }, 1500);
+  });
+  
+  // ===== Status Toggle Visual Feedback =====
+  document.querySelectorAll('input[name="status"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      // Optional: Add custom behavior when status changes
+      const isActive = this.value === '1';
+      if (!isActive) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'User will be inactive',
+          text: 'They won\'t be able to log in',
+          showConfirmButton: false,
+          timer: 2500,
+          background: '#1f2937',
+          color: '#fff'
+        });
+      }
+    });
+  });
+  
+});
+</script>

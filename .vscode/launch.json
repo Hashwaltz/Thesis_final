@@ -8,9 +8,13 @@
             "module": "main_app.run",
             "console": "integratedTerminal",
             "env": {
-                "FLASK_DEBUG": "1"
+                "FLASK_DEBUG": "1",
+                "FLASK_APP": "main_app.run"
             },
-            "justMyCode": true
+            "justMyCode": true,
+            "stopOnEntry": false,
+            "subProcess": true,
+            "redirectOutput": true
         }
     ]
 }

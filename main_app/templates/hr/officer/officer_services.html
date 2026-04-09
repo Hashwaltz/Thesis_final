@@ -3,64 +3,64 @@
 {% block title %}Services | HR Officer{% endblock %}
 
 {% block content %}
+<div class="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-<div class="space-y-8">
-
-  <h1 class="text-2xl font-bold text-white">HR Officer Services</h1>
-
-  <p class="text-slate-400">
-    Access document generation and export utilities.
-  </p>
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-2xl shadow-xl border border-slate-700/50 backdrop-blur-sm">
+    <h1 class="text-2xl md:text-3xl font-bold text-blue-400 flex items-center gap-3">
+      <i class="fa-solid fa-screwdriver-wrench text-3xl drop-shadow-md"></i>
+      HR Officer Services
+    </h1>
+    <p class="text-slate-400 mt-2 max-w-2xl">
+      Access document generation and export utilities. Select a service below to get started.
+    </p>
+  </header>
 
   <!-- Services Grid -->
   <div class="grid md:grid-cols-3 gap-6">
 
     <!-- MOA Service -->
-    <div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center space-y-4 hover:bg-slate-700 transition">
-      <div class="text-blue-400 text-5xl">
-        <i class="fa-solid fa-file-excel"></i>
+    <div class="group bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-lg border border-slate-700/50 p-6 flex flex-col items-center text-center space-y-4 hover:border-blue-500/40 hover:shadow-blue-500/10 transition-all duration-300">
+      <div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition">
+        <i class="fa-solid fa-file-excel text-blue-400 text-4xl"></i>
       </div>
       <h2 class="text-xl font-semibold text-white">Export Employee List</h2>
-      <p class="text-slate-400 text-sm">
-        Generate MOA list in Excel format.
+      <p class="text-slate-400 text-sm leading-relaxed">
+        Generate MOA-compliant employee lists in Excel format with filtering options.
       </p>
       <button id="openMoaModal"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition">
-        Generate MOA List
+        class="mt-2 w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-6 py-2.5 rounded-xl transition font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate MOA List
       </button>
     </div>
 
     <!-- Service Record -->
-    <div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center space-y-4 hover:bg-slate-700 transition">
-      <div class="text-green-400 text-5xl">
-        <i class="fa-solid fa-file-lines"></i>
+    <div class="group bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-lg border border-slate-700/50 p-6 flex flex-col items-center text-center space-y-4 hover:border-green-500/40 hover:shadow-green-500/10 transition-all duration-300">
+      <div class="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition">
+        <i class="fa-solid fa-file-lines text-green-400 text-4xl"></i>
       </div>
-      <h2 class="text-xl font-semibold text-white">
-        Service Record Document
-      </h2>
-      <p class="text-slate-400 text-sm">
-        Download employee service record in DOCX format.
+      <h2 class="text-xl font-semibold text-white">Service Record Document</h2>
+      <p class="text-slate-400 text-sm leading-relaxed">
+        Download comprehensive employee service records in DOCX format.
       </p>
       <button id="openServiceRecordModal"
-        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-xl text-white">
-        Export Service Record
+        class="mt-2 w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white px-6 py-2.5 rounded-xl transition font-medium flex items-center justify-center gap-2 shadow-lg shadow-green-500/20">
+        <i class="fa-solid fa-download"></i> Export Service Record
       </button>
     </div>
 
     <!-- COE Certificate -->
-    <div class="bg-slate-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center space-y-4 hover:bg-slate-700 transition">
-      <div class="text-yellow-400 text-5xl">
-        <i class="fa-solid fa-file-pdf"></i>
+    <div class="group bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-lg border border-slate-700/50 p-6 flex flex-col items-center text-center space-y-4 hover:border-yellow-500/40 hover:shadow-yellow-500/10 transition-all duration-300">
+      <div class="w-16 h-16 rounded-2xl bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/20 transition">
+        <i class="fa-solid fa-file-pdf text-yellow-400 text-4xl"></i>
       </div>
-      <h2 class="text-xl font-semibold text-white">
-        Certificate of Employment
-      </h2>
-      <p class="text-slate-400 text-sm">
-        Generate COE certificate in PDF format.
+      <h2 class="text-xl font-semibold text-white">Certificate of Employment</h2>
+      <p class="text-slate-400 text-sm leading-relaxed">
+        Generate official COE certificates in PDF format with customizable fields.
       </p>
       <button id="openCOEModal"
-        class="bg-yellow-600 hover:bg-yellow-700 px-6 py-2 rounded-xl transition">
-        Generate COE
+        class="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 active:scale-95 text-white px-6 py-2.5 rounded-xl transition font-medium flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20">
+        <i class="fa-solid fa-certificate"></i> Generate COE
       </button>
     </div>
 
@@ -68,133 +68,259 @@
 </div>
 
 <!-- ============================= -->
-<!-- MODALS -->
+<!-- MODALS (Shared Structure) -->
 <!-- ============================= -->
 
 <!-- MOA Modal -->
-<div id="moaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-  <div class="bg-slate-800 p-8 rounded-2xl w-full max-w-lg border border-slate-700 space-y-4">
-
-    <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-semibold text-blue-400">Generate MOA</h2>
-      <button class="closeModal text-slate-400 hover:text-white">
+<div id="moaModal" role="dialog" aria-modal="true" aria-labelledby="moaTitle"
+     class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity opacity-0" id="moaBackdrop"></div>
+  <div class="relative bg-slate-900 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+    
+    <div class="flex items-center justify-between p-5 border-b border-slate-700">
+      <h2 id="moaTitle" class="text-xl font-bold text-blue-400 flex items-center gap-2">
+        <i class="fa-solid fa-file-excel"></i> Generate MOA List
+      </h2>
+      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
     </div>
 
-    <form id="moaForm" class="space-y-4">
-      <label class="text-slate-300 text-lg font-medium">Select Employment Type</label>
-      <select id="employmentTypeSelect"
-        class="bg-slate-700 text-white w-full rounded-lg px-4 py-3 mt-2 text-lg" required>
-        <option value="">Select Type</option>
-        {% for etype in employment_types %}
-        <option value="{{ etype.id }}">{{ etype.name }}</option>
-        {% endfor %}
-      </select>
+    <form id="moaForm" class="p-5 space-y-5">
+      <div>
+        <label for="employmentTypeSelect" class="block text-sm font-medium text-slate-300 mb-2">
+          Select Employment Type
+        </label>
+        <select id="employmentTypeSelect" name="employment_type" required
+          class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer">
+          <option value="">Choose a type...</option>
+          {% for etype in employment_types %}
+          <option value="{{ etype.id }}">{{ etype.name }}</option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-slate-500 mt-1.5">Only employees matching this type will be included.</p>
+      </div>
 
-      <div class="flex justify-end gap-3 mt-6">
-        <button type="button" class="closeModal bg-gray-600 px-6 py-3 rounded-xl text-white">Cancel</button>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl text-white">Generate</button>
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+        <button type="button" class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition">
+          Cancel
+        </button>
+        <button type="submit" id="moaGenerateBtn" class="bg-blue-600 hover:bg-blue-700 active:scale-95 px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition shadow-lg shadow-blue-500/20">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>Generate</span>
+          <span id="moaSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+        </button>
       </div>
     </form>
-
   </div>
 </div>
 
 <!-- Service Record Modal -->
-<div id="serviceRecordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-  <div class="bg-slate-800 p-8 rounded-2xl w-full max-w-lg border border-slate-700 space-y-4">
-
-    <h2 class="text-2xl text-green-400 font-semibold">Service Record Export</h2>
-
-    <select id="serviceEmployeeId"
-      class="w-full bg-slate-700 text-white px-4 py-3 rounded-lg text-lg">
-      <option value="">Select Employee</option>
-      {% for emp in employees %}
-      <option value="{{ emp.id }}">{{ emp.get_full_name() }}</option>
-      {% endfor %}
-    </select>
-
-    <div class="flex justify-end gap-3 mt-6">
-      <button class="closeModal bg-gray-600 px-6 py-3 rounded-xl text-white">Cancel</button>
-      <button id="generateServiceRecordBtn" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl text-white">Generate</button>
+<div id="serviceRecordModal" role="dialog" aria-modal="true" aria-labelledby="serviceTitle"
+     class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity opacity-0" id="serviceBackdrop"></div>
+  <div class="relative bg-slate-900 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+    
+    <div class="flex items-center justify-between p-5 border-b border-slate-700">
+      <h2 id="serviceTitle" class="text-xl font-bold text-green-400 flex items-center gap-2">
+        <i class="fa-solid fa-file-lines"></i> Service Record Export
+      </h2>
+      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
     </div>
 
+    <div class="p-5 space-y-5">
+      <div>
+        <label for="serviceEmployeeId" class="block text-sm font-medium text-slate-300 mb-2">
+          Select Employee
+        </label>
+        <select id="serviceEmployeeId"
+          class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 
+                 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition cursor-pointer">
+          <option value="">Search or select...</option>
+          {% for emp in employees %}
+          <option value="{{ emp.id }}">{{ emp.get_full_name() }} {% if emp.employee_id %}(#{{ emp.employee_id }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+        <p class="text-xs text-slate-400">
+          <i class="fa-solid fa-circle-info text-green-400 mr-1"></i>
+          Service records include employment history, positions held, and tenure details.
+        </p>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+        <button class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition">
+          Cancel
+        </button>
+        <button id="generateServiceRecordBtn" class="bg-green-600 hover:bg-green-700 active:scale-95 px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition shadow-lg shadow-green-500/20">
+          <i class="fa-solid fa-download"></i>
+          <span>Export DOCX</span>
+          <span id="serviceSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- COE Modal -->
-<div id="coeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-  <div class="bg-slate-800 p-8 rounded-2xl w-full max-w-lg border border-slate-700 space-y-4">
-
-    <h2 class="text-2xl text-yellow-400 font-semibold">COE Certificate</h2>
-
-    <select id="coeEmployeeId"
-      class="w-full bg-slate-700 text-white px-4 py-3 rounded-lg text-lg">
-      <option value="">Select Employee</option>
-      {% for emp in employees %}
-      <option value="{{ emp.id }}">{{ emp.get_full_name() }}</option>
-      {% endfor %}
-    </select>
-
-    <div class="mt-4 space-y-2 text-lg">
-      <p class="text-slate-300 font-semibold">Select Details to Include:</p>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="position" checked> Position</label><br>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="department" checked> Department</label><br>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="employment_type" checked> Employment Type</label><br>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="hire_date" checked> Hire Date</label><br>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="end_date" checked> End Date / Status</label><br>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="working_duration" checked> Working Duration</label><br>
-      <label class="text-slate-300"><input type="checkbox" class="coe-field" value="deductions"> Show Deductions</label>
+<div id="coeModal" role="dialog" aria-modal="true" aria-labelledby="coeTitle"
+     class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity opacity-0" id="coeBackdrop"></div>
+  <div class="relative bg-slate-900 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+    
+    <div class="flex items-center justify-between p-5 border-b border-slate-700">
+      <h2 id="coeTitle" class="text-xl font-bold text-yellow-400 flex items-center gap-2">
+        <i class="fa-solid fa-file-pdf"></i> Certificate of Employment
+      </h2>
+      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
     </div>
 
-    <div class="flex justify-end gap-3 mt-6">
-      <button class="closeModal bg-gray-600 px-6 py-3 rounded-xl text-white">Cancel</button>
-      <button id="generateCOEBtn" class="bg-yellow-600 hover:bg-yellow-700 px-6 py-3 rounded-xl text-white">Generate</button>
-    </div>
+    <div class="p-5 space-y-5">
+      <div>
+        <label for="coeEmployeeId" class="block text-sm font-medium text-slate-300 mb-2">
+          Select Employee
+        </label>
+        <select id="coeEmployeeId"
+          class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 
+                 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition cursor-pointer">
+          <option value="">Search or select...</option>
+          {% for emp in employees %}
+          <option value="{{ emp.id }}">{{ emp.get_full_name() }} {% if emp.employee_id %}(#{{ emp.employee_id }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
 
+      <fieldset>
+        <legend class="text-sm font-medium text-slate-300 mb-3">Include in Certificate:</legend>
+        <div class="grid grid-cols-2 gap-2">
+          {% set fields = [
+            {'id': 'position', 'label': 'Position', 'checked': true},
+            {'id': 'department', 'label': 'Department', 'checked': true},
+            {'id': 'employment_type', 'label': 'Employment Type', 'checked': true},
+            {'id': 'hire_date', 'label': 'Hire Date', 'checked': true},
+            {'id': 'end_date', 'label': 'End Date / Status', 'checked': true},
+            {'id': 'working_duration', 'label': 'Working Duration', 'checked': true},
+            {'id': 'deductions', 'label': 'Show Deductions', 'checked': false}
+          ] %}
+          {% for field in fields %}
+          <label class="flex items-center gap-2 p-2.5 bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-slate-600 transition cursor-pointer">
+            <input type="checkbox" class="coe-field w-4 h-4 rounded border-slate-600 text-yellow-500 focus:ring-yellow-500 bg-slate-700" 
+                   value="{{ field.id }}" {% if field.checked %}checked{% endif %}>
+            <span class="text-sm text-slate-300">{{ field.label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+        <button class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition">
+          Cancel
+        </button>
+        <button id="generateCOEBtn" class="bg-yellow-600 hover:bg-yellow-700 active:scale-95 px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition shadow-lg shadow-yellow-500/20">
+          <i class="fa-solid fa-file-pdf"></i>
+          <span>Generate PDF</span>
+          <span id="coeSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ============================= -->
-<!-- JAVASCRIPT -->
+<!-- STYLES & SCRIPTS -->
 <!-- ============================= -->
+<style>
+  /* Modal animations */
+  #moaModal:not(.hidden) #moaBackdrop,
+  #serviceRecordModal:not(.hidden) #serviceBackdrop,
+  #coeModal:not(.hidden) #coeBackdrop { opacity: 1; }
+  
+  #moaModal:not(.hidden) > div:not([class*="absolute"]),
+  #serviceRecordModal:not(.hidden) > div:not([class*="absolute"]),
+  #coeModal:not(.hidden) > div:not([class*="absolute"]) {
+    transform: scale(1);
+    opacity: 1;
+  }
+</style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-
+  // Modal management
   const modals = {
-    moa: document.getElementById("moaModal"),
-    service: document.getElementById("serviceRecordModal"),
-    coe: document.getElementById("coeModal")
+    moa: { el: document.getElementById("moaModal"), backdrop: document.getElementById("moaBackdrop") },
+    service: { el: document.getElementById("serviceRecordModal"), backdrop: document.getElementById("serviceBackdrop") },
+    coe: { el: document.getElementById("coeModal"), backdrop: document.getElementById("coeBackdrop") }
   };
 
-  function openModal(modal){
-    Object.values(modals).forEach(m => m.classList.add("hidden"));
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-  }
-
-  function closeAllModal(){
+  function openModal(modal) {
+    // Close all first
     Object.values(modals).forEach(m => {
-      m.classList.add("hidden");
-      m.classList.remove("flex");
+      m.el.classList.add("hidden");
+      m.el.classList.remove("flex");
     });
+    
+    // Open target
+    modal.el.classList.remove("hidden");
+    modal.el.classList.add("flex");
+    document.body.style.overflow = "hidden";
+    
+    // Focus first input
+    const firstInput = modal.el.querySelector("select, input");
+    if (firstInput) firstInput.focus();
   }
 
-  document.getElementById("openMoaModal").addEventListener("click", ()=> openModal(modals.moa));
-  document.getElementById("openServiceRecordModal").addEventListener("click", ()=> openModal(modals.service));
-  document.getElementById("openCOEModal").addEventListener("click", ()=> openModal(modals.coe));
-  document.querySelectorAll(".closeModal").forEach(btn => btn.addEventListener("click", closeAllModal));
+  function closeModal(modal) {
+    modal.el.classList.add("hidden");
+    modal.el.classList.remove("flex");
+    document.body.style.overflow = "";
+  }
+
+  function closeAllModals() {
+    Object.values(modals).forEach(m => closeModal(m));
+  }
+
+  // Open triggers
+  document.getElementById("openMoaModal").addEventListener("click", () => openModal(modals.moa));
+  document.getElementById("openServiceRecordModal").addEventListener("click", () => openModal(modals.service));
+  document.getElementById("openCOEModal").addEventListener("click", () => openModal(modals.coe));
+
+  // Close triggers
+  document.querySelectorAll(".closeModal").forEach(btn => 
+    btn.addEventListener("click", closeAllModals)
+  );
+  Object.values(modals).forEach(m => 
+    m.backdrop.addEventListener("click", () => closeModal(m))
+  );
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAllModals();
+  });
 
   // ===== MOA EXPORT =====
   document.getElementById("moaForm").addEventListener("submit", function(e){
     e.preventDefault();
     const typeId = document.getElementById("employmentTypeSelect").value;
+    const btn = document.getElementById("moaGenerateBtn");
+    const spinner = document.getElementById("moaSpinner");
+    
     if(!typeId){
-      Swal.fire("Missing", "Select employment type", "warning");
+      if (typeof Swal !== 'undefined') {
+        Swal.fire("Selection Required", "Please select an employment type", "warning");
+      } else {
+        alert("Please select an employment type");
+      }
       return;
     }
+    
+    btn.disabled = true;
+    spinner.classList.remove("hidden");
+    
     const baseUrl = "{{ url_for('hr_officer_bp.generate_moa_all', employment_type_id=0) }}".replace("/0", "");
     window.location.href = baseUrl + "/" + typeId;
   });
@@ -202,10 +328,21 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===== SERVICE RECORD =====
   document.getElementById("generateServiceRecordBtn").addEventListener("click", function(){
     const employeeId = document.getElementById("serviceEmployeeId").value;
+    const btn = this;
+    const spinner = document.getElementById("serviceSpinner");
+    
     if(!employeeId){
-      Swal.fire("Missing", "Enter employee ID", "warning");
+      if (typeof Swal !== 'undefined') {
+        Swal.fire("Selection Required", "Please select an employee", "warning");
+      } else {
+        alert("Please select an employee");
+      }
       return;
     }
+    
+    btn.disabled = true;
+    spinner.classList.remove("hidden");
+    
     const baseUrl = "{{ url_for('hr_officer_bp.export_service_record', employee_id=0) }}";
     window.location.href = baseUrl.replace("0", employeeId);
   });
@@ -213,22 +350,46 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===== COE =====
   document.getElementById("generateCOEBtn").addEventListener("click", function(){
     const employeeId = document.getElementById("coeEmployeeId").value;
+    const btn = this;
+    const spinner = document.getElementById("coeSpinner");
+    
     if(!employeeId){
-      Swal.fire("Missing", "Enter employee ID", "warning");
+      if (typeof Swal !== 'undefined') {
+        Swal.fire("Selection Required", "Please select an employee", "warning");
+      } else {
+        alert("Please select an employee");
+      }
       return;
     }
 
-    // Gather selected fields
     const selectedFields = Array.from(document.querySelectorAll(".coe-field:checked")).map(f => f.value);
     const baseUrl = "{{ url_for('hr_officer_bp.generate_coe', employee_id=0) }}";
     let url = baseUrl.replace("0", employeeId);
+    
     if(selectedFields.length > 0){
       url += "?fields=" + selectedFields.join("&fields=");
     }
+    
+    btn.disabled = true;
+    spinner.classList.remove("hidden");
     window.location.href = url;
   });
 
+  // Reset buttons when modals close (for UX)
+  Object.values(modals).forEach(modal => {
+    modal.el.addEventListener("transitionend", (e) => {
+      if (modal.el.classList.contains("hidden")) {
+        // Reset form & buttons
+        const form = modal.el.querySelector("form");
+        if (form) form.reset();
+        modal.el.querySelectorAll("button[type='submit'], button[id$='Btn']").forEach(b => {
+          b.disabled = false;
+          const spin = b.querySelector("[id$='Spinner']");
+          if (spin) spin.classList.add("hidden");
+        });
+      }
+    });
+  });
 });
 </script>
-
 {% endblock %}

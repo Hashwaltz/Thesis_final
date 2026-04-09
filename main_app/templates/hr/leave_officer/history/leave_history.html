@@ -39,7 +39,7 @@
         <div x-data="{ open: {{ 'true' if loop.first else 'false' }} }"
              class="border border-slate-700 rounded-2xl overflow-hidden bg-slate-800 shadow">
 
-            <!-- Header -->
+            <!-- Year Header -->
             <button @click="open = !open"
                 class="w-full flex justify-between items-center px-5 py-4 text-left hover:bg-slate-700 transition">
 
@@ -59,24 +59,47 @@
                 </svg>
             </button>
 
-            <!-- Body -->
+            <!-- Year Body -->
             <div x-show="open" x-transition class="p-5 space-y-4 bg-slate-900">
 
                 {% for month in months %}
                 <div class="bg-slate-800 border border-slate-700 rounded-xl shadow">
 
                     <!-- Month Header -->
-                    <div class="flex justify-between items-center px-4 py-3 border-b border-slate-700">
+                    <div class="flex flex-wrap justify-between items-center gap-2 px-4 py-3 border-b border-slate-700">
                         <h4 class="font-semibold text-white">
                             📅 {{ month.month }}
                             <span class="text-sm text-slate-400">
                                 ({{ month.worked_days }}/{{ month.total_days }} days)
                             </span>
+                            {% if month.late_deduction > 0 and month.late_deduction_pending %}
+                            <span class="ml-2 px-2 py-0.5 text-[10px] rounded bg-amber-600/30 text-amber-300 border border-amber-600">
+                                ⏳ Pending Deduction
+                            </span>
+                            {% elif month.late_deduction_applied %}
+                            <span class="ml-2 px-2 py-0.5 text-[10px] rounded bg-green-600/30 text-green-300 border border-green-600">
+                                ✅ Deduction Applied
+                            </span>
+                            {% endif %}
                         </h4>
 
-                        <span class="px-3 py-1 text-xs rounded-full bg-green-600/20 text-green-400 border border-green-600">
-                            Earned: {{ month.earned_credit }}
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <!-- 🔄 CHANGED: Show "Earned | Used" format -->
+                            {% set vl_data = month.leave_data | selectattr('leave_type', 'equalto', 'Vacation Leave') | first | default(None) %}
+                            {% set sl_data = month.leave_data | selectattr('leave_type', 'equalto', 'Sick Leave') | first | default(None) %}
+                            {% set vl_used = vl_data.used | default(0) if vl_data else 0 %}
+                            {% set sl_used = sl_data.used | default(0) if sl_data else 0 %}
+                            {% set total_used = vl_used + sl_used %}
+                            
+                           <span class="px-3 py-1 text-xs rounded-full bg-slate-700/50 border border-slate-600 flex items-center gap-1" 
+                                title="Earned: {{ month.earned_credit }} | VL Used: {{ vl_used }} | SL Used: {{ sl_used }}">
+                                <span class="text-emerald-400 font-medium">{{ month.earned_credit | round(3) }}</span>
+                                <span class="text-slate-500">|</span>
+                                <span class="text-red-400 font-medium">{{ total_used | round(3) }}</span>
+                            </span>
+                                                        
+                            <!-- Apply button removed from header - now inside Late Records -->
+                        </div>
                     </div>
 
                     <!-- Content -->
@@ -89,7 +112,13 @@
                                 <span class="text-red-400 text-lg">⚠️</span>
                                 <div class="flex-1">
                                     <p class="text-red-400 font-medium">
-                                        Late Deduction Applied: <span class="font-bold">-{{ month.late_deduction }}</span> credits
+                                        Late Deduction 
+                                        {% if month.late_deduction_pending %}
+                                            <span class="text-amber-400">(PENDING)</span>
+                                        {% elif month.late_deduction_applied %}
+                                            <span class="text-green-400">(APPLIED)</span>
+                                        {% endif %}: 
+                                        <span class="font-bold">-{{ month.late_deduction }}</span> credits
                                     </p>
                                     
                                     <!-- Deduction Breakdown: VL First, Then SL -->
@@ -117,7 +146,6 @@
                                     </div>
                                     
                                     <!-- ✅ Total Consumption Summary for VL -->
-                                    {% set vl_data = month.leave_data | selectattr('leave_type', 'equalto', 'Vacation Leave') | first | default(None) %}
                                     {% if vl_data %}
                                         {% set vl_leave_used = vl_data.used | default(0) %}
                                         {% set vl_total_consumed = vl_leave_used + month.deduction_breakdown.from_vl %}
@@ -129,7 +157,6 @@
                                     {% endif %}
                                     
                                     <!-- ✅ Total Consumption Summary for SL -->
-                                    {% set sl_data = month.leave_data | selectattr('leave_type', 'equalto', 'Sick Leave') | first | default(None) %}
                                     {% if sl_data and month.deduction_breakdown.from_sl > 0 %}
                                         {% set sl_leave_used = sl_data.used | default(0) %}
                                         {% set sl_total_consumed = sl_leave_used + month.deduction_breakdown.from_sl %}
@@ -176,7 +203,13 @@
                                             </div>
                                             <div class="flex justify-between">
                                                 <span class="text-slate-400">Late Deduction:</span>
-                                                <span class="text-red-400 font-medium">-{{ late_credits_deducted }} credits</span>
+                                                <span class="text-red-400 font-medium">
+                                                    {% if month.late_deduction_pending %}
+                                                        -{{ late_credits_deducted }} (pending)
+                                                    {% else %}
+                                                        -{{ late_credits_deducted }}
+                                                    {% endif %}
+                                                </span>
                                             </div>
                                             <div class="flex justify-between pt-1 border-t border-slate-700">
                                                 <span class="text-slate-300 font-semibold">Total Consumed:</span>
@@ -268,7 +301,50 @@
                               </tbody>
                             </table>
                           </div>
+                          
+                          <!-- 🎯 MANUAL LATE DEDUCTION BUTTON (MOVED INSIDE LATE RECORDS) -->
+                          {% if month.late_deduction > 0 %}
+                          <div class="mt-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700 flex flex-wrap items-center justify-between gap-3">
+                            <div class="text-sm">
+                                {% if month.late_deduction_pending %}
+                                    <span class="text-amber-400 font-medium">⏳ Ready to apply deduction</span>
+                                    <span class="text-slate-500 mx-2">•</span>
+                                    <span class="text-slate-400">{{ month.late_deduction }} credits will be deducted</span>
+                                {% elif month.late_deduction_applied %}
+                                    <span class="text-green-400 font-medium">✅ Deduction already applied</span>
+                                    <span class="text-slate-500 mx-2">•</span>
+                                    <span class="text-slate-400">No further action needed</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if month.late_deduction_pending %}
+                            <form method="POST" 
+                                  action="{{ url_for('leave_officer_bp.apply_monthly_late_deduction', 
+                                                    employee_id=employee.id, 
+                                                    year=month.year, 
+                                                    month=month.month_num) }}"
+                                  class="inline"
+                                  onsubmit="return confirm('⚠️ Apply late deduction of {{ month.late_deduction }} credits for {{ month.month }}?\\n\\nPolicy: Vacation Leave will be deducted first. Sick Leave only if VL is exhausted.\\n\\nThis action cannot be undone.');">
+                                <button type="submit" 
+                                        class="px-4 py-2 text-sm rounded-lg bg-red-600/20 text-red-400 border border-red-600 hover:bg-red-600/30 transition cursor-pointer flex items-center gap-2">
+                                    <span>⚡</span>
+                                    <span>Apply Late Deduction: -{{ month.late_deduction }} credits</span>
+                                </button>
+                            </form>
+                            {% elif month.late_deduction_applied %}
+                            <span class="px-4 py-2 text-sm rounded-lg bg-green-600/20 text-green-400 border border-green-600 font-medium">
+                                ✓ Deduction Applied
+                            </span>
+                            {% endif %}
+                          </div>
+                          {% endif %}
+                          
                         </details>
+                        {% else %}
+                        <!-- No late records message -->
+                        <div class="text-center py-8 text-slate-500">
+                            <p class="text-lg">😊 No late records for this month</p>
+                        </div>
                         {% endif %}
 
                         <!-- Leave Usage -->
@@ -324,6 +400,7 @@
             <li>Credits are only earned when employment type is <strong>Regular (ID:1)</strong> or <strong>Casual (ID:3)</strong></li>
             <li>Unapplied deductions occur when both VL and SL balances are exhausted</li>
             <li><strong>Total Consumption = Leave Credits Used + Late Deduction Credits</strong></li>
+            <li class="text-amber-400">⚡ Late deductions are applied MANUALLY via the button inside Late Records</li>
         </ul>
     </div>
 

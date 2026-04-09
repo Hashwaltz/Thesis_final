@@ -2,42 +2,551 @@
 {% block title %}Import Attendance | HR Admin{% endblock %}
 
 {% block content %}
-
-<main class="p-6 space-y-6 max-w-3xl mx-auto">
-
-  <!-- Card Container -->
-  <div class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6">
+<main class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-900/20 py-8 px-4 sm:px-6 lg:px-8">
+  
+  <div class="max-w-3xl mx-auto">
     
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-semibold text-blue-400">Import Attendance</h2>
-      <i class="fas fa-file-excel text-green-400 text-2xl"></i>
-    </div>
+    <!-- ===== PAGE HEADER ===== -->
+    <header class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 shadow-lg shadow-emerald-500/20 mb-4">
+        <i class="fa-solid fa-file-excel text-white text-2xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-white">Import Attendance Records</h1>
+      <p class="text-gray-400 mt-2 text-sm max-w-md mx-auto">
+        Upload an Excel file to bulk import employee attendance data. Ensure your file follows the required format.
+      </p>
+    </header>
 
-    <!-- Upload Form -->
-    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+    <!-- ===== UPLOAD CARD ===== -->
+    <section class="bg-gray-800/60 backdrop-blur-sm rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-700/50">
       
-      <div class="flex flex-col gap-2">
-        <label class="text-gray-300 font-medium" for="file">Upload Attendance Excel File</label>
-        <input 
-          type="file" 
-          name="file" 
-          id="file"
-          accept=".xlsx,.xls" 
-          required
-          class="bg-slate-700 text-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 border border-slate-600"
-        >
+      <!-- Card Header -->
+      <div class="flex items-center gap-3 pb-6 border-b border-gray-700/50 mb-6">
+        <div class="p-2 bg-emerald-600/20 rounded-lg">
+          <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-white">Upload File</h2>
+          <p class="text-gray-400 text-sm">Drag & drop or click to browse your Excel file</p>
+        </div>
       </div>
 
-      <button type="submit" 
-              class="bg-blue-500 hover:bg-blue-600 text-white w-full py-3 rounded-xl flex items-center justify-center gap-2 transition">
-        <i class="fas fa-upload"></i> Upload & Parse
-      </button>
+      <form method="POST" enctype="multipart/form-data" class="space-y-6" id="importForm">
 
-    </form>
+        <!-- ===== DRAG & DROP UPLOAD ZONE ===== -->
+        <div 
+          id="dropZone"
+          class="relative border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer
+                 border-gray-600 hover:border-emerald-500/60 hover:bg-emerald-500/5 
+                 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/30"
+        >
+          <!-- Hidden File Input -->
+          <input 
+            type="file" 
+            name="file" 
+            id="fileInput"
+            accept=".xlsx,.xls" 
+            required
+            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          >
+          
+          <!-- Default State -->
+          <div id="dropZoneDefault" class="space-y-3">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-600/20 mx-auto">
+              <i class="fa-solid fa-file-excel text-emerald-400 text-xl"></i>
+            </div>
+            <div>
+              <p class="text-white font-medium">Click to browse or drag file here</p>
+              <p class="text-gray-400 text-sm mt-1">Supports .xlsx and .xls formats • Max 10MB</p>
+            </div>
+            <span class="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">
+              <i class="fa-solid fa-check-circle"></i>
+              Template ready
+            </span>
+          </div>
+
+          <!-- Preview State (hidden by default) -->
+          <div id="dropZonePreview" class="hidden space-y-3">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-600/20 mx-auto">
+              <i class="fa-solid fa-file-lines text-blue-400 text-xl"></i>
+            </div>
+            <div>
+              <p id="fileName" class="text-white font-medium truncate">filename.xlsx</p>
+              <p id="fileSize" class="text-gray-400 text-sm mt-1">-- MB</p>
+            </div>
+            <button type="button" id="removeFile" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 mx-auto">
+              <i class="fa-solid fa-trash"></i>
+              Remove file
+            </button>
+          </div>
+
+          <!-- Success State (hidden by default) -->
+          <div id="dropZoneSuccess" class="hidden space-y-3">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-600/30 mx-auto">
+              <i class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+            </div>
+            <p class="text-emerald-400 font-medium">File ready to upload!</p>
+          </div>
+        </div>
+
+        <!-- ===== FILE INFO & VALIDATION ===== -->
+        <div id="fileInfo" class="hidden bg-gray-900/40 rounded-xl p-4 border border-gray-700/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-400">File Details</span>
+            <span id="validationBadge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              ✓ Valid
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="flex items-center gap-2 text-gray-300">
+              <i class="fa-regular fa-file text-gray-500"></i>
+              <span>Type: <strong id="fileType" class="text-white">.xlsx</strong></span>
+            </div>
+            <div class="flex items-center gap-2 text-gray-300">
+              <i class="fa-solid fa-weight-scale text-gray-500"></i>
+              <span>Size: <strong id="fileSizeDetail" class="text-white">--</strong></span>
+            </div>
+          </div>
+          <div id="validationErrors" class="text-xs text-red-400 space-y-1 hidden">
+            <!-- Errors injected here -->
+          </div>
+        </div>
+
+        <!-- ===== TEMPLATE DOWNLOAD ===== -->
+        <div class="bg-blue-900/20 border border-blue-700/40 rounded-xl p-4">
+          <div class="flex items-start gap-3">
+            <div class="p-2 bg-blue-600/20 rounded-lg shrink-0">
+              <i class="fa-solid fa-download text-blue-400"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="text-blue-400 font-semibold text-sm mb-1">Need a template?</h4>
+              <p class="text-gray-400 text-xs mb-3">Download our pre-formatted Excel template with sample data and required columns.</p>
+              <a href="{{ url_for('hr_admin_bp.attendance_report') }}" 
+                 class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-300 hover:text-blue-200 transition-colors">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                Download Attendance Template (.xlsx)
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== FORMAT REQUIREMENTS ===== -->
+        <details class="bg-gray-900/40 rounded-xl border border-gray-700/40">
+          <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-gray-300 flex items-center justify-between hover:text-white transition-colors">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-gray-500"></i>
+              Required Format
+            </span>
+            <i class="fa-solid fa-chevron-down text-gray-500 transition-transform open:rotate-180"></i>
+          </summary>
+          <div class="px-4 pb-4 space-y-3 text-xs text-gray-400">
+            <p>Your Excel file must include these columns (case-insensitive):</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                <span class="text-emerald-400 font-mono">employee_id</span>
+                <span class="text-gray-500">• Employee ID/Code</span>
+              </div>
+              <div class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                <span class="text-emerald-400 font-mono">date</span>
+                <span class="text-gray-500">• YYYY-MM-DD format</span>
+              </div>
+              <div class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                <span class="text-emerald-400 font-mono">time_in</span>
+                <span class="text-gray-500">• HH:MM:SS (24h)</span>
+              </div>
+              <div class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                <span class="text-emerald-400 font-mono">time_out</span>
+                <span class="text-gray-500">• HH:MM:SS (24h)</span>
+              </div>
+              <div class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                <span class="text-emerald-400 font-mono">status</span>
+                <span class="text-gray-500">• Present/Late/Absent</span>
+              </div>
+              <div class="flex items-center gap-2 bg-gray-800/60 rounded-lg px-3 py-2">
+                <span class="text-emerald-400 font-mono">remarks</span>
+                <span class="text-gray-500">• Optional notes</span>
+              </div>
+            </div>
+            <p class="text-amber-400 flex items-center gap-1">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              First row must contain headers. Empty cells will be skipped.
+            </p>
+          </div>
+        </details>
+
+        <!-- ===== FORM ACTIONS ===== -->
+        <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-700/50">
+          <a href="{{ url_for('hr_admin_bp.view_attendance') }}"
+             class="inline-flex items-center justify-center gap-2 px-5 py-2.5 
+                    bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium 
+                    transition-all border border-gray-600 hover:border-gray-500">
+            <i class="fa-solid fa-xmark"></i>
+            Cancel
+          </a>
+          <button type="submit" 
+                  id="submitBtn"
+                  class="inline-flex items-center justify-center gap-2 px-6 py-2.5 
+                         bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 
+                         text-white rounded-xl text-sm font-semibold transition-all 
+                         shadow-lg hover:shadow-emerald-500/25 hover:-translate-y-0.5 
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Upload & Import</span>
+            <i class="fa-solid fa-arrow-right ml-1 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- ===== HELPER TIPS ===== -->
+    <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-lightbulb text-yellow-400"></i>
+          <span class="text-sm font-medium text-gray-300">Pro Tip</span>
+        </div>
+        <p class="text-xs text-gray-400">Use the template to ensure correct column names and date formats.</p>
+      </div>
+      <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-shield-check text-emerald-400"></i>
+          <span class="text-sm font-medium text-gray-300">Validation</span>
+        </div>
+        <p class="text-xs text-gray-400">System auto-validates employee IDs and date ranges before import.</p>
+      </div>
+      <div class="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-rotate-left text-blue-400"></i>
+          <span class="text-sm font-medium text-gray-300">Undo</span>
+        </div>
+        <p class="text-xs text-gray-400">Imported records can be bulk-deleted within 24 hours if needed.</p>
+      </div>
+    </div>
 
   </div>
-
 </main>
 
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  
+  // ===== DOM ELEMENTS =====
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const dropZoneDefault = document.getElementById('dropZoneDefault');
+  const dropZonePreview = document.getElementById('dropZonePreview');
+  const dropZoneSuccess = document.getElementById('dropZoneSuccess');
+  const fileName = document.getElementById('fileName');
+  const fileSize = document.getElementById('fileSize');
+  const fileType = document.getElementById('fileType');
+  const fileSizeDetail = document.getElementById('fileSizeDetail');
+  const fileInfo = document.getElementById('fileInfo');
+  const validationBadge = document.getElementById('validationBadge');
+  const validationErrors = document.getElementById('validationErrors');
+  const removeFile = document.getElementById('removeFile');
+  const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('importForm');
+
+  // ===== CONFIG =====
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+  const ALLOWED_EXTENSIONS = ['.xlsx', '.xls'];
+
+  // ===== FORMAT FILE SIZE =====
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // ===== VALIDATE FILE =====
+  function validateFile(file) {
+    const errors = [];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    
+    // Check extension
+    if (!ALLOWED_EXTENSIONS.includes(ext)) {
+      errors.push(`Invalid file type. Please use ${ALLOWED_EXTENSIONS.join(' or ')}`);
+    }
+    
+    // Check MIME type (if available)
+    if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+      errors.push('File type not recognized as Excel format');
+    }
+    
+    // Check size
+    if (file.size > MAX_FILE_SIZE) {
+      errors.push(`File too large. Maximum size is ${formatBytes(MAX_FILE_SIZE)}`);
+    }
+    
+    // Check name length
+    if (file.name.length > 100) {
+      errors.push('Filename too long. Please shorten it.');
+    }
+    
+    return errors;
+  }
+
+  // ===== UPDATE UI WITH FILE =====
+  function showFilePreview(file) {
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    
+    fileName.textContent = file.name;
+    fileSize.textContent = formatBytes(file.size);
+    fileType.textContent = ext.toUpperCase();
+    fileSizeDetail.textContent = formatBytes(file.size);
+    
+    // Show preview state
+    dropZoneDefault.classList.add('hidden');
+    dropZonePreview.classList.remove('hidden');
+    dropZoneSuccess.classList.add('hidden');
+    fileInfo.classList.remove('hidden');
+    
+    // Validate and show results
+    const errors = validateFile(file);
+    if (errors.length === 0) {
+      validationBadge.textContent = '✓ Valid';
+      validationBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      validationErrors.classList.add('hidden');
+      submitBtn.disabled = false;
+    } else {
+      validationBadge.textContent = '✗ Invalid';
+      validationBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30';
+      validationErrors.innerHTML = errors.map(e => `• ${e}`).join('<br>');
+      validationErrors.classList.remove('hidden');
+      submitBtn.disabled = true;
+    }
+  }
+
+  // ===== RESET UPLOAD ZONE =====
+  function resetUploadZone() {
+    fileInput.value = '';
+    dropZoneDefault.classList.remove('hidden');
+    dropZonePreview.classList.add('hidden');
+    dropZoneSuccess.classList.add('hidden');
+    fileInfo.classList.add('hidden');
+    validationErrors.classList.add('hidden');
+    submitBtn.disabled = false;
+  }
+
+  // ===== EVENT LISTENERS =====
+  
+  // Click on drop zone triggers file input
+  dropZone.addEventListener('click', (e) => {
+    if (e.target !== removeFile && !removeFile.contains(e.target)) {
+      fileInput.click();
+    }
+  });
+
+  // File input change
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      showFilePreview(file);
+    }
+  });
+
+  // Remove file button
+  removeFile.addEventListener('click', (e) => {
+    e.stopPropagation();
+    resetUploadZone();
+  });
+
+  // Drag & drop events
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => {
+      dropZone.classList.add('border-emerald-500', 'bg-emerald-500/10');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => {
+      dropZone.classList.remove('border-emerald-500', 'bg-emerald-500/10');
+    }, false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      // Manually set the file to the input
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      fileInput.files = dataTransfer.files;
+      showFilePreview(file);
+    }
+  });
+
+  // ===== FORM SUBMISSION =====
+  form.addEventListener('submit', function(e) {
+    const file = fileInput.files[0];
+    if (!file) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'warning',
+        title: 'No File Selected',
+        text: 'Please select an Excel file to import.',
+        background: '#1e293b',
+        color: '#f1f5f9',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    const errors = validateFile(file);
+    if (errors.length > 0) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File',
+        html: errors.join('<br>'),
+        background: '#1e293b',
+        color: '#f1f5f9',
+        confirmButtonColor: '#ef4444'
+      });
+      return;
+    }
+
+    // Show loading state
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Processing...</span>
+    `;
+
+    // Optional: Show progress for large files
+    // (Backend should handle this with chunked upload if needed)
+  });
+
+  // ===== SWEETALERT FLASH MESSAGES =====
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        {% if category == 'success' %}
+          // Parse import results if available
+          const result = {{ message|tojson }};
+          Swal.fire({
+            icon: 'success',
+            title: '✓ Import Successful!',
+            html: `
+              <div class="text-left text-sm">
+                <p class="mb-2">{{ message }}</p>
+                ${result ? `
+                  <div class="bg-gray-700/50 rounded-lg p-3 space-y-1 text-xs">
+                    <p>📊 Records processed: <strong class="text-white">${result.processed || 0}</strong></p>
+                    <p>✅ Imported: <strong class="text-emerald-400">${result.imported || 0}</strong></p>
+                    <p>⚠️ Skipped: <strong class="text-amber-400">${result.skipped || 0}</strong></p>
+                    <p>❌ Errors: <strong class="text-red-400">${result.errors || 0}</strong></p>
+                  </div>
+                ` : ''}
+              </div>
+            `,
+            background: '#1e293b',
+            color: '#f1f5f9',
+            confirmButtonColor: '#10b981',
+            confirmButtonText: 'View Records',
+            willClose: () => { 
+              window.location.href = "{{ url_for('hr_admin_bp.view_attendance') }}"; 
+            }
+          });
+        {% elif category == 'error' %}
+          Swal.fire({
+            icon: 'error',
+            title: '⚠ Import Failed',
+            text: '{{ message }}',
+            background: '#1e293b',
+            color: '#f1f5f9',
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Try Again'
+          });
+        {% elif category == 'warning' %}
+          Swal.fire({
+            icon: 'warning',
+            title: '⚡ Partial Import',
+            text: '{{ message }}',
+            background: '#1e293b',
+            color: '#f1f5f9',
+            confirmButtonColor: '#f59e0b',
+            confirmButtonText: 'Review Results'
+          });
+        {% else %}
+          Swal.fire({
+            icon: 'info',
+            title: 'ℹ Info',
+            text: '{{ message }}',
+            background: '#1e293b',
+            color: '#f1f5f9',
+            timer: 2500,
+            showConfirmButton: false
+          });
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  // ===== KEYBOARD ACCESSIBILITY =====
+  dropZone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+  dropZone.setAttribute('tabindex', '0');
+  dropZone.setAttribute('role', 'button');
+  dropZone.setAttribute('aria-label', 'Upload attendance file');
+
+});
+</script>
+
+<!-- Custom Styles -->
+<style>
+/* Smooth transitions */
+#dropZone {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Details/summary arrow rotation */
+details summary i.fa-chevron-down {
+  transition: transform 0.2s ease;
+}
+details[open] summary i.fa-chevron-down {
+  transform: rotate(180deg);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Focus visible for accessibility */
+input[type="file"]:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+</style>
 {% endblock %}

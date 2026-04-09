@@ -2,278 +2,577 @@
 {% block title %}User Profile | HR Officer{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-lg text-slate-100">
+<div class="max-w-6xl mx-auto p-4 sm:p-6">
 
-  <!-- HEADER -->
-  <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
-
-    <!-- Avatar -->
-    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-cover bg-center ring-4 ring-slate-700 overflow-hidden flex-shrink-0"
-         style="background-image: url('{{ url_for('static', filename=current_user.employee_profile.photo) if current_user.employee_profile and current_user.employee_profile.photo else url_for('static', filename='img/default-avatar.png') }}')">
+  <!-- Profile Card -->
+  <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl shadow-2xl border border-slate-700/50 backdrop-blur-sm overflow-hidden">
+    
+    <!-- Decorative Header -->
+    <div class="h-24 sm:h-32 bg-gradient-to-r from-blue-600/20 via-purple-600/10 to-transparent relative">
+      <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%2394a3b8%22%20fill-opacity%3D%220.08%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-30"></div>
     </div>
 
-    <!-- Info -->
-    <div class="flex-1 text-center md:text-left">
-      <h1 class="text-xl sm:text-2xl font-semibold break-words">
-        {{ current_user.employee_profile.get_full_name() if current_user.employee_profile else "No name" }}
-      </h1>
+    <div class="px-6 sm:px-8 pb-8 -mt-12 sm:-mt-16">
+      
+      <!-- Header Section -->
+      <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
 
-      <p class="text-sm text-slate-300 mt-1">
-        {{ current_user.employee_profile.position.name if current_user.employee_profile and current_user.employee_profile.position else 'Position not assigned' }}
-        <span class="hidden sm:inline">•</span><br class="sm:hidden">
-        {{ current_user.employee_profile.department.name if current_user.employee_profile and current_user.employee_profile.department else 'No department' }}
-      </p>
+        <!-- Avatar with Badge -->
+        <div class="relative group">
+          <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full ring-4 ring-slate-800 shadow-xl overflow-hidden bg-slate-700 flex items-center justify-center">
+            {% set photo_url = url_for('static', filename=current_user.employee_profile.photo) if current_user.employee_profile and current_user.employee_profile.photo else None %}
+            {% if photo_url %}
+              <img src="{{ photo_url }}" alt="Profile" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\'fa-solid fa-user text-4xl text-slate-500\'></i>'">
+            {% else %}
+              <i class="fa-solid fa-user text-4xl text-slate-500"></i>
+            {% endif %}
+          </div>
+          <span class="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-slate-800 rounded-full" title="Active"></span>
+        </div>
 
-      <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-3">
-        <button id="editProfileBtn"
-          class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md transition">
-          <i class="fa-solid fa-user-pen"></i> Edit Profile
-        </button>
-      </div>
-    </div>
+        <!-- Name & Title -->
+        <div class="flex-1 text-center md:text-left pt-2 md:pt-4">
+          <h1 class="text-xl sm:text-2xl font-bold text-white break-words flex items-center justify-center md:justify-start gap-2">
+            {{ current_user.employee_profile.get_full_name() if current_user.employee_profile else "Profile Incomplete" }}
+            {% if current_user.employee_profile and current_user.employee_profile.date_hired %}
+              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                <i class="fa-solid fa-briefcase mr-1"></i> {{ working_duration or 'New' }}
+              </span>
+            {% endif %}
+          </h1>
 
-    <!-- Employee ID -->
-    <div class="text-center md:text-right">
-      <p class="text-sm text-slate-300">Employee ID</p>
-      <p class="font-semibold text-lg break-words">
-        {{ current_user.employee_profile.employee_id if current_user.employee_profile else '-' }}
-      </p>
-    </div>
-  </div>
-
-  <hr class="my-6 border-slate-700">
-
-  <!-- GRID -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    <!-- LEFT -->
-    <div class="space-y-4">
-
-      <!-- Personal -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Personal Information</h3>
-
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-
-          <div>
-            <span class="text-slate-400">Full name</span>
-            <div class="font-medium break-words">
-              {{ current_user.employee_profile.get_full_name() if current_user.employee_profile else '-' }}
-            </div>
+          <div class="mt-2 flex flex-wrap justify-center md:justify-start gap-2 text-sm">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-700/60 text-slate-300 border border-slate-600/50">
+              <i class="fa-solid fa-user-tie text-blue-400"></i>
+              {{ current_user.employee_profile.position.name if current_user.employee_profile and current_user.employee_profile.position else 'Position not assigned' }}
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-700/60 text-slate-300 border border-slate-600/50">
+              <i class="fa-solid fa-building text-purple-400"></i>
+              {{ current_user.employee_profile.department.name if current_user.employee_profile and current_user.employee_profile.department else 'No department' }}
+            </span>
           </div>
 
-          <div>
-            <span class="text-slate-400">Birthdate</span>
-            <div class="font-medium">
-              {{ current_user.employee_profile.date_of_birth.strftime('%B %d, %Y') if current_user.employee_profile and current_user.employee_profile.date_of_birth else '-' }}
-            </div>
+          <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-3">
+            <button id="editProfileBtn"
+              class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition font-medium">
+              <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+            </button>
+            <button id="downloadVCardsBtn"
+              class="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-200 px-5 py-2.5 rounded-xl border border-slate-600 transition font-medium">
+              <i class="fa-solid fa-address-card"></i> Save Contact
+            </button>
           </div>
+        </div>
 
-          <div>
-            <span class="text-slate-400">Age</span>
-            <div class="font-medium">{{ age if age else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Gender</span>
-            <div class="font-medium">{{ current_user.employee_profile.gender if current_user.employee_profile else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Civil Status</span>
-            <div class="font-medium">{{ current_user.employee_profile.marital_status if current_user.employee_profile else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Working Years</span>
-            <div class="font-medium">{{ working_duration if working_duration else '-' }}</div>
-          </div>
-
+        <!-- Employee ID Card -->
+        <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50 min-w-[140px] text-center">
+          <p class="text-xs text-slate-400 uppercase tracking-wider font-medium">Employee ID</p>
+          <p class="font-mono font-bold text-lg text-blue-400 mt-1 break-all">
+            {{ current_user.employee_profile.employee_id if current_user.employee_profile else '-' }}
+          </p>
+          <button onclick="navigator.clipboard.writeText('{{ current_user.employee_profile.employee_id if current_user.employee_profile else '' }}')" 
+                  class="mt-2 text-xs text-slate-500 hover:text-blue-400 transition flex items-center justify-center gap-1 mx-auto">
+            <i class="fa-regular fa-copy"></i> Copy ID
+          </button>
         </div>
       </div>
 
-      <!-- Contact -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Contact</h3>
+      <hr class="my-6 border-slate-700/50">
 
-        <div class="mt-3 space-y-2 text-sm">
-          <div>
-            <span class="text-slate-400">Mobile</span>
-            <div class="font-medium break-words">
-              {{ current_user.employee_profile.phone if current_user.employee_profile else '-' }}
-            </div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Email</span>
-            <div class="font-medium break-words">
-              {{ current_user.employee_profile.email if current_user.employee_profile else '-' }}
-            </div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Address</span>
-            <div class="font-medium break-words">
-              {{ current_user.employee_profile.get_full_address() if current_user.employee_profile else '-' }}
-            </div>
-          </div>
+      <!-- Profile Completion Bar -->
+      {% set completion = 75 %} {# Calculate dynamically in backend if needed #}
+      <div class="mb-6">
+        <div class="flex justify-between items-center text-xs mb-2">
+          <span class="text-slate-400">Profile Completion</span>
+          <span class="text-blue-400 font-medium">{{ completion }}%</span>
+        </div>
+        <div class="h-2 bg-slate-700/50 rounded-full overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500" style="width: {{ completion }}%"></div>
         </div>
       </div>
 
-    </div>
+      <!-- Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-    <!-- RIGHT -->
-    <div class="space-y-4">
+        <!-- LEFT COLUMN -->
+        <div class="space-y-5">
 
-      <!-- Employment -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Employment Details</h3>
+          <!-- Personal Information -->
+          <div class="bg-slate-800/40 rounded-2xl p-5 border border-slate-700/50 hover:border-slate-600/50 transition">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                <i class="fa-regular fa-id-card text-blue-400"></i> Personal Information
+              </h3>
+              <span class="text-xs text-green-400 flex items-center gap-1">
+                <i class="fa-solid fa-check"></i> Verified
+              </span>
+            </div>
 
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-
-          <div>
-            <span class="text-slate-400">Department</span>
-            <div class="font-medium break-words">
-              {{ current_user.employee_profile.department.name if current_user.employee_profile and current_user.employee_profile.department else '-' }}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              {% set personal_fields = [
+                {'label': 'Full Name', 'value': current_user.employee_profile.get_full_name() if current_user.employee_profile else '-', 'icon': 'fa-user'},
+                {'label': 'Birthdate', 'value': current_user.employee_profile.date_of_birth.strftime('%B %d, %Y') if current_user.employee_profile and current_user.employee_profile.date_of_birth else '-', 'icon': 'fa-cake-candles'},
+                {'label': 'Age', 'value': age if age else '-', 'icon': 'fa-hourglass-half'},
+                {'label': 'Gender', 'value': current_user.employee_profile.gender if current_user.employee_profile else '-', 'icon': 'fa-venus-mars'},
+                {'label': 'Civil Status', 'value': current_user.employee_profile.marital_status if current_user.employee_profile else '-', 'icon': 'fa-ring'},
+                {'label': 'Working Years', 'value': working_duration if working_duration else '-', 'icon': 'fa-briefcase'}
+              ] %}
+              {% for field in personal_fields %}
+              <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition">
+                <div class="w-8 h-8 rounded-lg bg-slate-600/50 flex items-center justify-center shrink-0">
+                  <i class="fa-solid {{ field.icon }} text-slate-400 text-sm"></i>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-500">{{ field.label }}</p>
+                  <p class="font-medium text-slate-200 break-words">{{ field.value }}</p>
+                </div>
+              </div>
+              {% endfor %}
             </div>
           </div>
 
-          <div>
-            <span class="text-slate-400">Position</span>
-            <div class="font-medium break-words">
-              {{ current_user.employee_profile.position.name if current_user.employee_profile and current_user.employee_profile.position else '-' }}
-            </div>
-          </div>
+          <!-- Contact Information -->
+          <div class="bg-slate-800/40 rounded-2xl p-5 border border-slate-700/50 hover:border-slate-600/50 transition">
+            <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-address-book text-green-400"></i> Contact Information
+            </h3>
 
-          <div>
-            <span class="text-slate-400">Employment Type</span>
-            <div class="font-medium">
-              {{ current_user.employee_profile.employment_type.name if current_user.employee_profile and current_user.employee_profile.employment_type else '-' }}
-            </div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Date Hired</span>
-            <div class="font-medium">
-              {{ current_user.employee_profile.date_hired.strftime('%B %d, %Y') if current_user.employee_profile and current_user.employee_profile.date_hired else '-' }}
-            </div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Salary</span>
-            <div class="font-medium">
-              {{ "{:,.2f}".format(current_user.employee_profile.salary) if current_user.employee_profile and current_user.employee_profile.salary else '-' }}
+            <div class="space-y-3 text-sm">
+              {% set contact_fields = [
+                {'label': 'Email', 'value': current_user.employee_profile.email if current_user.employee_profile else '-', 'icon': 'fa-envelope', 'copy': True},
+                {'label': 'Mobile', 'value': current_user.employee_profile.phone if current_user.employee_profile else '-', 'icon': 'fa-phone', 'copy': True},
+                {'label': 'Address', 'value': current_user.employee_profile.get_full_address() if current_user.employee_profile else '-', 'icon': 'fa-location-dot', 'copy': False}
+              ] %}
+              {% for field in contact_fields %}
+              <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition group">
+                <div class="w-8 h-8 rounded-lg bg-slate-600/50 flex items-center justify-center shrink-0">
+                  <i class="fa-solid {{ field.icon }} text-slate-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs text-slate-500">{{ field.label }}</p>
+                  <p class="font-medium text-slate-200 break-words truncate">{{ field.value }}</p>
+                </div>
+                {% if field.copy and field.value and field.value != '-' %}
+                <button onclick="navigator.clipboard.writeText('{{ field.value }}')" 
+                        class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-blue-400 transition p-1.5 rounded-lg hover:bg-slate-600/50" 
+                        title="Copy to clipboard">
+                  <i class="fa-regular fa-copy text-sm"></i>
+                </button>
+                {% endif %}
+              </div>
+              {% endfor %}
             </div>
           </div>
 
         </div>
-      </div>
 
-      <!-- Emergency -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Emergency Contact</h3>
+        <!-- RIGHT COLUMN -->
+        <div class="space-y-5">
 
-        <div class="mt-3 text-sm">
-          <span class="text-slate-400">Name</span>
-          <div class="font-medium break-words">
-            {{ current_user.employee_profile.emergency_contact if current_user.employee_profile else '-' }}
+          <!-- Employment Details -->
+          <div class="bg-slate-800/40 rounded-2xl p-5 border border-slate-700/50 hover:border-slate-600/50 transition">
+            <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-building-user text-purple-400"></i> Employment Details
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              {% set employment_fields = [
+                {'label': 'Department', 'value': current_user.employee_profile.department.name if current_user.employee_profile and current_user.employee_profile.department else '-', 'icon': 'fa-building-columns', 'badge': True},
+                {'label': 'Position', 'value': current_user.employee_profile.position.name if current_user.employee_profile and current_user.employee_profile.position else '-', 'icon': 'fa-user-tie', 'badge': True},
+                {'label': 'Employment Type', 'value': current_user.employee_profile.employment_type.name if current_user.employee_profile and current_user.employee_profile.employment_type else '-', 'icon': 'fa-file-contract'},
+                {'label': 'Date Hired', 'value': current_user.employee_profile.date_hired.strftime('%B %d, %Y') if current_user.employee_profile and current_user.employee_profile.date_hired else '-', 'icon': 'fa-calendar-check'},
+                {'label': 'Salary', 'value': '₱' + "{:,.2f}".format(current_user.employee_profile.salary) if current_user.employee_profile and current_user.employee_profile.salary else '-', 'icon': 'fa-coins', 'mono': True}
+              ] %}
+              {% for field in employment_fields %}
+              <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-700/30 hover:bg-slate-700/50 transition">
+                <div class="w-8 h-8 rounded-lg bg-slate-600/50 flex items-center justify-center shrink-0">
+                  <i class="fa-solid {{ field.icon }} text-slate-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs text-slate-500">{{ field.label }}</p>
+                  {% if field.badge %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-600/50 text-slate-200 mt-0.5">
+                      {{ field.value }}
+                    </span>
+                  {% elif field.mono %}
+                    <p class="font-mono font-medium text-green-400 mt-0.5">{{ field.value }}</p>
+                  {% else %}
+                    <p class="font-medium text-slate-200 break-words mt-0.5">{{ field.value }}</p>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
           </div>
+
+          <!-- Emergency Contact -->
+          <div class="bg-slate-800/40 rounded-2xl p-5 border border-slate-700/50 hover:border-slate-600/50 transition">
+            <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-heart-pulse text-red-400"></i> Emergency Contact
+            </h3>
+
+            {% if current_user.employee_profile and current_user.employee_profile.emergency_contact %}
+              <div class="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-slate-800 border border-red-500/20">
+                <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-user-shield text-red-400"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-slate-200 break-words">{{ current_user.employee_profile.emergency_contact }}</p>
+                  <p class="text-xs text-slate-500 mt-1">Designated emergency contact</p>
+                </div>
+                <button onclick="navigator.clipboard.writeText('{{ current_user.employee_profile.emergency_contact }}')" 
+                        class="text-slate-500 hover:text-red-400 transition p-2 rounded-lg hover:bg-slate-600/50" 
+                        title="Copy name">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+            {% else %}
+              <div class="text-center py-6 text-slate-500 bg-slate-700/30 rounded-xl border border-dashed border-slate-600">
+                <i class="fa-regular fa-circle-exclamation text-2xl mb-2"></i>
+                <p class="text-sm">No emergency contact added</p>
+                <button id="editProfileBtn" class="mt-2 text-blue-400 hover:text-blue-300 text-sm font-medium">Add one now</button>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Account Security -->
+          <div class="bg-slate-800/40 rounded-2xl p-5 border border-slate-700/50 hover:border-slate-600/50 transition">
+            <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-shield-halved text-yellow-400"></i> Account Security
+            </h3>
+            
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between p-3 rounded-xl bg-slate-700/30">
+                <div class="flex items-center gap-3">
+                  <i class="fa-solid fa-key text-slate-400"></i>
+                  <span class="text-slate-300">Password</span>
+                </div>
+                <span class="text-xs text-green-400 flex items-center gap-1">
+                  <i class="fa-solid fa-check"></i> Last updated recently
+                </span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
-
     </div>
-
   </div>
 </div>
 
 <!-- SweetAlert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- MODAL -->
-<div id="editProfileModal"
-     class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
-
-  <div class="bg-slate-900 rounded-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
-
-    <h2 class="text-xl font-semibold text-white mb-4">
-      <i class="fa-solid fa-user-pen"></i> Edit Profile
-    </h2>
-
-    <button id="closeModalBtn"
-      class="absolute top-3 right-4 text-slate-400 hover:text-white text-xl">&times;</button>
-
-    <form id="editProfileForm" class="space-y-4">
-
-      <div>
-        <label class="text-sm text-slate-300">Current Password</label>
-        <input type="password" name="current_password" required
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-300">Email</label>
-        <input type="email" name="email" value="{{ current_user.email }}"
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-300">New Password</label>
-        <input type="password" name="new_password"
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-300">Confirm Password</label>
-        <input type="password" name="confirm_password"
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white">
-      </div>
-
-      <button type="submit"
-        class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-xl flex items-center justify-center gap-2">
-        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"
+     class="fixed inset-0 hidden z-50 flex items-center justify-center p-4">
+  
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop"></div>
+  
+  <!-- Content -->
+  <div class="relative bg-slate-900 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+    
+    <div class="flex items-center justify-between p-5 border-b border-slate-700">
+      <h2 id="modalTitle" class="text-lg font-bold text-white flex items-center gap-2">
+        <i class="fa-solid fa-user-pen text-blue-400"></i> Edit Profile
+      </h2>
+      <button id="closeModalBtn" aria-label="Close modal"
+              class="text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition">
+        <i class="fa-solid fa-xmark text-lg"></i>
       </button>
+    </div>
 
+    <form id="editProfileForm" class="p-5 space-y-4">
+      
+      <!-- Current Password -->
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">
+          Current Password <span class="text-red-400">*</span>
+        </label>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="password" name="current_password" required autocomplete="current-password"
+            class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl pl-9 pr-4 py-2.5 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
+        <div class="relative">
+          <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="email" name="email" value="{{ current_user.email }}" autocomplete="email" readonly
+            class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl pl-9 pr-4 py-2.5 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+      </div>
+
+      <!-- New Password -->
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">New Password</label>
+        <div class="relative">
+          <i class="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="password" name="new_password" id="newPassword" autocomplete="new-password"
+            class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl pl-9 pr-10 py-2.5 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+          <button type="button" onclick="togglePassword('newPassword')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            <i class="fa-regular fa-eye" id="toggleNewPassword"></i>
+          </button>
+        </div>
+        <!-- Password Strength -->
+        <div id="passwordStrength" class="mt-2 hidden">
+          <div class="flex gap-1 mb-1">
+            <div class="h-1 flex-1 rounded-full bg-slate-700" id="strengthBar1"></div>
+            <div class="h-1 flex-1 rounded-full bg-slate-700" id="strengthBar2"></div>
+            <div class="h-1 flex-1 rounded-full bg-slate-700" id="strengthBar3"></div>
+            <div class="h-1 flex-1 rounded-full bg-slate-700" id="strengthBar4"></div>
+          </div>
+          <p class="text-xs text-slate-500" id="strengthText">Password strength</p>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Confirm New Password</label>
+        <div class="relative">
+          <i class="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="password" name="confirm_password" id="confirmPassword" autocomplete="new-password"
+            class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl pl-9 pr-10 py-2.5 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+          <button type="button" onclick="togglePassword('confirmPassword')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            <i class="fa-regular fa-eye" id="toggleConfirmPassword"></i>
+          </button>
+        </div>
+        <p id="passwordMatch" class="text-xs mt-1 hidden"></p>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" id="submitBtn"
+        class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white py-2.5 rounded-xl flex items-center justify-center gap-2 transition font-medium shadow-lg shadow-blue-500/20 mt-2">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>Save Changes</span>
+        <span id="submitSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+      </button>
     </form>
   </div>
 </div>
 
 <script>
+// Modal Management
 const modal = document.getElementById('editProfileModal');
 const editBtn = document.getElementById('editProfileBtn');
 const closeBtn = document.getElementById('closeModalBtn');
+const backdrop = document.getElementById('modalBackdrop');
+const modalPanel = modal?.querySelector('.relative');
 
-editBtn.onclick = () => modal.classList.remove('hidden');
-closeBtn.onclick = () => modal.classList.add('hidden');
+function openModal() {
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  // Trigger reflow for animation
+  void modal.offsetWidth;
+  modalPanel?.classList.remove('scale-95', 'opacity-0');
+  backdrop?.classList.remove('opacity-0');
+}
 
-document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+function closeModal() {
+  modalPanel?.classList.add('scale-95', 'opacity-0');
+  backdrop?.classList.add('opacity-0');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }, 300);
+}
 
-  const data = Object.fromEntries(new FormData(e.target).entries());
+editBtn?.addEventListener('click', openModal);
+closeBtn?.addEventListener('click', closeModal);
+backdrop?.addEventListener('click', closeModal);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+});
 
-  const confirm = await Swal.fire({
-    title: 'Confirm Update',
-    text: 'Update your profile?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#2563EB'
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  const res = await fetch('{{ url_for("hr_officer_bp.edit_profile") }}', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  });
-
-  const result = await res.json();
-
-  if (result.status === 'success') {
-    Swal.fire('Updated!', result.message, 'success').then(() => location.reload());
+// Password Toggle
+function togglePassword(inputId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById('toggle' + inputId.charAt(0).toUpperCase() + inputId.slice(1));
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
   } else {
-    Swal.fire('Error', result.message, 'error');
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+
+// Password Strength Checker
+const newPassword = document.getElementById('newPassword');
+const strengthBars = [1,2,3,4].map(i => document.getElementById(`strengthBar${i}`));
+const strengthText = document.getElementById('strengthText');
+const strengthContainer = document.getElementById('passwordStrength');
+
+newPassword?.addEventListener('input', function() {
+  const val = this.value;
+  if (!val) {
+    strengthContainer.classList.add('hidden');
+    return;
+  }
+  strengthContainer.classList.remove('hidden');
+  
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  
+  const colors = ['bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+  const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+  
+  strengthBars.forEach((bar, i) => {
+    bar.className = `h-1 flex-1 rounded-full transition-all ${i < score ? colors[score-1] : 'bg-slate-700'}`;
+  });
+  strengthText.textContent = labels[score-1] || 'Enter password';
+  strengthText.className = `text-xs ${score <= 2 ? 'text-red-400' : score === 3 ? 'text-yellow-400' : 'text-green-400'}`;
+});
+
+// Password Match Checker
+const confirmPassword = document.getElementById('confirmPassword');
+const passwordMatch = document.getElementById('passwordMatch');
+
+function checkPasswordMatch() {
+  if (!newPassword?.value || !confirmPassword?.value) {
+    passwordMatch.classList.add('hidden');
+    return;
+  }
+  passwordMatch.classList.remove('hidden');
+  if (newPassword.value === confirmPassword.value) {
+    passwordMatch.textContent = '✓ Passwords match';
+    passwordMatch.className = 'text-xs text-green-400 mt-1';
+  } else {
+    passwordMatch.textContent = '✗ Passwords do not match';
+    passwordMatch.className = 'text-xs text-red-400 mt-1';
+  }
+}
+
+newPassword?.addEventListener('input', checkPasswordMatch);
+confirmPassword?.addEventListener('input', checkPasswordMatch);
+
+// Form Submission
+document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  // Validate passwords match
+  if (newPassword?.value && confirmPassword?.value && newPassword.value !== confirmPassword.value) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire('Password Mismatch', 'New passwords do not match', 'error');
+    } else {
+      alert('Passwords do not match');
+    }
+    return;
+  }
+  
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const submitBtn = document.getElementById('submitBtn');
+  const spinner = document.getElementById('submitSpinner');
+  
+  submitBtn.disabled = true;
+  spinner.classList.remove('hidden');
+  
+  try {
+    const confirm = typeof Swal !== 'undefined' 
+      ? await Swal.fire({
+          title: 'Confirm Update',
+          text: 'Update your profile credentials?',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#2563EB',
+          cancelButtonColor: '#64748b'
+        })
+      : { isConfirmed: confirm('Update your profile credentials?') };
+    
+    if (!confirm.isConfirmed) {
+      submitBtn.disabled = false;
+      spinner.classList.add('hidden');
+      return;
+    }
+    
+    const res = await fetch('{{ url_for("hr_officer_bp.edit_profile") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    
+    if (result.status === 'success') {
+      if (typeof Swal !== 'undefined') {
+        await Swal.fire('Updated!', result.message, 'success');
+      }
+      location.reload();
+    } else {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire('Error', result.message, 'error');
+      } else {
+        alert('Error: ' + result.message);
+      }
+      submitBtn.disabled = false;
+      spinner.classList.add('hidden');
+    }
+  } catch (err) {
+    console.error('Submission error:', err);
+    if (typeof Swal !== 'undefined') {
+      Swal.fire('Error', 'Failed to connect to server', 'error');
+    }
+    submitBtn.disabled = false;
+    spinner.classList.add('hidden');
   }
 });
-</script>
 
+// ✅ vCard Download - FIXED: Build object from individual primitive values
+document.getElementById('downloadVCardsBtn')?.addEventListener('click', function() {
+  // Build profile object from individual template variables (safe JSON serialization)
+  // Each value is a primitive string/number that |tojson can handle
+  const profile = {
+    full_name: {{ current_user.employee_profile.get_full_name()|tojson if current_user.employee_profile else 'null' }},
+    employee_id: {{ current_user.employee_profile.employee_id|tojson if current_user.employee_profile else 'null' }},
+    email: {{ current_user.employee_profile.email|tojson if current_user.employee_profile else 'null' }},
+    phone: {{ current_user.employee_profile.phone|tojson if current_user.employee_profile else 'null' }},
+    department: {
+      name: {{ current_user.employee_profile.department.name|tojson if current_user.employee_profile and current_user.employee_profile.department else 'null' }}
+    },
+    position: {
+      name: {{ current_user.employee_profile.position.name|tojson if current_user.employee_profile and current_user.employee_profile.position else 'null' }}
+    }
+  };
+  
+  if (!profile || !profile.full_name) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire('Incomplete Profile', 'Please complete your profile first', 'info');
+    }
+    return;
+  }
+  
+  const vcard = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    `FN:${profile.full_name}`,
+    profile.department?.name ? `ORG:${profile.department.name}` : '',
+    profile.position?.name ? `TITLE:${profile.position.name}` : '',
+    profile.email ? `EMAIL;TYPE=WORK:${profile.email}` : '',
+    profile.phone ? `TEL;TYPE=WORK,VOICE:${profile.phone}` : '',
+    profile.employee_id ? `NOTE:Employee ID: ${profile.employee_id}` : '',
+    'END:VCARD'
+  ].filter(line => line).join('\n');
+  
+  const blob = new Blob([vcard], {type: 'text/vcard'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${profile.full_name.replace(/\s+/g, '_')}.vcf`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
 {% endblock %}

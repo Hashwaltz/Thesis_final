@@ -1,4 +1,4 @@
-from flask import render_template, request
+from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from datetime import date, timedelta, datetime, time
 import calendar
@@ -55,7 +55,7 @@ def apply_late_deduction_to_credits(employee_id, year, month, late_deduction_amo
     
     # 🔹 STEP 1: Deduct from Vacation Leave first
     if vl_credit and remaining_deduction > 0:
-        vl_remaining = vl_credit.total_credits - vl_credit.used_credits
+        vl_remaining = max(0, vl_credit.total_credits - vl_credit.used_credits)
         vl_to_deduct = min(remaining_deduction, vl_remaining)
         
         if vl_to_deduct > 0:
@@ -65,7 +65,7 @@ def apply_late_deduction_to_credits(employee_id, year, month, late_deduction_amo
     
     # 🔹 STEP 2: If deduction remains, use Sick Leave
     if sl_credit and remaining_deduction > 0:
-        sl_remaining = sl_credit.total_credits - sl_credit.used_credits
+        sl_remaining = max(0, sl_credit.total_credits - sl_credit.used_credits)
         sl_to_deduct = min(remaining_deduction, sl_remaining)
         
         if sl_to_deduct > 0:
@@ -82,6 +82,47 @@ def apply_late_deduction_to_credits(employee_id, year, month, late_deduction_amo
         "sl_deducted": round(sl_deducted, 3),
         "unapplied": round(remaining_deduction, 3)
     }
+
+
+# =========================================================
+# 🆕 HELPER: CHECK IF LATE DEDUCTION WAS ALREADY APPLIED
+# =========================================================
+def is_late_deduction_applied(employee_id, year, month):
+    """
+    Checks if late deduction was already applied for this month.
+    Uses LeaveCreditHistory to detect if used_credits exceed approved leave usage.
+    """
+    month_label = f"{datetime(year, month, 1).strftime('%B')} {year}"
+    vl_type = LeaveType.query.filter_by(name="Vacation Leave").first()
+    sl_type = LeaveType.query.filter_by(name="Sick Leave").first()
+    
+    if not vl_type or not sl_type:
+        return False
+    
+    # Get history records
+    vl_history = LeaveCreditHistory.query.filter_by(
+        employee_id=employee_id,
+        leave_type_id=vl_type.id,
+        month=month_label
+    ).first()
+    sl_history = LeaveCreditHistory.query.filter_by(
+        employee_id=employee_id,
+        leave_type_id=sl_type.id,
+        month=month_label
+    ).first()
+    
+    # Get approved leave usage for this month
+    leave_usage = get_monthly_leave_usage(employee_id, year, month)
+    vl_used_in_leaves = sum(u['days_used'] for u in leave_usage if u['leave_type'] == 'Vacation Leave')
+    sl_used_in_leaves = sum(u['days_used'] for u in leave_usage if u['leave_type'] == 'Sick Leave')
+    
+    # If used_credits in history > leave usage, deduction was likely applied
+    if vl_history and vl_history.used > vl_used_in_leaves:
+        return True
+    if sl_history and sl_history.used > sl_used_in_leaves:
+        return True
+    
+    return False
 
 
 # =========================================================
@@ -298,6 +339,11 @@ def get_monthly_late_summary(employee_id, year, month):
       - late_records: List of daily late entries (for display: minutes + seconds)
       - monthly_deduction: Single deduction value calculated from TOTAL late time 
         using late_per_minutes_late_into_leave_credits dictionary
+        
+    Computation Example (88 minutes):
+      - hours = 88 // 60 = 1 → 1 * 0.125 = 0.125
+      - remaining = 88 % 60 = 28 → lookup[28] = 0.058
+      - total = 0.125 + 0.058 = 0.183 credits
     """
     month_start = date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
@@ -344,7 +390,7 @@ def get_monthly_late_summary(employee_id, year, month):
     else:
         full_hours = total_late_minutes // 60
         remaining_mins = total_late_minutes % 60
-        hourly_deduction = full_hours * late_per_minutes_late_into_leave_credits[60]
+        hourly_deduction = full_hours * late_per_minutes_late_into_leave_credits[60]  # 60 mins = 1 hour = 0.125
         minute_deduction = late_per_minutes_late_into_leave_credits.get(remaining_mins, 0) if remaining_mins > 0 else 0
         monthly_deduction = round(hourly_deduction + minute_deduction, 3)
     
@@ -408,6 +454,74 @@ def calculate_net_credits_after_deduction(employee_id, earned_credit, late_deduc
 
 
 # =========================================================
+# 🆕 ROUTE: MANUALLY APPLY LATE DEDUCTION FOR A MONTH
+# =========================================================
+@leave_officer_bp.route("/history/<int:employee_id>/<int:year>/<int:month>/apply-late-deduction", methods=["POST"])
+@login_required
+@leave_officer_required
+def apply_monthly_late_deduction(employee_id, year, month):
+    """
+    Manually apply late deduction for a specific month.
+    Uses VL-first, then SL fallback logic.
+    Computation: hours * 0.125 + remaining_minutes lookup
+    """
+    employee = Employee.query.get_or_404(employee_id)
+    month_label = f"{datetime(year, month, 1).strftime('%B')} {year}"
+    
+    # 🔹 Recalculate late deduction using dictionary logic
+    late_records, monthly_late_deduction = get_monthly_late_summary(employee.id, year, month)
+    
+    if monthly_late_deduction <= 0:
+        flash("ℹ️ No late deduction to apply for this month.", "info")
+        return redirect(url_for("leave_officer.view_leave_history", employee_id=employee_id))
+    
+    # 🔹 Check if already applied (prevent double-deduction)
+    if is_late_deduction_applied(employee_id, year, month):
+        flash(f"⚠️ Late deduction for {month_label} was already applied.", "warning")
+        return redirect(url_for("leave_officer.view_leave_history", employee_id=employee_id))
+    
+    # 🔹 Apply deduction using VL-first logic
+    deduction_breakdown = apply_late_deduction_to_credits(
+        employee.id, year, month, monthly_late_deduction
+    )
+    
+    # 🔹 Update LeaveCreditHistory to reflect the deduction
+    vl_type = LeaveType.query.filter_by(name="Vacation Leave").first()
+    sl_type = LeaveType.query.filter_by(name="Sick Leave").first()
+    
+    if vl_type and deduction_breakdown['vl_deducted'] > 0:
+        vl_history = LeaveCreditHistory.query.filter_by(
+            employee_id=employee_id,
+            leave_type_id=vl_type.id,
+            month=month_label
+        ).first()
+        if vl_history:
+            vl_history.used += deduction_breakdown['vl_deducted']
+    
+    if sl_type and deduction_breakdown['sl_deducted'] > 0:
+        sl_history = LeaveCreditHistory.query.filter_by(
+            employee_id=employee_id,
+            leave_type_id=sl_type.id,
+            month=month_label
+        ).first()
+        if sl_history:
+            sl_history.used += deduction_breakdown['sl_deducted']
+    
+    db.session.commit()
+    
+    # 🔹 Build flash message
+    unapplied_msg = f", Unapplied: {deduction_breakdown['unapplied']}" if deduction_breakdown['unapplied'] > 0 else ""
+    flash(
+        f"✅ Late deduction of {monthly_late_deduction} credits applied for {month_label}.<br>"
+        f"📋 Breakdown: VL: -{deduction_breakdown['vl_deducted']}, "
+        f"SL: -{deduction_breakdown['sl_deducted']}{unapplied_msg}",
+        "success"
+    )
+    
+    return redirect(url_for("leave_officer.view_leave_history", employee_id=employee_id))
+
+
+# =========================================================
 # LEAVE CREDIT HISTORY VIEW (MAIN ROUTE)
 # =========================================================
 @leave_officer_bp.route("/history/<int:employee_id>")
@@ -416,7 +530,7 @@ def calculate_net_credits_after_deduction(employee_id, earned_credit, late_deduc
 def view_leave_history(employee_id):
     employee = Employee.query.get_or_404(employee_id)
     
-    # Generate/update leave history in database (includes late deductions)
+    # Generate/update leave history in database (does NOT auto-apply late deductions anymore)
     generate_leave_history(employee)
 
     leave_types = LeaveType.query.filter(
@@ -437,23 +551,34 @@ def view_leave_history(employee_id):
         worked_days, total_days = count_eligible_work_days(employee, year, month)
         earned_credit = CREDITS_TABLE.get(worked_days, 0)
 
-        # 🆕 Get late records + deduction amount
+        # 🆕 Get late records + deduction amount (for display & manual application)
         late_records, monthly_late_deduction = get_monthly_late_summary(employee.id, year, month)
         leave_usage = get_monthly_leave_usage(employee.id, year, month)
 
-        # 🎯 APPLY LATE DEDUCTION TO DATABASE (VL-first, then SL)
-        deduction_breakdown = {}
-        if monthly_late_deduction > 0:
-            deduction_breakdown = apply_late_deduction_to_credits(
-                employee.id, year, month, monthly_late_deduction
+        # 🎯 CHECK IF DEDUCTION WAS ALREADY APPLIED
+        deduction_already_applied = is_late_deduction_applied(employee.id, year, month)
+        
+        # 🎯 CALCULATE NET CREDITS FOR DISPLAY (VL-first logic) - only if not yet applied
+        if deduction_already_applied:
+            # If already applied, fetch actual values from history
+            net_credits = {
+                "vl_net": earned_credit,
+                "sl_net": earned_credit,
+                "vl_deducted": 0,
+                "sl_deducted": 0,
+                "unapplied_deduction": 0
+            }
+            deduction_breakdown = {"from_vl": 0, "from_sl": 0, "unapplied": 0}
+        else:
+            # Show what WOULD be deducted if applied now
+            net_credits = calculate_net_credits_after_deduction(
+                employee.id, earned_credit, monthly_late_deduction
             )
-            # Refresh employee data after commit
-            db.session.refresh(employee)
-
-        # 🎯 CALCULATE NET CREDITS FOR DISPLAY (VL-first logic)
-        net_credits = calculate_net_credits_after_deduction(
-            employee.id, earned_credit, monthly_late_deduction
-        )
+            deduction_breakdown = {
+                "from_vl": net_credits["vl_deducted"],
+                "from_sl": net_credits["sl_deducted"],
+                "unapplied": net_credits["unapplied_deduction"]
+            }
 
         month_record = {
             "month": current.strftime("%B %Y"),
@@ -463,14 +588,12 @@ def view_leave_history(employee_id):
             "total_days": total_days,
             "earned_credit": earned_credit,
             "late_deduction": monthly_late_deduction,
+            "late_deduction_pending": monthly_late_deduction > 0 and not deduction_already_applied,
+            "late_deduction_applied": deduction_already_applied,
             # 🆕 Net credits after VL-first deduction
             "vl_net_credit": net_credits["vl_net"],
             "sl_net_credit": net_credits["sl_net"],
-            "deduction_breakdown": {
-                "from_vl": net_credits["vl_deducted"],
-                "from_sl": net_credits["sl_deducted"],
-                "unapplied": net_credits["unapplied_deduction"]
-            },
+            "deduction_breakdown": deduction_breakdown,
             "leave_usage": leave_usage,
             "late_deductions": late_records,
             "leave_data": []
@@ -484,7 +607,7 @@ def view_leave_history(employee_id):
             )
 
             if history:
-                # Calculate remaining based on stored history (already has deductions applied)
+                # Calculate remaining based on stored history
                 remaining = round(max(0, history.earned - history.used), 3)
                 
                 month_record["leave_data"].append({

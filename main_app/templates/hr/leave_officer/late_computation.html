@@ -4,16 +4,37 @@
 {% block content %}
 <main class="p-4 md:p-6 bg-[#0f172a] min-h-screen text-gray-100 space-y-6">
 
+  <!-- ================= HEADER ================= -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+        <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
+        Late & Undertime Computation
+      </h1>
+      <p class="text-gray-400 text-sm mt-1.5">Track employee tardiness and undertime deductions by month.</p>
+    </div>
+    
+    <div class="flex items-center gap-3 bg-[#1e293b]/60 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-gray-700/50">
+      <i class="fa-regular fa-calendar text-blue-400/80"></i>
+      <div class="text-right">
+        <p class="text-xs text-gray-500 uppercase tracking-wider">Current View</p>
+        <p class="text-sm font-medium text-gray-200">
+          {{ month_names[month-1] }} {{ year }}
+        </p>
+      </div>
+    </div>
+  </header>
+
   <!-- ================= FILTERS ================= -->
-  <div class="bg-[#1e293b] p-4 rounded-2xl shadow border border-gray-700 flex flex-wrap items-end gap-4">
-    <form method="get" class="flex flex-wrap items-end gap-4 w-full">
+  <div class="bg-[#1e293b] p-4 rounded-2xl shadow border border-gray-700">
+    <form method="get" class="flex flex-wrap items-end gap-4">
 
       <!-- Month -->
-      <div class="flex flex-col">
-        <label class="text-sm text-gray-400 flex items-center gap-1">
+      <div class="flex flex-col min-w-[140px]">
+        <label class="text-sm text-gray-400 flex items-center gap-1 mb-1">
           <i class="fa-solid fa-calendar-days text-gray-300"></i> Month
         </label>
-        <select name="month" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200">
+        <select name="month" class="px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
           {% for mname in month_names %}
             <option value="{{ loop.index }}" {% if loop.index == month %}selected{% endif %}>{{ mname }}</option>
           {% endfor %}
@@ -21,131 +42,268 @@
       </div>
 
       <!-- Year -->
-      <div class="flex flex-col">
-        <label class="text-sm text-gray-400 flex items-center gap-1">
+      <div class="flex flex-col min-w-[100px]">
+        <label class="text-sm text-gray-400 flex items-center gap-1 mb-1">
           <i class="fa-solid fa-calendar-alt text-gray-300"></i> Year
         </label>
-        <select name="year" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200">
+        <select name="year" class="px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
           {% for y in range(2020, 2031) %}
             <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <!-- Employee -->
-      <!-- Employee Search + Dropdown -->
-<div class="flex flex-col min-w-[200px]">
-  <label class="text-sm text-gray-400 flex items-center gap-1">
-    <i class="fa-solid fa-magnifying-glass text-gray-300"></i> Search Employee
-  </label>
-  <div class="flex gap-2 mt-1">
-    <input 
-      type="text" 
-      name="employee_search" 
-      value="{{ employee_search or '' }}"
-      placeholder="Type name to filter..." 
-      class="px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none flex-1"
-    >
-    <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1" title="Search">
-      <i class="fa-solid fa-search"></i>
-    </button>
-    {% if employee_search %}
-      <a href="{{ url_for(request.endpoint, month=month, year=year) }}" 
-         class="bg-gray-600 px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-1" title="Clear search">
-        <i class="fa-solid fa-xmark"></i>
-      </a>
-    {% endif %}
-  </div>
-</div>
+      <!-- Employee Search -->
+      <div class="flex flex-col min-w-[200px] flex-1">
+        <label class="text-sm text-gray-400 flex items-center gap-1 mb-1">
+          <i class="fa-solid fa-magnifying-glass text-gray-300"></i> Search Employee
+        </label>
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            name="employee_search" 
+            value="{{ employee_search or '' }}"
+            placeholder="Type name to filter..." 
+            class="px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 flex-1 transition"
+            autocomplete="off"
+          >
+          <button type="submit" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1 transition" title="Search">
+            <i class="fa-solid fa-search"></i>
+          </button>
+          {% if employee_search %}
+            <a href="{{ url_for(request.endpoint, month=month, year=year) }}" 
+               class="bg-gray-600 px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center gap-1 transition" title="Clear search">
+              <i class="fa-solid fa-xmark"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
 
-    <!-- Employee Dropdown (filtered by search) -->
-    <div class="flex flex-col min-w-[250px]">
-      <label class="text-sm text-gray-400 flex items-center gap-1">
-        <i class="fa-solid fa-user text-gray-300"></i> Select Employee
-      </label>
-      <select name="employee_id" class="mt-1 px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none">
-        <option value="">-- Select Employee --</option>
-        {% for emp in employees %}
-          <option value="{{ emp.id }}" {% if emp.id == selected_employee_id %}selected{% endif %}>
-            {{ emp.get_full_name() }} ({{ emp.employment_type.name if emp.employment_type else '-' }})
-          </option>
-        {% else %}
-          <option disabled>No employees found{% if employee_search %} for "{{ employee_search }}"{% endif %}</option>
-        {% endfor %}
-      </select>
-    </div>
+      <!-- Employee Dropdown -->
+      <div class="flex flex-col min-w-[250px]">
+        <label class="text-sm text-gray-400 flex items-center gap-1 mb-1">
+          <i class="fa-solid fa-user text-gray-300"></i> Select Employee
+        </label>
+        <select name="employee_id" class="px-3 py-2 rounded-lg bg-[#111827] text-gray-200 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
+          <option value="">-- Select Employee --</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}" {% if emp.id == selected_employee_id %}selected{% endif %}>
+              {{ emp.get_full_name() }} 
+              {% if emp.employment_type %}• {{ emp.employment_type.name }}{% endif %}
+            </option>
+          {% else %}
+            <option disabled>No employees found{% if employee_search %} for "{{ employee_search }}"{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-      <button type="submit" class="bg-blue-600 px-5 py-2 rounded-xl hover:bg-blue-700 flex items-center gap-2">
+      <!-- Submit Button -->
+      <button type="submit" class="bg-blue-600 px-5 py-2 rounded-xl hover:bg-blue-700 flex items-center gap-2 transition shadow-lg hover:shadow-blue-500/25">
         <i class="fa-solid fa-filter"></i>
-        <span>View</span>
+        <span>View Report</span>
       </button>
     </form>
   </div>
 
+  <!-- ================= INFO BANNER (when no selection) ================= -->
+  {% if not selected_employee_id %}
+  <div class="bg-blue-900/20 border border-blue-700/40 rounded-xl p-4 flex items-start gap-3">
+    <div class="shrink-0 mt-0.5">
+      <i class="fa-solid fa-circle-info text-blue-400 text-lg"></i>
+    </div>
+    <div class="text-sm text-gray-300">
+      <p class="font-medium text-blue-400 mb-1">How to Use</p>
+      <ul class="space-y-1 text-gray-400">
+        <li>• Search or select an employee from the dropdown above</li>
+        <li>• Click <strong class="text-blue-300">"View Report"</strong> to see late/undertime data</li>
+        <li>• Deductions are computed at <strong class="text-blue-300">₱0.002/minute</strong> (based on daily rate)</li>
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ================= SUMMARY CARDS ================= -->
-  {% if data %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    {% for card in [
-        {'label':'TOTAL LATE (MIN)','value':summary.total_late_minutes},
-        {'label':'DAYS LATE','value':summary.days_late},
-        {'label':'LATE DEDUCTION','value':summary.late_deduction},
-        {'label':'TOTAL UNDERTIME (MIN)','value':summary.total_undertime_minutes},
-        {'label':'DAYS UNDERTIME','value':summary.days_undertime},
-        {'label':'UNDERTIME DEDUCTION','value':summary.undertime_deduction},
-        {'label':'OVERALL (MIN & SEC)','value':summary.overall_time_str},
-        {'label':'OVERALL DAYS','value':summary.overall_days},
-        {'label':'OVERALL DEDUCTION','value':summary.overall_deduction,'colspan':2}
-      ] %}
-      <div class="bg-[#1e293b] p-4 rounded-2xl border border-gray-700 shadow text-center {% if card.colspan %}lg:col-span-2{% endif %}">
-        <p class="text-gray-400 text-sm">{{ card.label }}</p>
-        <p class="text-emerald-400 text-xl font-semibold">{{ card.value }}</p>
+  {% if data and summary %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+    
+    <!-- Late Cards -->
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-gray-700 shadow hover:border-blue-500/40 transition">
+      <p class="text-gray-400 text-xs uppercase tracking-wider">Total Late</p>
+      <p class="text-blue-400 text-2xl font-bold">{{ summary.total_late_minutes|default(0)|round(2) }} <span class="text-sm text-gray-500">min</span></p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-gray-700 shadow hover:border-blue-500/40 transition">
+      <p class="text-gray-400 text-xs uppercase tracking-wider">Days Late</p>
+      <p class="text-blue-400 text-2xl font-bold">{{ summary.days_late|default(0)|round(2) }}</p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-gray-700 shadow hover:border-blue-500/40 transition">
+      <p class="text-gray-400 text-xs uppercase tracking-wider">Late Deduction</p>
+      <p class="text-red-400 text-2xl font-bold">₱{{ summary.late_deduction|default(0)|round(2) }}</p>
+    </div>
+
+    <!-- Undertime Cards -->
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-gray-700 shadow hover:border-amber-500/40 transition">
+      <p class="text-gray-400 text-xs uppercase tracking-wider">Total Undertime</p>
+      <p class="text-amber-400 text-2xl font-bold">{{ summary.total_undertime_minutes|default(0)|round(2) }} <span class="text-sm text-gray-500">min</span></p>
+    </div>
+    <div class="bg-[#1e293b] p-4 rounded-2xl border border-gray-700 shadow hover:border-amber-500/40 transition">
+      <p class="text-gray-400 text-xs uppercase tracking-wider">Undertime Deduction</p>
+      <p class="text-red-400 text-2xl font-bold">₱{{ summary.undertime_deduction|default(0)|round(2) }}</p>
+    </div>
+
+    <!-- Overall Summary (spans full width on large screens) -->
+    <div class="bg-gradient-to-br from-emerald-900/40 to-slate-900/40 p-4 rounded-2xl border border-emerald-700/40 shadow xl:col-span-2">
+      <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Overall Summary</p>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p class="text-emerald-400 text-lg font-bold">{{ summary.overall_time_str|default("0 min 0 sec") }}</p>
+          <p class="text-gray-500 text-xs">Total Time</p>
+        </div>
+        <div>
+          <p class="text-emerald-400 text-lg font-bold">{{ summary.overall_days|default(0)|round(2) }}</p>
+          <p class="text-gray-500 text-xs">Equivalent Days</p>
+        </div>
+        <div>
+          <p class="text-red-400 text-lg font-bold">₱{{ summary.overall_deduction|default(0)|round(2) }}</p>
+          <p class="text-gray-500 text-xs">Total Deduction</p>
+        </div>
       </div>
-    {% endfor %}
+    </div>
   </div>
   {% endif %}
 
   <!-- ================= CALENDAR HEADER ================= -->
   {% if data %}
   <div class="flex justify-between items-center mt-6 mb-2">
-    <h2 class="text-xl font-bold text-gray-300">
-      <i class="fa-solid fa-calendar-days text-blue-400 mr-2"></i>
-      {{ month_names[month-1] }} {{ year }}
+    <h2 class="text-xl font-bold text-gray-300 flex items-center gap-2">
+      <i class="fa-solid fa-calendar-days text-blue-400"></i>
+      {{ month_names[month-1] }} {{ year }} Attendance
     </h2>
+    <span class="text-xs text-gray-500 bg-[#111827] px-3 py-1 rounded-full border border-gray-700">
+      {{ days_in_month }} days in month
+    </span>
   </div>
   {% endif %}
 
   <!-- ================= CALENDAR LAYOUT ================= -->
   {% if data %}
     {% for row in data %}
-      <div class="bg-[#1e293b] rounded-2xl shadow border border-gray-700 p-4 mt-4">
-        <h3 class="font-semibold text-lg text-emerald-400 mb-2">
-          <i class="fa-solid fa-user-tie mr-2"></i>
-          {{ row.employee.get_full_name() }}
-        </h3>
+      <article class="bg-[#1e293b] rounded-2xl shadow border border-gray-700 p-4 mt-4 hover:border-blue-500/30 transition">
+        
+        <!-- Employee Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-700/50">
+          <h3 class="font-semibold text-lg text-emerald-400 flex items-center gap-2">
+            <i class="fa-solid fa-user-tie"></i>
+            {{ row.employee.get_full_name() }}
+            {% if row.employee.employment_type %}
+              <span class="text-xs font-normal text-gray-400 bg-[#111827] px-2 py-0.5 rounded">
+                {{ row.employee.employment_type.name }}
+              </span>
+            {% endif %}
+          </h3>
+          <div class="flex items-center gap-2 text-xs text-gray-400">
+            <span class="flex items-center gap-1">
+              <i class="fa-solid fa-circle text-green-500 text-[8px]"></i> On Time
+            </span>
+            <span class="flex items-center gap-1">
+              <i class="fa-solid fa-circle text-blue-500 text-[8px]"></i> Late
+            </span>
+            <span class="flex items-center gap-1">
+              <i class="fa-solid fa-circle text-amber-500 text-[8px]"></i> Undertime
+            </span>
+          </div>
+        </div>
+
+        <!-- Calendar Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
           {% for d in range(1, days_in_month + 1) %}
             {% set day = row.days.get(d) %}
-            <div class="bg-[#0f172a] p-2 rounded-lg border border-gray-600 flex flex-col items-center text-center">
-              <span class="font-medium text-gray-400">{{ d }} <span class="text-sm text-gray-500">({{ day.weekday }})</span></span>
-              <span class="text-green-400 font-semibold flex items-center gap-1">
+            {% set is_late = day.late|default(0) > 0 %}
+            {% set is_undertime = day.undertime|default(0) > 0 %}
+            
+            <div class="bg-[#0f172a] p-2 rounded-lg border 
+                        {% if is_late %}border-blue-500/50 bg-blue-900/10
+                        {% elif is_undertime %}border-amber-500/50 bg-amber-900/10
+                        {% else %}border-gray-600{% endif %}
+                        flex flex-col items-center text-center transition hover:shadow-lg">
+              
+              <!-- Date -->
+              <span class="font-medium {% if is_late or is_undertime %}text-white{% else %}text-gray-400{% endif %}">
+                {{ d }} 
+                <span class="text-[10px] text-gray-500">({{ day.weekday|default('') }})</span>
+              </span>
+              
+              <!-- Time In -->
+              <span class="text-green-400 font-semibold flex items-center gap-1 mt-1 text-[10px]">
                 <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                IN: {{ day.time_in }}
+                {{ day.time_in|default('-') }}
               </span>
-              <span class="text-yellow-400 font-semibold flex items-center gap-1">
+              
+              <!-- Late Indicator -->
+              {% if is_late %}
+                <span class="text-blue-400 text-[10px] font-medium mt-0.5">
+                  +{{ day.late|round(1) }} min late
+                </span>
+              {% endif %}
+              
+              <!-- Time Out -->
+              <span class="text-yellow-400 font-semibold flex items-center gap-1 mt-1 text-[10px]">
                 <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                OUT: {{ day.time_out }}
+                {{ day.time_out|default('-') }}
               </span>
+              
+              <!-- Undertime Indicator -->
+              {% if is_undertime %}
+                <span class="text-amber-400 text-[10px] font-medium mt-0.5">
+                  -{{ day.undertime|round(1) }} min early
+                </span>
+              {% endif %}
+              
             </div>
           {% endfor %}
         </div>
-      </div>
+
+        <!-- Employee Summary Footer -->
+        <div class="mt-4 pt-3 border-t border-gray-700/50 flex flex-wrap justify-center gap-4 text-xs text-gray-400">
+          <span>🔹 Late: <strong class="text-blue-400">{{ summary.total_late_minutes|default(0)|round(2) }} min</strong></span>
+          <span>🔹 Undertime: <strong class="text-amber-400">{{ summary.total_undertime_minutes|default(0)|round(2) }} min</strong></span>
+          <span>🔹 Total Deduction: <strong class="text-red-400">₱{{ summary.overall_deduction|default(0)|round(2) }}</strong></span>
+        </div>
+
+      </article>
     {% endfor %}
+    
   {% else %}
-    <div class="text-center text-gray-400 mt-4">
-      <i class="fa-solid fa-info-circle mr-2"></i>
-      Select an employee and click View to see late computation.
+    <!-- Empty State -->
+    <div class="text-center py-12 bg-[#1e293b]/50 rounded-2xl border border-gray-700/40">
+      <div class="w-16 h-16 mx-auto rounded-full bg-[#0f172a] flex items-center justify-center mb-4 border border-gray-600">
+        <i class="fa-regular fa-calendar-xmark text-2xl text-gray-400"></i>
+      </div>
+      <p class="text-gray-300 font-medium">No Data Selected</p>
+      <p class="text-gray-500 text-sm mt-1">Select an employee and click "View Report" to see late computation data.</p>
     </div>
   {% endif %}
 
+  <!-- ================= FOOTER NOTE ================= -->
+  <footer class="text-center pt-4 pb-2 text-xs text-gray-500">
+    <p>
+      <i class="fa-solid fa-circle-info mr-1"></i>
+      Computation: Late after 8:00 AM • Undertime before 5:00 PM • Deduction rate: ₱0.002/minute
+    </p>
+  </footer>
+
 </main>
+
+<!-- ================= OPTIONAL: Auto-submit on employee select ================= -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const employeeSelect = document.querySelector('select[name="employee_id"]');
+  if (employeeSelect) {
+    employeeSelect.addEventListener('change', function() {
+      if (this.value) {
+        this.closest('form').submit();
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

@@ -1,144 +1,273 @@
 {% extends "hr/officer/officer_base.html" %}
-{% block title %}Job History | HR Officer - {% endblock %}
+{% block title %}Job History | HR Officer{% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-6 space-y-6">
+<main class="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
 
   <!-- Page Header -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-briefcase text-3xl"></i>
-      Job History
-    </h1>
+  <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-800 to-slate-900 p-5 rounded-2xl shadow-xl border border-slate-700/50 backdrop-blur-sm">
+    <div>
+      <h1 class="text-2xl font-bold text-blue-400 flex items-center gap-3">
+        <i class="fa-solid fa-briefcase text-3xl drop-shadow-md"></i>
+        Job History
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">Track employee positions, departments, and employment timeline</p>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="flex gap-3 text-xs">
+      <span class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300">
+        <span class="font-bold text-blue-400">{{ job_history.total if job_history else 0 }}</span> Records
+      </span>
+      <span class="bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300">
+        <span class="font-bold text-green-400">{{ job_history.items|selectattr('status','equalto','Active')|list|length if job_history else 0 }}</span> Active
+      </span>
+    </div>
   </header>
 
   <!-- Filters -->
-  <form method="GET"
-        class="flex flex-col md:flex-row gap-4 flex-wrap items-start md:items-end
-               bg-gray-800 p-4 rounded-2xl shadow border border-gray-700">
+  <form method="GET" 
+        class="bg-slate-900/70 backdrop-blur-md p-5 rounded-2xl shadow-xl border border-slate-700/50 space-y-4">
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Employee Search -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Employee</label>
+        <div class="relative">
+          <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+          <input type="text" name="employee" value="{{ request.args.get('employee','') }}" autocomplete="off"
+                 placeholder="Search by name..."
+                 class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl pl-9 pr-4 py-2.5 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-slate-500">
+        </div>
+      </div>
 
-    <!-- Employee Search -->
-    <div class="flex flex-col gap-2 w-full md:flex-1">
-      <label class="text-gray-400">Employee</label>
-      <input type="text"
-             name="employee"
-             value="{{ request.args.get('employee','') }}"
-             placeholder="Search employee..."
-             class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                    focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">
+      <!-- Department -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Department</label>
+        <select name="department"
+                class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-right-3 bg-[length:1rem] pr-9">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept.id }}" {% if request.args.get('department') == dept.id|string %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Status</label>
+        <select name="status"
+                class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-right-3 bg-[length:1rem] pr-9">
+          <option value="">All Status</option>
+          {% for status in ['Active', 'Resigned', 'Terminated'] %}
+          <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>
+            {{ status }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Date Range (Optional Enhancement) -->
+      <div class="hidden lg:block">
+        <label class="block text-xs font-medium text-slate-400 mb-1.5">Quick Filter</label>
+        <div class="flex gap-2">
+          <button type="button" onclick="filterByStatus('Active')" 
+                  class="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3 py-2.5 rounded-xl border border-green-500/30 text-xs font-medium transition">
+            Active Only
+          </button>
+          <button type="button" onclick="filterByStatus('')" 
+                  class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2.5 rounded-xl border border-slate-600 text-xs font-medium transition">
+            All
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Department -->
-    <div class="flex flex-col gap-2 w-full md:w-64">
-      <label class="text-gray-400">Department</label>
-      <select name="department"
-              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                     focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">
-        <option value="">All Departments</option>
-        {% for dept in departments %}
-        <option value="{{ dept.id }}" {% if request.args.get('department') == dept.id|string %}selected{% endif %}>
-          {{ dept.name }}
-        </option>
-        {% endfor %}
-      </select>
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-3 border-t border-slate-700/50">
+      <span class="text-sm text-slate-400">
+        Showing <span class="font-medium text-slate-200">{{ job_history.items|length if job_history else 0 }}</span> of <span class="font-medium text-slate-200">{{ job_history.total if job_history else 0 }}</span> records
+      </span>
+      <div class="flex gap-3 w-full sm:w-auto">
+        <a href="{{ url_for('hr_officer_bp.job_history_list') }}" 
+           class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-slate-200 px-5 py-2.5 rounded-xl 
+                  flex items-center justify-center gap-2 transition font-medium">
+          <i class="fa-solid fa-rotate-right"></i> Reset
+        </a>
+        <button type="submit" id="filterBtn"
+                class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-5 py-2.5 rounded-xl 
+                       flex items-center justify-center gap-2 transition shadow-lg shadow-blue-500/20 font-medium">
+          <i class="fa-solid fa-magnifying-glass"></i> Apply Filters
+          <span id="filterSpinner" class="hidden ml-1"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+        </button>
+      </div>
     </div>
-
-    <!-- Status -->
-    <div class="flex flex-col gap-2 w-full md:w-64">
-      <label class="text-gray-400">Status</label>
-      <select name="status"
-              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2
-                     focus:outline-none focus:ring-2 focus:ring-blue-400 w-full">
-        <option value="">All Status</option>
-        <option value="Active" {% if request.args.get('status') == 'Active' %}selected{% endif %}>Active</option>
-        <option value="Resigned" {% if request.args.get('status') == 'Resigned' %}selected{% endif %}>Resigned</option>
-        <option value="Terminated" {% if request.args.get('status') == 'Terminated' %}selected{% endif %}>Terminated</option>
-        <option value="LWOP" {% if request.args.get('status') == 'LWOP' %}selected{% endif %}>LWOP</option>
-      </select>
-    </div>
-
-    <!-- Buttons -->
-    <div class="flex gap-2 mt-2 md:mt-0 flex-wrap">
-      <button type="submit"
-              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2
-                     rounded-xl flex items-center gap-2 transition">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span class="hidden sm:inline">Search</span>
-      </button>
-
-      <a href="{{ url_for('hr_officer_bp.job_history_list') }}"
-         class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2
-                rounded-xl flex items-center gap-2 transition">
-        <i class="fa-solid fa-eraser"></i>
-        <span class="hidden sm:inline">Clear</span>
-      </a>
-    </div>
-
   </form>
 
   <!-- Job History Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
-    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
-      <thead class="bg-gray-900 text-gray-400">
-        <tr>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Employee</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Position</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Department</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Employment Type</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Start</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">End</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Salary</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Status</th>
-          <th class="px-4 py-3 text-left whitespace-nowrap">Remarks</th>
-        </tr>
-      </thead>
-
-      <tbody class="divide-y divide-gray-700 text-gray-200">
-        {% for job in job_history.items %}
-        <tr class="hover:bg-gray-700 transition">
-          <td class="px-4 py-2 whitespace-nowrap">{{ job.employee.get_full_name() }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ job.position.name if job.position else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ job.department.name if job.department else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ job.employment_type.name if job.employment_type else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ job.effective_date }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">{{ job.end_date if job.end_date else 'Present' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">₱{{ "{:,.2f}".format(job.salary) if job.salary else '-' }}</td>
-          <td class="px-4 py-2 whitespace-nowrap">
-            {% if job.status == "Active" %}
-            <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs">Active</span>
-            {% elif job.status == "Resigned" %}
-            <span class="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs">Resigned</span>
-            {% elif job.status == "Terminated" %}
-            <span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs">Terminated</span>
-            {% else %}
-            <span class="bg-gray-500/20 text-gray-300 px-2 py-1 rounded text-xs">{{ job.status }}</span>
-            {% endif %}
-          </td>
-          <td class="px-4 py-2 whitespace-pre-wrap">{{ job.remarks or '-' }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="9" class="px-4 py-3 text-center text-gray-400">No job history records found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="bg-slate-900/70 backdrop-blur-md rounded-2xl shadow-xl border border-slate-700/50 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-700/50">
+        <thead class="bg-slate-800/80 text-slate-400 text-xs uppercase tracking-wider">
+          <tr>
+            <th class="px-5 py-4 text-left font-semibold">Employee</th>
+            <th class="px-5 py-4 text-left font-semibold">Position</th>
+            <th class="px-5 py-4 text-left font-semibold hidden md:table-cell">Department</th>
+            <th class="px-5 py-4 text-left font-semibold hidden lg:table-cell">Type</th>
+            <th class="px-5 py-4 text-left font-semibold">Period</th>
+            <th class="px-5 py-4 text-left font-semibold hidden xl:table-cell">Salary</th>
+            <th class="px-5 py-4 text-left font-semibold">Status</th>
+            <th class="px-5 py-4 text-left font-semibold hidden lg:table-cell">Remarks</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700/50 text-sm">
+          {% for job in job_history.items %}
+          <tr class="hover:bg-slate-800/60 transition duration-150 group">
+            <!-- Employee -->
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30 shrink-0">
+                  {{ job.employee.get_full_name()[0:2].upper() if job.employee.get_full_name() else '?' }}
+                </div>
+                <div>
+                  <div class="font-medium text-slate-200">{{ job.employee.get_full_name() }}</div>
+                  <div class="text-xs text-slate-500 md:hidden">{{ job.department.name if job.department else '-' }}</div>
+                </div>
+              </div>
+            </td>
+            
+            <!-- Position -->
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              <span class="text-slate-200 font-medium">{{ job.position.name if job.position else '-' }}</span>
+            </td>
+            
+            <!-- Department (hidden on mobile) -->
+            <td class="px-5 py-3.5 whitespace-nowrap hidden md:table-cell">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-700/50 text-slate-300 border border-slate-600/50">
+                {{ job.department.name if job.department else '-' }}
+              </span>
+            </td>
+            
+            <!-- Employment Type (hidden on small screens) -->
+            <td class="px-5 py-3.5 whitespace-nowrap hidden lg:table-cell text-slate-400">
+              {{ job.employment_type.name if job.employment_type else '-' }}
+            </td>
+            
+            <!-- Period -->
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              <div class="text-slate-300 text-xs font-mono">
+                <div>{{ job.effective_date.strftime('%b %d, %Y') if job.effective_date else '-' }}</div>
+                <div class="text-slate-500">→ {{ job.end_date.strftime('%b %d, %Y') if job.end_date else 'Present' }}</div>
+              </div>
+            </td>
+            
+            <!-- Salary (hidden on medium screens) -->
+            <td class="px-5 py-3.5 whitespace-nowrap hidden xl:table-cell">
+              <span class="text-green-400 font-mono font-medium">₱{{ "{:,.2f}".format(job.salary) if job.salary else '-' }}</span>
+            </td>
+            
+            <!-- Status Badge -->
+            <td class="px-5 py-3.5 whitespace-nowrap">
+              {% set status_styles = {
+                'Active': 'bg-green-500/15 text-green-400 border-green-500/30',
+                'Resigned': 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+                'Terminated': 'bg-red-500/15 text-red-400 border-red-500/30',
+                'LWOP': 'bg-slate-500/15 text-slate-400 border-slate-500/30'
+              } %}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border {{ status_styles.get(job.status, 'bg-slate-500/15 text-slate-400 border-slate-500/30') }}">
+                {{ job.status or 'Unknown' }}
+              </span>
+            </td>
+            
+            <!-- Remarks (hidden on medium screens) -->
+            <td class="px-5 py-3.5 whitespace-pre-wrap hidden lg:table-cell max-w-xs text-slate-400 text-xs leading-relaxed">
+              {{ job.remarks or '-' }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="px-5 py-16 text-center">
+              <div class="flex flex-col items-center justify-center text-slate-500">
+                <i class="fa-solid fa-folder-open text-5xl mb-4 opacity-40"></i>
+                <p class="text-lg font-medium text-slate-300">No job history records found</p>
+                <p class="text-sm mt-1 max-w-md">Try adjusting your filters or search terms to find what you're looking for.</p>
+                <a href="{{ url_for('hr_officer_bp.job_history_list') }}" 
+                   class="mt-4 text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center gap-1">
+                  <i class="fa-solid fa-rotate-right"></i> Clear all filters
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Pagination -->
-  <div class="flex flex-col sm:flex-row justify-center gap-4 text-gray-400 items-center mt-4 flex-wrap">
+  {% if job_history.pages > 1 %}
+  <nav class="flex justify-center items-center gap-2 mt-4" aria-label="Pagination">
     {% if job_history.has_prev %}
-    <a href="{{ url_for('hr_officer_bp.job_history_list', page=job_history.prev_num, **args) }}"
-       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Previous</a>
+      <a href="{{ url_for('hr_officer_bp.job_history_list', page=job_history.prev_num, **args) }}"
+         class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition border border-slate-700 flex items-center gap-2">
+        <i class="fa-solid fa-chevron-left text-xs"></i> Prev
+      </a>
+    {% else %}
+      <span class="px-4 py-2 bg-slate-800/50 text-slate-600 rounded-xl cursor-not-allowed border border-slate-700/50 flex items-center gap-2">
+        <i class="fa-solid fa-chevron-left text-xs"></i> Prev
+      </span>
     {% endif %}
 
-    <span class="px-4 py-2">Page {{ job_history.page }} of {{ job_history.pages }}</span>
+    <div class="flex items-center gap-1.5 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
+      <span class="text-slate-400 text-sm">Page</span>
+      <span class="text-blue-400 font-bold">{{ job_history.page }}</span>
+      <span class="text-slate-500">of</span>
+      <span class="text-slate-300">{{ job_history.pages }}</span>
+    </div>
 
     {% if job_history.has_next %}
-    <a href="{{ url_for('hr_officer_bp.job_history_list', page=job_history.next_num, **args) }}"
-       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600">Next</a>
+      <a href="{{ url_for('hr_officer_bp.job_history_list', page=job_history.next_num, **args) }}"
+         class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition border border-slate-700 flex items-center gap-2">
+        Next <i class="fa-solid fa-chevron-right text-xs"></i>
+      </a>
+    {% else %}
+      <span class="px-4 py-2 bg-slate-800/50 text-slate-600 rounded-xl cursor-not-allowed border border-slate-700/50 flex items-center gap-2">
+        Next <i class="fa-solid fa-chevron-right text-xs"></i>
+      </span>
     {% endif %}
-  </div>
+  </nav>
+  {% endif %}
 
 </main>
+
+<!-- Quick Filter Script -->
+<script>
+  function filterByStatus(status) {
+    const url = new URL(window.location);
+    if (status) {
+      url.searchParams.set('status', status);
+    } else {
+      url.searchParams.delete('status');
+    }
+    url.searchParams.delete('page'); // Reset to first page
+    window.location.href = url.toString();
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form[method='GET']");
+    const btn = document.getElementById("filterBtn");
+    const spinner = document.getElementById("filterSpinner");
+
+    if (form && btn && spinner) {
+      form.addEventListener("submit", function () {
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+      });
+    }
+  });
+</script>
 {% endblock %}

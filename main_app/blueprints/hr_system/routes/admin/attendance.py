@@ -577,61 +577,87 @@ def edit_attendance(attendance_id):
     return render_template('hr/admin/atttendance/edit_attendance.html', attendance=attendance)
 
 
+
 @hr_admin_bp.route('/add_manual_attendance', methods=['POST'])
 @admin_required
 @login_required  
 def add_manual_attendance():
-    employee_id = request.form.get('employee_id')
-    date_str = request.form.get('date')
-    time_in_str = request.form.get('time_in')
-    time_out_str = request.form.get('time_out')
-    status = request.form.get('status')
-    remarks = request.form.get('remarks')
-
-    # Validate employee
-    emp = Employee.query.get(employee_id)
-    if not emp:
-        flash("Employee not found.", "danger")
-        return redirect(url_for('hr_admin_bp.view_attendance'))
-
-    # Convert date and times
     try:
-        attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except:
-        flash("Invalid date format.", "danger")
-        return redirect(url_for('hr_admin_bp.view_attendance'))
+        employee_id = request.form.get('employee_id')
+        date_str = request.form.get('date')
+        time_in_str = request.form.get('time_in', '').strip()
+        time_out_str = request.form.get('time_out', '').strip()
+        status = request.form.get('status')
+        remarks = request.form.get('remarks', '').strip()
 
-    time_in_obj = None
-    time_out_obj = None
-    try:
+        # Validate required fields
+        if not employee_id or not date_str or not status:
+            flash("Employee, Date, and Status are required.", "error")
+            return redirect(url_for('hr_admin_bp.view_attendance'))
+
+        # Validate employee exists and is active
+        emp = Employee.query.filter_by(id=int(employee_id), archived=False).first()
+        if not emp:
+            flash("Employee not found or archived.", "error")
+            return redirect(url_for('hr_admin_bp.view_attendance'))
+
+        # Parse date
+        try:
+            attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash("Invalid date format. Use YYYY-MM-DD.", "error")
+            return redirect(url_for('hr_admin_bp.view_attendance'))
+
+        # Parse times safely
+        time_in_obj = None
+        time_out_obj = None
+        
         if time_in_str:
-            time_in_obj = datetime.strptime(time_in_str, '%H:%M').time()
+            try:
+                h, m = map(int, time_in_str.split(":"))
+                if 0 <= h <= 23 and 0 <= m <= 59:
+                    time_in_obj = time(hour=h, minute=m)
+            except:
+                flash(f"Invalid time_in format: {time_in_str}", "error")
+                return redirect(url_for('hr_admin_bp.view_attendance'))
+
         if time_out_str:
-            time_out_obj = datetime.strptime(time_out_str, '%H:%M').time()
-    except:
-        flash("Invalid time format.", "danger")
+            try:
+                h, m = map(int, time_out_str.split(":"))
+                if 0 <= h <= 23 and 0 <= m <= 59:
+                    time_out_obj = time(hour=h, minute=m)
+            except:
+                flash(f"Invalid time_out format: {time_out_str}", "error")
+                return redirect(url_for('hr_admin_bp.view_attendance'))
+
+        # Check for duplicate
+        existing_att = Attendance.query.filter_by(
+            employee_id=emp.id, 
+            date=attendance_date
+        ).first()
+        
+        if existing_att:
+            flash(f"Attendance already exists for {emp.get_full_name()} on {attendance_date}.", "error")
+            return redirect(url_for('hr_admin_bp.view_attendance'))
+
+        # Create new attendance record
+        new_attendance = Attendance(
+            employee_id=emp.id,
+            date=attendance_date,
+            time_in=time_in_obj,
+            time_out=time_out_obj,
+            status=status,
+            remarks=remarks if remarks else None
+        )
+
+        db.session.add(new_attendance)
+        db.session.commit()
+
+        flash(f"✅ Attendance for {emp.get_full_name()} on {attendance_date} added successfully.", "success")
         return redirect(url_for('hr_admin_bp.view_attendance'))
 
-    # Check if attendance already exists
-    existing_att = Attendance.query.filter_by(employee_id=emp.id, date=attendance_date).first()
-    if existing_att:
-        flash(f"Attendance already exists for {emp.get_full_name()} on {attendance_date}.", "danger")
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Add attendance error: {str(e)}")
+        flash(f"Server error: {str(e)}", "error")
         return redirect(url_for('hr_admin_bp.view_attendance'))
-
-    # Create new attendance
-    new_attendance = Attendance(
-        employee_id=emp.id,
-        date=attendance_date,
-        time_in=time_in_obj,
-        time_out=time_out_obj,
-        status=status,
-        remarks=remarks
-    )
-
-    db.session.add(new_attendance)
-    db.session.commit()
-
-    flash(f"Attendance for {emp.get_full_name()} on {attendance_date} added successfully.", "success")
-    return redirect(url_for('hr_admin_bp.view_attendance'))
-
-

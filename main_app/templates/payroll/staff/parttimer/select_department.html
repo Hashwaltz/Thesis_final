@@ -1,0 +1,141 @@
+{% extends 'payroll/staff/staff_base.html' %}
+
+{% block title %}Part-Timer Select Department{% endblock %}
+
+{% block content %}
+<section class="p-4 sm:p-6 lg:p-8 space-y-6 text-gray-200 max-w-7xl mx-auto">
+
+  <!-- HEADER -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+        <i class="fa-solid fa-clock text-violet-400"></i>
+        Part-Timer Payroll
+      </h1>
+      <p class="text-gray-400 text-sm mt-1.5">Select a department to process part-timer payroll for the current period.</p>
+    </div>
+    
+    <div class="flex items-center gap-3 bg-gray-800/60 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-gray-700/50">
+      <i class="fa-regular fa-calendar text-violet-400/80"></i>
+      <div class="text-right">
+        <p class="text-xs text-gray-500 uppercase tracking-wider">Pay Period</p>
+        <p class="text-sm font-medium text-gray-200">
+          {{ period.start_date.strftime('%Y-%m-%d') }} – {{ period.end_date.strftime('%Y-%m-%d') }}
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <!-- INFO BADGE -->
+  <div class="bg-violet-900/20 border border-violet-700/40 rounded-xl p-4 flex items-start gap-3">
+    <div class="shrink-0 mt-0.5">
+      <i class="fa-solid fa-circle-info text-violet-400 text-lg"></i>
+    </div>
+    <div class="text-sm text-gray-300">
+      <p class="font-medium text-violet-400 mb-1">Part-Timer Payroll Rules</p>
+      <ul class="space-y-1 text-gray-400">
+        <li>• <span class="text-gray-300">Hourly-based gross</span>: Hourly Rate × Hours Worked</li>
+        <li>• <span class="text-gray-300">Allowances apply</span> (editable per employee)</li>
+        <li>• Deductions: SSS, PhilHealth, Pag-IBIG, GSIS, TRAIN Tax — <span class="text-violet-300">all optional</span></li>
+        <li>• Hours pulled from Attendance: Time In/Out counted; Leaves optional</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DEPARTMENT CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for dept in departments %}
+    {% set is_processed = department_status.get(dept.id, False) %}
+
+    <div
+      class="group relative bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 flex flex-col
+             transition-all duration-200
+             {% if not is_processed %}cursor-pointer hover:border-violet-500/40 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10{% else %}opacity-75{% endif %}"
+      {% if not is_processed %}
+        onclick="goToPreview({{ dept.id }})"
+        tabindex="0"
+        role="button"
+        aria-label="Preview payroll for {{ dept.name }}"
+        onkeydown="if(event.key==='Enter'||event.key===' ')this.click()"
+      {% endif %}>
+
+      <!-- Subtle accent gradient overlay -->
+      <div class="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity rounded-2xl bg-gradient-to-br from-violet-500 to-transparent pointer-events-none"></div>
+
+      <!-- STATUS BADGE -->
+      <div class="absolute top-4 right-4 z-10">
+        {% if is_processed %}
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <i class="fa-solid fa-check text-[10px]"></i>
+            Processed
+          </span>
+        {% else %}
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
+            Pending
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- ICON -->
+      <div class="relative z-10 mb-4">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-violet-500/10 flex items-center justify-center group-hover:bg-violet-500/20 transition-colors">
+          <i class="fa-solid fa-building text-violet-400 text-2xl"></i>
+        </div>
+      </div>
+
+      <!-- Department Name -->
+      <h3 class="text-lg font-semibold text-white text-center group-hover:text-violet-400 transition-colors relative z-10 mb-1">
+        {{ dept.name }}
+      </h3>
+
+      <!-- Helper Text -->
+      <p class="text-xs text-gray-500 text-center mb-5 relative z-10">
+        Part-Timer • Hourly Processing
+      </p>
+
+      <!-- ACTION BUTTON / STATE -->
+      <div class="mt-auto relative z-10">
+        {% if is_processed %}
+          <div class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-700/50 text-gray-400 text-sm border border-gray-600">
+            <i class="fa-solid fa-lock text-xs"></i>
+            <span>Payroll Locked</span>
+          </div>
+          <p class="text-[11px] text-gray-500 text-center mt-2">View results in payroll reports</p>
+        {% else %}
+          <a href="{{ url_for('payroll_staff_bp.preview_parttimer_payroll', period_id=period.id, department_id=dept.id) }}"
+             class="flex items-center justify-center gap-2 w-full px-4 py-2.5 font-medium text-sm text-white rounded-xl
+                    bg-violet-600 hover:bg-violet-500 active:bg-violet-700
+                    transition-all shadow-sm hover:shadow-violet-500/25">
+             <i class="fa-solid fa-eye text-[10px]"></i>
+             Preview Payroll
+          </a>
+        {% endif %}
+      </div>
+
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="col-span-full bg-gray-800/30 border border-gray-700/30 rounded-2xl p-8 text-center">
+      <i class="fa-regular fa-folder-open text-4xl text-gray-600 mb-3 block"></i>
+      <p class="text-gray-400">No departments available for part-timer payroll processing.</p>
+      <p class="text-gray-500 text-sm mt-1">Ensure departments have assigned active part-timer employees.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- HELPER FOOTER -->
+  <div class="mt-8 pt-6 border-t border-gray-700/40 text-center text-xs text-gray-500">
+    <p>💡 <span class="text-gray-400">Tip:</span> Click or press <kbd class="px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 border border-gray-600">Enter</kbd> on a department card to preview payroll.</p>
+  </div>
+
+</section>
+
+<script>
+function goToPreview(deptId) {
+  const url = "{{ url_for('payroll_staff_bp.preview_parttimer_payroll', period_id=period.id, department_id=0) }}";
+  window.location.href = url.replace('/dept/0', '/dept/' + deptId);
+}
+</script>
+
+{% endblock %}

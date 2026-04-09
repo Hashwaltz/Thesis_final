@@ -2,89 +2,362 @@
 {% block title %}Add Department | HR Admin{% endblock %}
 
 {% block content %}
-<main class="p-6 md:p-10 space-y-6 text-white">
+<main class="p-4 md:p-8 lg:p-10 space-y-6 text-white min-h-screen">
+
+  <!-- Breadcrumb Navigation -->
+  <nav class="text-sm text-gray-400" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-2 flex-wrap">
+      <li><a href="{{ url_for('hr_admin_bp.hr_dashboard') }}" class="hover:text-blue-400 transition-colors"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+      <li><i class="fa-solid fa-chevron-right text-xs"></i></li>
+      <li><a href="{{ url_for('hr_admin_bp.view_departments') }}" class="hover:text-blue-400 transition-colors">Departments</a></li>
+      <li><i class="fa-solid fa-chevron-right text-xs"></i></li>
+      <li class="text-blue-400 font-medium" aria-current="page">Add New</li>
+    </ol>
+  </nav>
 
   <!-- Page Header -->
-  <header class="mb-6">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-building"></i>
-      <i class="fa-solid fa-plus text-blue-400"></i>
-      Add Department
-    </h1>
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+        <span class="bg-blue-500/20 p-3 rounded-xl">
+          <i class="fa-solid fa-building-user text-blue-400 text-xl"></i>
+        </span>
+        Add New Department
+      </h1>
+      <p class="text-gray-400 mt-2 ml-1">Create a new department and assign a head to manage operations.</p>
+    </div>
+    <a href="{{ url_for('hr_admin_bp.view_departments') }}" 
+       class="inline-flex items-center gap-2 text-gray-300 hover:text-white bg-gray-700/50 hover:bg-gray-700 px-4 py-2 rounded-lg transition-all duration-200 self-start md:self-auto">
+      <i class="fa-solid fa-arrow-left"></i>
+      Back to List
+    </a>
   </header>
 
-  <!-- Department Form -->
-  <section class="bg-gray-800 rounded-2xl p-6 shadow-lg max-w-3xl mx-auto">
-    <h2 class="text-xl font-semibold mb-4">Department Details</h2>
-    <form method="POST" class="space-y-6">
+  <!-- Department Form Card -->
+  <section class="bg-gradient-to-br from-gray-800 to-gray-850 rounded-2xl p-6 md:p-8 shadow-xl border border-gray-700/50 max-w-4xl mx-auto">
+    
+    <!-- Form Header -->
+    <div class="flex items-center gap-3 pb-4 border-b border-gray-700/50 mb-6">
+      <div class="bg-blue-500/10 p-2 rounded-lg">
+        <i class="fa-solid fa-clipboard-list text-blue-400"></i>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-white">Department Details</h2>
+        <p class="text-sm text-gray-400">Fields marked with <span class="text-red-400">*</span> are required</p>
+      </div>
+    </div>
 
-      <!-- Department Name -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Department Name <span class="text-red-500">*</span></label>
-        <input type="text" name="name" placeholder="Enter department name" required
-               class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+    <form method="POST" id="addDepartmentForm" class="space-y-6" novalidate>
+      
+      <!-- Grid Layout for Better Organization -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Department Name -->
+        <div class="md:col-span-2">
+          <label for="name" class="block text-gray-300 mb-2 font-medium">
+            Department Name <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
+              <i class="fa-solid fa-tag"></i>
+            </span>
+            <input type="text" 
+                   id="name"
+                   name="name" 
+                   placeholder="e.g., Engineering, Marketing, Human Resources" 
+                   required
+                   maxlength="100"
+                   pattern="^[A-Za-z\s\-\&']+$"
+                   title="Please enter a valid department name (letters, spaces, hyphens only)"
+                   class="w-full bg-gray-900/80 text-white rounded-xl pl-10 pr-4 py-3 
+                          border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                          focus:outline-none transition-all duration-200 placeholder-gray-500
+                          invalid:border-red-500/50 invalid:focus:ring-red-500/30"
+                   oninput="this.setCustomValidity(''); validateField(this)"/>
+          </div>
+          <p class="mt-1.5 text-xs text-gray-500 flex items-center gap-1">
+            <i class="fa-regular fa-circle-info"></i>
+            Use clear, descriptive names. Maximum 100 characters.
+          </p>
+          <span class="text-xs text-red-400 hidden" id="nameError">Please enter a valid department name</span>
+        </div>
+
+        <!-- Description -->
+        <div class="md:col-span-2">
+          <label for="description" class="block text-gray-300 mb-2 font-medium">
+            Description <span class="text-gray-500 font-normal">(Optional)</span>
+          </label>
+          <div class="relative">
+            <textarea id="description"
+                      name="description" 
+                      rows="4" 
+                      placeholder="Briefly describe the department's purpose, responsibilities, and scope..."
+                      maxlength="500"
+                      class="w-full bg-gray-900/80 text-white rounded-xl px-4 py-3 resize-none
+                             border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                             focus:outline-none transition-all duration-200 placeholder-gray-500"
+                      oninput="updateCharCount('description', 'descCount')"></textarea>
+            <div class="absolute bottom-3 right-3 text-xs text-gray-500">
+              <span id="descCount">0</span>/500
+            </div>
+          </div>
+          <p class="mt-1.5 text-xs text-gray-500">
+            <i class="fa-regular fa-lightbulb"></i>
+            Tip: Include key functions, team size, or reporting structure.
+          </p>
+        </div>
+
+        <!-- Department Head -->
+        <div>
+          <label for="head_id" class="block text-gray-300 mb-2 font-medium">
+            Department Head <span class="text-gray-500 font-normal">(Optional)</span>
+          </label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10">
+              <i class="fa-regular fa-user"></i>
+            </span>
+            <select id="head_id"
+                    name="head_id" 
+                    class="w-full bg-gray-900/80 text-white rounded-xl pl-10 pr-10 py-3 appearance-none
+                           border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                           focus:outline-none transition-all duration-200 cursor-pointer">
+              <option value="">Select an employee...</option>
+              {% for emp in employees %}
+                <option value="{{ emp.id }}" 
+                        data-position="{{ emp.position.name if emp.position else '' }}"
+                        data-email="{{ emp.email }}">
+                  {{ emp.get_full_name() }} 
+                  {% if emp.position %}• {{ emp.position.name }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+          <p class="mt-1.5 text-xs text-gray-500">
+            <i class="fa-solid fa-circle-info"></i>
+            You can assign a head later from the department settings.
+          </p>
+        </div>
+
+        <!-- Status Toggle (Optional Enhancement) -->
+        <div>
+          <label class="block text-gray-300 mb-2 font-medium">
+            Status
+          </label>
+          <div class="flex items-center gap-3 bg-gray-900/50 rounded-xl p-3 border border-gray-700/50">
+            <label class="flex items-center gap-2 cursor-pointer group">
+              <input type="radio" name="status" value="active" checked 
+                     class="w-4 h-4 text-blue-500 bg-gray-800 border-gray-600 focus:ring-blue-500 focus:ring-offset-gray-800">
+              <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Active</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer group">
+              <input type="radio" name="status" value="inactive"
+                     class="w-4 h-4 text-blue-500 bg-gray-800 border-gray-600 focus:ring-blue-500 focus:ring-offset-gray-800">
+              <span class="text-sm text-gray-300 group-hover:text-white transition-colors">Inactive</span>
+            </label>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Description -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Description</label>
-        <textarea name="description" rows="4" placeholder="Enter department description"
-                  class="bg-gray-900 text-white rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
-      </div>
-
-      <!-- Department Head -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Department Head</label>
-        <select name="head_id" class="bg-gray-900 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <option value="">Select Department Head</option>
-          {% for emp in employees %}
-            <option value="{{ emp.id }}">{{ emp.get_full_name() }}{% if emp.position %} - {{ emp.position.name }}{% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <!-- Submit Button -->
-      <div class="flex justify-end">
-        <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl flex items-center gap-2 transition">
-          <i class="fa-solid fa-building"></i>
+      <!-- Form Actions -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 border-t border-gray-700/50">
+        <button type="button" 
+                onclick="window.location.href='{{ url_for('hr_admin_bp.view_departments') }}'"
+                class="px-5 py-2.5 rounded-xl text-gray-300 hover:text-white 
+                       bg-gray-700/50 hover:bg-gray-700 border border-gray-600 
+                       flex items-center justify-center gap-2 transition-all duration-200
+                       focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+          <i class="fa-solid fa-xmark"></i>
+          Cancel
+        </button>
+        <button type="submit" 
+                id="submitBtn"
+                class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 
+                       hover:from-blue-700 hover:to-blue-600 text-white font-medium
+                       flex items-center justify-center gap-2 transition-all duration-200
+                       focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                       disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20
+                       hover:shadow-blue-500/40 hover:-translate-y-0.5">
           <i class="fa-solid fa-plus"></i>
-          Add Department
+          <span id="submitText">Create Department</span>
+          <i class="fa-solid fa-spinner fa-spin hidden" id="submitLoader"></i>
         </button>
       </div>
 
     </form>
   </section>
+
+  <!-- Quick Tips Card (Optional) -->
+  <aside class="max-w-4xl mx-auto mt-4">
+    <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/30">
+      <h3 class="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-2">
+        <i class="fa-regular fa-lightbulb text-yellow-400"></i>
+        Quick Tips
+      </h3>
+      <ul class="text-xs text-gray-400 space-y-1.5 list-disc list-inside">
+        <li>Department names should be unique across the organization</li>
+        <li>Assigning a head enables immediate workflow setup</li>
+        <li>You can edit all details later from the departments list</li>
+      </ul>
+    </div>
+  </aside>
+
 </main>
 
-<!-- SweetAlert -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Enhanced JavaScript -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  
+  // Character counter for description
+  function updateCharCount(textareaId, counterId) {
+    const textarea = document.getElementById(textareaId);
+    const counter = document.getElementById(counterId);
+    if (textarea && counter) {
+      counter.textContent = textarea.value.length;
+      // Visual warning near limit
+      if (textarea.value.length > 450) {
+        counter.classList.add('text-orange-400');
+      } else {
+        counter.classList.remove('text-orange-400');
+      }
+    }
+  }
+  window.updateCharCount = updateCharCount;
+  
+  // Basic field validation
+  function validateField(field) {
+    const errorSpan = document.getElementById(field.id + 'Error');
+    if (!field.validity.valid) {
+      if (errorSpan) errorSpan.classList.remove('hidden');
+      field.classList.add('border-red-500');
+      return false;
+    } else {
+      if (errorSpan) errorSpan.classList.add('hidden');
+      field.classList.remove('border-red-500');
+      return true;
+    }
+  }
+  window.validateField = validateField;
+  
+  // Form submission with loading state
+  const form = document.getElementById('addDepartmentForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitText = document.getElementById('submitText');
+  const submitLoader = document.getElementById('submitLoader');
+  
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      // Client-side validation
+      const nameField = document.getElementById('name');
+      if (!validateField(nameField)) {
+        e.preventDefault();
+        nameField.focus();
+        return;
+      }
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      submitText.textContent = 'Creating...';
+      submitLoader.classList.remove('hidden');
+      
+      // Optional: Add confirmation for important actions
+      // Uncomment below if you want confirmation dialog
+      /*
+      e.preventDefault();
+      Swal.fire({
+        title: 'Confirm Creation',
+        text: 'Create this new department?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Create',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          form.submit();
+        } else {
+          submitBtn.disabled = false;
+          submitText.textContent = 'Create Department';
+          submitLoader.classList.add('hidden');
+        }
+      });
+      */
+    });
+  }
+  
+  // Flash messages with enhanced SweetAlert
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       {% for category, message in messages %}
         {% if category == 'success' %}
           Swal.fire({
             icon: 'success',
-            title: 'Success',
+            title: '🎉 Department Created!',
             text: '{{ message }}',
+            background: '#1f2937',
+            color: '#fff',
+            confirmButtonColor: '#3b82f6',
             showConfirmButton: false,
-            timer: 2000,
+            timer: 2500,
             timerProgressBar: true,
-            willClose: () => { window.location.href = "{{ url_for('hr_admin_bp.view_departments') }}"; }
+            toast: true,
+            position: 'top-end',
+            showClass: { popup: 'animate__animated animate__fadeInDown' },
+            hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+            willClose: () => { 
+              window.location.href = "{{ url_for('hr_admin_bp.view_departments') }}"; 
+            }
           });
         {% elif category == 'error' %}
           Swal.fire({
             icon: 'error',
-            title: 'Error',
+            title: '⚠️ Action Failed',
             text: '{{ message }}',
-            confirmButtonColor: '#e74a3b'
+            background: '#1f2937',
+            color: '#fff',
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Try Again',
+            showClass: { popup: 'animate__animated animate__fadeIn' }
+          });
+        {% elif category == 'info' %}
+          Swal.fire({
+            icon: 'info',
+            title: 'ℹ️ Note',
+            text: '{{ message }}',
+            background: '#1f2937',
+            color: '#fff',
+            confirmButtonColor: '#3b82f6',
+            timer: 3000,
+            timerProgressBar: true
           });
         {% endif %}
       {% endfor %}
     {% endif %}
   {% endwith %}
+  
+  // Auto-hide validation errors on input
+  document.querySelectorAll('input, textarea, select').forEach(field => {
+    field.addEventListener('input', function() {
+      const errorSpan = document.getElementById(this.id + 'Error');
+      if (errorSpan) errorSpan.classList.add('hidden');
+      this.classList.remove('border-red-500');
+    });
+  });
+  
+  // Optional: Add search to department head dropdown (requires Choices.js or similar)
+  // For now, native browser search works with <datalist> or consider adding a library
 });
 </script>
+
+<!-- Optional: Add Animate.css for SweetAlert animations -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
 {% endblock %}

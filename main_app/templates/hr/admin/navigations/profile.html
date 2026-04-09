@@ -2,277 +2,750 @@
 {% block title %}User Profile | HR Admin {% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto p-4 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-lg text-slate-100">
-
-  <!-- HEADER -->
-  <div class="flex flex-col md:flex-row md:items-center gap-6">
-
-    <!-- Avatar -->
-    <div class="flex justify-center md:justify-start">
-      <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-cover bg-center ring-4 ring-slate-700 overflow-hidden"
-        style="background-image: url('{{ url_for('static', filename=employee.photo) if employee and employee.photo else url_for('static', filename='img/default-avatar.png') }}')">
-      </div>
-    </div>
-
-    <!-- Info -->
-    <div class="flex-1 text-center md:text-left">
-      <h1 class="text-xl sm:text-2xl font-semibold">
-        {{ employee.get_full_name() if employee else "No name" }}
-      </h1>
-
-      <p class="text-sm text-slate-300">
-        {{ employee.position.name if employee and employee.position else 'Position not assigned' }} • 
-        {{ employee.department.name if employee and employee.department else 'No department' }}
-      </p>
-
-      <div class="mt-4 flex justify-center md:justify-start">
+<main class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 p-4 md:p-6 lg:p-8">
+  <div class="max-w-6xl mx-auto space-y-6 animate-fade-in">
+    
+    <!-- ================== Breadcrumbs & Actions ================== -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <nav class="flex items-center gap-2 text-sm text-slate-400">
+        <a href="{{ url_for('hr_admin_bp.hr_dashboard') }}" class="hover:text-blue-400 transition flex items-center gap-1">
+          <i class="fa-solid fa-house"></i> Dashboard
+        </a>
+        <i class="fa-solid fa-chevron-right text-xs"></i>
+        <span class="text-slate-200">Employee Profile</span>
+      </nav>
+      
+      <div class="flex items-center gap-2">
+        <button onclick="window.print()" 
+                class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-medium flex items-center gap-2 transition text-sm">
+          <i class="fa-solid fa-print"></i> Print
+        </button>
         <button id="editProfileBtn"
-          class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md transition text-sm sm:text-base">
-          <i class="fa-solid fa-user-pen"></i>
-          Change Password
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium flex items-center gap-2 transition shadow-lg shadow-blue-500/20 text-sm">
+          <i class="fa-solid fa-key"></i> Change Password
         </button>
       </div>
     </div>
 
-    <!-- Employee ID -->
-    <div class="text-center md:text-right">
-      <p class="text-sm text-slate-300">Employee ID</p>
-      <p class="font-semibold text-lg">{{ employee.employee_id if employee else '-' }}</p>
+    <!-- ================== Profile Header Card ================== -->
+    <section class="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 md:p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row gap-6 items-center md:items-start">
+        
+        <!-- Avatar with Status Badge -->
+        <div class="relative group">
+          <div class="w-28 h-28 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 
+                      border-2 border-slate-600 flex items-center justify-center overflow-hidden 
+                      ring-4 ring-slate-700/50 group-hover:ring-blue-500/30 transition">
+            {% if employee and employee.photo %}
+              <img src="{{ url_for('static', filename=employee.photo) }}" 
+                   alt="Profile" 
+                   class="w-full h-full object-cover">
+            {% else %}
+              <span class="text-3xl font-bold text-blue-400">
+                {{ employee.get_initials() if employee and employee.get_initials else 'HR' }}
+              </span>
+            {% endif %}
+          </div>
+          <!-- Online Status Indicator -->
+          <span class="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-slate-800 rounded-full" 
+                title="Active Employee"></span>
+        </div>
+
+        <!-- Core Info -->
+        <div class="flex-1 text-center md:text-left space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 justify-center md:justify-start">
+            <h1 class="text-2xl md:text-3xl font-bold text-white">
+              {{ employee.get_full_name() if employee else "Employee Profile" }}
+            </h1>
+            <!-- Employee ID Badge -->
+            <span class="inline-flex items-center px-3 py-1 rounded-full bg-slate-700/50 border border-slate-600 
+                         text-xs font-mono text-slate-300">
+              <i class="fa-solid fa-id-badge mr-1.5"></i>
+              {{ employee.employee_id if employee else 'N/A' }}
+            </span>
+          </div>
+          
+          <p class="text-slate-300">
+            <span class="font-medium text-blue-400">{{ employee.position.name if employee and employee.position else 'Position not assigned' }}</span>
+            <span class="mx-2 text-slate-600">•</span>
+            <span>{{ employee.department.name if employee and employee.department else 'No department' }}</span>
+          </p>
+          
+          <!-- Quick Stats -->
+          <div class="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
+            <div class="flex items-center gap-1.5 text-sm text-slate-400">
+              <i class="fa-regular fa-calendar text-slate-500"></i>
+              <span>Hired: {{ employee.date_hired.strftime('%b %Y') if employee and employee.date_hired else '-' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-sm text-slate-400">
+              <i class="fa-solid fa-briefcase text-slate-500"></i>
+              <span>{{ working_duration if working_duration else '-' }} tenure</span>
+            </div>
+            {% if employee and employee.email %}
+            <button onclick="copyToClipboard('{{ employee.email }}')" 
+                    class="flex items-center gap-1.5 text-sm text-slate-400 hover:text-blue-400 transition group"
+                    title="Copy email">
+              <i class="fa-regular fa-envelope group-hover:text-blue-400"></i>
+              <span class="truncate max-w-[180px]">{{ employee.email }}</span>
+              <i class="fa-regular fa-copy text-xs opacity-0 group-hover:opacity-100 transition"></i>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Employment Type Badge -->
+        <div class="flex flex-col items-center md:items-end">
+          <span class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 
+                       border border-emerald-500/20 text-emerald-400 text-sm font-medium">
+            <i class="fa-solid fa-user-check mr-1.5"></i>
+            {{ employee.employment_type.name if employee and employee.employment_type else 'Full-time' }}
+          </span>
+          {% if employee and employee.salary %}
+          <p class="text-xs text-slate-500 mt-2">
+            Salary: <span class="font-semibold text-slate-300">₱{{ "{:,.2f}".format(employee.salary) }}</span>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ================== Info Grid ================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- LEFT COLUMN -->
+      <div class="space-y-5">
+        
+        <!-- Personal Information -->
+        <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-700/50">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <h3 class="font-semibold text-slate-100">Personal Information</h3>
+          </div>
+          
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-regular fa-id-card text-slate-600 group-hover:text-blue-400 transition"></i>
+                Full Name
+              </dt>
+              <dd class="font-medium text-slate-200 break-words">{{ employee.get_full_name() if employee else '-' }}</dd>
+            </div>
+            
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-cake-candles text-slate-600 group-hover:text-amber-400 transition"></i>
+                Birthdate
+              </dt>
+              <dd class="font-medium text-slate-200">
+                {{ employee.date_of_birth.strftime('%B %d, %Y') if employee and employee.date_of_birth else '-' }}
+                {% if employee and employee.date_of_birth %}
+                <span class="ml-2 text-xs text-slate-500">({{ age }} yrs)</span>
+                {% endif %}
+              </dd>
+            </div>
+            
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-venus-mars text-slate-600 group-hover:text-purple-400 transition"></i>
+                Gender
+              </dt>
+              <dd class="font-medium text-slate-200">{{ employee.gender if employee else '-' }}</dd>
+            </div>
+            
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-ring text-slate-600 group-hover:text-rose-400 transition"></i>
+                Civil Status
+              </dt>
+              <dd class="font-medium text-slate-200">{{ employee.marital_status if employee else '-' }}</dd>
+            </div>
+            
+            <div class="group sm:col-span-2">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-location-dot text-slate-600 group-hover:text-emerald-400 transition"></i>
+                Address
+              </dt>
+              <dd class="font-medium text-slate-200 break-words">
+                {{ employee.get_full_address() if employee else '-' }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <!-- Contact Information -->
+        <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-700/50">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <i class="fa-solid fa-address-book"></i>
+            </div>
+            <h3 class="font-semibold text-slate-100">Contact Details</h3>
+          </div>
+          
+          <dl class="space-y-4 text-sm">
+            <div class="flex items-start gap-3 group">
+              <div class="w-9 h-9 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0 
+                          text-slate-400 group-hover:bg-blue-500/20 group-hover:text-blue-400 transition">
+                <i class="fa-solid fa-phone"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <dt class="text-slate-500 mb-0.5">Mobile Number</dt>
+                <dd class="font-medium text-slate-200 flex items-center gap-2">
+                  {{ employee.phone if employee else '-' }}
+                  {% if employee and employee.phone %}
+                  <button onclick="copyToClipboard('{{ employee.phone }}')" 
+                          class="text-slate-500 hover:text-blue-400 transition p-1 rounded"
+                          title="Copy number">
+                    <i class="fa-regular fa-copy text-xs"></i>
+                  </button>
+                  {% endif %}
+                </dd>
+              </div>
+            </div>
+            
+            <div class="flex items-start gap-3 group">
+              <div class="w-9 h-9 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0 
+                          text-slate-400 group-hover:bg-blue-500/20 group-hover:text-blue-400 transition">
+                <i class="fa-regular fa-envelope"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <dt class="text-slate-500 mb-0.5">Email Address</dt>
+                <dd class="font-medium text-slate-200 flex items-center gap-2">
+                  <a href="mailto:{{ employee.email if employee else '#' }}" 
+                     class="hover:text-blue-400 transition truncate">
+                    {{ employee.email if employee else '-' }}
+                  </a>
+                  {% if employee and employee.email %}
+                  <button onclick="copyToClipboard('{{ employee.email }}')" 
+                          class="text-slate-500 hover:text-blue-400 transition p-1 rounded"
+                          title="Copy email">
+                    <i class="fa-regular fa-copy text-xs"></i>
+                  </button>
+                  {% endif %}
+                </dd>
+              </div>
+            </div>
+          </dl>
+        </section>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="space-y-5">
+        
+        <!-- Employment Details -->
+        <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-700/50">
+            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <i class="fa-solid fa-briefcase"></i>
+            </div>
+            <h3 class="font-semibold text-slate-100">Employment Details</h3>
+          </div>
+          
+          <dl class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-sm">
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-building text-slate-600 group-hover:text-blue-400 transition"></i>
+                Department
+              </dt>
+              <dd class="font-medium text-slate-200">{{ employee.department.name if employee and employee.department else '-' }}</dd>
+            </div>
+            
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-user-tie text-slate-600 group-hover:text-amber-400 transition"></i>
+                Position
+              </dt>
+              <dd class="font-medium text-slate-200">{{ employee.position.name if employee and employee.position else '-' }}</dd>
+            </div>
+            
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-regular fa-calendar-check text-slate-600 group-hover:text-emerald-400 transition"></i>
+                Date Hired
+              </dt>
+              <dd class="font-medium text-slate-200">
+                {{ employee.date_hired.strftime('%B %d, %Y') if employee and employee.date_hired else '-' }}
+              </dd>
+            </div>
+            
+            <div class="group">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-coins text-slate-600 group-hover:text-yellow-400 transition"></i>
+                Monthly Salary
+              </dt>
+              <dd class="font-medium text-slate-200">
+                {% if employee and employee.salary %}
+                  ₱{{ "{:,.2f}".format(employee.salary) }}
+                {% else %}
+                  -
+                {% endif %}
+              </dd>
+            </div>
+            
+            <div class="group sm:col-span-2">
+              <dt class="text-slate-500 flex items-center gap-1.5 mb-1">
+                <i class="fa-solid fa-clock-rotate-left text-slate-600 group-hover:text-cyan-400 transition"></i>
+                Employment Duration
+              </dt>
+              <dd class="font-medium text-slate-200">
+                {{ working_duration if working_duration else '-' }}
+                {% if employee and employee.date_hired %}
+                <span class="ml-2 text-xs text-slate-500">
+                  (Since {{ employee.date_hired.strftime('%Y') }})
+                </span>
+                {% endif %}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <!-- Emergency Contact -->
+        <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-700/50">
+            <div class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
+              <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+            <h3 class="font-semibold text-slate-100">Emergency Contact</h3>
+          </div>
+          
+          <div class="flex items-start gap-3 group">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-orange-500/20 
+                        border border-rose-500/30 flex items-center justify-center flex-shrink-0 
+                        text-rose-400 group-hover:scale-105 transition">
+              <i class="fa-solid fa-user-group"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <dt class="text-slate-500 mb-1">Contact Person</dt>
+              <dd class="font-medium text-slate-200 text-lg break-words">
+                {{ employee.emergency_contact if employee and employee.emergency_contact else 'Not specified' }}
+              </dd>
+              {% if employee and employee.emergency_contact %}
+              <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                <i class="fa-solid fa-circle-info"></i>
+                Update this contact in employee settings if needed
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </section>
+
+        <!-- Account Security Notice -->
+        <section class="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 
+                      rounded-2xl p-4 flex items-start gap-3">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="text-sm">
+            <p class="font-medium text-amber-200">Security Reminder</p>
+            <p class="text-amber-300/80 mt-0.5">
+              Use the <strong>Change Password</strong> button to update your credentials. 
+              Never share your password with anyone.
+            </p>
+          </div>
+        </section>
+        
+      </div>
     </div>
 
+    <!-- ================== Footer ================== -->
+    <footer class="text-center text-slate-500 text-sm pt-4 border-t border-slate-800/50">
+      <p>
+        Last updated: {{ employee.updated_at.strftime('%B %d, %Y at %I:%M %p') if employee and employee.updated_at else 'N/A' }}
+        <span class="mx-2">•</span>
+        HR Admin Portal • Municipality of Norzagaray
+      </p>
+    </footer>
+    
   </div>
+</main>
 
-  <hr class="my-6 border-slate-700">
+<!-- ================== Change Password Modal ================== -->
+<div id="editProfileModal" 
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden"
+     role="dialog" 
+     aria-modal="true"
+     aria-labelledby="modalTitle">
+  
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl 
+              transform transition-all duration-300 scale-100 opacity-100"
+       x-data="{ show: false }" 
+       x-init="show = true"
+       x-show="show"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95">
 
-  <!-- GRID -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-    <!-- LEFT -->
-    <div class="space-y-4">
-
-      <!-- Personal -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Personal Information</h3>
-
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-
-          <div>
-            <span class="text-slate-400">Full name</span>
-            <div class="font-medium break-words">{{ employee.get_full_name() if employee else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Birthdate</span>
-            <div class="font-medium">
-              {{ employee.date_of_birth.strftime('%B %d, %Y') if employee and employee.date_of_birth else '-' }}
-            </div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Age</span>
-            <div class="font-medium">{{ age if age else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Gender</span>
-            <div class="font-medium">{{ employee.gender if employee else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Civil Status</span>
-            <div class="font-medium">{{ employee.marital_status if employee else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Working Years</span>
-            <div class="font-medium">{{ working_duration if working_duration else '-' }}</div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Contact -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Contact</h3>
-
-        <div class="mt-3 space-y-2 text-sm">
-
-          <div>
-            <span class="text-slate-400">Mobile</span>
-            <div class="font-medium break-words">{{ employee.phone if employee else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Email</span>
-            <div class="font-medium break-words">{{ employee.email if employee else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Address</span>
-            <div class="font-medium break-words">{{ employee.get_full_address() if employee else '-' }}</div>
-          </div>
-
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RIGHT -->
-    <div class="space-y-4">
-
-      <!-- Employment -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Employment Details</h3>
-
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-
-          <div>
-            <span class="text-slate-400">Department</span>
-            <div class="font-medium">{{ employee.department.name if employee and employee.department else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Position</span>
-            <div class="font-medium">{{ employee.position.name if employee and employee.position else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Employment Type</span>
-            <div class="font-medium">{{ employee.employment_type.name if employee and employee.employment_type else '-' }}</div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Date Hired</span>
-            <div class="font-medium">
-              {{ employee.date_hired.strftime('%B %d, %Y') if employee and employee.date_hired else '-' }}
-            </div>
-          </div>
-
-          <div>
-            <span class="text-slate-400">Salary</span>
-            <div class="font-medium">
-              {{ "{:,.2f}".format(employee.salary) if employee and employee.salary else '-' }}
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Emergency -->
-      <div class="p-4 bg-slate-800 rounded-xl shadow-inner">
-        <h3 class="text-sm text-slate-300">Emergency Contact</h3>
-
-        <div class="mt-3 text-sm">
-          <span class="text-slate-400">Name</span>
-          <div class="font-medium break-words">{{ employee.emergency_contact if employee else '-' }}</div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- MODAL -->
-<div id="editProfileModal"
-  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 px-4">
-
-  <div class="bg-slate-900 rounded-2xl w-full max-w-md p-6 relative">
-
-    <h2 class="text-lg sm:text-xl font-semibold text-white mb-4">
-      <i class="fa-solid fa-user-pen"></i> Edit Profile
-    </h2>
-
-    <button id="closeModalBtn"
-      class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">&times;</button>
-
-    <form id="editProfileForm" class="space-y-4">
-
-      <div>
-        <label class="text-sm text-slate-300">Current Password</label>
-        <input type="password" name="current_password" required
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-600">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-300">Email</label>
-        <input type="email" name="email" value="{{ user.email if user else '' }}"
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-600">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-300">New Password</label>
-        <input type="password" name="new_password"
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-600">
-      </div>
-
-      <div>
-        <label class="text-sm text-slate-300">Confirm Password</label>
-        <input type="password" name="confirm_password"
-          class="w-full mt-1 px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-600">
-      </div>
-
-      <button type="submit"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl w-full flex items-center justify-center gap-2">
-        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-5 border-b border-slate-700/50">
+      <h2 id="modalTitle" class="text-lg font-semibold text-white flex items-center gap-2">
+        <i class="fa-solid fa-key text-blue-400"></i>
+        Change Password
+      </h2>
+      <button id="closeModalBtn" 
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 
+                     hover:text-white hover:bg-slate-700 transition"
+              aria-label="Close modal">
+        <i class="fa-solid fa-xmark"></i>
       </button>
+    </div>
 
+    <!-- Modal Body -->
+    <form id="editProfileForm" class="p-5 space-y-4">
+      
+      <!-- Current Password -->
+      <div class="space-y-1.5">
+        <label class="text-sm text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-lock text-slate-500"></i>
+          Current Password <span class="text-rose-400">*</span>
+        </label>
+        <div class="relative">
+          <input type="password" name="current_password" required
+                 class="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 text-white border border-slate-600 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                        transition placeholder-slate-500"
+                 placeholder="••••••••"
+                 autocomplete="current-password">
+          <button type="button" 
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                  onclick="togglePasswordVisibility(this)">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Email (Read-only display) -->
+      <div class="space-y-1.5">
+        <label class="text-sm text-slate-300 flex items-center gap-1.5">
+          <i class="fa-regular fa-envelope text-slate-500"></i>
+          Account Email
+        </label>
+        <div class="px-4 py-2.5 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-300 text-sm flex items-center justify-between">
+          <span class="truncate">{{ user.email if user else 'Not set' }}</span>
+          <button type="button" 
+                  onclick="copyToClipboard('{{ user.email if user else '' }}')"
+                  class="text-slate-500 hover:text-blue-400 transition p-1 rounded"
+                  title="Copy email">
+            <i class="fa-regular fa-copy text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- New Password -->
+      <div class="space-y-1.5">
+        <label class="text-sm text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-key text-slate-500"></i>
+          New Password <span class="text-rose-400">*</span>
+        </label>
+        <div class="relative">
+          <input type="password" name="new_password" id="newPassword"
+                 class="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 text-white border border-slate-600 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                        transition placeholder-slate-500"
+                 placeholder="Minimum 8 characters"
+                 autocomplete="new-password"
+                 oninput="checkPasswordStrength(this.value)">
+          <button type="button" 
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                  onclick="togglePasswordVisibility(this)">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+        <!-- Password Strength Indicator -->
+        <div id="passwordStrength" class="hidden mt-2">
+          <div class="flex items-center gap-2 text-xs">
+            <div class="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div id="strengthBar" class="h-full w-0 bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-500 transition-all duration-300"></div>
+            </div>
+            <span id="strengthText" class="text-slate-400">Strength: <span class="font-medium">-</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="space-y-1.5">
+        <label class="text-sm text-slate-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-lock text-slate-500"></i>
+          Confirm New Password <span class="text-rose-400">*</span>
+        </label>
+        <div class="relative">
+          <input type="password" name="confirm_password" id="confirmPassword"
+                 class="w-full px-4 py-2.5 rounded-xl bg-slate-800/80 text-white border border-slate-600 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                        transition placeholder-slate-500"
+                 placeholder="Re-enter new password"
+                 autocomplete="new-password"
+                 oninput="checkPasswordMatch()">
+          <button type="button" 
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                  onclick="togglePasswordVisibility(this)">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+        <p id="matchMessage" class="text-xs mt-1 hidden"></p>
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit"
+              class="w-full mt-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 
+                     text-white font-medium px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 
+                     transition shadow-lg shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+              id="submitBtn">
+        <i class="fa-solid fa-floppy-disk"></i>
+        Save New Password
+      </button>
+      
     </form>
+    
+    <!-- Modal Footer -->
+    <div class="px-5 pb-5 pt-0">
+      <p class="text-xs text-slate-500 text-center">
+        <i class="fa-solid fa-circle-info mr-1"></i>
+        Password must be at least 8 characters with a mix of letters, numbers & symbols
+      </p>
+    </div>
   </div>
 </div>
 
+<!-- ================== Toast Notification Container ================== -->
+<div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+<!-- ================== Scripts ================== -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+// ================== Utility Functions ==================
+function copyToClipboard(text) {
+  if (!text || text === '-') return;
+  
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Copied to clipboard!', 'success');
+  }).catch(() => {
+    showToast('Failed to copy', 'error');
+  });
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  
+  const icons = {
+    success: 'fa-circle-check text-emerald-400',
+    error: 'fa-circle-xmark text-rose-400',
+    info: 'fa-circle-info text-blue-400',
+    warning: 'fa-circle-exclamation text-amber-400'
+  };
+  
+  const bgColors = {
+    success: 'bg-emerald-500/10 border-emerald-500/20',
+    error: 'bg-rose-500/10 border-rose-500/20',
+    info: 'bg-blue-500/10 border-blue-500/20',
+    warning: 'bg-amber-500/10 border-amber-500/20'
+  };
+  
+  toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border ${bgColors[type]} 
+                    text-slate-200 text-sm shadow-lg animate-slide-in-right`;
+  toast.innerHTML = `
+    <i class="fa-solid ${icons[type]}"></i>
+    <span>${message}</span>
+    <button onclick="this.parentElement.remove()" class="ml-2 text-slate-500 hover:text-slate-300">
+      <i class="fa-solid fa-xmark text-xs"></i>
+    </button>
+  `;
+  
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function togglePasswordVisibility(btn) {
+  const input = btn.parentElement.querySelector('input');
+  const icon = btn.querySelector('i');
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+
+function checkPasswordStrength(password) {
+  const strengthBar = document.getElementById('strengthBar');
+  const strengthText = document.getElementById('strengthText');
+  const strengthContainer = document.getElementById('passwordStrength');
+  
+  if (!password) {
+    strengthContainer.classList.add('hidden');
+    return;
+  }
+  
+  strengthContainer.classList.remove('hidden');
+  
+  let strength = 0;
+  if (password.length >= 8) strength++;
+  if (password.length >= 12) strength++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+  if (/\d/.test(password)) strength++;
+  if (/[^a-zA-Z0-9]/.test(password)) strength++;
+  
+  const widths = ['0%', '25%', '50%', '75%', '100%'];
+  const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#22c55e'];
+  const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+  const index = Math.min(Math.floor((strength - 1) / 1.25), 4);
+  
+  strengthBar.style.width = widths[index];
+  strengthBar.style.backgroundColor = colors[index];
+  strengthText.innerHTML = `Strength: <span class="font-medium" style="color:${colors[index]}">${labels[index]}</span>`;
+}
+
+function checkPasswordMatch() {
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  const matchMessage = document.getElementById('matchMessage');
+  
+  if (!confirmPassword) {
+    matchMessage.classList.add('hidden');
+    return;
+  }
+  
+  matchMessage.classList.remove('hidden');
+  
+  if (newPassword === confirmPassword) {
+    matchMessage.textContent = '✓ Passwords match';
+    matchMessage.className = 'text-xs mt-1 text-emerald-400';
+  } else {
+    matchMessage.textContent = '✗ Passwords do not match';
+    matchMessage.className = 'text-xs mt-1 text-rose-400';
+  }
+}
+
+// ================== Modal Logic ==================
 const modal = document.getElementById('editProfileModal');
 const editBtn = document.getElementById('editProfileBtn');
 const closeBtn = document.getElementById('closeModalBtn');
 
-editBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+function openModal() {
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  // Reset form
+  document.getElementById('editProfileForm').reset();
+  document.getElementById('passwordStrength').classList.add('hidden');
+  document.getElementById('matchMessage').classList.add('hidden');
+}
 
-window.addEventListener('click', (e) => {
-  if (e.target === modal) modal.classList.add('hidden');
+function closeModal() {
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+editBtn?.addEventListener('click', openModal);
+closeBtn?.addEventListener('click', closeModal);
+
+// Close on backdrop click
+modal?.addEventListener('click', (e) => {
+  if (e.target === modal) closeModal();
 });
 
-document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+// Close on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+    closeModal();
+  }
+});
 
+// ================== Form Submission ==================
+document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  
+  // Validation
+  if (newPassword.length < 8) {
+    showToast('Password must be at least 8 characters', 'error');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showToast('Passwords do not match', 'error');
+    return;
+  }
+  
   const formData = new FormData(e.target);
   const data = Object.fromEntries(formData.entries());
-
-  const result = await Swal.fire({
-    title: 'Confirm Update',
-    text: 'Are you sure you want to update your profile?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#2563EB',
-    cancelButtonColor: '#6B7280',
-    confirmButtonText: 'Yes, update it!'
-  });
-
-  if (result.isConfirmed) {
-    try {
-      const response = await fetch('{{ url_for('hr_admin_bp.edit_profile') }}', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-      });
-
-      const resData = await response.json();
-
-      if(resData.status === 'success') {
-        Swal.fire('Updated!', resData.message, 'success').then(() => location.reload());
-      } else {
-        Swal.fire('Error', resData.message, 'error');
-      }
-
-    } catch (err) {
-      Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+  
+  const submitBtn = document.getElementById('submitBtn');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+  
+  try {
+    const response = await fetch('{{ url_for("hr_admin_bp.edit_profile") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    
+    const resData = await response.json();
+    
+    if (resData.status === 'success') {
+      showToast(resData.message, 'success');
+      closeModal();
+      // Optional: reload after short delay
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(resData.message || 'Update failed', 'error');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
     }
+    
+  } catch (err) {
+    console.error('Error:', err);
+    showToast('Network error. Please try again.', 'error');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
   }
+});
+
+// ================== Print Optimization ==================
+window.addEventListener('beforeprint', () => {
+  document.querySelectorAll('.no-print, button, [onclick]').forEach(el => {
+    el.classList.add('print:hidden');
+  });
+});
+
+window.addEventListener('afterprint', () => {
+  document.querySelectorAll('.print\\:hidden').forEach(el => {
+    el.classList.remove('print:hidden');
+  });
 });
 </script>
 
+<!-- ================== Styles ================== -->
+<style>
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  
+  @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  .animate-slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
+  
+  /* Print Styles */
+  @media print {
+    @page { margin: 1.5cm; size: A4; }
+    body { background: white !important; color: #111 !important; }
+    main { background: transparent !important; padding: 0 !important; }
+    .bg-slate-800\/50, .bg-slate-800\/40 { background: transparent !important; border: 1px solid #e2e8f0 !important; }
+    .text-slate-100, .text-slate-200, .text-slate-300 { color: #111 !important; }
+    .text-slate-400, .text-slate-500 { color: #4b5563 !important; }
+    .text-blue-400 { color: #2563eb !important; }
+    .text-emerald-400 { color: #059669 !important; }
+    button, .no-print, [x-data], #editProfileModal, #toastContainer { display: none !important; }
+    a { color: #2563eb !important; text-decoration: none !important; }
+    .rounded-2xl { border-radius: 8px !important; }
+    .shadow-xl, .shadow-lg { box-shadow: none !important; }
+  }
+</style>
 {% endblock %}

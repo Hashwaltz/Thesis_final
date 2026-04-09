@@ -1,17 +1,20 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file
+from flask import  render_template, request, flash, redirect, url_for,  send_file
 from io import BytesIO 
-from collections import Counter
+from collections import Counter, defaultdict
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from flask_login import login_required, current_user
 from datetime import datetime, date, timedelta
+import logging
+from sqlalchemy import func
 
-
-from main_app.helpers.decorators import admin_required
-from main_app.models.hr_models import Position, Employee, Department, Attendance, Leave
+from main_app.helpers.decorators import admin_required  
+from main_app.models.hr_models import  Employee, Department, Attendance, Leave, LeaveType
 
 
 from main_app.blueprints.hr_system.routes.admin import hr_admin_bp
 
+logger = logging.getLogger(__name__)
 
 
 # ------------------------- Reports -------------------------
@@ -75,6 +78,8 @@ def reports():
 
 
 
+
+
 @hr_admin_bp.route('/attendance-report', methods=['GET'])
 @login_required
 @admin_required
@@ -86,7 +91,6 @@ def attendance_report():
     end_date = request.args.get('end_date')
     department_id = request.args.get('department_id')
 
-    # Default to current month
     if not start_date:
         start_date = date.today().replace(day=1)
     else:
@@ -98,100 +102,135 @@ def attendance_report():
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 
     # ------------------------------
-    # Base employee query
+    # Fetch Employees
     # ------------------------------
     employees_query = Employee.query.filter(Employee.status == "Active")
     if department_id:
         employees_query = employees_query.filter(Employee.department_id == department_id)
     employees = employees_query.all()
     total_employees = len(employees)
+    departments = Department.query.all()
+    total_days = ((end_date - start_date).days + 1)
+
+    if total_employees == 0:
+        return render_template(
+            "hr/admin/reports/attendance_reports.html",
+            report_data=[], department_summary=[], top_absentees=[],
+            top_latecomers=[], perfect_attendees=[], best_dept=None, worst_dept=None,
+            total_employees=0, total_hours_worked=0, avg_attendance_rate=0,
+            avg_punctuality_rate=0, start_date=start_date, end_date=end_date,
+            department_id=department_id, departments=departments,
+            current_date=date.today().strftime("%B %d, %Y"), current_user=current_user
+        )
 
     # ------------------------------
-    # Collect attendance data per employee
+    # Efficient Attendance Fetch (1 Query instead of N+1)
+    # ------------------------------
+    all_attendance = Attendance.query.filter(
+        Attendance.date >= start_date,
+        Attendance.date <= end_date
+    ).all()
+
+    emp_att_map = defaultdict(list)
+    for att in all_attendance:
+        emp_att_map[att.employee_id].append(att)
+
+    # ------------------------------
+    # Process Data & Insights
     # ------------------------------
     report_data = []
+    top_absentees = []
+    top_latecomers = []
+    perfect_attendees = []
     total_hours_worked = 0
     total_present_days = 0
 
     for emp in employees:
-        emp_attendances = Attendance.query.filter(
-            Attendance.employee_id == emp.id,
-            Attendance.date >= start_date,
-            Attendance.date <= end_date
-        ).all()
+        atts = emp_att_map.get(emp.id, [])
+        days_present = sum(1 for a in atts if a.status in ["Present", "Late"])
+        days_absent = sum(1 for a in atts if a.status == "Absent")
+        late_count = sum(1 for a in atts if a.status == "Late")
+        hours_worked = sum(a.working_hours for a in atts)
 
-        days_present = sum(1 for a in emp_attendances if a.status in ["Present", "Late"])
-        days_absent = sum(1 for a in emp_attendances if a.status == "Absent")
-        late_count = sum(1 for a in emp_attendances if a.status == "Late")
-        hours_worked = sum(a.working_hours for a in emp_attendances)
+        punctuality_rate = round(((days_present - late_count) / days_present) * 100, 2) if days_present > 0 else 0
 
         total_hours_worked += hours_worked
         total_present_days += days_present
 
-        report_data.append({
+        record = {
+            "employee_id": emp.id,
             "employee_name": emp.get_full_name(),
-            "department_name": emp.department.name if emp.department else "",
+            "department_name": emp.department.name if emp.department else "N/A",
+            "department_id": emp.department_id,
             "days_present": days_present,
             "days_absent": days_absent,
             "late_count": late_count,
-            "total_hours": round(hours_worked, 2)
-        })
+            "total_hours": round(hours_worked, 2),
+            "punctuality_rate": punctuality_rate
+        }
+        report_data.append(record)
 
-    # ------------------------------
-    # Average attendance rate
-    # ------------------------------
-    avg_attendance_rate = (
-        round((total_present_days / (total_employees * ((end_date - start_date).days + 1))) * 100, 2)
-        if total_employees > 0 else 0
-    )
+        # Categorize for insights
+        if days_absent > 0:
+            top_absentees.append(record)
+        if late_count > 0:
+            top_latecomers.append(record)
+        if days_absent == 0 and late_count == 0 and days_present > 0:
+            perfect_attendees.append(record)
 
-    # ------------------------------
-    # Department summary
-    # ------------------------------
+    # Sort insights
+    top_absentees.sort(key=lambda x: x['days_absent'], reverse=True)
+    top_latecomers.sort(key=lambda x: x['late_count'], reverse=True)
+
+    # Overall Stats
+    avg_attendance_rate = round((total_present_days / (total_employees * total_days)) * 100, 2) if total_employees > 0 else 0
+    avg_punctuality_rate = round(sum(r['punctuality_rate'] for r in report_data) / len(report_data), 2) if report_data else 0
+
+    # Department Summary
     department_summary = []
-    departments = Department.query.all()
+    dept_metrics = {}
     for dept in departments:
-        dept_emps = [e for e in employees if e.department_id == dept.id]
+        dept_emps = [r for r in report_data if r['department_id'] == dept.id]
         if not dept_emps:
             continue
 
-        dept_attendance_days = 0
-        dept_total_hours = 0
-        for emp in dept_emps:
-            emp_att = [a for a in report_data if a["employee_name"] == emp.get_full_name()]
-            if emp_att:
-                dept_attendance_days += emp_att[0]["days_present"]
-                dept_total_hours += emp_att[0]["total_hours"]
-        
-        num_days = ((end_date - start_date).days + 1) * len(dept_emps)
-        avg_att = round((dept_attendance_days / num_days) * 100, 2) if num_days > 0 else 0
-        avg_hours = round(dept_total_hours / len(dept_emps), 2) if dept_emps else 0
+        dept_att_days = sum(r['days_present'] for r in dept_emps)
+        dept_hours = sum(r['total_hours'] for r in dept_emps)
+        num_days = total_days * len(dept_emps)
+        avg_att = round((dept_att_days / num_days) * 100, 2) if num_days > 0 else 0
+        avg_hours = round(dept_hours / len(dept_emps), 2)
 
-        department_summary.append({
-            "name": dept.name,
-            "avg_attendance": avg_att,
-            "avg_hours": avg_hours
-        })
+        department_summary.append({"name": dept.name, "avg_attendance": avg_att, "avg_hours": avg_hours})
+        dept_metrics[dept.id] = avg_att
 
-    # ------------------------------
-    # Render template
-    # ------------------------------
+    best_dept = None
+    worst_dept = None
+    if dept_metrics:
+        best_dept_id = max(dept_metrics, key=dept_metrics.get)
+        worst_dept_id = min(dept_metrics, key=dept_metrics.get)
+        best_dept = next((d for d in departments if d.id == best_dept_id), None)
+        worst_dept = next((d for d in departments if d.id == worst_dept_id), None)
+
     return render_template(
         "hr/admin/reports/attendance_reports.html",
         report_data=report_data,
         department_summary=department_summary,
+        top_absentees=top_absentees[:5],
+        top_latecomers=top_latecomers[:5],
+        perfect_attendees=perfect_attendees,
+        best_dept=best_dept.name if best_dept else None,
+        worst_dept=worst_dept.name if worst_dept else None,
         total_employees=total_employees,
         total_hours_worked=round(total_hours_worked, 2),
         avg_attendance_rate=avg_attendance_rate,
+        avg_punctuality_rate=avg_punctuality_rate,
         start_date=start_date,
         end_date=end_date,
-        department_id=int(department_id) if department_id else "",
+        department_id=int(department_id) if department_id else None,
         departments=departments,
         current_date=date.today().strftime("%B %d, %Y"),
         current_user=current_user
     )
-
-
 
 
 @hr_admin_bp.route('/attendance/reports/word')
@@ -340,146 +379,294 @@ def attendance_report_word():
 
 
 
+# ------------------------------
+# Leave Report - Main View
+# ------------------------------
 @hr_admin_bp.route("/hr_admin/leave_report")
 @admin_required
 @login_required
 def leave_report():
-    start_date_str = request.args.get('start_date')
-    end_date_str = request.args.get('end_date')
-    department_id = request.args.get('department_id')
-    status_filter = request.args.get('status')
+    try:
+        # --- Parse & Validate Filters ---
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        department_id = request.args.get('department_id', type=int)
+        status_filter = request.args.get('status')
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 25, type=int)
 
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else date.today() - timedelta(days=30)
-    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else date.today()
+        # Default date range: last 30 days
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else date.today() - timedelta(days=30)
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else date.today()
+        except ValueError:
+            flash("Invalid date format. Using default 30-day range.", "warning")
+            start_date = date.today() - timedelta(days=30)
+            end_date = date.today()
 
-    employees = Employee.query.filter(Employee.archived == False)
-    if department_id:
-        employees = employees.filter(Employee.department_id == department_id)
-    employees = employees.all()
+        if start_date > end_date:
+            flash("Start date cannot be after end date.", "error")
+            start_date, end_date = end_date, start_date
 
-    leave_data = []
-    for emp in employees:
-        emp_leaves = Leave.query.filter(
-            Leave.employee_id == emp.id,
-            Leave.start_date >= start_date,
-            Leave.end_date <= end_date
+        # --- Build Base Query ---
+        leave_query = Leave.query.join(Employee).join(Department, isouter=True).join(LeaveType, isouter=True).filter(
+            Employee.archived == False,
+            Leave.start_date <= end_date,  # Overlap logic: leave starts before range ends
+            Leave.end_date >= start_date   # AND leave ends after range starts
         )
+
+        if department_id:
+            leave_query = leave_query.filter(Employee.department_id == department_id)
         if status_filter:
-            emp_leaves = emp_leaves.filter(Leave.status == status_filter)
-        leave_data.extend(emp_leaves.all())
+            leave_query = leave_query.filter(Leave.status == status_filter)
 
-    # Insights
-    total_leaves = len(leave_data)
-    avg_days_per_leave = round(sum(lv.days_requested for lv in leave_data)/total_leaves,2) if total_leaves else 0
-    leave_types = [lv.leave_type.name for lv in leave_data if lv.leave_type]
-    most_common_leave_type = Counter(leave_types).most_common(1)[0][0] if leave_types else "N/A"
+        # --- Pagination ---
+        pagination = leave_query.order_by(Leave.start_date.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        leave_data = pagination.items
 
-    # Department-wise summary
-    dept_summary = {}
-    for dept in Department.query.all():
-        dept_leaves = [lv for lv in leave_data if lv.employee.department_id == dept.id]
-        if dept_leaves:
-            dept_summary[dept.name] = {
-                "total": len(dept_leaves),
-                "avg_days": round(sum(lv.days_requested for lv in dept_leaves)/len(dept_leaves), 2)
+        # --- Insights (Efficient Aggregation) ---
+        insights = _calculate_leave_insights(leave_query, start_date, end_date)
+
+        # --- Department Summary (Cached) ---
+        dept_summary = _get_department_summary(leave_query)
+
+        # --- Preload Departments for Filter ---
+        departments = Department.query.order_by(Department.name).all()
+
+        return render_template(
+            "hr/admin/reports/leave_reports.html",
+            leave_data=leave_data,
+            pagination=pagination,
+            start_date=start_date,
+            end_date=end_date,
+            departments=departments,
+            department_id=department_id,
+            status_filter=status_filter,
+            per_page=per_page,
+            **insights,
+            dept_summary=dept_summary,
+            current_filters={
+                'start_date': start_date_str,
+                'end_date': end_date_str,
+                'department_id': department_id,
+                'status': status_filter
             }
+        )
 
-    return render_template(
-        "hr/admin/reports/leave_reports.html",
-        leave_data=leave_data,
-        start_date=start_date,
-        end_date=end_date,
-        departments=Department.query.all(),
-        department_id=int(department_id) if department_id else None,
-        total_leaves=total_leaves,
-        avg_days_per_leave=avg_days_per_leave,
-        most_common_leave_type=most_common_leave_type,
-        dept_summary=dept_summary
-    )
-
-
+    except Exception as e:
+        logger.error(f"Leave report error: {str(e)}", exc_info=True)
+        flash("An error occurred while loading the report.", "error")
+        return redirect(url_for('hr_admin_bp.dashboard'))
 
 
 # ------------------------------
-# Leave Report Word Export
+# Leave Report - Word Export
 # ------------------------------
 @hr_admin_bp.route("/leave-report/word")
 @login_required
 @admin_required
 def leave_report_word():
-    # --- Filter params ---
-    start_date_str = request.args.get("start_date")
-    end_date_str = request.args.get("end_date")
-    department_id = request.args.get("department_id", type=int)
+    try:
+        # --- Reuse Filter Logic ---
+        start_date_str = request.args.get("start_date")
+        end_date_str = request.args.get("end_date")
+        department_id = request.args.get("department_id", type=int)
+        status_filter = request.args.get("status")  # ✅ Now included
 
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
-    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+        except ValueError:
+            start_date = end_date = None
 
-    # --- Fetch leaves ---
-    query = Leave.query.join(Employee).join(Department)
-    if start_date:
-        query = query.filter(Leave.start_date >= start_date)
-    if end_date:
-        query = query.filter(Leave.end_date <= end_date)
-    if department_id:
-        query = query.filter(Employee.department_id == department_id)
+        # --- Build Query (Matches Main View) ---
+        query = Leave.query.join(Employee).join(Department, isouter=True).join(LeaveType, isouter=True).filter(
+            Employee.archived == False
+        )
+        
+        if start_date:
+            query = query.filter(Leave.start_date <= end_date, Leave.end_date >= start_date)
+        if department_id:
+            query = query.filter(Employee.department_id == department_id)
+        if status_filter:
+            query = query.filter(Leave.status == status_filter)
 
-    all_leaves = query.order_by(Leave.start_date.asc()).all()
+        all_leaves = query.order_by(Leave.start_date.asc(), Employee.last_name.asc()).all()
 
-    # --- Create Word doc ---
+        # --- Generate Document ---
+        doc = _generate_leave_report_doc(all_leaves, start_date_str, end_date_str, department_id, status_filter)
+
+        # --- Stream Response ---
+        file_stream = BytesIO()
+        doc.save(file_stream)
+        file_stream.seek(0)
+        filename = f"Leave_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
+
+        return send_file(
+            file_stream,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
+    except Exception as e:
+        logger.error(f"Word export error: {str(e)}", exc_info=True)
+        flash("Failed to generate report. Please try again.", "error")
+        return redirect(url_for('hr_admin_bp.leave_report'))
+
+
+# ------------------------------
+# Helper: Calculate Insights
+# ------------------------------
+def _calculate_leave_insights(query, start_date, end_date):
+    """Efficiently compute report insights using SQLAlchemy aggregation."""
+    total_leaves = query.count()
+    
+    if total_leaves == 0:
+        return {
+            "total_leaves": 0,
+            "avg_days_per_leave": 0,
+            "most_common_leave_type": "N/A",
+            "approved_count": 0,
+            "pending_count": 0,
+            "rejected_count": 0,
+            "total_days_requested": 0
+        }
+
+    # Aggregations
+    stats = query.with_entities(
+        func.sum(Leave.days_requested).label('total_days'),
+        func.avg(Leave.days_requested).label('avg_days')
+    ).first()
+    
+    status_counts = dict(query.with_entities(
+        Leave.status, func.count(Leave.id)
+    ).group_by(Leave.status).all())
+    
+    leave_types = [t[0] for t in query.with_entities(LeaveType.name).filter(LeaveType.name.isnot(None)).all()]
+    most_common = Counter(leave_types).most_common(1)
+
+    return {
+        "total_leaves": total_leaves,
+        "avg_days_per_leave": round(stats.avg_days or 0, 2),
+        "most_common_leave_type": most_common[0][0] if most_common else "N/A",
+        "approved_count": status_counts.get('Approved', 0),
+        "pending_count": status_counts.get('Pending', 0),
+        "rejected_count": status_counts.get('Rejected', 0),
+        "total_days_requested": stats.total_days or 0
+    }
+
+
+# ------------------------------
+# Helper: Department Summary
+# ------------------------------
+def _get_department_summary(query):
+    """Generate department-wise breakdown."""
+    dept_summary = defaultdict(lambda: {"total": 0, "total_days": 0})
+    
+    for leave in query.with_entities(Leave, Department.name, Employee.department_id).all():
+        dept_name = leave[1] or "Unassigned"
+        dept_summary[dept_name]["total"] += 1
+        dept_summary[dept_name]["total_days"] += leave[0].days_requested
+
+    # Calculate averages
+    return {
+        dept: {
+            "total": data["total"],
+            "avg_days": round(data["total_days"] / data["total"], 2) if data["total"] > 0 else 0,
+            "total_days": data["total_days"]
+        }
+        for dept, data in dept_summary.items()
+    }
+
+
+# ------------------------------
+# Helper: Generate Word Document
+# ------------------------------
+def _generate_leave_report_doc(leaves, start_date_str, end_date_str, dept_id, status_filter):
+    """Create a professionally formatted Word document."""
     doc = Document()
-    doc.add_heading("Municipality of Norzagaray", 0).alignment = 1
-    doc.add_paragraph(f"Leave Report ({start_date_str or 'N/A'} - {end_date_str or 'N/A'})", style="Heading 1")
-    doc.add_paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}\n")
+    
+    # Header
+    title = doc.add_heading("Municipality of Norzagaray", 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    subtitle = doc.add_paragraph("Human Resources Department")
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    subtitle.style = 'Subtitle'
+    
+    doc.add_paragraph()  # Spacer
+    
+    # Report Title & Metadata
+    doc.add_heading("Leave Activity Report", level=1)
+    meta = doc.add_paragraph()
+    meta.add_run(f"Period: {start_date_str or 'N/A'} to {end_date_str or 'N/A'}\n")
+    if dept_id:
+        dept = Department.query.get(dept_id)
+        meta.add_run(f"Department: {dept.name if dept else 'N/A'}\n")
+    if status_filter:
+        meta.add_run(f"Status Filter: {status_filter.title()}\n")
+    meta.add_run(f"Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}")
+    
+    doc.add_paragraph()
+    
+    # Data Table
+    table = doc.add_table(rows=1, cols=8)
+    table.style = 'Light Grid Accent 1'
+    headers = ["Employee", "Department", "Leave Type", "Start", "End", "Days", "Status", "Reason"]
+    for i, header in enumerate(headers):
+        table.rows[0].cells[i].text = header
+        table.rows[0].cells[i].paragraphs[0].runs[0].bold = True
 
-    # --- Table ---
-    table = doc.add_table(rows=1, cols=7)
-    hdr_cells = table.rows[0].cells
-    headers = ["Employee Name", "Department", "Leave Type", "Start Date", "End Date", "Days Requested", "Status"]
-    for i, h in enumerate(headers):
-        hdr_cells[i].text = h
+    for leave in leaves:
+        row = table.add_row().cells
+        row[0].text = leave.employee.get_full_name()
+        row[1].text = leave.employee.department.name if leave.employee.department else "N/A"
+        row[2].text = leave.leave_type.name if leave.leave_type else "N/A"
+        row[3].text = leave.start_date.strftime("%Y-%m-%d")
+        row[4].text = leave.end_date.strftime("%Y-%m-%d")
+        row[5].text = str(leave.days_requested)
+        row[6].text = leave.status.title()
+        # Truncate long reasons
+        reason = (leave.reason or "")[:100] + ("..." if len(leave.reason or "") > 100 else "")
+        row[7].text = reason
 
-    for leave in all_leaves:
-        row_cells = table.add_row().cells
-        row_cells[0].text = leave.employee.get_full_name()
-        row_cells[1].text = leave.employee.department.name if leave.employee.department else ""
-        row_cells[2].text = leave.leave_type.name if leave.leave_type else ""
-        row_cells[3].text = leave.start_date.strftime("%Y-%m-%d")
-        row_cells[4].text = leave.end_date.strftime("%Y-%m-%d")
-        row_cells[5].text = str(leave.days_requested)
-        row_cells[6].text = leave.status
+    # Insights Section
+    doc.add_page_break()
+    doc.add_heading("Summary Insights", level=2)
+    
+    total = len(leaves)
+    avg_days = round(sum(l.days_requested for l in leaves) / total, 2) if total else 0
+    
+    insights_table = doc.add_table(rows=4, cols=2)
+    insights_table.style = 'Light Shading Accent 1'
+    insight_data = [
+        ("Total Leave Requests", str(total)),
+        ("Total Days Requested", str(sum(l.days_requested for l in leaves))),
+        ("Average Days per Request", str(avg_days)),
+        ("Approved / Pending / Rejected", f"{sum(1 for l in leaves if l.status=='Approved')} / {sum(1 for l in leaves if l.status=='Pending')} / {sum(1 for l in leaves if l.status=='Rejected')}")
+    ]
+    for i, (label, value) in enumerate(insight_data):
+        insights_table.rows[i].cells[0].text = label
+        insights_table.rows[i].cells[1].text = value
 
-    # --- Insights ---
-    doc.add_paragraph("\nInsights", style="Heading 2")
-    total_leaves = len(all_leaves)
-    avg_days = round(sum(lv.days_requested for lv in all_leaves)/total_leaves, 2) if total_leaves else 0
-    doc.add_paragraph(f"Total leaves: {total_leaves}")
-    doc.add_paragraph(f"Average leave days per record: {avg_days}")
+    # Department Summary
+    if leaves:
+        doc.add_paragraph()
+        doc.add_heading("Department Breakdown", level=2)
+        dept_data = _get_department_summary(Leave.query.filter(Leave.id.in_([l.id for l in leaves])))
+        
+        dept_table = doc.add_table(rows=1, cols=3)
+        dept_table.style = 'Light Grid'
+        for cell in dept_table.rows[0].cells:
+            cell.text = "Department" if cell == dept_table.rows[0].cells[0] else "Total Leaves" if cell == dept_table.rows[0].cells[1] else "Avg Days"
+            cell.paragraphs[0].runs[0].bold = True
+            
+        for dept, stats in sorted(dept_data.items()):
+            row = dept_table.add_row().cells
+            row[0].text = dept
+            row[1].text = str(stats['total'])
+            row[2].text = str(stats['avg_days'])
 
-    # --- Department-wise summary ---
-    dept_summary = {}
-    for dept in Department.query.all():
-        dept_leaves = [lv for lv in all_leaves if lv.employee.department_id == dept.id]
-        if dept_leaves:
-            dept_summary[dept.name] = {
-                "total": len(dept_leaves),
-                "avg_days": round(sum(lv.days_requested for lv in dept_leaves) / len(dept_leaves), 2)
-            }
-
-    if dept_summary:
-        doc.add_paragraph("\nDepartment-wise Summary", style="Heading 2")
-        for dept, stats in dept_summary.items():
-            doc.add_paragraph(f"{dept}: Total Leaves = {stats['total']}, Average Days = {stats['avg_days']}")
-
-    # --- Send as file ---
-    file_stream = BytesIO()
-    doc.save(file_stream)
-    file_stream.seek(0)
-    filename = f"Leave_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.docx"
-
-    return send_file(
-        file_stream,
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    return doc

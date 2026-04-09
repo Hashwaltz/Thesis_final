@@ -1,131 +1,222 @@
-<div id="addAttendanceModal"
-     class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-50">
-
-  <div class="bg-gray-900 rounded-2xl w-full max-w-2xl p-6 relative border border-gray-700 shadow-xl">
-
-    <!-- Close Button -->
-    <button type="button"
-            id="closeAddAttendanceModal"
-            class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-
+<!-- hr/admin/attendance/add_attendance.html -->
+<div 
+  id="addAttendanceModal"
+  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="addAttendanceModalTitle"
+>
+  <div class="bg-gray-900/95 backdrop-blur-xl rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-700/50 flex flex-col">
+    
     <!-- Header -->
-    <h2 class="text-2xl font-semibold text-blue-400 mb-6 text-center flex items-center justify-center gap-2">
-      <i class="fa-solid fa-user-plus"></i>
-      Add Manual Attendance
-    </h2>
-
-    <form action="{{ url_for('hr_admin_bp.add_manual_attendance') }}"
-          method="POST"
-          class="space-y-5">
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-
-        <!-- Employee -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <div class="bg-green-500/20 p-2.5 rounded-xl">
+          <i class="fa-solid fa-plus text-green-400 text-lg"></i>
+        </div>
         <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-user mr-1"></i> Employee
+          <h2 id="addAttendanceModalTitle" class="text-lg font-semibold text-white">Add Attendance Record</h2>
+          <p class="text-xs text-gray-400">Create a new manual attendance entry</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        id="closeAddAttendanceModal"
+        class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-xl transition-colors"
+        aria-label="Close modal"
+      >
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="overflow-y-auto p-5 md:p-6 space-y-5">
+      <form id="addAttendanceForm" action="{{ url_for('hr_admin_bp.add_manual_attendance') }}" method="POST" class="space-y-5" novalidate>
+        
+        <!-- 🔑 CSRF Token - CRITICAL for Flask-WTF -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+
+        <!-- Employee Select (Required) -->
+        <div class="space-y-1.5">
+          <label for="add_employee_id" class="block text-sm font-medium text-gray-300">
+            <i class="fa-regular fa-user text-green-400 mr-1.5"></i>
+            Employee <span class="text-red-400">*</span>
           </label>
           <div class="relative">
-            <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <select name="employee_id"
-                    required
-                    class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
-              <option value="">Select Employee</option>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-user"></i>
+            </span>
+            <select 
+              id="add_employee_id" 
+              name="employee_id"
+              class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+              required
+            >
+              <option value="">Select an employee...</option>
               {% for emp in employees %}
-                <option value="{{ emp.id }}">
-                  {{ emp.get_full_name() }}
-                </option>
+                <option value="{{ emp.id }}">{{ emp.get_full_name() }} - {{ emp.department.name if emp.department else 'No Dept' }}</option>
               {% endfor %}
             </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
           </div>
         </div>
 
-        <!-- Date -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-regular fa-calendar mr-1"></i> Date
-          </label>
-          <div class="relative">
-            <i class="fa-regular fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="date"
-                   name="date"
-                   required
-                   class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
+        <!-- Date & Status Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Date -->
+          <div class="space-y-1.5">
+            <label for="add_date" class="block text-sm font-medium text-gray-300">
+              <i class="fa-regular fa-calendar text-green-400 mr-1.5"></i>
+              Date <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-regular fa-calendar"></i>
+              </span>
+              <input 
+                type="date" 
+                id="add_date" 
+                name="date"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all"
+                required
+                max="{{ now_date if now_date else '' }}"
+              />
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div class="space-y-1.5">
+            <label for="add_status" class="block text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-circle-info text-green-400 mr-1.5"></i>
+              Status <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-solid fa-tag"></i>
+              </span>
+              <select 
+                id="add_status" 
+                name="status"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                required
+              >
+                <option value="">Select status...</option>
+                <option value="Present">✅ Present</option>
+                <option value="Late">⏰ Late</option>
+                <option value="Absent">❌ Absent</option>
+                <option value="Leave">📋 On Leave</option>
+              </select>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-solid fa-chevron-down text-xs"></i>
+              </span>
+            </div>
           </div>
         </div>
 
-        <!-- Time In -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-right-to-bracket mr-1"></i> Time In
-          </label>
-          <div class="relative">
-            <i class="fa-solid fa-right-to-bracket absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="time"
-                   name="time_in"
-                   class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
+        <!-- Time In / Time Out Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Time In -->
+          <div class="space-y-1.5">
+            <label for="add_time_in" class="block text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-arrow-right-to-bracket text-green-400 mr-1.5"></i>
+              Time In
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-regular fa-clock"></i>
+              </span>
+              <input 
+                type="time" 
+                id="add_time_in" 
+                name="time_in"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all"
+                step="60"
+              />
+            </div>
+            <p class="text-xs text-gray-500">Leave blank if not applicable</p>
           </div>
-        </div>
 
-        <!-- Time Out -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-right-from-bracket mr-1"></i> Time Out
-          </label>
-          <div class="relative">
-            <i class="fa-solid fa-right-from-bracket absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="time"
-                   name="time_out"
-                   class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
-          </div>
-        </div>
-
-        <!-- Status -->
-        <div>
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-solid fa-circle-info mr-1"></i> Status
-          </label>
-          <div class="relative">
-            <i class="fa-solid fa-circle-info absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <select name="status"
-                    class="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500">
-              <option value="Present">Present</option>
-              <option value="Late">Late</option>
-              <option value="Absent">Absent</option>
-            </select>
+          <!-- Time Out -->
+          <div class="space-y-1.5">
+            <label for="add_time_out" class="block text-sm font-medium text-gray-300">
+              <i class="fa-solid fa-arrow-right-from-bracket text-blue-400 mr-1.5"></i>
+              Time Out
+            </label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <i class="fa-regular fa-clock"></i>
+              </span>
+              <input 
+                type="time" 
+                id="add_time_out" 
+                name="time_out"
+                class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                step="60"
+              />
+            </div>
+            <p class="text-xs text-gray-500">Leave blank if not applicable</p>
           </div>
         </div>
 
         <!-- Remarks -->
-        <div class="md:col-span-2">
-          <label class="block text-gray-400 mb-1">
-            <i class="fa-regular fa-note-sticky mr-1"></i> Remarks
+        <div class="space-y-1.5">
+          <label for="add_remarks" class="block text-sm font-medium text-gray-300">
+            <i class="fa-regular fa-note-sticky text-green-400 mr-1.5"></i>
+            Remarks <span class="text-gray-500 font-normal">(Optional)</span>
           </label>
-          <textarea name="remarks"
-                    class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200 focus:ring-2 focus:ring-blue-500"></textarea>
+          <textarea 
+            id="add_remarks" 
+            name="remarks" 
+            rows="3"
+            placeholder="Add notes about this attendance record..."
+            class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500/30 focus:outline-none transition-all placeholder-gray-500 resize-none"
+            maxlength="250"
+          ></textarea>
+          <p class="text-xs text-gray-500 text-right" id="addRemarksCount">0/250</p>
         </div>
 
-      </div>
+      </form>
+    </div>
 
-      <!-- Buttons -->
-      <div class="flex justify-end gap-3 mt-6">
-
-        <button type="button"
-                id="cancelAddAttendance"
-                class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2">
-          <i class="fa-solid fa-ban"></i> Cancel
-        </button>
-
-        <button type="submit"
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-md">
-          <i class="fa-solid fa-floppy-disk"></i> Save Attendance
-        </button>
-
-      </div>
-
-    </form>
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky bottom-0 z-10">
+      <button
+        type="button"
+        id="cancelAddAttendance"
+        class="px-5 py-2.5 text-gray-300 hover:text-white bg-gray-700/80 hover:bg-gray-700 rounded-xl transition-all duration-200 border border-gray-600"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        form="addAttendanceForm"
+        id="submitAddAttendanceBtn"
+        class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/40"
+      >
+        <i class="fa-solid fa-plus-circle"></i>
+        <span>Add Record</span>
+      </button>
+    </div>
 
   </div>
 </div>
+
+<!-- Character Counter Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const remarksInput = document.getElementById('add_remarks');
+  const remarksCount = document.getElementById('addRemarksCount');
+  
+  remarksInput?.addEventListener('input', function() {
+    const count = this.value.length;
+    remarksCount.textContent = `${count}/250`;
+    if (count > 225) {
+      remarksCount.classList.add('text-orange-400');
+    } else {
+      remarksCount.classList.remove('text-orange-400');
+    }
+  });
+});
+</script>

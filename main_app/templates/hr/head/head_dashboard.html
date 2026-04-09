@@ -2,245 +2,253 @@
 {% block title %}Dashboard | HR Head{% endblock %}
 
 {% block content %}
-<section class="p-4 sm:p-6 space-y-6">
+<section class="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
 
 {% if not_assigned %}
-<div class="bg-red-900/40 border border-red-600 text-red-400 p-6 rounded-2xl">
-  <h2 class="text-xl font-semibold flex items-center gap-2">
-    ⚠ Department Not Assigned
+<div class="bg-red-900/40 border border-red-600/50 text-red-300 p-5 rounded-2xl shadow-lg">
+  <h2 class="text-lg sm:text-xl font-semibold flex items-center gap-2">
+    ⚠️ Department Not Assigned
   </h2>
-  <p>You are not currently assigned to any department.</p>
+  <p class="mt-1 text-sm opacity-90">You are not currently assigned to any department. Please contact your system administrator.</p>
 </div>
 
 {% else %}
 
 <!-- HEADER -->
-<h1 class="text-xl sm:text-2xl font-semibold text-blue-400 flex items-center gap-2">
-  🏢 {{ department.name }} Department Head Dashboard
-</h1>
+<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <h1 class="text-xl sm:text-2xl font-bold text-blue-400 flex items-center gap-2">
+    🏢 {{ department.name }} Department Dashboard
+  </h1>
+  <span class="text-xs sm:text-sm text-gray-400 bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
+    {{ month_name }} {{ current_year }}
+  </span>
+</header>
 
 <!-- STAT CARDS -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700">
-    <h2 class="text-gray-400 text-sm sm:text-base">Total Employees</h2>
-    <p class="text-2xl sm:text-3xl text-blue-400 font-bold">{{ total_employees }}</p>
-  </div>
+  {% set stats = [
+    {'label': 'Total Employees', 'value': total_employees, 'color': 'text-blue-400', 'icon': '👥'},
+    {'label': 'Present', 'value': attendance_summary.total_present, 'color': 'text-green-400', 'icon': '✅'},
+    {'label': 'Absent', 'value': attendance_summary.total_absent, 'color': 'text-red-400', 'icon': '❌'},
+    {'label': 'Late', 'value': attendance_summary.total_late, 'color': 'text-yellow-400', 'icon': '⏰'}
+  ] %}
 
-  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700">
-    <h2 class="text-gray-400 text-sm sm:text-base">Present (Month)</h2>
-    <p class="text-2xl sm:text-3xl text-green-400 font-bold">{{ attendance_summary.total_present }}</p>
+  {% for stat in stats %}
+  <div class="bg-gray-800/60 backdrop-blur-sm p-4 sm:p-5 rounded-2xl border border-gray-700/50 hover:border-gray-600 transition-colors">
+    <p class="text-gray-400 text-sm font-medium mb-1">{{ stat.icon }} {{ stat.label }}</p>
+    <p class="text-2xl sm:text-3xl font-bold {{ stat.color }}">{{ stat.value }}</p>
   </div>
-
-  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700">
-    <h2 class="text-gray-400 text-sm sm:text-base">Absent (Month)</h2>
-    <p class="text-2xl sm:text-3xl text-red-400 font-bold">{{ attendance_summary.total_absent }}</p>
-  </div>
-
-  <div class="bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700">
-    <h2 class="text-gray-400 text-sm sm:text-base">Late (Month)</h2>
-    <p class="text-2xl sm:text-3xl text-yellow-400 font-bold">{{ attendance_summary.total_late }}</p>
-  </div>
+  {% endfor %}
 </div>
 
 <!-- RECENT LEAVES -->
-<div class="bg-gray-800/60 backdrop-blur-md rounded-2xl border border-gray-700 p-4 sm:p-6 space-y-4">
-  <h3 class="text-blue-400 text-lg font-semibold">📋 Recent Leave Requests</h3>
+<div class="bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-4 sm:p-6 space-y-4">
+  <h3 class="text-blue-400 text-lg font-semibold flex items-center gap-2">📋 Recent Leave Requests</h3>
 
   {% if recent_leaves %}
-  <div class="space-y-3 max-h-64 overflow-y-auto">
+  <div class="space-y-3 max-h-72 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
     {% for leave in recent_leaves %}
-    <div class="bg-gray-900 p-3 sm:p-4 rounded-xl border border-gray-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 hover:bg-gray-800 transition">
-
+    <div class="bg-gray-900/80 p-3 sm:p-4 rounded-xl border border-gray-700/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 hover:bg-gray-800 transition-colors">
       <div>
-        <p class="text-blue-300 font-medium">
-          {{ leave.employee.get_full_name() }}
-        </p>
-        <p class="text-sm text-gray-400">
-          {{ leave.leave_type.name }} • {{ leave.start_date }} → {{ leave.end_date }}
-        </p>
+        <p class="text-blue-300 font-medium">{{ leave.employee.get_full_name() }}</p>
+        <p class="text-sm text-gray-400">{{ leave.leave_type.name }} • {{ leave.start_date }} → {{ leave.end_date }}</p>
       </div>
-
-      <span class="px-3 py-1 rounded-lg text-sm w-fit
-        {% if leave.status=='Pending' %}bg-yellow-900/40 text-yellow-400
-        {% elif leave.status=='Approved' %}bg-green-900/40 text-green-400
-        {% else %}bg-red-900/40 text-red-400{% endif %}">
+      {% set status_class = 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' if leave.status == 'Pending' 
+                           else 'bg-green-900/40 text-green-300 border-green-700/50' if leave.status == 'Approved' 
+                           else 'bg-red-900/40 text-red-300 border-red-700/50' %}
+      <span class="px-2.5 py-1 rounded-lg text-xs font-medium border {{ status_class }}">
         {{ leave.status }}
       </span>
-
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <p class="text-gray-400 italic text-sm">No recent leave requests.</p>
+  <p class="text-gray-400 italic text-sm py-4 text-center">No recent leave requests.</p>
   {% endif %}
 </div>
 
-<!-- DATE PICKER -->
-<form method="get" class="my-4 flex flex-col sm:flex-row sm:items-center gap-2">
-  <label class="text-gray-300 font-semibold">Select Month:</label>
-
+<!-- MONTH PICKER -->
+<form method="get" class="flex flex-col sm:flex-row sm:items-center gap-3 bg-gray-800/40 p-3 rounded-xl border border-gray-700/50">
+  <label for="monthpicker" class="text-gray-300 font-medium text-sm">Filter by Month:</label>
   <input type="month"
+         id="monthpicker"
          name="monthpicker"
-         value="{{current_year}}-{{'%02d' % current_month}}"
-         class="bg-gray-800 text-gray-300 px-3 py-2 rounded-lg w-full sm:w-auto"
+         value="{{ current_year }}-{{ '%02d' % current_month }}"
+         class="bg-gray-900 text-gray-200 px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
          onchange="this.form.submit()">
-
-  <span class="text-gray-300 sm:ml-2 font-semibold">
-    {{ month_name }} {{ current_year }}
-  </span>
 </form>
 
-<!-- ================= MOBILE CALENDAR ================= -->
-<div class="md:hidden space-y-3">
-  {% for week in calendar_days %}
-    {% for day in week %}
-      {% if day %}
-        {% set summary = calendar_summary.get(day) %}
-
-        <div onclick="openModal('{{day}}')"
-             class="bg-gray-800 p-4 rounded-xl border border-gray-700">
-
-          <div class="flex justify-between items-center">
-            <p class="text-blue-300 font-semibold">
-              {{ day.split('-')[2] }}
-            </p>
-
-            {% if summary %}
-              <span class="text-xs text-gray-400">Has Data</span>
-            {% else %}
-              <span class="text-xs text-gray-500">No Data</span>
-            {% endif %}
-          </div>
-
-          {% if summary %}
-          <div class="mt-2 text-xs grid grid-cols-2 gap-2">
-            <div class="text-green-400">P: {{ summary['Present'] }}</div>
-            <div class="text-red-400">A: {{ summary['Absent'] }}</div>
-            <div class="text-yellow-400">L: {{ summary['Late'] }}</div>
-            <div class="text-blue-400">O: {{ summary['On Leave'] }}</div>
-          </div>
-          {% endif %}
-
-        </div>
-
-      {% endif %}
-    {% endfor %}
-  {% endfor %}
-</div>
-
-<!-- ================= DESKTOP CALENDAR ================= -->
-<div class="hidden md:block w-full bg-gray-700/40 backdrop-blur-md rounded-2xl shadow-xl p-4 sm:p-6 overflow-x-auto">
-
-  <div class="min-w-[700px]">
-
-    <!-- WEEK LABELS -->
-    <div class="grid grid-cols-7 text-center text-gray-400 text-sm mb-3">
-      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-    </div>
-
-    <!-- CALENDAR -->
+<!-- CALENDAR CONTAINER -->
+<div id="calendar-container" class="space-y-4">
+  <!-- MOBILE VIEW -->
+  <div class="md:hidden space-y-3">
     {% for week in calendar_days %}
-    <div class="grid grid-cols-7 gap-2 sm:gap-4 mb-4">
       {% for day in week %}
         {% if day %}
           {% set summary = calendar_summary.get(day) %}
-
-          <div onclick="openModal('{{day}}')"
-               class="bg-gray-800 text-white p-3 sm:p-4 rounded-2xl shadow-lg hover:scale-105 transition cursor-pointer border border-gray-700">
-
-            <div class="font-semibold text-gray-300 mb-2">
-              {{ day.split('-')[2] }}
+          {% set day_num = day.split('-')[2] %}
+          
+          <div data-date="{{ day }}"
+               class="calendar-day bg-gray-800/70 p-4 rounded-xl border border-gray-700/50 hover:bg-gray-750 transition cursor-pointer">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-blue-300 font-semibold">{{ day_num }}</span>
+              {% if summary %}
+                <span class="text-xs text-green-400 bg-green-900/30 px-2 py-0.5 rounded">Data Available</span>
+              {% else %}
+                <span class="text-xs text-gray-500">No Records</span>
+              {% endif %}
             </div>
-
             {% if summary %}
-            <div class="text-xs space-y-1">
-              <div class="text-green-400">P: {{ summary['Present'] }}</div>
-              <div class="text-red-400">A: {{ summary['Absent'] }}</div>
-              <div class="text-yellow-400">L: {{ summary['Late'] }}</div>
-              <div class="text-blue-400">O: {{ summary['On Leave'] }}</div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <span class="text-green-400">P: {{ summary['Present'] }}</span>
+              <span class="text-red-400">A: {{ summary['Absent'] }}</span>
+              <span class="text-yellow-400">L: {{ summary['Late'] }}</span>
+              <span class="text-blue-400">O: {{ summary['On Leave'] }}</span>
             </div>
-            {% else %}
-            <p class="text-xs text-gray-500">No Data</p>
             {% endif %}
-
           </div>
-
-        {% else %}
-          <div></div>
         {% endif %}
       {% endfor %}
-    </div>
     {% endfor %}
+  </div>
 
+  <!-- DESKTOP VIEW -->
+  <div class="hidden md:block bg-gray-800/40 backdrop-blur-sm rounded-2xl border border-gray-700/50 p-4 sm:p-6 overflow-x-auto">
+    <div class="min-w-[750px]">
+      <div class="grid grid-cols-7 text-center text-gray-400 text-sm font-medium mb-4 border-b border-gray-700/50 pb-2">
+        {% for d in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] %}
+        <div class="{{ 'text-red-400/80' if d in ['Sun', 'Sat'] else '' }}">{{ d }}</div>
+        {% endfor %}
+      </div>
+
+      {% for week in calendar_days %}
+      <div class="grid grid-cols-7 gap-3 mb-4">
+        {% for day in week %}
+          {% if day %}
+            {% set summary = calendar_summary.get(day) %}
+            {% set day_num = day.split('-')[2] %}
+            
+            <div data-date="{{ day }}"
+                 class="calendar-day bg-gray-900/60 p-3 rounded-xl border border-gray-700/50 hover:scale-[1.02] hover:border-blue-500/50 transition cursor-pointer min-h-[110px] flex flex-col">
+              <div class="font-semibold text-gray-200 mb-2">{{ day_num }}</div>
+              {% if summary %}
+              <div class="text-xs space-y-1.5 mt-auto">
+                <div class="text-green-400">P: {{ summary['Present'] }}</div>
+                <div class="text-red-400">A: {{ summary['Absent'] }}</div>
+                <div class="text-yellow-400">L: {{ summary['Late'] }}</div>
+                <div class="text-blue-400">O: {{ summary['On Leave'] }}</div>
+              </div>
+              {% else %}
+              <p class="text-xs text-gray-600 mt-auto text-center py-2">—</p>
+              {% endif %}
+            </div>
+          {% else %}
+            <div class="bg-transparent"></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
   </div>
 </div>
 
 {% endif %}
 </section>
 
-<!-- ATTENDANCE MODAL (MOBILE SAFE) -->
+<!-- ATTENDANCE MODAL -->
 <div id="attendanceModal"
-     class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50">
-
-  <div class="bg-gray-900 w-[95%] sm:w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl border border-gray-700 shadow-2xl">
-
-    <div class="flex justify-between items-center mb-4">
-      <h2 id="modalDateTitle" class="text-lg sm:text-xl text-blue-400 font-semibold"></h2>
-      <button onclick="closeModal()" class="text-red-400 text-xl">&times;</button>
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modalTitle"
+     class="fixed inset-0 bg-black/75 hidden items-center justify-center z-50 p-4 transition-opacity duration-200">
+  <div class="bg-gray-900 w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-700 shadow-2xl transform transition-transform duration-200">
+    <div class="sticky top-0 bg-gray-900/95 backdrop-blur-sm p-4 sm:p-5 border-b border-gray-700/50 flex justify-between items-center">
+      <h2 id="modalTitle" class="text-lg sm:text-xl text-blue-400 font-semibold"></h2>
+      <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-red-400 transition text-2xl leading-none">&times;</button>
     </div>
-
-    <div id="modalContent" class="space-y-3"></div>
+    <div id="modalContent" class="p-4 sm:p-5 space-y-3"></div>
   </div>
 </div>
 
+<!-- Safe JSON injection -->
+<script id="attendance-data" type="application/json">{{ attendance_details|tojson }}</script>
+
 <script>
-function openModal(dateStr){
-    const modal = document.getElementById("attendanceModal");
-    const content = document.getElementById("modalContent");
-    const title = document.getElementById("modalDateTitle");
+(function() {
+  'use strict';
 
-    title.innerText = "Attendance Details - " + dateStr;
-    content.innerHTML = "";
+  const attendanceData = JSON.parse(document.getElementById('attendance-data').textContent);
+  const modal = document.getElementById('attendanceModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalContent = document.getElementById('modalContent');
+  const calendarContainer = document.getElementById('calendar-container');
 
-    const details = {{ attendance_details|tojson }};
+  // Status color mapping
+  const statusColors = {
+    'Present': 'text-green-400',
+    'Absent': 'text-red-400',
+    'Late': 'text-yellow-400',
+    'On Leave': 'text-blue-400'
+  };
 
-    if(details[dateStr]){
-        details[dateStr].forEach(emp => {
-            let color = "text-green-400";
-            if(emp.status == "Absent") color = "text-red-400";
-            if(emp.status == "Late") color = "text-yellow-400";
-            if(emp.status == "On Leave") color = "text-blue-400";
+  function openModal(dateStr) {
+    const formattedDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    modalTitle.textContent = `Attendance Details • ${formattedDate}`;
+    modalContent.innerHTML = '';
 
-            content.innerHTML += `
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
+    const records = attendanceData[dateStr] || [];
+    if (records.length) {
+      records.forEach(emp => {
+        const colorClass = statusColors[emp.status] || 'text-gray-300';
+        modalContent.innerHTML += `
+          <div class="bg-gray-800/80 p-4 rounded-xl border border-gray-700/50 hover:bg-gray-800 transition">
+            <div class="flex justify-between items-start mb-1">
               <p class="text-blue-300 font-semibold">${emp.name}</p>
-              <p class="${color}">${emp.status}</p>
-              <p class="text-gray-400 text-sm">
-                Time In: ${emp.time_in} | Time Out: ${emp.time_out}
-              </p>
-            </div>`;
-        });
+              <span class="text-xs ${colorClass} font-medium px-2 py-0.5 rounded bg-gray-900">${emp.status}</span>
+            </div>
+            <p class="text-sm text-gray-400">
+              <span class="text-gray-500">In:</span> ${emp.time_in || '—'} • 
+              <span class="text-gray-500">Out:</span> ${emp.time_out || '—'}
+            </p>
+          </div>`;
+      });
     } else {
-        content.innerHTML = `
-          <p class="text-gray-400 text-center py-6">
-            No attendance records for this day.
-          </p>`;
+      modalContent.innerHTML = `<p class="text-gray-400 text-center py-8">No attendance records for this day.</p>`;
     }
 
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    modal.querySelector('button').focus();
+  }
 
-function closeModal(){
-    const modal = document.getElementById("attendanceModal");
-    modal.classList.remove("flex");
-    modal.classList.add("hidden");
-}
+  function closeModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
 
-document.querySelector('input[name="monthpicker"]').addEventListener('change', function(){
-    const [y,m] = this.value.split('-');
-    window.location.href = `?year=${y}&month=${m}`;
-});
+  // Event delegation for calendar clicks
+  calendarContainer.addEventListener('click', (e) => {
+    const dayEl = e.target.closest('.calendar-day');
+    if (dayEl) openModal(dayEl.dataset.date);
+  });
+
+  // Close modal on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  // Expose to global scope for inline onclick fallback (if needed)
+  window.closeModal = closeModal;
+})();
 </script>
 
 {% endblock %}

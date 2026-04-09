@@ -96,7 +96,8 @@ def hr_dashboard():
         attendance_counts=attendance_counts,
         leave_labels=leave_labels,
         leave_counts=leave_counts,
-        user=current_user
+        user=current_user,
+        today=datetime.today()
     )
 
 

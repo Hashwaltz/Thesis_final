@@ -5,239 +5,446 @@
 {% include 'hr/admin/employees/add_employee.html' %}
 {% include 'hr/admin/employees/edit_employee.html' %}
 
-<main class="p-4 md:p-6 space-y-6">
+<main class="p-4 md:p-6 lg:p-8 space-y-6 text-white min-h-screen">
+
+  <!-- Breadcrumb Navigation -->
+  <nav class="text-sm text-gray-400" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-2 flex-wrap">
+      <li><a href="{{ url_for('hr_admin_bp.hr_dashboard') }}" class="hover:text-blue-400 transition-colors">
+        <i class="fa-solid fa-house"></i> Dashboard
+      </a></li>
+      <li><i class="fa-solid fa-chevron-right text-xs"></i></li>
+      <li class="text-blue-400 font-medium" aria-current="page">Employees</li>
+    </ol>
+  </nav>
 
   <!-- Page Header -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-id-badge text-3xl"></i>
-      Employee Records
-    </h1>
-    <div class="flex gap-2 flex-wrap">
+  <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-gray-700/50">
+    <div class="flex items-start lg:items-center gap-4">
+      <div class="bg-blue-500/20 p-3 rounded-xl hidden sm:block">
+        <i class="fa-solid fa-id-badge text-blue-400 text-2xl"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl lg:text-3xl font-bold text-white flex items-center gap-3">
+          Employee Records
+          <span class="bg-gray-700/80 text-gray-300 text-sm font-normal px-3 py-1 rounded-full">
+            {{ employees.total }} total
+          </span>
+        </h1>
+        <p class="text-gray-400 mt-1">Manage employee information, assignments, and status</p>
+      </div>
+    </div>
+    
+    <div class="flex flex-wrap gap-2">
       <button id="openAddEmployeeModal"
-              class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+              class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 hover:-translate-y-0.5">
         <i class="fa-solid fa-user-plus"></i>
-        <span class="hidden sm:inline">Add Employee</span>
+        <span class="hidden sm:inline font-medium">Add Employee</span>
       </button>
 
       <a href="{{ url_for('hr_admin_bp.view_archived_employees') }}"
-        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
-        <i class="fa-solid fa-trash-alt"></i>
-        <span class="hidden sm:inline">View Archive</span>
+         class="bg-gray-700/80 hover:bg-gray-700 text-gray-200 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 border border-gray-600">
+        <i class="fa-solid fa-box-archive"></i>
+        <span class="hidden sm:inline">Archive</span>
       </a>
 
-      <a href="javascript:void(0);" id="openMoaModal"
-        class="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition">
-        <i class="fa-solid fa-file-alt text-lg"></i>
-        <span class="hidden sm:inline">Export Employee List</span>
-      </a>
-
+      <button id="openMoaModal"
+              class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+        <i class="fa-solid fa-file-export"></i>
+        <span class="hidden sm:inline font-medium">Export List</span>
+      </button>
     </div>
   </header>
 
-  <!-- Search + Filters -->
-  <form method="get" action="{{ url_for('hr_admin_bp.view_employees') }}"
-        class="flex flex-col md:flex-row gap-4 items-start md:items-end bg-gray-800 p-4 rounded-2xl shadow border border-gray-700"
-        id="employeeFilterForm">
+  <!-- Active Filters Display -->
+  {% if selected_department or selected_employment_type or selected_barangay or search %}
+  <div class="flex flex-wrap items-center gap-2 pb-2">
+    <span class="text-sm text-gray-400">Active filters:</span>
+    {% if selected_department %}
+      {% set dept_name = 'Unknown' %}
+      {% for dept in departments if dept.id|string == selected_department %}
+        {% set dept_name = dept.name %}
+      {% endfor %}
+      <span class="inline-flex items-center gap-1 bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm">
+        Department: {{ dept_name }}
+        <a href="{{ url_for('hr_admin_bp.view_employees', search=search, employment_type_id=selected_employment_type, barangay=selected_barangay) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
+      </span>
+    {% endif %}
+    {% if selected_employment_type %}
+      {% set etype_name = 'Unknown' %}
+      {% for etype in employment_types if etype.id|string == selected_employment_type %}
+        {% set etype_name = etype.name %}
+      {% endfor %}
+      <span class="inline-flex items-center gap-1 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">
+        Type: {{ etype_name }}
+        <a href="{{ url_for('hr_admin_bp.view_employees', search=search, department_id=selected_department, barangay=selected_barangay) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
+      </span>
+    {% endif %}
+    {% if selected_barangay %}
+      <span class="inline-flex items-center gap-1 bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-sm">
+        Barangay: {{ selected_barangay }}
+        <a href="{{ url_for('hr_admin_bp.view_employees', search=search, department_id=selected_department, employment_type_id=selected_employment_type) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
+      </span>
+    {% endif %}
+    {% if search %}
+      <span class="inline-flex items-center gap-1 bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full text-sm">
+        Search: "{{ search }}"
+        <a href="{{ url_for('hr_admin_bp.view_employees', department_id=selected_department, employment_type_id=selected_employment_type, barangay=selected_barangay) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
+      </span>
+    {% endif %}
+    <a href="{{ url_for('hr_admin_bp.view_employees') }}" class="text-xs text-gray-400 hover:text-red-400 underline ml-1">Clear all</a>
+  </div>
+  {% endif %}
 
-    <!-- Department Filter -->
-    <div class="flex flex-col gap-2 w-full md:w-auto flex-1">
-      <label for="departmentSelect" class="text-gray-400">Department</label>
-      <select name="department_id" id="departmentSelect"
-              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <option value="">All Departments</option>
-        {% for dept in departments %}
-        <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>
-          {{ dept.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <!-- Employment Type Filter -->
-    <div class="flex flex-col gap-2 w-full md:w-auto flex-1">
-      <label for="employmentTypeSelect" class="text-gray-400">Employment Type</label>
-      <select name="employment_type_id" id="employmentTypeSelect"
-              class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <option value="">All Employment Types</option>
-        {% for etype in employment_types %}
-        <option value="{{ etype.id }}" {% if etype.id|string == selected_employment_type %}selected{% endif %}>
-          {{ etype.name }}
-        </option>
-        {% endfor %}
-      </select>
-    </div>
-    <!-- Barangay Filter -->
-    <div class="flex flex-col gap-2 w-full md:w-auto flex-1">
-      <label for="barangayInput" class="text-gray-400">Barangay</label>
-      <input type="text" name="barangay" id="barangayInput" 
-            value="{{ selected_barangay }}"
-            placeholder="Enter barangay..."
-            class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"/>
-    </div>
-    <!-- Search Input -->
-    <div class="flex flex-col gap-2 w-full md:flex-1">
-      <label for="search" class="text-gray-400">Search</label>
-      <input type="text" name="search" value="{{ search }}"
-             placeholder="Search employees..."
-             class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"/>
-    </div>
-
-    <div class="flex w-full md:w-auto gap-2">
-      <!-- Search Button -->
-      <button type="submit"
-              class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 w-full md:w-auto justify-center transition">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <span class="hidden sm:inline">Search</span>
-      </button>
-
-      <!-- Clear Filter Button -->
-      <a href="{{ url_for('hr_admin_bp.view_employees') }}"
-        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 w-full md:w-auto justify-center transition">
-        <i class="fa-solid fa-rotate-left"></i>
-        <span class="hidden sm:inline">Clear</span>
-      </a>
-
-    </div>
-
-  </form>
-
-  <!-- Employee Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
-    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base">
-      <thead class="bg-gray-900">
-        <tr>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">ID</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Full Name</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Department</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Position</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Date Hired</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Status</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        {% for employee in employees.items %}
-        <tr class="hover:bg-gray-700 transition">
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee.employee_id }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee.get_full_name() }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee.department.name if employee.department else '-' }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee.position.name if employee.position else '-' }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee.date_hired.strftime('%Y-%m-%d') if employee.date_hired else '-' }}</td>
-          <td class="px-2 sm:px-4 py-2">
-            <span class="px-2 py-1 rounded-xl text-sm font-medium
-              {% if employee.status == 'Active' %}
-                text-green-500
-              {% elif employee.status == 'Retired' %}
-                text-gray-400
-              {% elif employee.status == 'Resigned' %}
-                text-yellow-500
-              {% elif employee.status == 'Fired' %}
-                text-red-600
-              {% else %}
-                text-gray-300
-              {% endif %}
-            ">
-              {{ employee.status }}
+  <!-- Search + Filters Card -->
+  <section class="bg-gray-800/80 backdrop-blur-sm rounded-2xl p-4 md:p-5 shadow-lg border border-gray-700/50">
+    <form method="get" action="{{ url_for('hr_admin_bp.view_employees') }}" id="employeeFilterForm" class="space-y-4">
+      
+      <!-- Filter Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Department Filter -->
+        <div class="relative">
+          <label for="departmentSelect" class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Department</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-building"></i>
             </span>
-          </td>
-          <td class="px-2 sm:px-4 py-2">
-            <div class="flex gap-2"> <!-- flex container for row layout -->
-              <a href="javascript:void(0);"
-                class="edit-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl text-sm flex items-center gap-1 transition justify-center"
-                data-url="{{ url_for('hr_admin_bp.edit_employee', employee_id=employee.id) }}"
-                data-employee-id="{{ employee.id }}">
-                <i class="fa-solid fa-pen-to-square text-sm"></i>
-                <span class="hidden sm:inline">Edit | View</span>
-              </a>
+            <select name="department_id" id="departmentSelect"
+                    class="w-full bg-gray-900/80 text-gray-200 rounded-xl pl-9 pr-8 py-2.5 appearance-none
+                           border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                           focus:outline-none transition-all duration-200 cursor-pointer">
+              <option value="">All Departments</option>
+              {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if dept.id|string == selected_department %}selected{% endif %}>
+                {{ dept.name }}
+              </option>
+              {% endfor %}
+            </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+        </div>
 
-              <a href="javascript:void(0);"
-                class="archive-btn bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-xl text-sm flex items-center gap-1 transition justify-center"
-                data-url="{{ url_for('hr_admin_bp.archive_employee', employee_id=employee.id) }}">
-                <i class="fa-solid fa-archive text-sm"></i>
-                <span class="hidden sm:inline">Archive</span>
-              </a>
-            </div>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7" class="px-4 py-3 text-center text-gray-400">No employees found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+        <!-- Employment Type Filter -->
+        <div class="relative">
+          <label for="employmentTypeSelect" class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Employment Type</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-briefcase"></i>
+            </span>
+            <select name="employment_type_id" id="employmentTypeSelect"
+                    class="w-full bg-gray-900/80 text-gray-200 rounded-xl pl-9 pr-8 py-2.5 appearance-none
+                           border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                           focus:outline-none transition-all duration-200 cursor-pointer">
+              <option value="">All Types</option>
+              {% for etype in employment_types %}
+              <option value="{{ etype.id }}" {% if etype.id|string == selected_employment_type %}selected{% endif %}>
+                {{ etype.name }}
+              </option>
+              {% endfor %}
+            </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </span>
+          </div>
+        </div>
 
-  <!-- Pagination -->
-  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
-    {% if employees.has_prev %}
-    <a href="{{ url_for('hr_admin_bp.view_employees', page=employees.prev_num, search=search, department_id=selected_department, employment_type_id=selected_employment_type) }}"
-       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Previous</a>
-    {% endif %}
+        <!-- Barangay Filter -->
+        <div class="relative">
+          <label for="barangayInput" class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Barangay</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-location-dot"></i>
+            </span>
+            <input type="text" name="barangay" id="barangayInput" 
+                   value="{{ selected_barangay }}"
+                   placeholder="Filter by barangay..."
+                   class="w-full bg-gray-900/80 text-gray-200 rounded-xl pl-9 pr-4 py-2.5
+                          border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                          focus:outline-none transition-all duration-200 placeholder-gray-500"/>
+          </div>
+        </div>
 
-    <span class="px-4 py-2">{{ employees.page }} of {{ employees.pages }}</span>
-
-    {% if employees.has_next %}
-    <a href="{{ url_for('hr_admin_bp.view_employees', page=employees.next_num, search=search, department_id=selected_department, employment_type_id=selected_employment_type) }}"
-       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Next</a>
-    {% endif %}
-  </div>
-
-</main>
-  <!-- Generate MOA Modal -->
-  <div id="moaModal"
-      class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-gray-800 p-6 rounded-2xl w-full max-w-md border border-gray-700 shadow-lg space-y-4">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-xl font-semibold text-blue-400">Generate Employee List</h2>
-        <button id="closeMoaModal" class="text-gray-400 hover:text-gray-200">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <!-- Search Input -->
+        <div class="relative">
+          <label for="search" class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Search</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <input type="text" name="search" id="search" value="{{ search }}"
+                   placeholder="Name, ID, email..."
+                   class="w-full bg-gray-900/80 text-gray-200 rounded-xl pl-9 pr-4 py-2.5
+                          border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 
+                          focus:outline-none transition-all duration-200 placeholder-gray-500"/>
+          </div>
+        </div>
       </div>
 
-      <form id="moaForm" method="POST" action="#">
-        <label class="text-gray-300">Select Employment Type</label>
+      <!-- Filter Actions -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-700/50">
+        <div class="flex items-center gap-2 text-sm text-gray-400">
+          <i class="fa-regular fa-circle-info"></i>
+          <span>Filters auto-apply on change</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="resetFiltersBtn"
+                  class="text-gray-400 hover:text-gray-200 text-sm flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-rotate-left"></i>
+            Reset
+          </button>
+          <button type="submit"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-all duration-200">
+            <i class="fa-solid fa-filter"></i>
+            Apply
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- Employee Table Card -->
+  <section class="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-700/50 overflow-hidden">
+    
+    <!-- Table Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-gray-700/50 bg-gray-900/50">
+      <span class="text-sm text-gray-400">
+        Showing <strong class="text-white">{{ employees.from }}</strong>-<strong class="text-white">{{ employees.to }}</strong> of <strong class="text-white">{{ employees.total }}</strong>
+      </span>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead class="bg-gray-900/80 sticky top-0 z-10">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">ID</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Employee</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Department</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden lg:table-cell">Position</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Hired</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700/50">
+          {% for employee in employees.items %}
+          <tr class="hover:bg-gray-700/50 transition-colors duration-150 group">
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="text-sm font-mono text-gray-400">{{ employee.employee_id }}</span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-3">
+                <!-- Avatar with Safe Initials (Jinja2-compatible) -->
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0 border border-gray-600">
+                  {% set fn = employee.get_full_name()|trim|upper %}
+                  <span class="text-sm font-semibold text-blue-300">
+                    {{ fn[0] if fn else 'U' }}{{ fn[1] if fn|length > 1 else '' }}
+                  </span>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-white truncate">{{ employee.get_full_name() }}</p>
+                  <p class="text-xs text-gray-400 truncate hidden sm:block">{{ employee.email }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap hidden md:table-cell">
+              <span class="text-sm text-gray-300">{{ employee.department.name if employee.department else '—' }}</span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
+              <span class="text-sm text-gray-300">{{ employee.position.name if employee.position else '—' }}</span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <span class="text-sm text-gray-300">{{ employee.date_hired.strftime('%b %d, %Y') if employee.date_hired else '—' }}</span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              {% if employee.status == 'Active' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/15 text-green-400 border border-green-500/30">
+                  <i class="fa-solid fa-circle text-[8px]"></i>{{ employee.status }}
+                </span>
+              {% elif employee.status == 'Resigned' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                  <i class="fa-solid fa-person-walking-arrow-right text-[8px]"></i>{{ employee.status }}
+                </span>
+              {% elif employee.status == 'Fired' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/30">
+                  <i class="fa-solid fa-circle-xmark text-[8px]"></i>{{ employee.status }}
+                </span>
+              {% elif employee.status == 'Retired' %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-500/15 text-gray-400 border border-gray-500/30">
+                  {{ employee.status }}
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-500/15 text-gray-400">
+                  {{ employee.status }}
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button type="button"
+                        class="edit-btn p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-colors"
+                        data-url="{{ url_for('hr_admin_bp.edit_employee', employee_id=employee.id) }}"
+                        data-employee-id="{{ employee.id }}"
+                        title="Edit">
+                  <i class="fa-solid fa-pen-to-square text-sm"></i>
+                </button>
+                <button type="button"
+                        class="archive-btn p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                        data-url="{{ url_for('hr_admin_bp.archive_employee', employee_id=employee.id) }}"
+                        title="Archive">
+                  <i class="fa-solid fa-box-archive text-sm"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="px-4 py-12 text-center">
+              <div class="flex flex-col items-center gap-4">
+                <div class="w-16 h-16 rounded-full bg-gray-700/50 flex items-center justify-center">
+                  <i class="fa-regular fa-users text-2xl text-gray-500"></i>
+                </div>
+                <p class="text-lg font-medium text-gray-300">No employees found</p>
+                <p class="text-sm text-gray-500">Try adjusting your filters or add a new employee</p>
+                <button id="openAddEmployeeModal" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+                  <i class="fa-solid fa-user-plus"></i>
+                  Add First Employee
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if employees.pages > 1 %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-700/50 bg-gray-900/30">
+      <p class="text-sm text-gray-400">
+        Page <strong class="text-white">{{ employees.page }}</strong> of <strong class="text-white">{{ employees.pages }}</strong>
+      </p>
+      <div class="flex items-center gap-1">
+        {% if employees.has_prev %}
+        <a href="{{ url_for('hr_admin_bp.view_employees', page=employees.prev_num, search=search, department_id=selected_department, employment_type_id=selected_employment_type, barangay=selected_barangay) }}"
+           class="px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <i class="fa-solid fa-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="px-3 py-1.5 text-sm text-gray-600"><i class="fa-solid fa-chevron-left"></i></span>
+        {% endif %}
+
+        {% for p in range([1, employees.page-2]|max, [employees.pages, employees.page+3]|min) %}
+          {% if p == employees.page %}
+            <span class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg font-medium">{{ p }}</span>
+          {% elif p == 1 or p == employees.pages or (p >= employees.page-2 and p <= employees.page+2) %}
+            <a href="{{ url_for('hr_admin_bp.view_employees', page=p, search=search, department_id=selected_department, employment_type_id=selected_employment_type, barangay=selected_barangay) }}"
+               class="px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+              {{ p }}
+            </a>
+          {% elif p == employees.page-3 or p == employees.page+3 %}
+            <span class="px-2 py-1.5 text-sm text-gray-500">…</span>
+          {% endif %}
+        {% endfor %}
+
+        {% if employees.has_next %}
+        <a href="{{ url_for('hr_admin_bp.view_employees', page=employees.next_num, search=search, department_id=selected_department, employment_type_id=selected_employment_type, barangay=selected_barangay) }}"
+           class="px-3 py-1.5 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+          <i class="fa-solid fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="px-3 py-1.5 text-sm text-gray-600"><i class="fa-solid fa-chevron-right"></i></span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+</main>
+
+<!-- ===== Export MOA Modal ===== -->
+<div id="moaModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 shadow-2xl">
+    <div class="flex items-center justify-between p-5 border-b border-gray-700">
+      <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+        <i class="fa-solid fa-file-export text-purple-400"></i>
+        Export Employee List
+      </h2>
+      <button id="closeMoaModal" class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-gray-700">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form id="moaForm" class="p-5 space-y-4">
+      <div>
+        <label for="employmentTypeSelectMoa" class="block text-sm font-medium text-gray-300 mb-2">
+          Filter by Employment Type <span class="text-gray-500 font-normal">(Optional)</span>
+        </label>
         <select name="employment_type_id" id="employmentTypeSelectMoa"
-                class="bg-gray-700 text-gray-200 w-full rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" required>
-          <option value="">Select Type</option>
+                class="w-full bg-gray-900 text-gray-200 rounded-xl px-4 py-2.5 border border-gray-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 focus:outline-none transition-all">
+          <option value="">All Employment Types</option>
           {% for etype in employment_types %}
             <option value="{{ etype.id }}">{{ etype.name }}</option>
           {% endfor %}
         </select>
-
-        <div class="flex justify-end gap-2 mt-4">
-          <button type="button" id="cancelMoaBtn"
-                  class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl transition">
-            Cancel
-          </button>
-          <button type="submit"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition">
-            Generate
-          </button>
-        </div>
-      </form>
+      </div>
+    </form>
+    <div class="flex justify-end gap-3 p-5 border-t border-gray-700 bg-gray-900/50 rounded-b-2xl">
+      <button type="button" id="cancelMoaBtn"
+              class="px-4 py-2 text-gray-300 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-xl transition-colors">
+        Cancel
+      </button>
+      <button type="submit" form="moaForm"
+              class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all">
+        <i class="fa-solid fa-download"></i>
+        Generate
+      </button>
     </div>
   </div>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-
-  // ------------------ Filters Auto-submit ------------------
+  
+  // ===== Filter Auto-Submit =====
   const filterForm = document.getElementById("employeeFilterForm");
-  ["departmentSelect","employmentTypeSelect"].forEach(id => {
-    document.getElementById(id)?.addEventListener("change", () => filterForm?.submit());
+  ["departmentSelect", "employmentTypeSelect"].forEach(id => {
+    document.getElementById(id)?.addEventListener("change", () => filterForm?.requestSubmit());
+  });
+  
+  // Reset Filters
+  document.getElementById("resetFiltersBtn")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.href = "{{ url_for('hr_admin_bp.view_employees') }}";
   });
 
-  // ------------------ Add Employee Modal ------------------
+  // ===== Modal Toggle Helper =====
+  const toggleModal = (modalId, show) => {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    if (show) {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      document.body.style.overflow = "hidden";
+    } else {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+      document.body.style.overflow = "";
+    }
+  };
+
+  // ===== Add Employee Modal =====
   const addModal = document.getElementById("addEmployeeModal");
-  const openAddBtn = document.getElementById("openAddEmployeeModal");
-  const closeAddBtn = document.getElementById("closeAddEmployeeModal");
+  document.getElementById("openAddEmployeeModal")?.addEventListener("click", () => toggleModal("addEmployeeModal", true));
+  document.getElementById("closeAddEmployeeModal")?.addEventListener("click", () => toggleModal("addEmployeeModal", false));
+  addModal?.addEventListener("click", (e) => { if (e.target === addModal) toggleModal("addEmployeeModal", false); });
 
-  openAddBtn?.addEventListener("click", () => addModal?.classList.remove("hidden"));
-  closeAddBtn?.addEventListener("click", () => addModal?.classList.add("hidden"));
-
-  // Multi-step Add Modal Logic
+  // Multi-step form logic (preserve your existing logic)
   const steps = document.querySelectorAll(".step");
   let currentStep = 0;
   const prevBtn = document.getElementById("prevBtn");
@@ -247,37 +454,45 @@ document.addEventListener("DOMContentLoaded", function () {
   const previewContainer = document.getElementById("previewContainer");
 
   function showStep(n) {
-    steps.forEach((s) => s.classList.add("hidden"));
+    steps.forEach(s => s.classList.add("hidden"));
     steps[n]?.classList.remove("hidden");
-    prevBtn.style.display = n === 0 ? "none" : "inline-block";
-    nextBtn.style.display = n === steps.length - 1 ? "none" : "inline-block";
-    submitBtn.style.display = n === steps.length - 1 ? "inline-block" : "none";
-    if (n === steps.length - 1) populatePreview();
+    if (prevBtn) prevBtn.style.display = n === 0 ? "none" : "inline-block";
+    if (nextBtn) nextBtn.style.display = n === steps.length - 1 ? "none" : "inline-block";
+    if (submitBtn) submitBtn.style.display = n === steps.length - 1 ? "inline-block" : "none";
+    if (n === steps.length - 1 && previewContainer) populatePreview();
   }
 
   function populatePreview() {
+    if (!previewContainer || !addForm) return;
     previewContainer.innerHTML = "";
     const addressFields = ["street_address","barangay","municipality","province","postal_code"];
     addForm.querySelectorAll("input, select").forEach(input => {
-      if(addressFields.includes(input.name)) return;
-      let label = input.previousElementSibling?.innerText || input.name;
-      let value = input.tagName === "SELECT" ? input.options[input.selectedIndex]?.text : input.value;
-      previewContainer.innerHTML += `<div><p class="font-semibold text-gray-400">${label}</p><p>${value}</p></div>`;
+      if (!input.name || addressFields.includes(input.name)) return;
+      const label = input.previousElementSibling?.innerText || input.name.replace('_', ' ');
+      const value = input.tagName === "SELECT" ? input.options[input.selectedIndex]?.text : input.value;
+      if (value) {
+        previewContainer.innerHTML += `<div class="flex justify-between py-1 border-b border-gray-700/50"><span class="text-gray-400 text-sm">${label}</span><span class="text-white text-sm">${value}</span></div>`;
+      }
     });
-    const street = addForm.querySelector('[name="street_address"]').value;
-    const barangay = addForm.querySelector('[name="barangay"]').value;
-    const municipality = addForm.querySelector('[name="municipality"]').value;
-    const province = addForm.querySelector('[name="province"]').value;
-    const postal = addForm.querySelector('[name="postal_code"]').value;
-    const fullAddress = [street, barangay, municipality, province, postal].filter(p => p).join(", ");
-    previewContainer.innerHTML += `<div><p class="font-semibold text-gray-400">Full Address</p><p>${fullAddress}</p></div>`;
+    // Address preview
+    const addr = [
+      addForm.querySelector('[name="street_address"]')?.value,
+      addForm.querySelector('[name="barangay"]')?.value,
+      addForm.querySelector('[name="municipality"]')?.value,
+      addForm.querySelector('[name="province"]')?.value,
+      addForm.querySelector('[name="postal_code"]')?.value
+    ].filter(Boolean).join(", ");
+    if (addr) {
+      previewContainer.innerHTML += `<div class="flex justify-between py-1"><span class="text-gray-400 text-sm">Address</span><span class="text-white text-sm">${addr}</span></div>`;
+    }
   }
 
   nextBtn?.addEventListener("click", () => {
-    const currentInputs = steps[currentStep].querySelectorAll("input[required], select[required]");
-    for (let input of currentInputs) {
+    const required = steps[currentStep]?.querySelectorAll("input[required], select[required]") || [];
+    for (let input of required) {
       if (!input.value.trim()) {
-        Swal.fire({ title: "Missing Field", text: `Please fill ${input.previousElementSibling.innerText}`, icon: "error" });
+        Swal.fire({ title: "Required", text: `Please fill "${input.previousElementSibling?.innerText || input.name}"`, icon: "warning", background: "#1f2937", color: "#fff" });
+        input.focus();
         return;
       }
     }
@@ -285,192 +500,136 @@ document.addEventListener("DOMContentLoaded", function () {
     showStep(currentStep);
   });
 
-  prevBtn?.addEventListener("click", () => {
-    currentStep--;
-    showStep(currentStep);
-  });
+  prevBtn?.addEventListener("click", () => { if (currentStep > 0) { currentStep--; showStep(currentStep); } });
+  if (steps.length) showStep(currentStep);
 
-  showStep(currentStep);
-
+  // Salary placeholder based on employment type
   const salaryInput = document.getElementById("salaryInput");
-  const employmentTypeSelectModal = addModal?.querySelector('select[name="employment_type_id"]');
-  employmentTypeSelectModal?.addEventListener("change", function () {
-    const text = this.options[this.selectedIndex]?.text.toLowerCase();
-    if (text.includes("casual")) salaryInput.placeholder = "Enter daily rate with leave credits";
-    else if (text.includes("regular")) salaryInput.placeholder = "Enter monthly salary with leave credits";
-    else if (text.includes("part")) salaryInput.placeholder = "Enter per hour rate";
-    else if (text.includes("jo")) salaryInput.placeholder = "Enter daily rate";
-    else salaryInput.placeholder = "Enter salary";
+  const empTypeSelect = addModal?.querySelector('select[name="employment_type_id"]');
+  empTypeSelect?.addEventListener("change", function() {
+    const t = this.options[this.selectedIndex]?.text.toLowerCase();
+    if (salaryInput) {
+      if (t.includes("casual")) salaryInput.placeholder = "Daily rate with leave credits";
+      else if (t.includes("regular")) salaryInput.placeholder = "Monthly salary with benefits";
+      else if (t.includes("part")) salaryInput.placeholder = "Hourly rate";
+      else if (t.includes("jo")) salaryInput.placeholder = "Daily rate";
+      else salaryInput.placeholder = "Enter salary";
+    }
   });
 
-  addForm?.addEventListener("submit", function (e) {
+  // Add form submit confirmation
+  addForm?.addEventListener("submit", function(e) {
     e.preventDefault();
-    const _form = this;
     Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, add employee!"
-    }).then(result => {
-      if (result.isConfirmed) _form.submit();
-      _form.reset();
-        // Optionally reset modal steps
-        currentStep = 0;
-        showStep(currentStep)
-    });
+      title: "Confirm", text: "Add this employee?", icon: "question",
+      background: "#1f2937", color: "#fff",
+      showCancelButton: true, confirmButtonText: "Yes, Add", cancelButtonText: "Cancel",
+      confirmButtonColor: "#22c55e", cancelButtonColor: "#6b7280"
+    }).then(r => { if (r.isConfirmed) this.submit(); });
   });
 
-  // ------------------ Edit Employee Modal ------------------
+  // ===== Edit Employee Modal =====
   const editModal = document.getElementById("editEmployeeModal");
-  const closeEditBtn = document.getElementById("closeEditEmployeeModal");
-  const cancelEditBtn = document.getElementById("cancelEditEmployeeModal");
-
-  closeEditBtn?.addEventListener("click", () => editModal?.classList.add("hidden"));
-  cancelEditBtn?.addEventListener("click", () => editModal?.classList.add("hidden"));
+  const closeEdit = () => toggleModal("editEmployeeModal", false);
+  document.getElementById("closeEditEmployeeModal")?.addEventListener("click", closeEdit);
+  document.getElementById("cancelEditEmployeeModal")?.addEventListener("click", closeEdit);
+  editModal?.addEventListener("click", (e) => { if (e.target === editModal) closeEdit(); });
 
   document.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const url = btn.dataset.url;
-      const employeeId = btn.dataset.employeeId;
-
+      const empId = btn.dataset.employeeId;
       try {
         const res = await fetch(url, { headers: { "Accept": "application/json" } });
-        if (!res.ok) throw new Error("Network response was not ok");
+        if (!res.ok) throw new Error("Fetch failed");
         const data = await res.json();
-
         const form = editModal.querySelector("form");
-        form.action = url;
-
-        [
-          "first_name","middle_name","last_name","email","phone","gender",
-          "marital_status","emergency_contact","department_id","position_id",
-          "employment_type_id","salary","date_of_birth","date_hired",
-          "street_address","barangay","municipality","province","postal_code"
-        ].forEach(field => {
-          const input = form.querySelector(`[name="${field}"]`);
-          if (input) input.value = data[field] || "";
+        if (form) form.action = url;
+        ["first_name","middle_name","last_name","email","phone","gender","marital_status",
+         "emergency_contact","department_id","position_id","employment_type_id","salary",
+         "date_of_birth","date_hired","street_address","barangay","municipality","province","postal_code","status"
+        ].forEach(f => {
+          const el = form?.querySelector(`[name="${f}"]`);
+          if (el && data[f] !== undefined) el.value = data[f];
         });
-
-       const statusSelect = form.querySelector(`[name="status"]`);
-      if (statusSelect) statusSelect.value = data.status || "Active";
-
-
-        // Export Service Record
-        const exportBtn = document.getElementById('exportServiceRecordBtn');
-        if (exportBtn) {
-          exportBtn.href = `/employees/${employeeId}/service_record`;
-          exportBtn.target = "_blank";
-        }
-
-        // COE Export Button
+        // Update export links
+        const srBtn = document.getElementById('exportServiceRecordBtn');
+        if (srBtn) srBtn.href = `/employees/${empId}/service_record`;
         const coeBtn = document.getElementById("coeExportBtn");
-        if (coeBtn) {
-          coeBtn.href = `/employee/${employeeId}/generate-coe`;
-          coeBtn.target = "_blank";
-        }
-
-        editModal.classList.remove("hidden");
+        if (coeBtn) coeBtn.href = `/employee/${empId}/generate-coe`;
+        toggleModal("editEmployeeModal", true);
       } catch (err) {
         console.error(err);
-        Swal.fire("Error", "Failed to fetch employee data", "error");
+        Swal.fire({ title: "Error", text: "Failed to load employee data", icon: "error", background: "#1f2937", color: "#fff" });
       }
     });
   });
 
-  const editForm = editModal?.querySelector("form");
-  editForm?.addEventListener("submit", function (e) {
+  editModal?.querySelector("form")?.addEventListener("submit", function(e) {
     e.preventDefault();
-    const _form = this;
     Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, update employee!"
-    }).then(result => {
-      if (result.isConfirmed) _form.submit();
-    });
+      title: "Confirm Update", text: "Save changes?", icon: "question",
+      background: "#1f2937", color: "#fff",
+      showCancelButton: true, confirmButtonText: "Yes, Update", cancelButtonText: "Cancel",
+      confirmButtonColor: "#3b82f6"
+    }).then(r => { if (r.isConfirmed) this.submit(); });
   });
 
-});
-
-// ------------------ Archive Employee ------------------
-document.querySelectorAll(".archive-btn").forEach(btn => {
-  btn.addEventListener("click", async () => {
-    const url = btn.dataset.url;
-
-    Swal.fire({
-      title: "Are you sure?",
-      text: "This will archive the employee!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, archive!"
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const res = await fetch(url, {
-            method: "POST",
-            headers: {
-              "X-Requested-With": "XMLHttpRequest",
-              "Content-Type": "application/json"
-            }
-          });
-
-          if (!res.ok) throw new Error("Failed to archive employee");
-
-          Swal.fire("Archived!", "Employee has been archived.", "success")
-            .then(() => location.reload());
-        } catch (err) {
-          console.error(err);
-          Swal.fire("Error", "Failed to archive employee.", "error");
+  // ===== Archive Employee =====
+  document.querySelectorAll(".archive-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const url = btn.dataset.url;
+      Swal.fire({
+        title: "Archive?", text: "This will move the employee to archive.", icon: "warning",
+        background: "#1f2937", color: "#fff",
+        showCancelButton: true, confirmButtonText: "Yes, Archive", cancelButtonText: "Cancel",
+        confirmButtonColor: "#ef4444"
+      }).then(async (r) => {
+        if (r.isConfirmed) {
+          try {
+            const res = await fetch(url, { method: "POST", headers: { "X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json" } });
+            if (!res.ok) throw new Error("Failed");
+            Swal.fire({ title: "Archived", text: "Employee archived successfully.", icon: "success", background: "#1f2937", color: "#fff", timer: 2000 }).then(() => location.reload());
+          } catch (err) {
+            Swal.fire({ title: "Error", text: "Failed to archive employee", icon: "error", background: "#1f2937", color: "#fff" });
+          }
         }
-      }
+      });
     });
   });
-});
 
-// ===== MOA EXPORT =====
-const moaModal = document.getElementById("moaModal");
-const openMoaBtn = document.getElementById("openMoaModal");
-const closeMoaBtn = document.getElementById("closeMoaModal");
-const cancelMoaBtn = document.getElementById("cancelMoaBtn");
-const moaForm = document.getElementById("moaForm");
+  // ===== MOA Export Modal =====
+  const moaModal = document.getElementById("moaModal");
+  document.getElementById("openMoaModal")?.addEventListener("click", () => toggleModal("moaModal", true));
+  document.getElementById("closeMoaModal")?.addEventListener("click", () => toggleModal("moaModal", false));
+  document.getElementById("cancelMoaBtn")?.addEventListener("click", () => toggleModal("moaModal", false));
+  moaModal?.addEventListener("click", (e) => { if (e.target === moaModal) toggleModal("moaModal", false); });
 
-openMoaBtn?.addEventListener("click", () => {
-    moaModal.classList.remove("hidden");
-    moaModal.classList.add("flex");
-});
-
-[closeMoaBtn, cancelMoaBtn].forEach(btn => {
-    btn?.addEventListener("click", () => {
-        moaModal.classList.add("hidden");
-        moaModal.classList.remove("flex");
-    });
-});
-
-moaForm?.addEventListener("submit", (e) => {
+  document.getElementById("moaForm")?.addEventListener("submit", (e) => {
     e.preventDefault();
-
-    const typeId = document.getElementById("employmentTypeSelectMoa").value;
-
+    const typeId = document.getElementById("employmentTypeSelectMoa")?.value;
     if (!typeId) {
-        Swal.fire({
-            title: "Missing",
-            text: "Please select an employment type first.",
-            icon: "warning"
-        });
-        return;
+      Swal.fire({ title: "Select Type", text: "Please choose an employment type", icon: "warning", background: "#1f2937", color: "#fff" });
+      return;
     }
+    toggleModal("moaModal", false);
+    window.location.href = `/generate_moa_all/${typeId}`;
+  });
 
-   window.location.href = `/generate_moa_all/${typeId}`;
+  // ===== Flash Messages =====
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        Swal.fire({
+          toast: true, position: 'top-end',
+          icon: '{{ "success" if category == "success" else "error" if category == "error" else "info" }}',
+          title: '{{ message }}', showConfirmButton: false, timer: 3000, timerProgressBar: true,
+          background: '#1f2937', color: '#fff'
+        });
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
 });
 </script>
-
 {% endblock %}

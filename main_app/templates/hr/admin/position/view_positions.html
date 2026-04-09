@@ -2,67 +2,237 @@
 {% block title %}Positions | HR Admin{% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-6 space-y-6">
-  <!-- Page Header -->
-  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-id-badge text-3xl"></i>
-      Position Details
-    </h1>
 
+
+<main class="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+  <!-- Page Header -->
+  <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-gray-700/50 pb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+        <div class="p-2 bg-blue-500/10 rounded-xl">
+          <i class="fa-solid fa-id-badge text-blue-400 text-xl"></i>
+        </div>
+        Position Management
+      </h1>
+      <p class="mt-1 text-sm text-gray-400">Manage roles, descriptions, and employee assignments.</p>
+    </div>
     <a href="{{ url_for('hr_admin_bp.add_position') }}"
-       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
-      <i class="fa-solid fa-plus"></i> Add Position
+       class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
+      <i class="fa-solid fa-plus text-sm"></i> Add Position
     </a>
   </header>
 
   <!-- Positions Table -->
-  <div class="overflow-x-auto bg-gray-800 rounded-2xl shadow border border-gray-700">
-    <table class="min-w-full divide-y divide-gray-700 text-sm md:text-base table-auto">
-      <thead class="bg-gray-900">
-        <tr>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Position Name</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Description</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Employees</th>
-          <th class="px-2 sm:px-4 py-3 text-left text-gray-400">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-700">
-        {% for position in positions.items %}
-        <tr class="hover:bg-gray-700 transition">
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ position.name }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ position.description or '-' }}</td>
-          <td class="px-2 sm:px-4 py-2 text-gray-200 whitespace-nowrap">{{ employee_counts.get(position.id, 0) }}</td>
-          <td class="px-2 sm:px-4 py-2">
-            <a href="{{ url_for('hr_admin_bp.edit_position', position_id=position.id) }}"
-               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl text-sm flex items-center gap-1 transition justify-center">
-              <i class="fa-solid fa-pen-to-square"></i>
-              <span class="hidden sm:inline">Edit</span>
-            </a>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="px-4 py-3 text-center text-gray-400">No positions found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="overflow-hidden rounded-2xl border border-gray-700/50 bg-gray-800 shadow-xl">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700/50">
+        <thead class="bg-gray-900/50">
+          <tr>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Position</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Description</th>
+            <th class="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Employees</th>
+            <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-gray-400">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700/50">
+          {% for position in positions.items %}
+          <tr class="group hover:bg-gray-700/30 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="text-sm font-medium text-gray-100">{{ position.name }}</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="max-w-xs text-sm text-gray-400 truncate" title="{{ position.description or 'No description' }}">
+                {{ position.description or '<span class="text-gray-500 italic">Not provided</span>' }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              {% set count = employee_counts.get(position.id, 0) %}
+              <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium
+                {% if count > 0 %}bg-blue-500/15 text-blue-400{% else %}bg-gray-600/30 text-gray-400{% endif %}">
+                {{ count }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right">
+              <div class="flex items-center justify-end gap-2">
+                <!-- Edit Button (opens modal) -->
+                <button type="button"
+                        data-position-id="{{ position.id }}"
+                        class="open-edit-modal inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-700/50 hover:bg-blue-600/20 hover:text-blue-400 text-gray-300 transition-colors"
+                        title="Edit Position">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                  <span class="hidden sm:inline">Edit</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center gap-3">
+                <div class="p-4 bg-gray-700/30 rounded-full">
+                  <i class="fa-solid fa-layer-group text-3xl text-gray-500"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-300">No positions found</h3>
+                <p class="text-sm text-gray-500">Get started by adding your first position.</p>
+                <a href="{{ url_for('hr_admin_bp.add_position') }}" class="mt-2 text-sm text-blue-400 hover:text-blue-300 hover:underline">+ Add Position</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Pagination -->
-  <div class="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4 mt-4 text-gray-400 items-center">
-    {% if positions.has_prev %}
-      <a href="{{ url_for('hr_admin_bp.view_positions', page=positions.prev_num) }}"
-         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Previous</a>
-    {% endif %}
-
-    <span class="px-4 py-2">Page {{ positions.page }} of {{ positions.pages }}</span>
-
-    {% if positions.has_next %}
-      <a href="{{ url_for('hr_admin_bp.view_positions', page=positions.next_num) }}"
-         class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">Next</a>
-    {% endif %}
+  {% if positions.pages > 1 %}
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+    <p class="text-sm text-gray-400">Showing page <span class="font-medium text-gray-200">{{ positions.page }}</span> of <span class="font-medium text-gray-200">{{ positions.pages }}</span></p>
+    <nav class="flex items-center gap-2">
+      {% if positions.has_prev %}
+        <a href="{{ url_for('hr_admin_bp.view_positions', page=positions.prev_num) }}" class="px-4 py-2 rounded-lg bg-gray-700/50 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition">Prev</a>
+      {% else %}
+        <span class="px-4 py-2 rounded-lg bg-gray-800/50 text-sm text-gray-500 cursor-not-allowed opacity-60">Prev</span>
+      {% endif %}
+      <span class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg">{{ positions.page }}</span>
+      {% if positions.has_next %}
+        <a href="{{ url_for('hr_admin_bp.view_positions', page=positions.next_num) }}" class="px-4 py-2 rounded-lg bg-gray-700/50 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition">Next</a>
+      {% else %}
+        <span class="px-4 py-2 rounded-lg bg-gray-800/50 text-sm text-gray-500 cursor-not-allowed opacity-60">Next</span>
+      {% endif %}
+    </nav>
   </div>
+  {% endif %}
 </main>
+
+{% include 'hr/admin/position/edit_position.html' %}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+// Modal Functions
+function openEditModal(positionId) {
+  const modal = document.getElementById('editPositionModal');
+  const form = document.getElementById('modalEditForm');
+  
+  // Show modal with animation
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden'; // Prevent background scroll
+  
+  // Fetch position data
+  fetch(`/position/${positionId}/edit`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById('modalPositionId').value = data.id;
+    document.getElementById('modalPositionName').value = data.name;
+    document.getElementById('modalPositionDescription').value = data.description || '';
+  })
+  .catch(err => {
+    console.error('Error loading position:', err);
+    Swal.fire('Error', 'Could not load position data.', 'error');
+    closeEditModal();
+  });
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('editPositionModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+  document.getElementById('modalEditForm').reset();
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('editPositionModal');
+    if (!modal.classList.contains('hidden')) {
+      closeEditModal();
+    }
+  }
+});
+
+// Attach click listeners to Edit buttons
+document.querySelectorAll('.open-edit-modal').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const positionId = btn.dataset.positionId;
+    openEditModal(positionId);
+  });
+});
+
+// Handle form submission via AJAX
+document.getElementById('modalEditForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const form = this;
+  const positionId = document.getElementById('modalPositionId').value;
+  const formData = new FormData(form);
+  
+  Swal.fire({
+    title: 'Confirm Update',
+    text: 'Do you want to save these changes?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#2563eb',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Yes, Save',
+    cancelButtonText: 'Cancel',
+    background: '#1e293b',
+    color: '#f1f5f9',
+    customClass: { popup: 'rounded-2xl' }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`/position/${positionId}/edit`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Updated!',
+            text: data.message,
+            background: '#1e293b',
+            color: '#f1f5f9',
+            customClass: { popup: 'rounded-2xl' },
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            closeEditModal();
+            location.reload(); // Refresh to show updated data
+          });
+        } else {
+          Swal.fire('Error', data.message || 'Update failed.', 'error');
+        }
+      })
+      .catch(() => {
+        Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+      });
+    }
+  });
+});
+
+// Delete confirmation placeholder
+function confirmDelete(positionId) {
+  Swal.fire({
+    title: 'Delete Position?',
+    text: 'This action cannot be undone.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Yes, Delete',
+    background: '#1e293b',
+    color: '#f1f5f9',
+    customClass: { popup: 'rounded-2xl' }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // TODO: Implement actual delete endpoint
+      Swal.fire('Not Implemented', 'Delete functionality is a placeholder.', 'info');
+    }
+  });
+}
+</script>
 {% endblock %}

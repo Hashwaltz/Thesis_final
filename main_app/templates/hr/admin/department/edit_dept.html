@@ -1,61 +1,390 @@
 <!-- hr/admin/includes/edit_department_modal.html -->
-<div id="editDepartmentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-  <div class="bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-lg">
+<div id="editDepartmentModal" 
+     class="fixed inset-0 z-50 flex items-center justify-center hidden"
+     role="dialog" 
+     aria-modal="true" 
+     aria-labelledby="modal-title">
+  
+  <!-- Backdrop with Blur Effect -->
+  <div id="modalBackdrop" 
+       class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0"
+       aria-hidden="true"></div>
+
+  <!-- Modal Panel -->
+  <div class="relative bg-gradient-to-br from-gray-900 to-gray-900/95 
+              border border-gray-700/50 rounded-3xl w-full max-w-lg mx-4 
+              shadow-2xl shadow-black/50 transform transition-all duration-300 
+              scale-95 opacity-0"
+       id="modalPanel">
+    
+    <!-- Decorative gradient accent -->
+    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500 rounded-t-3xl"></div>
 
     <!-- Close Button -->
-    <button id="closeEditDepartmentModal" class="absolute top-4 right-4 text-gray-400 hover:text-white">
-      <i class="fa-solid fa-xmark text-2xl"></i>
+    <button id="closeEditDepartmentModal" 
+            class="absolute top-4 right-4 p-2 text-gray-400 hover:text-white 
+                   hover:bg-gray-700/50 rounded-xl transition-all duration-200 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            aria-label="Close modal"
+            type="button">
+      <i class="fa-solid fa-xmark text-xl"></i>
     </button>
 
     <!-- Modal Header -->
-    <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-      <i class="fa-solid fa-pen-to-square text-blue-400"></i> Edit Department
-    </h2>
+    <div class="px-6 pt-6 pb-4 border-b border-gray-700/50">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-blue-500/20 rounded-xl border border-blue-500/30">
+          <i class="fa-solid fa-pen-to-square text-blue-400"></i>
+        </div>
+        <div>
+          <h2 id="modal-title" class="text-xl font-bold text-white">
+            Edit Department
+          </h2>
+          <p class="text-sm text-gray-400 mt-0.5">Update department details below</p>
+        </div>
+      </div>
+    </div>
 
     <!-- Form -->
-    <form id="editDepartmentForm" method="POST" action="{{ url_for('hr_admin_bp.edit_department', department_id=department.id) }}">
+    <form id="editDepartmentForm" 
+          method="POST" 
+          action="{{ url_for('hr_admin_bp.edit_department', department_id=department.id) }}"
+          class="px-6 py-5 space-y-5">
       {{ form.hidden_tag() if form else '' }}
 
       <div class="space-y-4">
         <!-- Department Name -->
-        <div class="flex flex-col">
-          <label class="text-gray-300 mb-1">Department Name</label>
-          <input type="text" name="name" value="{{ department.name }}" placeholder="Enter department name"
-                 required class="bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+        <div class="group">
+          <label for="dept-name" class="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+            <i class="fa-solid fa-building-columns text-blue-400/80"></i>
+            Department Name
+            <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <input type="text" 
+                   id="dept-name"
+                   name="name" 
+                   value="{{ department.name }}" 
+                   placeholder="e.g., Engineering, Marketing"
+                   required 
+                   pattern="[\S\s]{2,100}"
+                   title="Please enter 2-100 characters"
+                   class="w-full bg-gray-800/80 text-white border border-gray-700 
+                          rounded-xl px-4 py-3 pr-10
+                          focus:outline-none focus:ring-2 focus:ring-blue-500/50 
+                          focus:border-blue-500 placeholder-gray-500 
+                          transition-all duration-200
+                          invalid:border-red-500/50 invalid:focus:ring-red-500/50"
+            />
+            <i class="fa-solid fa-check absolute right-4 top-1/2 -translate-y-1/2 
+                      text-emerald-400 opacity-0 group-focus-within:opacity-100 
+                      transition-opacity"></i>
+          </div>
+          <p class="mt-1.5 text-xs text-gray-500">Use a clear, descriptive name for your department.</p>
         </div>
 
         <!-- Department Head -->
-        <div class="flex flex-col">
-          <label class="text-gray-300 mb-1">Department Head</label>
-          <select name="dept_head" class="bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <option value="">Select Department Head</option>
-            {% for emp in employees %}
-              <option value="{{ emp.id }}" {% if department.head_id == emp.id %}selected{% endif %}>
-                {{ emp.first_name }} {{ emp.last_name }}
-              </option>
-            {% endfor %}
-          </select>
+        <div class="group">
+          <label for="dept-head" class="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+            <i class="fa-solid fa-user-tie text-blue-400/80"></i>
+            Department Head
+          </label>
+          <div class="relative">
+            <select id="dept-head"
+                    name="dept_head" 
+                    class="w-full bg-gray-800/80 text-white border border-gray-700 
+                           rounded-xl px-4 py-3 pr-10 appearance-none
+                           focus:outline-none focus:ring-2 focus:ring-blue-500/50 
+                           focus:border-blue-500 transition-all duration-200
+                           cursor-pointer">
+              <option value="">Select a department head</option>
+              {% for emp in employees %}
+                <option value="{{ emp.id }}" {% if department.head_id == emp.id %}selected{% endif %}>
+                  {{ emp.first_name }} {{ emp.last_name }} 
+                  {% if emp.email %}({{ emp.email }}){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 
+                      text-gray-500 pointer-events-none"></i>
+          </div>
+          <p class="mt-1.5 text-xs text-gray-500">The assigned head will receive management permissions.</p>
         </div>
 
         <!-- Description -->
-        <div class="flex flex-col">
-          <label class="text-gray-300 mb-1">Description</label>
-          <textarea name="description" placeholder="Enter department description" rows="4" style="resize: none;"
-                    class="bg-gray-800 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">{{ department.description }}</textarea>
+        <div class="group">
+          <label for="dept-desc" class="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+            <i class="fa-solid fa-align-left text-blue-400/80"></i>
+            Description
+          </label>
+          <textarea id="dept-desc"
+                    name="description" 
+                    placeholder="Briefly describe the department's purpose and responsibilities..."
+                    rows="4"
+                    maxlength="500"
+                    class="w-full bg-gray-800/80 text-white border border-gray-700 
+                           rounded-xl px-4 py-3 resize-none
+                           focus:outline-none focus:ring-2 focus:ring-blue-500/50 
+                           focus:border-blue-500 placeholder-gray-500 
+                           transition-all duration-200"></textarea>
+          <div class="flex justify-between mt-1.5">
+            <p class="text-xs text-gray-500">Optional but recommended for clarity.</p>
+            <span id="charCount" class="text-xs text-gray-500"><span id="currentChars">0</span>/500</span>
+          </div>
         </div>
       </div>
 
-      <!-- Buttons -->
-      <div class="mt-6 flex justify-end gap-3 flex-wrap">
+      <!-- Form Actions -->
+      <div class="pt-4 border-t border-gray-700/50 flex flex-col sm:flex-row-reverse gap-3">
         <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-1">
-          <i class="fa-solid fa-pen-to-square"></i> Update
+                id="submitBtn"
+                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 
+                       bg-gradient-to-r from-blue-600 to-blue-500 
+                       hover:from-blue-500 hover:to-blue-400 
+                       text-white font-medium rounded-xl 
+                       shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 
+                       transition-all duration-200 hover:-translate-y-0.5 
+                       active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed 
+                       disabled:hover:translate-y-0">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Save Changes</span>
         </button>
-        <button type="button" id="cancelEditDepartment" 
-                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl flex items-center gap-1">
-          <i class="fa-solid fa-xmark"></i> Cancel
+        
+        <button type="button" 
+                id="cancelEditDepartment"
+                class="px-5 py-2.5 bg-gray-700/80 hover:bg-gray-600 
+                       text-gray-200 font-medium rounded-xl 
+                       transition-colors duration-200
+                       focus:outline-none focus:ring-2 focus:ring-gray-500/50">
+          Cancel
         </button>
       </div>
     </form>
+
+    <!-- Loading Overlay (hidden by default) -->
+    <div id="formLoading" 
+         class="absolute inset-0 bg-gray-900/80 backdrop-blur-sm rounded-3xl 
+                flex items-center justify-center hidden z-10">
+      <div class="flex flex-col items-center gap-3">
+        <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent 
+                    rounded-full animate-spin"></div>
+        <p class="text-sm text-gray-300">Saving changes...</p>
+      </div>
+    </div>
   </div>
 </div>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // ============ MODAL LOGIC (Consolidated) ============
+  const modal = document.getElementById("editDepartmentModal");
+  const backdrop = document.getElementById("modalBackdrop");
+  const panel = document.getElementById("modalPanel");
+  const openBtn = document.getElementById("openEditDepartmentModal");
+  const closeBtn = document.getElementById("closeEditDepartmentModal");
+  const cancelBtn = document.getElementById("cancelEditDepartment");
+  const form = document.getElementById("editDepartmentForm");
+  
+  // Character counter
+  const textarea = document.getElementById('dept-desc');
+  const charCount = document.getElementById('currentChars');
+  if (textarea && charCount) {
+    const updateCount = () => charCount.textContent = textarea.value.length;
+    textarea.addEventListener('input', updateCount);
+    updateCount();
+  }
+
+  // Open modal with animations
+  const openModal = () => {
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    modal.setAttribute('aria-hidden', 'false');
+    
+    // Trigger reflow for CSS transitions
+    void modal.offsetWidth;
+    
+    // Animate backdrop & panel
+    backdrop?.classList.remove('opacity-0');
+    panel?.classList.remove('scale-95', 'opacity-0');
+    panel?.classList.add('scale-100', 'opacity-100');
+    
+    // Focus management
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('dept-name')?.focus(), 150);
+    
+    // Trap focus
+    trapFocus(modal);
+  };
+
+  // Close modal with animations
+  const closeModal = () => {
+    if (!modal) return;
+    
+    backdrop?.classList.add('opacity-0');
+    panel?.classList.remove('scale-100', 'opacity-100');
+    panel?.classList.add('scale-95', 'opacity-0');
+    
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      releaseFocusTrap();
+      openBtn?.focus();
+    }, 300);
+  };
+
+  // Event listeners
+  openBtn?.addEventListener("click", openModal);
+  closeBtn?.addEventListener("click", closeModal);
+  cancelBtn?.addEventListener("click", closeModal);
+  
+  // Close on backdrop click
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+      e.preventDefault();
+      closeModal();
+    }
+  });
+
+  // Focus trap utilities
+  let firstFocusable, lastFocusable;
+  const trapFocus = (element) => {
+    const focusable = element.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable = focusable[0];
+    lastFocusable = focusable[focusable.length - 1];
+    element.addEventListener('keydown', handleTabKey);
+  };
+  const releaseFocusTrap = () => {
+    modal?.removeEventListener('keydown', handleTabKey);
+  };
+  const handleTabKey = (e) => {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey) {
+      if (document.activeElement === firstFocusable) {
+        e.preventDefault();
+        lastFocusable?.focus();
+      }
+    } else {
+      if (document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable?.focus();
+      }
+    }
+  };
+
+  // ============ FORM SUBMISSION (SweetAlert2) ============
+  form?.addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    Swal.fire({
+      title: "Confirm Changes",
+      text: "Update this department?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, update it",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+      customClass: {
+        popup: 'bg-gray-800 border border-gray-700',
+        title: 'text-white',
+        htmlContainer: 'text-gray-300',
+        confirmButton: 'bg-blue-600 hover:bg-blue-500',
+        cancelButton: 'bg-gray-700 hover:bg-gray-600'
+      }
+    }).then(result => {
+      if (result.isConfirmed) {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn?.innerHTML;
+        
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+        
+        fetch(this.action, {
+          method: "POST",
+          body: new FormData(this),
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            Swal.fire({
+              icon: "success",
+              title: "Updated!",
+              text: data.message,
+              timer: 2000,
+              showConfirmButton: false,
+              customClass: {
+                popup: 'bg-gray-800 border border-gray-700',
+                title: 'text-white'
+              }
+            }).then(() => location.reload());
+          } else {
+            Swal.fire("Error", data.message || "Something went wrong", "error");
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalBtnText;
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Submission error:', err);
+          Swal.fire("Error", "Network error. Please try again.", "error");
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+          }
+        });
+      }
+    });
+  });
+
+  // ============ EMPLOYEE FILTER ============
+  window.filterEmployees = function(query) {
+    const term = query.toLowerCase().trim();
+    document.querySelectorAll('.employee-row').forEach(row => {
+      const name = row.dataset.name || '';
+      const position = row.dataset.position || '';
+      row.style.display = (name.includes(term) || position.includes(term)) ? '' : 'none';
+    });
+  };
+
+  // Expose for external triggers
+  window.openEditDepartmentModal = openModal;
+  window.closeEditDepartmentModal = closeModal;
+});
+</script>
+
+<!-- CSS Transitions -->
+<style>
+#editDepartmentModal {
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+#editDepartmentModal.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+#modalPanel {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+  border-color: #ef4444 !important;
+}
+</style>

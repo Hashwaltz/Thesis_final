@@ -1,195 +1,517 @@
 {% extends 'payroll/staff/staff_base.html' %}
 
-{% block title %}Part-Timer Payroll Preview{% endblock %}
+{% block title %}Preview Part-Timer Payroll - {{ department.name }}{% endblock %}
 
 {% block content %}
-<section class="p-6 space-y-6 text-gray-200 max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-100">
 
-<!-- HEADER -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <!-- ================= HEADER ================= -->
+    <header class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+            
+            <!-- Back Button -->
+            <a href="{{ url_for('payroll_staff_bp.parttimer_select_department', period_id=period.id) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700/60 hover:bg-slate-600/80 
+                      text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-600 
+                      hover:border-slate-500 hover:shadow-lg">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back to Departments</span>
+            </a>
 
-<h2 class="text-2xl font-semibold text-emerald-400 flex items-center gap-3">
-<i class="fa-solid fa-clock text-3xl"></i>
-Part-Timer Payroll Preview
-</h2>
+            <!-- Center Title -->
+            <div class="text-center flex-1">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                    LGU Municipality of Norzagaray
+                </p>
+                <h1 class="text-2xl lg:text-3xl font-bold text-white mt-1">
+                    {{ department.name }}
+                </h1>
+                <p class="text-sm text-violet-400 font-medium mt-1">
+                    Part-Timer Hourly Payroll
+                </p>
+            </div>
 
-<p class="text-gray-400 text-sm">
-Period: {{ period.start_date }} - {{ period.end_date }}
-</p>
+            <!-- Payroll Reference -->
+            <div class="text-right bg-slate-900/60 px-5 py-3 rounded-xl border border-slate-700/60 min-w-[180px]">
+                <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Payroll Reference</p>
+                <p class="text-lg font-bold text-violet-400 font-mono tracking-tight">
+                    {{ period.start_date.month }}-{{ period.start_date.strftime('%y') }}-PT
+                </p>
+            </div>
+        </div>
+
+        <!-- Period Banner -->
+        <div class="mt-6 pt-4 border-t border-slate-700/50">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></div>
+                    <span class="text-sm font-medium text-slate-300">Pay Period:</span>
+                </div>
+                <p class="text-lg font-semibold text-white font-mono tabular-nums">
+                    {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-800/40 py-2 px-4 rounded-lg border border-slate-700/40">
+            <i class="fa-solid fa-circle-info text-violet-400/80"></i>
+            <span>Gross = Hourly Rate × Hours Worked + Allowance • All deductions optional & editable</span>
+        </div>
+    </header>
+
+    <!-- ================= PAYROLL FORM ================= -->
+    <form method="POST"
+          action="{{ url_for('payroll_staff_bp.process_parttimer_payroll', period_id=period.id, department_id=department.id) }}"
+          class="space-y-6">
+
+        {% for data in payroll_rows %}
+        {% set emp = data.employee %}
+        {% set hourly_rate = data.hourly_rate %}
+        {% set gross_pay = data.gross_pay or ((hourly_rate * data.total_hours_decimal) + (data.allowance_total or 0)) %}
+
+        <!-- Employee Card -->
+        <article class="employee-card bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-700/60 
+                       shadow-lg hover:shadow-xl transition-shadow duration-200"
+                 data-hourly-rate="{{ hourly_rate }}"
+                 data-employee-id="{{ emp.id }}">
+
+            <!-- Card Header -->
+            <div class="px-6 py-5 border-b border-slate-700/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 
+                               flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        {{ emp.get_full_name().split()|first|first|upper }}
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white leading-tight">
+                            <span class="text-violet-400/90 font-mono text-sm">#{{ emp.employee_id }}</span>
+                            {{ emp.get_full_name() }}
+                        </h3>
+                        <p class="text-sm text-slate-400 mt-0.5">
+                            {{ emp.position.name }}
+                        </p>
+                        {% if emp.employment_type %}
+                        <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-medium 
+                                   bg-slate-700/60 text-slate-300 rounded-md border border-slate-600">
+                            {{ emp.employment_type.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Hourly Rate</p>
+                    <p class="text-xl font-bold text-violet-400 font-mono tabular-nums">
+                        ₱ {{ '{:,.2f}'.format(hourly_rate) }}
+                    </p>
+                    <p class="text-[10px] text-slate-500 mt-0.5">
+                        × {{ data.hours_worked }} worked
+                    </p>
+                </div>
+            </div>
+
+            <!-- Card Body: Earnings & Deductions -->
+            <div class="p-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                <!-- EARNINGS SECTION -->
+                <section class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/40 space-y-5">
+                    <div class="flex items-center gap-2 pb-3 border-b border-slate-700/40">
+                        <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center">
+                            <i class="fa-solid fa-coins text-violet-400 text-sm"></i>
+                        </div>
+                        <h4 class="font-semibold text-violet-400">Earnings</h4>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <i class="fa-solid fa-clock"></i> Hours Worked
+                            </label>
+                            <input type="text"
+                                   value="{{ data.hours_worked }}"
+                                   readonly
+                                   class="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-600/60 
+                                          rounded-lg text-right font-mono tabular-nums text-slate-300 text-sm cursor-not-allowed">
+                            <p class="text-[10px] text-slate-500">
+                                Decimal: {{ data.total_hours_decimal|round(2) }} hrs
+                            </p>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <i class="fa-solid fa-money-bill-wave"></i> Hourly Rate
+                            </label>
+                            <input type="text"
+                                   value="₱ {{ '{:,.2f}'.format(hourly_rate) }}"
+                                   readonly
+                                   class="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-600/60 
+                                          rounded-lg text-right font-mono tabular-nums text-slate-300 text-sm cursor-not-allowed">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-medium text-slate-400 flex items-center gap-1">
+                                <i class="fa-solid fa-gift"></i> Allowance (Optional)
+                            </label>
+                            <input type="number"
+                                   name="allowance_{{ emp.id }}"
+                                   value="0"
+                                   min="0"
+                                   step="0.01"
+                                   placeholder="0.00"
+                                   class="allowance w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                          rounded-lg text-right font-mono tabular-nums text-white
+                                          focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 
+                                          outline-none transition-all placeholder-slate-500">
+                        </div>
+                    </div>
+
+                    <!-- Gross Pay (computed from Hourly Rate × Hours + Allowance) -->
+                    <div class="space-y-3 pt-4 border-t border-slate-700/40">
+                        <div class="flex justify-between items-center py-2 bg-violet-900/15 rounded-lg px-3">
+                            <span class="text-sm font-semibold text-violet-300">Gross Pay</span>
+                            <input type="text" readonly 
+                                   class="gross w-40 px-3 py-1.5 bg-violet-900/30 border border-violet-700/40 
+                                          rounded text-right font-mono tabular-nums font-bold text-violet-400 text-sm">
+                        </div>
+                    </div>
+                    
+                    <!-- Hours Summary -->
+                    <div class="p-3 bg-slate-800/40 rounded-lg border border-slate-700/40">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Hours Summary</p>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="text-center p-2 bg-violet-900/20 rounded">
+                                <p class="text-violet-300 font-bold">{{ data.hours_worked }}</p>
+                                <p class="text-slate-500">Worked</p>
+                            </div>
+                            <div class="text-center p-2 bg-slate-700/40 rounded">
+                                <p class="text-slate-300 font-bold">{{ data.total_hours_decimal|round(1) }}h</p>
+                                <p class="text-slate-500">Decimal</p>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-2 text-center">
+                            <i class="fa-solid fa-circle-info mr-1"></i>
+                            Pulled from Attendance records • Time In/Out counted
+                        </p>
+                    </div>
+                </section>
+
+                <!-- DEDUCTIONS SECTION (ALL OPTIONAL & EDITABLE) -->
+                <section class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/40 space-y-5">
+                    <div class="flex items-center gap-2 pb-3 border-b border-slate-700/40">
+                        <div class="w-8 h-8 rounded-lg bg-red-600/20 flex items-center justify-center">
+                            <i class="fa-solid fa-minus-circle text-red-400 text-sm"></i>
+                        </div>
+                        <h4 class="font-semibold text-red-400">Deductions <span class="text-xs font-normal text-slate-400">(All Optional)</span></h4>
+                    </div>
+
+                    <!-- Deductions Grid - 2-column layout -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        
+                        {% for ded in data.deductions %}
+                        
+                            {% if ded.key == "sss" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-hand-holding-dollar"></i> SSS</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Optional</span>
+                                </label>
+                                <input type="number"
+                                       name="sss_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       placeholder="0.00"
+                                       class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="statutory"
+                                       data-auto-value="{{ ded.auto_value or 0 }}">
+                                <button type="button" 
+                                        class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        data-target="sss_{{ emp.id }}">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
+
+                            {% elif ded.key == "philhealth" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-heart-pulse"></i> PhilHealth</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Optional</span>
+                                </label>
+                                <input type="number"
+                                       name="philhealth_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       placeholder="0.00"
+                                       class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-emerald-600/40 
+                                              rounded-lg text-right font-mono tabular-nums text-emerald-300
+                                              focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="statutory"
+                                       data-auto-rate="0.025"
+                                       data-gross-dependent="true">
+                                <p class="text-[10px] text-slate-500 mt-1">Gov't Share: ₱ {{ '{:,.2f}'.format(ded.employer_share or 0) }}</p>
+                                <button type="button" 
+                                        class="reset-deduction mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                                        data-target="philhealth_{{ emp.id }}">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
+
+                            {% elif ded.key == "pagibig" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-house-chimney"></i> Pag-IBIG</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Optional</span>
+                                </label>
+                                <input type="number"
+                                       name="pagibig_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       placeholder="0.00"
+                                       class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="statutory"
+                                       data-auto-value="{{ ded.auto_value or 0 }}">
+                                <button type="button" 
+                                        class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        data-target="pagibig_{{ emp.id }}">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
+
+                            {% elif ded.key == "gsis" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-shield-halved"></i> GSIS</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Optional</span>
+                                </label>
+                                <input type="number"
+                                       name="gsis_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       placeholder="0.00"
+                                       class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="statutory"
+                                       data-auto-value="{{ ded.auto_value or 0 }}">
+                                <button type="button" 
+                                        class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        data-target="gsis_{{ emp.id }}">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
+
+                            {% elif ded.key == "tax" %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-file-invoice-dollar"></i> TRAIN Tax</span>
+                                    <span class="text-[10px] text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded border border-violet-500/30">Optional</span>
+                                </label>
+                                <input type="number"
+                                       name="tax_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       placeholder="0.00"
+                                       class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-violet-600/40 
+                                              rounded-lg text-right font-mono tabular-nums text-violet-300
+                                              focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="tax"
+                                       data-auto-value="{{ ded.auto_value or 0 }}">
+                                <button type="button" 
+                                        class="reset-deduction mt-1 text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1"
+                                        data-target="tax_{{ emp.id }}">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
+
+                            {% elif "loan" in ded.key %}
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-file-invoice-dollar"></i> {{ ded.name }}</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Optional</span>
+                                </label>
+                                <input type="number"
+                                       name="{{ ded.key }}_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0"
+                                       step="0.01"
+                                       placeholder="0.00"
+                                       class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
+                                              rounded-lg text-right font-mono tabular-nums text-white
+                                              focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="loan"
+                                       data-auto-value="{{ ded.auto_value or 0 }}">
+                                <button type="button" 
+                                        class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        data-target="{{ ded.key }}_{{ emp.id }}">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </button>
+                            </div>
+                            {% endif %}
+                            
+                        {% endfor %}
+
+                    </div>
+
+                    <!-- Total Deductions -->
+                    <div class="pt-4 border-t border-slate-700/40">
+                        <label class="text-sm font-semibold text-slate-300 block mb-2">Total Deductions</label>
+                        <input type="text" readonly 
+                               class="total-deduction w-full px-4 py-3 bg-red-900/20 border border-red-700/40 
+                                      rounded-lg text-right font-mono tabular-nums font-bold text-red-400 text-lg">
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- NET PAY FOOTER -->
+            <div class="px-6 py-4 bg-gradient-to-r from-violet-900/40 via-slate-900/40 to-slate-900/40 
+                       border-t border-violet-700/30 rounded-b-2xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h5 class="text-sm font-semibold text-white">Net Payable</h5>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Gross Pay <span class="text-slate-500">−</span> Total Deductions
+                        </p>
+                    </div>
+                    <input type="text" readonly 
+                           class="net-pay w-full sm:w-56 px-5 py-3 bg-violet-900/50 border-2 border-violet-600/50 
+                                  rounded-xl text-right font-mono tabular-nums font-bold text-violet-300 text-2xl 
+                                  shadow-inner focus:outline-none">
+                </div>
+            </div>
+
+        </article>
+        {% endfor %}
+
+        <!-- Form Actions -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-5 pt-6 border-t border-slate-700/50">
+            <div class="flex items-start gap-3 text-sm text-slate-400">
+                <i class="fa-solid fa-circle-info text-violet-400/80 mt-0.5"></i>
+                <p>
+                    Gross = Hourly Rate × Hours Worked + Allowance • 
+                    All deductions are <strong class="text-amber-300">optional</strong> — leave blank to skip. 
+                    Use "Reset" buttons to restore calculated values. All amounts in ₱.
+                </p>
+            </div>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-7 py-3.5 font-semibold text-white rounded-xl
+                           bg-gradient-to-r from-violet-600 to-violet-700 
+                           hover:from-violet-500 hover:to-violet-600 active:from-violet-700 active:to-violet-800
+                           transition-all shadow-lg hover:shadow-violet-500/30 hover:-translate-y-0.5">
+                <i class="fa-solid fa-check-circle"></i>
+                <span>Process Part-Timer Payroll</span>
+            </button>
+        </div>
+
+    </form>
+
+    <!-- Footer Note -->
+    <footer class="text-center pt-4 pb-8">
+        <p class="text-xs text-slate-500">
+            <i class="fa-solid fa-shield-halved mr-1"></i>
+            Payroll data is encrypted and compliant with Data Privacy Act of 2012
+        </p>
+    </footer>
 
 </div>
 
+<!-- JavaScript: Auto-Compute for Part-Timer (Hourly-Based) -->
+<script>
+document.querySelectorAll('.employee-card').forEach(card => {
+    const empId = card.dataset.employeeId;
+    const hourlyRate = parseFloat(card.dataset.hourlyRate) || 0;
+
+    const hoursWorked = parseFloat(card.querySelector('[readonly]')?.value) || 0; // First readonly input = hours
+    const allowance = card.querySelector('.allowance');
+    const grossEl = card.querySelector('.gross');
+    const totalDedEl = card.querySelector('.total-deduction');
+    const netEl = card.querySelector('.net-pay');
+    
+    // Deduction inputs
+    const allDeductions = card.querySelectorAll('.ded');
+
+    function format(n) {
+        return "₱ " + (n || 0).toLocaleString('en-PH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function compute() {
+        // 1. Compute Gross Pay: Hourly Rate × Hours Worked + Allowance
+        const hrs = parseFloat(card.querySelector('[readonly]')?.value) || 0;
+        const a = parseFloat(allowance?.value) || 0;
+        const gross = (hourlyRate * hrs) + a;
+        
+        if (grossEl) grossEl.value = format(gross);
+
+        // 2. Sum all deductions (only if value is provided)
+        let totalDed = 0;
+        allDeductions.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            if (val > 0) totalDed += val;  // Only count if user entered a value
+        });
+        
+        if (totalDedEl) totalDedEl.value = format(totalDed);
+
+        // 3. Net Pay = Gross - Total Deductions (prevent negative)
+        const net = Math.max(gross - totalDed, 0);
+        if (netEl) netEl.value = format(net);
+    }
+
+    // Handle manual edits on deduction inputs
+    allDeductions.forEach(input => {
+        input.addEventListener('input', function() {
+            this.dataset.manualEdit = 'true';
+            this.classList.remove('border-violet-500/60', 'ring-1', 'ring-violet-500/30', 
+                                'border-amber-500/60', 'ring-1', 'ring-amber-500/30');
+            compute();
+        });
+        input.addEventListener('change', compute);
+        input.addEventListener('blur', compute);
+    });
+
+    // Handle allowance input
+    if (allowance) {
+        allowance.addEventListener('input', compute);
+        allowance.addEventListener('change', compute);
+    }
+
+    // Reset button: restore auto-computed or fixed value
+    card.querySelectorAll('.reset-deduction').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetName = this.dataset.target;
+            const targetInput = card.querySelector(`[name="${targetName}"]`);
+            
+            if (targetInput) {
+                // Use stored original auto value
+                targetInput.value = targetInput.dataset.autoValue || '0';
+                // Clear manual flag and visual indicators
+                delete targetInput.dataset.manualEdit;
+                targetInput.classList.remove('border-violet-500/60', 'ring-1', 'ring-violet-500/30',
+                                           'border-amber-500/60', 'ring-1', 'ring-amber-500/30');
+                compute();
+            }
+        });
+    });
+
+    // Initial compute on load
+    compute();
+});
+</script>
 
-<form method="POST" action="{{ url_for('payroll_staff_bp.confirm_parttimer_payroll') }}">
-<input type="hidden" name="period_id" value="{{ period.id }}">
-
-
-<div class="space-y-6">
-
-{% for p in payroll_rows %}
-
-<div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:border-emerald-500 transition shadow-md">
-
-<!-- EMPLOYEE HEADER -->
-<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
-
-<div>
-<h3 class="text-xl font-semibold text-emerald-400">
-{{ p.employee.get_full_name() }}
-</h3>
-
-<p class="text-gray-400 text-sm">
-{{ p.employee.position.name }}
-</p>
-</div>
-
-<div class="text-right">
-<p class="text-gray-400 text-sm">Hourly Rate</p>
-<p class="text-lg font-semibold text-yellow-400">
-₱ {{ "{:,.2f}".format(p.basic_salary or 0) }}
-</p>
-</div>
-
-</div>
-
-
-<!-- PAY COMPUTATION -->
-<div class="grid md:grid-cols-3 gap-4 mb-4">
-
-<div>
-<label class="block text-gray-400 text-sm">Hourly Rate</label>
-
-<input type="text"
-readonly
-value="₱ {{ '{:,.2f}'.format(p.basic_salary or 0) }}"
-class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400">
-</div>
-
-
-<div>
-<label class="block text-gray-400 text-sm">Hours Worked</label>
-
-<input type="text"
-readonly
-value="{{ p.hours_worked }}"
-class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-emerald-400">
-</div>
-
-
-<div>
-<label class="block text-gray-400 text-sm">Gross Pay</label>
-
-<input type="text"
-readonly
-value="₱ {{ '{:,.2f}'.format(p.gross_pay or 0) }}"
-class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-yellow-400">
-</div>
-
-</div>
-
-
-
-<!-- TOTAL DEDUCTIONS -->
-<div class="grid md:grid-cols-3 gap-4 mb-4">
-
-<div></div>
-
-<div></div>
-
-<div>
-
-<label class="block text-gray-400 text-sm">
-Total Deductions
-</label>
-
-<input type="text"
-readonly
-value="₱ {{ '{:,.2f}'.format(p.total_deductions or 0) }}"
-class="w-full px-4 py-2 rounded-lg bg-gray-900 border border-gray-600 text-red-400">
-
-</div>
-
-</div>
-
-
-
-<!-- DEDUCTIONS BREAKDOWN -->
-{% if p._deduction_breakdown %}
-
-<div class="bg-gray-900 border border-gray-700 rounded-xl p-4 mb-4">
-
-<h4 class="text-sm font-semibold text-red-400 mb-2">
-Deductions Breakdown
-</h4>
-
-<div class="grid md:grid-cols-2 gap-2 text-sm">
-
-{% for d in p._deduction_breakdown %}
-
-<div class="flex justify-between border-b border-gray-700 pb-1">
-
-<span>{{ d.name }}</span>
-
-<span class="text-red-400">
-Emp: ₱ {{ "{:,.2f}".format(d.employee_share or 0) }}
-|
-Er: ₱ {{ "{:,.2f}".format(d.employer_share or 0) }}
-</span>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-</div>
-
-{% endif %}
-
-
-
-<!-- NET PAY -->
-<div class="grid md:grid-cols-3 gap-4 items-end">
-
-<div></div>
-<div></div>
-
-<div>
-
-<label class="block text-gray-400 text-sm">
-Net Pay
-</label>
-
-<input type="text"
-readonly
-value="₱ {{ '{:,.2f}'.format(p.net_pay or 0) }}"
-class="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-600 text-emerald-400 text-lg font-semibold">
-
-</div>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-
-<!-- CONFIRM BUTTON -->
-<div class="pt-6 flex justify-end">
-
-<button type="submit"
-class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg transition flex items-center gap-2">
-
-<i class="fa-solid fa-check"></i>
-Confirm Part-Timer Payroll
-
-</button>
-
-</div>
-
-</form>
-
-</section>
 {% endblock %}

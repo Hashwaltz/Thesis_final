@@ -1,121 +1,359 @@
 {% extends 'hr/admin/admin_base.html' %} 
 {% block title %}Departments | HR Admin{% endblock %} 
 {% block content %}
-<main class="p-6 space-y-6 text-white">
+<main class="p-4 sm:p-6 lg:p-8 space-y-6 text-white min-h-screen">
+  
   <!-- Header Section -->
-  <header
-    class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4"
-  >
-    <h1 class="text-2xl font-semibold text-blue-400 flex items-center gap-2">
-      <i class="fa-solid fa-building text-blue-400"></i>
-      Department List
-    </h1>
+  <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+    <div class="flex items-center gap-3">
+      <div class="p-3 bg-blue-600/20 rounded-2xl border border-blue-500/30">
+        <i class="fa-solid fa-building-columns text-2xl text-blue-400"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+          Departments
+        </h1>
+        <p class="text-gray-400 text-sm mt-1">Manage organizational structure</p>
+      </div>
+    </div>
 
-    <!-- Search Bar -->
-    <form
-      method="get"
-      action="{{ url_for('hr_admin_bp.view_departments') }}"
-      class="relative w-full sm:w-72"
-    >
-      <input
-        type="text"
-        name="search"
-        value="{{ request.args.get('search', '') }}"
-        placeholder="Search department..."
-        class="w-full bg-gray-800 text-white border border-gray-700 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      <i
-        class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-      ></i>
-    </form>
+    <!-- Actions -->
+    <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+      <!-- Search -->
+      <form method="get" action="{{ url_for('hr_admin_bp.view_departments') }}" class="relative flex-1 sm:flex-initial">
+        <input
+          type="text"
+          name="search"
+          value="{{ request.args.get('search', '') }}"
+          placeholder="Search departments..."
+          aria-label="Search departments"
+          class="w-full sm:w-64 bg-gray-800/80 text-white border border-gray-700 rounded-xl py-2.5 pl-11 pr-10 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                 placeholder-gray-500 transition-all duration-200"
+        />
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+        {% if request.args.get('search') %}
+        <a href="{{ url_for('hr_admin_bp.view_departments') }}" 
+           class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+           aria-label="Clear search">
+          <i class="fa-solid fa-xmark"></i>
+        </a>
+        {% endif %}
+      </form>
+      
+      <!-- Add Department Button -->
+      <a href="{{ url_for('hr_admin_bp.add_department') }}" 
+         class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 
+                hover:from-blue-500 hover:to-blue-400 text-white font-medium rounded-xl 
+                shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 
+                transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
+        <i class="fa-solid fa-plus"></i>
+        <span>Add Department</span>
+      </a>
+    </div>
   </header>
 
+  <!-- Stats Overview -->
   {% if departments.items %}
-  <!-- Department Cards -->
-  <div
-    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6"
-  >
-    {% for dept in departments.items %}
-    <a
-      href="{{ url_for('hr_admin_bp.department_details', department_id=dept.id) }}"
-      class="group bg-gray-800 hover:shadow-[0_0_20px_4px_rgba(64,112,244,0.4)] hover:-translate-y-1 transition-all duration-300 p-6 rounded-2xl shadow-lg flex flex-col justify-between border border-gray-700 hover:border-blue-500"
-    >
-      <div class="flex flex-col items-start space-y-4">
-        <div
-          class="flex items-center justify-center w-14 h-14 rounded-full bg-blue-600 bg-opacity-20 text-blue-400 group-hover:bg-opacity-30 transition"
-        >
-          <i class="fa-solid fa-building-columns text-4xl"></i>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-500/20 rounded-lg">
+          <i class="fa-solid fa-building text-blue-400"></i>
         </div>
+        <div>
+          <p class="text-2xl font-bold">{{ departments.total }}</p>
+          <p class="text-xs text-gray-400">Total Depts</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-emerald-500/20 rounded-lg">
+          <i class="fa-solid fa-users text-emerald-400"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold">{{ employee_counts.values()|sum }}</p>
+          <p class="text-xs text-gray-400">Total Employees</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-amber-500/20 rounded-lg">
+          <i class="fa-solid fa-user-tie text-amber-400"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold">{{ departments.items|selectattr('head')|list|length }}</p>
+          <p class="text-xs text-gray-400">With Heads</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-purple-500/20 rounded-lg">
+          <i class="fa-solid fa-chart-simple text-purple-400"></i>
+        </div>
+        <div>
+          <p class="text-2xl font-bold">{{ (employee_counts.values()|sum / departments.total)|round(1) }}</p>
+          <p class="text-xs text-gray-400">Avg. per Dept</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-        <h2 class="text-xl font-semibold">{{ dept.name }}</h2>
+  {% if departments.items %}
+  <!-- Department Cards Grid -->
+  <div id="department-container"
+       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    {% for dept in departments.items %}
+    <a href="{{ url_for('hr_admin_bp.department_details', department_id=dept.id) }}" 
+       class="group relative bg-gradient-to-br from-gray-800 to-gray-800/80 
+              hover:from-gray-750 hover:to-gray-800 
+              border border-gray-700/60 hover:border-blue-500/50 
+              rounded-2xl p-5 shadow-lg hover:shadow-xl hover:shadow-blue-500/10 
+              transition-all duration-300 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+       aria-label="View {{ dept.name }} details">
+      
+      <!-- Decorative gradient orb -->
+      <div class="absolute -top-3 -right-3 w-16 h-16 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all"></div>
+      
+      <!-- Card Header -->
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600/30 to-cyan-500/20 
+                       border border-blue-500/30 flex items-center justify-center 
+                       group-hover:scale-110 transition-transform duration-300">
+              <i class="fa-solid fa-building-columns text-xl text-blue-300"></i>
+            </div>
+            <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-gray-800"></span>
+          </div>
+          <div>
+            <h2 class="font-semibold text-lg group-hover:text-blue-300 transition-colors line-clamp-1">
+              {{ dept.name }}
+            </h2>
+            <p class="text-xs text-gray-500">ID: #{{ dept.id }}</p>
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-right text-gray-600 group-hover:text-blue-400 
+                  group-hover:translate-x-1 transition-all"></i>
       </div>
 
-      <div
-        class="mt-auto pt-4 space-y-2 text-sm border-t border-gray-700 w-full"
-      >
-        <p class="flex items-center gap-2">
-          <i class="fa-solid fa-id-badge text-blue-400 text-lg"></i>
-          <span class="font-semibold text-blue-400">Head:</span>
-          {% if dept.head %} {{ dept.head.get_full_name() }} {% else %}
-          <em class="text-gray-400">No Head Assigned</em>
-          {% endif %}
-        </p>
+      <!-- Card Body -->
+      <div class="space-y-3 text-sm">
+        <div class="flex items-center gap-2.5 p-2.5 bg-gray-700/30 rounded-lg">
+          <i class="fa-solid fa-user-tie text-blue-400 w-5 text-center"></i>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs text-gray-400">Department Head</p>
+            <p class="font-medium text-gray-200 truncate">
+              {% if dept.head %}{{ dept.head.get_full_name() }}{% else %}
+                <span class="text-gray-500 italic">Unassigned</span>
+              {% endif %}
+            </p>
+          </div>
+        </div>
 
-        <p class="flex items-center gap-2">
-          <i class="fa-solid fa-users text-blue-400 text-lg"></i>
-          <span class="font-semibold text-blue-400">Employees:</span>
-          {{ employee_counts.get(dept.id, 0) }}
-        </p>
+        <div class="flex items-center gap-2.5 p-2.5 bg-gray-700/30 rounded-lg">
+          <i class="fa-solid fa-users text-emerald-400 w-5 text-center"></i>
+          <div class="flex-1">
+            <p class="text-xs text-gray-400">Team Size</p>
+            <p class="font-semibold text-gray-200">{{ employee_counts.get(dept.id, 0) }} members</p>
+          </div>
+        </div>
+
+        {% if dept.description %}
+        <div class="pt-2 border-t border-gray-700/50">
+          <p class="text-xs text-gray-400 line-clamp-2">{{ dept.description }}</p>
+        </div>
+        {% endif %}
       </div>
     </a>
     {% endfor %}
   </div>
 
-  <!-- Pagination -->
-  <div class="flex justify-center items-center gap-4 mt-8">
-    {% if departments.has_prev %}
-    <a
-      href="{{ url_for('hr_admin_bp.view_departments', page=departments.prev_num, search=request.args.get('search')) }}"
-      class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-blue-600"
-      >Previous</a
-    >
-    {% endif %}
-    <span>Page {{ departments.page }} of {{ departments.pages }}</span>
-    {% if departments.has_next %}
-    <a
-      href="{{ url_for('hr_admin_bp.view_departments', page=departments.next_num, search=request.args.get('search')) }}"
-      class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-blue-600"
-      >Next</a
-    >
-    {% endif %}
-  </div>
+  <!-- Enhanced Pagination -->
+  <nav class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6 border-t border-gray-700/50" 
+       aria-label="Pagination">
+    <p class="text-sm text-gray-400">
+      Showing <span class="font-medium text-gray-200">{{ departments.from }}</span> to 
+      <span class="font-medium text-gray-200">{{ departments.to }}</span> of 
+      <span class="font-medium text-gray-200">{{ departments.total }}</span> results
+    </p>
+    
+    <div class="flex items-center gap-2">
+      {% if departments.has_prev %}
+      <a href="{{ url_for('hr_admin_bp.view_departments', page=departments.prev_num, search=request.args.get('search')) }}" 
+         class="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 
+                rounded-xl text-sm font-medium transition-colors"
+         aria-label="Previous page">
+        <i class="fa-solid fa-chevron-left"></i>
+        <span class="hidden sm:inline">Prev</span>
+      </a>
+      {% endif %}
+      
+      <!-- Page Numbers -->
+      <div class="flex items-center gap-1">
+        {% for page_num in departments.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if page_num %}
+            {% if page_num == departments.page %}
+            <span class="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-lg font-medium text-sm">
+              {{ page_num }}
+            </span>
+            {% else %}
+            <a href="{{ url_for('hr_admin_bp.view_departments', page=page_num, search=request.args.get('search')) }}" 
+               class="w-9 h-9 flex items-center justify-center hover:bg-gray-700 rounded-lg font-medium text-sm transition-colors">
+              {{ page_num }}
+            </a>
+            {% endif %}
+          {% else %}
+            <span class="px-2 text-gray-500">…</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      
+      {% if departments.has_next %}
+      <a href="{{ url_for('hr_admin_bp.view_departments', page=departments.next_num, search=request.args.get('search')) }}" 
+         class="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 
+                rounded-xl text-sm font-medium transition-colors"
+         aria-label="Next page">
+        <span class="hidden sm:inline">Next</span>
+        <i class="fa-solid fa-chevron-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </nav>
 
   {% else %}
-  <p class="text-center text-gray-400 mt-6">No departments found.</p>
+  <!-- Empty State -->
+  <div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+    <div class="w-24 h-24 mb-6 rounded-full bg-gray-800/50 border border-gray-700 flex items-center justify-center">
+      <i class="fa-regular fa-folder-open text-4xl text-gray-500"></i>
+    </div>
+    <h3 class="text-xl font-semibold mb-2">No departments found</h3>
+    <p class="text-gray-400 max-w-md mb-6">
+      {% if request.args.get('search') %}
+        No results match "<strong>{{ request.args.get('search') }}</strong>". Try adjusting your search.
+      {% else %}
+        Get started by creating your first department to organize your team.
+      {% endif %}
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3">
+      {% if request.args.get('search') %}
+      <a href="{{ url_for('hr_admin_bp.view_departments') }}" 
+         class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl font-medium transition-colors">
+        Clear Search
+      </a>
+      {% endif %}
+      <a href="{{ url_for('hr_admin_bp.add_department') }}" 
+         class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 
+                rounded-xl font-medium transition-colors">
+        <i class="fa-solid fa-plus"></i>
+        Create Department
+      </a>
+    </div>
+  </div>
   {% endif %}
 </main>
 
+<!-- Enhanced Search Script with Loading State -->
 <script>
-  const searchInput = document.querySelector('input[name="search"]');
-  const departmentContainer = document.getElementById("department-container");
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.querySelector('input[name="search"]');
+    const departmentContainer = document.getElementById("department-container");
+    const mainContent = document.querySelector('main');
+    
+    let debounceTimer;
 
-  let debounceTimer;
+    // Loading indicator
+    const showLoading = () => {
+      if (departmentContainer) {
+        departmentContainer.style.opacity = '0.6';
+        departmentContainer.style.pointerEvents = 'none';
+      }
+    };
+    
+    const hideLoading = () => {
+      if (departmentContainer) {
+        departmentContainer.style.opacity = '1';
+        departmentContainer.style.pointerEvents = 'all';
+      }
+    };
 
-  searchInput.addEventListener("input", () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      const query = searchInput.value;
+    searchInput?.addEventListener("input", (e) => {
+      clearTimeout(debounceTimer);
+      
+      // Show subtle loading state
+      showLoading();
+      
+      debounceTimer = setTimeout(() => {
+        const query = e.target.value;
+        const url = new URL(`{{ url_for('hr_admin_bp.view_departments') }}`, window.location.origin);
+        if (query) url.searchParams.set('search', query);
+        else url.searchParams.delete('search');
+        
+        fetch(url, {
+          headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(res => res.text())
+        .then(html => {
+          // Extract just the container content from response
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newContainer = doc.getElementById('department-container');
+          
+          if (newContainer && departmentContainer) {
+            departmentContainer.innerHTML = newContainer.innerHTML;
+          } else {
+            // Fallback: replace entire main content
+            const newMain = doc.querySelector('main');
+            if (newMain && mainContent) {
+              mainContent.replaceWith(newMain);
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Search error:', err);
+          // Show error state
+          if (departmentContainer) {
+            departmentContainer.innerHTML = `
+              <div class="col-span-full text-center py-12 text-red-400">
+                <i class="fa-solid fa-triangle-exclamation text-2xl mb-3"></i>
+                <p>Failed to load results. Please try again.</p>
+              </div>
+            `;
+          }
+        })
+        .finally(hideLoading);
+      }, 300);
+    });
 
-      fetch(`{{ url_for('hr_admin_bp.view_departments') }}?search=${query}`, {
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      })
-        .then((res) => res.text())
-        .then((html) => {
-          departmentContainer.innerHTML = html;
-        });
-    }, 300); // debounce 300ms
+    // Keyboard accessibility for cards
+    document.querySelectorAll('#department-container a').forEach(card => {
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
+      });
+    });
   });
 </script>
+
+<!-- Optional: Add subtle entrance animation -->
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #department-container > a {
+    animation: fadeInUp 0.4s ease-out forwards;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+  /* Stagger animation via JS if needed */
+  document.querySelectorAll('#department-container > a').forEach((el, i) => {
+    el.style.setProperty('--i', i);
+  });
+</style>
 {% endblock %}

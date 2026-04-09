@@ -1,275 +1,462 @@
 <!-- hr/admin/modals/edit_employee_modal.html -->
 <div
   id="editEmployeeModal"
-  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+  class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center hidden z-50 p-4 transition-opacity duration-300"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="editEmployeeModalTitle"
 >
+  <!-- Modal Container with Blur-Resistant Background -->
   <div
-    class="bg-gray-900 rounded-2xl w-11/12 md:w-4/5 lg:w-3/4 xl:w-2/3 max-w-7xl p-6 relative max-h-[90vh] overflow-y-auto"
+    class="bg-gray-900/95 backdrop-blur-xl rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-700/50 flex flex-col"
   >
-    <!-- Close button -->
-    <button
-      id="closeEditEmployeeModal"
-      class="absolute top-4 right-4 text-gray-400 hover:text-white"
-    >
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-
-    <h2 class="text-2xl font-semibold text-blue-400 mb-6 text-center">
-      Edit Employee
-    </h2>
-
-    <form id="editEmployeeForm" method="POST" class="space-y-6">
-      <!-- ========================= -->
-      <!-- PERSONAL DETAILS SECTION -->
-      <!-- ========================= -->
-      <div>
-        <h3
-          class="text-lg font-semibold text-gray-300 flex items-center gap-2 mb-2"
-        >
-          <i class="fa-solid fa-id-badge"></i>
-          Personal Details
-        </h3>
-        <div class="border-b border-gray-700 mb-4"></div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-gray-400">First Name</label>
-            <input
-              type="text"
-              name="first_name"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Middle Name</label>
-            <input
-              type="text"
-              name="middle_name"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Last Name</label>
-            <input
-              type="text"
-              name="last_name"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Email</label>
-            <input
-              type="email"
-              name="email"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-              required
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Emergency Contact</label>
-            <input
-              type="text"
-              name="emergency_contact"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Street Address</label>
-            <input
-              type="text"
-              name="street_address"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Barangay</label>
-            <input
-              type="text"
-              name="barangay"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Municipality</label>
-            <input
-              type="text"
-              name="municipality"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Province</label>
-            <input
-              type="text"
-              name="province"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Postal Code</label>
-            <input
-              type="text"
-              name="postal_code"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Gender</label>
-            <select
-              name="gender"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-gray-400">Civil Status</label>
-            <select
-              name="marital_status"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            >
-              <option value="Single">Single</option>
-              <option value="Married">Married</option>
-              <option value="Widowed">Widowed</option>
-              <option value="Divorced">Divorced</option>
-              <option value="Separated">Separated</option>
-            </select>
-          </div>
+    
+    <!-- Modal Header (Sticky) -->
+    <div class="flex items-center justify-between p-5 border-b border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-500/20 p-2.5 rounded-xl">
+          <i class="fa-solid fa-user-pen text-blue-400 text-lg"></i>
+        </div>
+        <div>
+          <h2 id="editEmployeeModalTitle" class="text-xl font-semibold text-white">Edit Employee</h2>
+          <p class="text-sm text-gray-400">Update personal and employment information</p>
         </div>
       </div>
+      <button
+        id="closeEditEmployeeModal"
+        class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-xl transition-colors"
+        aria-label="Close modal"
+      >
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
 
-      <!-- ========================= -->
-      <!-- EMPLOYMENT DETAILS       -->
-      <!-- ========================= -->
-      <div>
-        <h3
-          class="text-lg font-semibold text-gray-300 flex items-center gap-2 mb-2"
-        >
-          <i class="fa-solid fa-briefcase"></i>
-          Employment Details
-        </h3>
-        <div class="border-b border-gray-700 mb-4"></div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-gray-400">Department</label>
-            <select
-              name="department_id"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            >
-              {% for dept in departments %}
-              <option value="{{ dept.id }}">{{ dept.name }}</option>
-              {% endfor %}
-            </select>
+    <!-- Scrollable Form Content -->
+    <div class="overflow-y-auto p-5 md:p-6 space-y-6">
+      
+      <form id="editEmployeeForm" method="POST" class="space-y-8">
+        
+        <!-- ========================= -->
+        <!-- PERSONAL DETAILS SECTION -->
+        <!-- ========================= -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-700/50">
+            <i class="fa-regular fa-id-badge text-blue-400"></i>
+            <h3 class="text-lg font-semibold text-white">Personal Details</h3>
           </div>
 
-          <div>
-            <label class="block text-gray-400">Position</label>
-            <select
-              name="position_id"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            >
-              {% for pos in positions %}
-              <option value="{{ pos.id }}">{{ pos.name }}</option>
-              {% endfor %}
-            </select>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- First Name -->
+            <div class="space-y-1.5">
+              <label for="edit_first_name" class="block text-sm font-medium text-gray-300">
+                First Name <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  id="edit_first_name"
+                  name="first_name"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Middle Name -->
+            <div class="space-y-1.5">
+              <label for="edit_middle_name" class="block text-sm font-medium text-gray-300">Middle Name</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  id="edit_middle_name"
+                  name="middle_name"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Enter middle name"
+                />
+              </div>
+            </div>
+
+            <!-- Last Name -->
+            <div class="space-y-1.5">
+              <label for="edit_last_name" class="block text-sm font-medium text-gray-300">
+                Last Name <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  id="edit_last_name"
+                  name="last_name"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="space-y-1.5">
+              <label for="edit_email" class="block text-sm font-medium text-gray-300">
+                Email <span class="text-red-400">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-envelope"></i>
+                </span>
+                <input
+                  type="email"
+                  id="edit_email"
+                  name="email"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="employee@company.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- Phone -->
+            <div class="space-y-1.5">
+              <label for="edit_phone" class="block text-sm font-medium text-gray-300">Phone</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-phone"></i>
+                </span>
+                <input
+                  type="tel"
+                  id="edit_phone"
+                  name="phone"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="+63 9XX XXX XXXX"
+                  pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                />
+              </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="space-y-1.5">
+              <label for="edit_emergency_contact" class="block text-sm font-medium text-gray-300">Emergency Contact</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-phone-volume"></i>
+                </span>
+                <input
+                  type="tel"
+                  id="edit_emergency_contact"
+                  name="emergency_contact"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Emergency contact number"
+                />
+              </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="space-y-1.5">
+              <label for="edit_gender" class="block text-sm font-medium text-gray-300">Gender</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-venus-mars"></i>
+                </span>
+                <select
+                  id="edit_gender"
+                  name="gender"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Prefer not to say</option>
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Civil Status -->
+            <div class="space-y-1.5">
+              <label for="edit_marital_status" class="block text-sm font-medium text-gray-300">Civil Status</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-ring"></i>
+                </span>
+                <select
+                  id="edit_marital_status"
+                  name="marital_status"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Widowed">Widowed</option>
+                  <option value="Separated">Separated</option>
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <label class="block text-gray-400">Employment Type</label>
-            <select
-              name="employment_type_id"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            >
-              {% for etype in employment_types %}
-              <option value="{{ etype.id }}">{{ etype.name }}</option>
-              {% endfor %}
-            </select>
+          <!-- Address Section (Full Width) -->
+          <div class="pt-2">
+            <h4 class="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-location-dot text-blue-400"></i>
+              Address Information
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="lg:col-span-2">
+                <label for="edit_street_address" class="block text-sm font-medium text-gray-300 mb-1">Street Address</label>
+                <input
+                  type="text"
+                  id="edit_street_address"
+                  name="street_address"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="House/Building, Street, Subdivision"
+                />
+              </div>
+              <div>
+                <label for="edit_barangay" class="block text-sm font-medium text-gray-300 mb-1">Barangay</label>
+                <input
+                  type="text"
+                  id="edit_barangay"
+                  name="barangay"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Barangay"
+                />
+              </div>
+              <div>
+                <label for="edit_municipality" class="block text-sm font-medium text-gray-300 mb-1">Municipality/City</label>
+                <input
+                  type="text"
+                  id="edit_municipality"
+                  name="municipality"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="City or Municipality"
+                />
+              </div>
+              <div>
+                <label for="edit_province" class="block text-sm font-medium text-gray-300 mb-1">Province</label>
+                <input
+                  type="text"
+                  id="edit_province"
+                  name="province"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="Province"
+                />
+              </div>
+              <div>
+                <label for="edit_postal_code" class="block text-sm font-medium text-gray-300 mb-1">Postal Code</label>
+                <input
+                  type="text"
+                  id="edit_postal_code"
+                  name="postal_code"
+                  class="w-full bg-gray-800/80 text-white rounded-xl px-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="1234"
+                  maxlength="4"
+                  pattern="\d{4}"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================= -->
+        <!-- EMPLOYMENT DETAILS       -->
+        <!-- ========================= -->
+        <section class="space-y-4 pt-4 border-t border-gray-700/50">
+          <div class="flex items-center gap-2 pb-2 border-b border-gray-700/50">
+            <i class="fa-solid fa-briefcase text-blue-400"></i>
+            <h3 class="text-lg font-semibold text-white">Employment Details</h3>
           </div>
 
-          <div>
-            <label class="block text-gray-400">Salary</label>
-            <input
-              type="number"
-              step="0.01"
-              name="salary"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Department -->
+            <div class="space-y-1.5">
+              <label for="edit_department_id" class="block text-sm font-medium text-gray-300">Department</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-building"></i>
+                </span>
+                <select
+                  id="edit_department_id"
+                  name="department_id"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select department</option>
+                  {% for dept in departments %}
+                  <option value="{{ dept.id }}">{{ dept.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Position -->
+            <div class="space-y-1.5">
+              <label for="edit_position_id" class="block text-sm font-medium text-gray-300">Position</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-user-tie"></i>
+                </span>
+                <select
+                  id="edit_position_id"
+                  name="position_id"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select position</option>
+                  {% for pos in positions %}
+                  <option value="{{ pos.id }}">{{ pos.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Employment Type -->
+            <div class="space-y-1.5">
+              <label for="edit_employment_type_id" class="block text-sm font-medium text-gray-300">Employment Type</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-file-contract"></i>
+                </span>
+                <select
+                  id="edit_employment_type_id"
+                  name="employment_type_id"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">Select type</option>
+                  {% for etype in employment_types %}
+                  <option value="{{ etype.id }}">{{ etype.name }}</option>
+                  {% endfor %}
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Salary -->
+            <div class="space-y-1.5">
+              <label for="edit_salary" class="block text-sm font-medium text-gray-300">Salary (₱)</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-peso-sign"></i>
+                </span>
+                <input
+                  type="number"
+                  id="edit_salary"
+                  name="salary"
+                  step="0.01"
+                  min="0"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all placeholder-gray-500"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <!-- Date of Birth -->
+            <div class="space-y-1.5">
+              <label for="edit_date_of_birth" class="block text-sm font-medium text-gray-300">Date of Birth</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-regular fa-calendar"></i>
+                </span>
+                <input
+                  type="date"
+                  id="edit_date_of_birth"
+                  name="date_of_birth"
+                  max="{{ now|default('2026-12-31') }}"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <!-- Date Hired -->
+            <div class="space-y-1.5">
+              <label for="edit_date_hired" class="block text-sm font-medium text-gray-300">Date Hired</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </span>
+                <input
+                  type="date"
+                  id="edit_date_hired"
+                  name="date_hired"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-4 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="space-y-1.5">
+              <label for="edit_status" class="block text-sm font-medium text-gray-300">Employment Status</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <i class="fa-solid fa-user-tag"></i>
+                </span>
+                <select
+                  id="edit_status"
+                  name="status"
+                  class="w-full bg-gray-800/80 text-white rounded-xl pl-9 pr-8 py-2.5 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none transition-all appearance-none cursor-pointer"
+                >
+                  <option value="Active">Active</option>
+                  <option value="On Leave">On Leave</option>
+                  <option value="Resigned">Resigned</option>
+                  <option value="Retired">Retired</option>
+                  <option value="Fired">Terminated</option>
+                </select>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </span>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div>
-            <label class="block text-gray-400">Date of Birth</label>
-            <input
-              type="date"
-              name="date_of_birth"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
+      </form>
+    </div>
 
-          <div>
-            <label class="block text-gray-400">Date Hired</label>
-            <input
-              type="date"
-              name="date_hired"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            />
-          </div>
+    <!-- Modal Footer (Sticky) -->
+    <div class="flex items-center justify-end gap-3 p-5 border-t border-gray-700/50 bg-gray-900/80 backdrop-blur-sm sticky bottom-0 z-10">
+      <button
+        type="button"
+        id="cancelEditEmployeeModal"
+        class="px-5 py-2.5 text-gray-300 hover:text-white bg-gray-700/80 hover:bg-gray-700 rounded-xl transition-all duration-200 border border-gray-600"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        form="editEmployeeForm"
+        class="px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 hover:-translate-y-0.5"
+      >
+        <i class="fa-solid fa-floppy-disk"></i>
+        Save Changes
+      </button>
+    </div>
 
-          <div>
-            <label class="block text-gray-400">Status</label>
-            <select
-              name="status"
-              class="w-full px-3 py-2 rounded-lg bg-gray-700 text-gray-200"
-            >
-              <option value="Active">Active</option>
-              <option value="Retired">Retired</option>
-              <option value="Resigned">Resigned</option>
-              <option value="Fired">Fired</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Buttons -->
-      <div class="flex justify-end mt-6 gap-2">
-        <button
-          type="button"
-          id="cancelEditEmployeeModal"
-          class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="submit"
-          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl"
-        >
-          Save Changes
-        </button>
-      </div>
-    </form>
   </div>
 </div>
+
+<!-- Optional: Add this CSS if backdrop-blur isn't working in your Tailwind config -->
+<style>
+/* Fallback for older browsers */
+@supports not (backdrop-filter: blur(12px)) {
+  #editEmployeeModal {
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+</style>
