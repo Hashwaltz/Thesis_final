@@ -11,9 +11,6 @@ instance/
 __pycache__/
 *.pyc
 
-# VSCode
-.vscode/
-
 # OS
 .DS_Store
 Thumbs.db
