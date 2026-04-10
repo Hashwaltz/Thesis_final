@@ -1,61 +1,33 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="GovHRPay - Human Resource Management System" />
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GovHRPay HR Admin Dashboard - Manage employees, attendance, and organization">
   <title>{% block title %}HR Admin | GovHRPay{% endblock %}</title>
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.avif') }}">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/favicon.avif') }}">
-  
   <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 
-  <!-- Font Awesome 6 -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
-
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
+
+  <!-- Font Awesome (Icon Library) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
   <!-- Custom Tailwind Config -->
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             'gov-blue': { 500: '#2563eb', 600: '#1d4ed8', 700: '#1e40af', 800: '#1e3a8a' },
-            'gov-dark': { 900: '#0f172a', 950: '#020617' },
-            slate: {
-              850: '#1e293b',
-              950: '#020617',
-            }
-          },
-          animation: {
-            'fade-in': 'fadeIn 0.25s ease-out',
-            'slide-in': 'slideIn 0.3s ease-out',
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: '0', transform: 'translateY(8px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
-            },
-            slideIn: {
-              '0%': { transform: 'translateX(-100%)' },
-              '100%': { transform: 'translateX(0)' },
-            }
+            'gov-dark': { 900: '#0f172a', 950: '#020617' }
           },
           transitionDuration: { '250': '250ms' }
         }
@@ -63,8 +35,9 @@
     }
   </script>
 
-  <!-- Custom Styles -->
   <style>
+    /* Smooth sidebar transition */
+    #sidebar { transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1); }
     /* Skip link for accessibility */
     .skip-link {
       position: absolute; top: -40px; left: 0; background: #1e40af; color: white;
@@ -72,46 +45,11 @@
       transition: top 0.2s;
     }
     .skip-link:focus { top: 0; }
-    
-    /* Smooth sidebar transition */
-    #sidebar { transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
-    
-    /* Active link indicator - simplified */
-    .nav-link.active {
-      background: rgba(37, 99, 235, 0.15);
-      border-left: 3px solid #3b82f6;
-      color: #fff;
-    }
-    .nav-link.active i { color: #60a5fa !important; }
-    
-    /* Focus visible for accessibility */
-    :focus-visible {
-      outline: 2px solid #60a5fa;
-      outline-offset: 2px;
-      border-radius: 0.5rem;
-    }
-    
-    /* Prevent layout shift on mobile menu */
-    body.menu-open { overflow: hidden; touch-action: none; }
-    
-    /* Smooth hover transitions */
-    .nav-link { transition: all 0.15s ease-in-out; }
-    .nav-link:hover { transform: translateX(3px); background: rgba(37, 99, 235, 0.1); }
-    .nav-link:hover i { transform: scale(1.1); }
-    
+    /* Focus visible for keyboard users */
+    :focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
     /* Hide scrollbar but allow scroll */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* SweetAlert dark theme override */
-    .swal2-popup {
-      background: #0f172a !important;
-      border: 1px solid #334155 !important;
-    }
-    .swal2-title { color: #f1f5f9 !important; }
-    .swal2-content { color: #cbd5e1 !important; }
-    .swal2-confirm { background: #2563eb !important; }
-    .swal2-cancel { background: #475569 !important; }
   </style>
 </head>
 
@@ -120,8 +58,9 @@
   <!-- ♿ Skip to Content Link -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- ================= MOBILE HEADER ================= -->
-  <header class="md:hidden bg-blue-800 text-white flex justify-between items-center p-4 shadow-md sticky top-0 z-40 border-b border-gray-800" role="banner">
+  <!-- ================= MOBILE NAVBAR ================= -->
+  <header class="md:hidden bg-blue-800 text-white flex justify-between items-center p-4 shadow-md sticky top-0 z-20"
+          role="banner">
     <div class="flex items-center gap-3">
       <button id="mobileMenuBtn" 
               class="p-2 hover:bg-blue-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-white"
@@ -130,129 +69,217 @@
               aria-controls="sidebar">
         <i class="fa-solid fa-bars text-2xl"></i>
       </button>
-      <div class="flex items-center gap-2">
-        <img src="{{ url_for('static', filename='img/logo2.avif') }}" class="w-8 h-8 rounded-lg object-cover ring-2 ring-blue-500/30" alt="GovHRPay">
-        <span class="font-semibold text-lg tracking-tight">GovHRPay</span>
-      </div>
+      <h1 class="font-semibold text-lg">GovHRPay</h1>
     </div>
-    <button id="logoutBtnMobile" 
+
+    <button id="logoutBtnMobile"
             class="p-2 hover:bg-blue-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-white"
-            aria-label="Logout">
+            aria-label="Log out">
       <i class="fa-solid fa-right-from-bracket text-lg"></i>
     </button>
   </header>
 
   <!-- ================= SIDEBAR ================= -->
-  <aside
-    id="sidebar"
+  <aside id="sidebar"
     class="bg-gray-950 text-white w-64 sm:w-72 flex-shrink-0 fixed md:static inset-y-0 left-0
            transform -translate-x-full md:translate-x-0 z-30 flex flex-col justify-between 
            border-r border-gray-800 shadow-xl"
     role="navigation"
     aria-label="Main navigation">
 
-    <!-- Sidebar Header -->
-    <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-800 sticky top-0 bg-gray-950 z-10">
-      <div class="relative">
-        <img src="{{ url_for('static', filename='img/logo2.avif') }}" 
-             class="w-12 h-12 rounded-xl object-cover ring-2 ring-blue-500/30" 
-             alt="GovHRPay Logo">
-        <span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-gray-950 animate-pulse-slow" title="System Active"></span>
-      </div>
-      <div class="min-w-0 flex-1">
-        <h2 class="text-lg font-semibold text-blue-400 tracking-tight">GovHRPay</h2>
-        <p class="text-sm text-gray-400">HR Administrator</p>
-        <p class="text-sm text-gray-300 mt-1 truncate font-medium">
-          {{ current_user.get_full_name() if current_user else 'Admin' }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Navigation Container -->
     <div class="overflow-y-auto flex-grow no-scrollbar">
-      <nav class="mt-4 px-4 text-gray-300 space-y-6" role="menubar">
-        
-        {% set menu = {
-          "Employee Management": [
-            ("fa-gauge-high", "Dashboard", "hr_admin_bp.hr_dashboard"),
-            ("fa-users", "Employee Records", "hr_admin_bp.view_employees"),
-            ("fa-user-shield", "User Accounts", "hr_admin_bp.view_users")
-          ],
-          "Attendance & Leave": [
-            ("fa-calendar-check", "Attendance", "hr_admin_bp.view_attendance"),
-            ("fa-file-import", "Import Attendance", "hr_admin_bp.import_attendance"),
-            ("fa-plane-departure", "Leave Requests", "hr_admin_bp.view_leaves"),
-            ("fa-calendar-days", "Shift Schedule", "hr_admin_bp.list_shifts"),
-            ("fa-circle-plus", "Add New Shift", "hr_admin_bp.create_shift")
-          ],
-          "Organization": [
-            ("fa-building-columns", "Departments", "hr_admin_bp.view_departments"),
-            ("fa-plus", "Add Department", "hr_admin_bp.add_department"),
-            ("fa-id-badge", "Positions", "hr_admin_bp.view_positions"),
-            ("fa-user-plus", "Add Position", "hr_admin_bp.add_position")
-          ],
-          "Reports & Settings": [
-            ("fa-chart-line", "Attendance Reports", "hr_admin_bp.attendance_report"),
-            ("fa-chart-pie", "Leave Analytics", "hr_admin_bp.leave_report"),
-            ("fa-user-gear", "Profile Settings", "hr_admin_bp.profile")
-          ]
-        } %}
 
-        {% for section, links in menu.items() %}
-        <div role="menuitem" aria-label="{{ section }}">
-          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">{{ section }}</h3>
-          <ul class="space-y-1" role="menu">
-            {% for icon, label, endpoint in links %}
-            {% set is_active = request.endpoint == endpoint %}
-            <li role="none">
-              <a href="{{ url_for(endpoint) }}" 
-                 class="nav-link flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
-                        {% if is_active %}active{% endif %}"
-                 role="menuitem"
-                 aria-current="{% if is_active %}page{% endif %}">
-                <i class="fa-solid {{ icon }} text-blue-400 w-5 text-center group-hover:text-blue-300 transition-colors"></i>
-                <span class="truncate">{{ label }}</span>
-                {% if is_active %}
-                <i class="fa-solid fa-chevron-right ml-auto text-xs text-blue-400/60"></i>
-                {% endif %}
+      <!-- LOGO & USER -->
+      <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-800 sticky top-0 bg-gray-950 z-10">
+        <img src="{{ url_for('static', filename='img/logo2.avif') }}"
+             alt="GovHRPay Logo"
+             class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-500/30">
+
+        <div class="min-w-0">
+          <h2 class="text-lg font-semibold text-blue-400">GovHRPay</h2>
+          <p class="text-sm text-gray-400">HR Administrator</p>
+          <p class="text-sm text-gray-300 mt-1 truncate">
+            Welcome, <span class="font-medium">{{ current_user.get_full_name() }}</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION -->
+      <nav class="mt-4 px-4 text-gray-300 space-y-6" role="menubar">
+
+        <!-- DASHBOARD -->
+        <div role="menuitem">
+          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">Dashboard</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="{{ url_for('hr_admin_bp.hr_dashboard') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.hr_dashboard' %}bg-blue-700/50 text-white{% endif %}"
+                 aria-current="{% if request.endpoint == 'hr_admin_bp.hr_dashboard' %}page{% endif %}">
+                <i class="fa-solid fa-gauge-high text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Dashboard</span>
               </a>
             </li>
-            {% endfor %}
           </ul>
         </div>
-        {% endfor %}
-        
-        <!-- System Status -->
-        <div class="mt-6 px-2">
-          <div class="bg-gray-800/40 rounded-lg p-3 border border-gray-700/50">
-            <div class="flex items-center gap-2 text-xs text-gray-400">
-              <i class="fa-solid fa-circle text-green-400 text-[10px] animate-pulse"></i>
-              <span>System Online</span>
-            </div>
-            <p class="text-[10px] text-gray-500 mt-1">Last sync: {{ now.strftime('%I:%M %p') if now else 'Just now' }}</p>
-          </div>
+
+        <!-- EMPLOYEE MANAGEMENT -->
+        <div role="menuitem">
+          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">Employee Management</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="{{ url_for('hr_admin_bp.view_employees') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.view_employees' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-users text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Employee Records</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.view_users') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.view_users' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-user-shield text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>User Accounts</span>
+              </a>
+            </li>
+          </ul>
         </div>
+
+        <!-- ATTENDANCE & LEAVE -->
+        <div role="menuitem">
+          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">Attendance & Leave</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="{{ url_for('hr_admin_bp.view_attendance') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.view_attendance' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-calendar-check text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Attendance</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.import_attendance') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.import_attendance' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-file-import text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Import Attendance</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.view_leaves') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.view_leaves' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-plane-departure text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Leave Requests</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.list_shifts') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.list_shifts' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-calendar-days text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Shift Schedule</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.create_shift') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.create_shift' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-circle-plus text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Add New Shift</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ORGANIZATION -->
+        <div role="menuitem">
+          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">Organization</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="{{ url_for('hr_admin_bp.view_departments') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.view_departments' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-building-columns text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Departments</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.add_department') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.add_department' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-plus text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Add Department</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.view_positions') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.view_positions' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-id-badge text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Positions</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.add_position') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.add_position' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-user-plus text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Add Position</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- REPORTS & SETTINGS -->
+        <div role="menuitem">
+          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">Reports & Settings</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="{{ url_for('hr_admin_bp.attendance_report') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.attendance_report' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-chart-line text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Attendance Reports</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.leave_report') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.leave_report' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-chart-pie text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Leave Analytics</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('hr_admin_bp.profile') }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
+                        {% if request.endpoint == 'hr_admin_bp.profile' %}bg-blue-700/50 text-white{% endif %}">
+                <i class="fa-solid fa-user-gear text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
+                <span>Account Settings</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
       </nav>
     </div>
 
-    <!-- ================= LOGOUT ================= -->
+    <!-- LOGOUT -->
     <div class="p-4 border-t border-gray-800">
-      <button
-        id="logoutBtn"
+      <button id="logoutBtn"
         class="flex items-center gap-2 w-full justify-center py-2.5 rounded-lg
                bg-red-600 hover:bg-red-700 active:bg-red-800 transition 
                focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-gray-950"
-        aria-label="Sign out of your account">
+        aria-label="Log out of GovHRPay">
         <i class="fa-solid fa-right-from-bracket"></i>
-        <span>Sign Out</span>
+        <span>Logout</span>
       </button>
-      <p class="text-[10px] text-gray-500 text-center mt-3">
-        GovHRPay v2.1 • © {{ now.year if now else 2026 }}
-      </p>
     </div>
   </aside>
 
-  <!-- ♿ Overlay for mobile -->
+  <!-- ♿ Overlay for mobile (focus trap helper) -->
   <div id="overlay" 
        class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 hidden md:hidden"
        aria-hidden="true"></div>
@@ -263,35 +290,17 @@
         role="main"
         tabindex="-1">
 
-    <!-- Desktop Page Header -->
-    <div class="bg-blue-800 text-white rounded-xl p-4 mb-6 hidden md:flex items-center gap-3 shadow-lg" role="region" aria-label="Page header">
-      <div class="w-10 h-10 rounded-xl bg-blue-700/30 flex items-center justify-center border border-blue-600/30">
-        <i class="fa-solid fa-user-tie text-blue-300"></i>
-      </div>
-      <div>
-        <h1 class="text-lg font-semibold">Human Resource Management System</h1>
-        <p class="text-xs text-blue-200/80">Administrator Portal</p>
-      </div>
+    <!-- TOP BAR (Desktop) -->
+    <div class="bg-blue-800 text-white rounded-xl p-4 mb-6 hidden md:flex items-center gap-3 shadow-lg"
+         role="region"
+         aria-label="Page header">
+      <i class="fa-solid fa-user-tie text-xl"></i>
+      <h1 class="text-lg font-semibold">HR Administrator Panel</h1>
       {% if request.endpoint %}
       <span class="ml-auto text-xs bg-blue-700/50 px-3 py-1 rounded-full">
         {{ request.endpoint.replace('hr_admin_bp.', '') }}
       </span>
       {% endif %}
-      
-      <!-- Quick Actions -->
-      <div class="flex items-center gap-2 ml-4">
-        <button class="relative p-2 rounded-lg hover:bg-blue-700/40 transition focus:outline-none focus:ring-2 focus:ring-white" 
-                title="Notifications"
-                aria-label="View notifications">
-          <i class="fa-regular fa-bell"></i>
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-blue-800 animate-pulse"></span>
-        </button>
-        <button class="p-2 rounded-lg hover:bg-blue-700/40 transition focus:outline-none focus:ring-2 focus:ring-white" 
-                title="Help & Support"
-                aria-label="Get help">
-          <i class="fa-regular fa-circle-question"></i>
-        </button>
-      </div>
     </div>
 
     <!-- Flash Messages -->
@@ -308,16 +317,12 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Content Block with Animation -->
-    <div class="animate-fade-in">
-      {% block content %}{% endblock %}
-    </div>
+    {% block content %}{% endblock %}
     
     <!-- Footer -->
     <footer class="mt-12 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
-      <p>Need assistance? Contact <a href="mailto:support@govhrpay.local" class="text-blue-400 hover:text-blue-300 transition underline-offset-2 hover:underline">IT Support</a></p>
-      <p class="mt-1">&copy; {{ now.year if now else 2026 }} GovHRPay. All rights reserved.</p>
-      <p class="mt-0.5">HR Management System v2.1</p>
+      <p>&copy; {{ now.year if now else 2026 }} GovHRPay. All rights reserved.</p>
+      <p class="mt-1">HR Management System v2.1</p>
     </footer>
   </main>
 
@@ -337,15 +342,13 @@
         mobileMenuBtn?.setAttribute("aria-expanded", "true");
         // Focus first nav link for keyboard users
         setTimeout(() => sidebar.querySelector("a[href]")?.focus(), 300);
-        document.body.style.overflow = "hidden";
-        document.body.classList.add("menu-open");
+        document.body.style.overflow = "hidden"; // Prevent background scroll
       } else {
         sidebar.classList.add("-translate-x-full");
         overlay.classList.add("hidden");
         mobileMenuBtn?.setAttribute("aria-expanded", "false");
         document.body.style.overflow = "";
-        document.body.classList.remove("menu-open");
-        mobileMenuBtn?.focus();
+        mobileMenuBtn?.focus(); // Return focus to trigger
       }
     };
 
@@ -365,38 +368,23 @@
 
     // ===== Logout Confirmation =====
     const confirmLogout = (e) => {
-      e?.preventDefault();
-      
+      e.preventDefault();
       Swal.fire({
-        title: "Sign Out?",
-        text: "You will need to log in again to access your account.",
-        icon: "question",
+        title: "Log out?",
+        text: "You will need to sign in again to continue.",
+        icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#2563eb",
-        cancelButtonColor: "#475569",
-        confirmButtonText: "Yes, sign out",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Yes, log out",
         cancelButtonText: "Cancel",
-        background: "#0f172a",
-        color: "#f1f5f9",
-        customClass: {
-          popup: 'rounded-2xl border border-slate-700 shadow-2xl',
-          title: 'text-white font-semibold',
-          content: 'text-slate-300',
-          confirmButton: 'rounded-xl px-5 py-2.5 font-medium',
-          cancelButton: 'rounded-xl px-5 py-2.5 font-medium'
-        },
-        buttonsStyling: true
+        reverseButtons: true
       }).then((result) => {
         if (result.isConfirmed) {
-          Swal.fire({
-            title: 'Signing out...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading(),
-            background: "#0f172a",
-            color: "#f1f5f9",
-            customClass: { popup: 'rounded-2xl border border-slate-700' }
-          });
-          window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
+          // Add small delay for animation
+          setTimeout(() => {
+            window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
+          }, 150);
         }
       });
     };
@@ -414,54 +402,25 @@
           setTimeout(() => msg.remove(), 300);
         }, 5000);
       });
-
-      // ===== Active link detection (client-side fallback) =====
-      const currentPath = window.location.pathname;
-      document.querySelectorAll('.nav-link').forEach(link => {
-        if (link.href === window.location.href || 
-            (currentPath && link.href.includes(currentPath.split('/').filter(Boolean).pop() || ''))) {
-          link.classList.add('active');
-          if (window.innerWidth < 768 && link.classList.contains('active')) {
-            link.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }
-      });
-
-      // ===== Auto-close mobile menu after navigation =====
-      document.querySelectorAll('#sidebar a[href]').forEach(link => {
-        link.addEventListener('click', () => {
-          if (!overlay?.classList.contains('hidden')) {
-            setTimeout(() => toggleSidebar(false), 150);
-          }
-        });
-      });
-
-      // ===== Prevent unwanted zoom on mobile input focus =====
-      document.querySelectorAll('input, select, textarea').forEach(el => {
-        el.addEventListener('focus', () => {
-          const viewport = document.querySelector('meta[name="viewport"]');
-          if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-        });
-        el.addEventListener('blur', () => {
-          const viewport = document.querySelector('meta[name="viewport"]');
-          if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
-        });
-      });
     });
 
     // ===== Prevent FOUC on sidebar init (mobile) =====
-    if (window.innerWidth < 768) {
-      sidebar.classList.add("-translate-x-full");
-    }
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.innerWidth < 768) {
+        sidebar.classList.add("-translate-x-full");
+      }
+    });
   </script>
 
   <!-- ♿ Announce page loads for screen readers -->
   <div id="aria-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   <script>
+    // Update aria-live region on page navigation (for SPA-like feel)
     document.addEventListener('DOMContentLoaded', () => {
       const liveRegion = document.getElementById('aria-live');
       const mainContent = document.getElementById('main-content');
       if (liveRegion && mainContent) {
+        // Announce initial load
         liveRegion.textContent = `Loaded: ${document.title}`;
       }
     });

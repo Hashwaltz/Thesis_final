@@ -253,7 +253,7 @@ Login credentials:
 Email: {user.email}
 Temporary Password: {default_password}
 
-Please log in at: http://127.0.0.1:5000/hr/auth/login
+Please log in at: https://web-production-e5e7e.up.railway.app/employee/auth/employee-login
 
 ⚠️ For security, please change your password after first login.
 

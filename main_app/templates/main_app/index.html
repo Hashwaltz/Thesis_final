@@ -1,255 +1,547 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GovHRPay</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GovHRPay - Integrated HR & Payroll Solution</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- Favicon -->
+  <link rel="icon" type="image/avif" href="{{ url_for('static', filename='img/favicon.avif') }}"/>
 
-<link rel="icon" type="image/avif"
-href="{{ url_for('static', filename='img/favicon.avif') }}"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<style>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
 
-@keyframes fadeInUp{
-0%{opacity:0; transform:translateY(30px);}
-100%{opacity:1; transform:translateY(0);}
-}
+    /* Smooth Scroll */
+    html { scroll-behavior: smooth; }
 
-@keyframes fadeInLeft{
-0%{opacity:0; transform:translateX(-30px);}
-100%{opacity:1; transform:translateX(0);}
-}
+    /* Background Image with Overlay */
+    .hero-bg {
+      background-image: 
+        linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 27, 75, 0.75) 50%, rgba(79, 70, 229, 0.4) 100%),
+        url("{{ url_for('static', filename='img/munihall.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      position: relative;
+    }
 
-@keyframes fadeInRight{
-0%{opacity:0; transform:translateX(30px);}
-100%{opacity:1; transform:translateX(0);}
-}
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at bottom, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
 
-.animate-fade-up{animation:fadeInUp 1s ease forwards;}
-.animate-fade-left{animation:fadeInLeft 1s ease forwards;}
-.animate-fade-right{animation:fadeInRight 1s ease forwards;}
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.5); }
+    }
 
-.delay-100{animation-delay:0.1s;}
-.delay-200{animation-delay:0.2s;}
-.delay-300{animation-delay:0.3s;}
-.delay-400{animation-delay:0.4s;}
-.delay-500{animation-delay:0.5s;}
-.delay-600{animation-delay:0.6s;}
-.delay-700{animation-delay:0.7s;}
-.delay-800{animation-delay:0.8s;}
-.delay-900{animation-delay:0.9s;}
+    .animate-fade-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+    .animate-fade-left { animation: fadeInLeft 0.8s ease-out forwards; opacity: 0; }
+    .animate-fade-right { animation: fadeInRight 0.8s ease-out forwards; opacity: 0; }
+    .animate-float { animation: float 3s ease-in-out infinite; }
 
-</style>
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+    .delay-600 { animation-delay: 0.6s; }
+    .delay-700 { animation-delay: 0.7s; }
+    .delay-800 { animation-delay: 0.8s; }
+
+    /* Glassmorphism Cards */
+    .glass-card {
+      background: rgba(31, 41, 55, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 12px 48px rgba(79, 70, 229, 0.25);
+      transform: translateY(-4px);
+    }
+
+    /* Button Glow Effects */
+    .btn-glow-indigo:hover { box-shadow: 0 0 25px rgba(99, 102, 241, 0.6); }
+    .btn-glow-green:hover { box-shadow: 0 0 25px rgba(34, 197, 94, 0.6); }
+    .btn-glow-blue:hover { box-shadow: 0 0 25px rgba(59, 130, 246, 0.6); }
+
+    /* Gradient Text */
+    .text-gradient {
+      background: linear-gradient(135deg, #818cf8, #c084fc, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Decorative Elements */
+    .decorative-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    /* Mobile Menu Transition */
+    #mobileMenu { transition: all 0.3s ease; }
+  </style>
 </head>
 
-<body class="bg-gray-900 text-gray-100">
+<body class="bg-gray-950 text-gray-100 overflow-x-hidden">
 
 <!-- HEADER -->
 <header class="absolute inset-x-0 top-0 z-50">
-
-  <nav class="flex items-center justify-between p-6 lg:px-8">
-
+  <nav class="flex items-center justify-between p-4 lg:px-8 lg:py-6">
+    
     <!-- LOGO -->
-    <div class="flex items-center">
-      <a href="#" class="flex items-center space-x-2">
-        <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
-             class="h-8 w-auto"/>
-        <span class="text-white font-semibold text-lg">
-          GovHRPay
-        </span>
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <div class="absolute inset-0 bg-indigo-500 rounded-lg blur opacity-40 animate-pulse"></div>
+        <div class="relative bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg">
+          <i class="fas fa-building-columns text-white text-xl"></i>
+        </div>
+      </div>
+      <a href="#" class="text-xl font-bold tracking-tight">
+        Gov<span class="text-indigo-400">HR</span>Pay
       </a>
     </div>
 
     <!-- DESKTOP NAV -->
-    <div class="hidden lg:flex lg:gap-x-10">
-      <a href="{{url_for('index')}}" class="text-sm font-semibold text-white hover:text-indigo-400">Home</a>
-      <a href="{{url_for('about')}}" class="text-sm font-semibold text-white hover:text-indigo-400">About</a>
-      <a href="{{url_for('features')}}" class="text-sm font-semibold text-white hover:text-indigo-400">System Features</a>
+    <div class="hidden lg:flex items-center gap-8">
+      <a href="{{url_for('index')}}" class="text-sm font-medium text-gray-300 hover:text-white transition-colors relative group">
+        Home
+        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-400 transition-all group-hover:w-full"></span>
+      </a>
+      <a href="{{url_for('about')}}" class="text-sm font-medium text-gray-300 hover:text-white transition-colors relative group">
+        About
+        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-400 transition-all group-hover:w-full"></span>
+      </a>
+      <a href="{{url_for('features')}}" class="text-sm font-medium text-gray-300 hover:text-white transition-colors relative group">
+        Features
+        <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-400 transition-all group-hover:w-full"></span>
+      </a>
     </div>
 
-    <!-- HAMBURGER BUTTON -->
-    <div class="lg:hidden">
-      <button onclick="toggleMenu()" class="text-white text-2xl focus:outline-none">
-        <i class="fas fa-bars"></i>
-      </button>
+    <!-- DESKTOP AUTH BUTTONS -->
+    <div class="hidden lg:flex items-center gap-3">
+      <a href="{{ url_for('hr_auth_bp.login') }}" class="px-4 py-2 text-sm font-medium text-indigo-300 hover:text-white transition-colors">
+        HR Login
+      </a>
+      <a href="{{ url_for('payroll_auth_bp.login') }}" class="px-4 py-2 text-sm font-medium text-green-300 hover:text-white transition-colors">
+        Payroll Login
+      </a>
+      <a href="{{url_for('employee_auth_bp.login')}}" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 px-5 py-2.5 rounded-lg text-sm font-semibold text-white shadow-lg btn-glow-indigo transition-all">
+        Employee Portal
+      </a>
     </div>
 
+    <!-- MOBILE MENU BUTTON -->
+    <button onclick="toggleMenu()" class="lg:hidden text-white text-2xl p-2 rounded-lg hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400" aria-label="Toggle menu">
+      <i class="fas fa-bars"></i>
+    </button>
   </nav>
 
   <!-- MOBILE MENU -->
-  <div id="mobileMenu" class="hidden bg-gray-900 px-6 pb-6 space-y-4 lg:hidden">
+  <div id="mobileMenu" class="hidden absolute top-full left-0 right-0 bg-gray-900/95 backdrop-blur-xl border-t border-white/10 px-6 py-4 space-y-3 lg:hidden">
+    <a href="{{url_for('index')}}" class="block py-3 text-white font-medium hover:text-indigo-400 transition-colors border-b border-white/5">Home</a>
+    <a href="{{url_for('about')}}" class="block py-3 text-white font-medium hover:text-indigo-400 transition-colors border-b border-white/5">About</a>
+    <a href="{{url_for('features')}}" class="block py-3 text-white font-medium hover:text-indigo-400 transition-colors border-b border-white/5">Features</a>
+    
+    <div class="pt-3 space-y-2">
+      <a href="{{ url_for('hr_auth_bp.login') }}" class="block w-full bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-center py-3 rounded-lg font-medium transition-colors border border-indigo-500/30">
+        <i class="fas fa-users mr-2"></i>HR System
+      </a>
+      <a href="{{ url_for('payroll_auth_bp.login') }}" class="block w-full bg-green-500/20 hover:bg-green-500/30 text-green-300 text-center py-3 rounded-lg font-medium transition-colors border border-green-500/30">
+        <i class="fas fa-calculator mr-2"></i>Payroll System
+      </a>
+      <a href="{{url_for('employee_auth_bp.login')}}" class="block w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white text-center py-3 rounded-lg font-semibold transition-all btn-glow-indigo">
+        <i class="fas fa-id-badge mr-2"></i>Employee Portal
+      </a>
+    </div>
+  </div>
+</header>
 
-    <a href="{{url_for('index')}}" class="block text-white font-semibold hover:text-indigo-400">
-      Home
-    </a>
+<!-- HERO SECTION with Background Image -->
+<section class="hero-bg relative min-h-screen flex items-center justify-center px-4 pt-24 pb-16">
+  
+  <!-- Decorative Elements -->
+  <div class="decorative-dot" style="top: 20%; left: 10%;"></div>
+  <div class="decorative-dot" style="top: 60%; right: 15%; animation-delay: 0.5s;"></div>
+  <div class="decorative-dot" style="bottom: 25%; left: 20%; animation-delay: 1s;"></div>
 
-    <a href="{{url_for('about')}}" class="block text-white font-semibold hover:text-indigo-400">
-      About
-    </a>
+  <div class="relative z-10 mx-auto max-w-4xl text-center">
+    
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 mb-8 animate-fade-up">
+      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+      <span class="text-sm text-gray-200">Trusted by Government Institutions</span>
+    </div>
 
-    <a href="{{url_for('features')}}" class="block text-white font-semibold hover:text-indigo-400">
-      System Features
-    </a>
+    <!-- Main Heading -->
+    <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 animate-fade-up delay-200">
+      Streamline Your <br class="hidden sm:block" />
+      <span class="text-gradient">HR & Payroll</span> Operations
+    </h1>
 
-    <hr class="border-gray-700">
+    <!-- Subheading -->
+    <p class="text-lg sm:text-xl text-gray-300 mb-10 max-w-2xl mx-auto animate-fade-up delay-300 leading-relaxed">
+      A unified, secure, and intelligent platform designed for modern government institutions to manage human resources, payroll processing, and employee self-service—effortlessly.
+    </p>
 
-    <a href="{{ url_for('hr_auth_bp.login') }}"
-       class="block bg-indigo-500 text-center py-2 rounded-md text-white font-semibold">
-      HR System
-    </a>
+    <!-- CTA Buttons -->
+    <div class="flex flex-wrap justify-center gap-4 animate-fade-up delay-400">
+      <a href="{{ url_for('hr_auth_bp.login') }}" 
+         class="group inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 px-6 py-3.5 rounded-xl text-white font-semibold shadow-lg btn-glow-indigo transition-all">
+        <i class="fas fa-users"></i>
+        Access HR System
+        <i class="fas fa-arrow-right ml-1 group-hover:translate-x-1 transition-transform"></i>
+      </a>
+      
+      <a href="{{ url_for('payroll_auth_bp.login') }}" 
+         class="group inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 px-6 py-3.5 rounded-xl text-white font-semibold shadow-lg btn-glow-green transition-all">
+        <i class="fas fa-calculator"></i>
+        Access Payroll
+        <i class="fas fa-arrow-right ml-1 group-hover:translate-x-1 transition-transform"></i>
+      </a>
+      
+      <a href="{{url_for('employee_auth_bp.login')}}" 
+         class="group inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-6 py-3.5 rounded-xl text-white font-semibold backdrop-blur-sm transition-all">
+        <i class="fas fa-id-badge"></i>
+        Employee Portal
+      </a>
+    </div>
 
-    <a href="{{ url_for('payroll_auth_bp.login') }}"
-       class="block bg-green-600 text-center py-2 rounded-md text-white font-semibold">
-      Payroll System
-    </a>
-
-    <a href="{{url_for('employee_auth_bp.login')}}"
-       class="block bg-blue-600 text-center py-2 rounded-md text-white font-semibold">
-      Employee Portal
-    </a>
+    <!-- Optional Feature Tags (Non-numerical) -->
+    <div class="mt-12 flex flex-wrap justify-center gap-3 animate-fade-up delay-500">
+      <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300">
+        <i class="fas fa-lock mr-1.5 text-indigo-400"></i>End-to-End Encryption
+      </span>
+      <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300">
+        <i class="fas fa-sync mr-1.5 text-green-400"></i>Real-Time Sync
+      </span>
+      <span class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300">
+        <i class="fas fa-mobile-alt mr-1.5 text-blue-400"></i>Mobile Ready
+      </span>
+    </div>
 
   </div>
 
-</header>
-<!-- HERO -->
-
-<section class="relative isolate px-6 pt-32 lg:px-8 bg-gradient-to-br from-indigo-500 to-purple-700">
-
-<div class="mx-auto max-w-3xl text-center py-32 sm:py-48 lg:py-56 text-white animate-fade-up delay-400">
-
-<h1 class="text-5xl font-bold tracking-tight sm:text-7xl mb-6 animate-fade-up delay-500">
-Welcome to GovHRPay
-</h1>
-
-<p class="mt-4 text-lg text-gray-200 animate-fade-up delay-600">
-Integrated Human Resources and Payroll Management Solution for modern institutions.
-</p>
-
-<div class="mt-10 flex flex-wrap items-center justify-center gap-6 animate-fade-up delay-700">
-
-<a href="{{ url_for('hr_auth_bp.login') }}"
-class="rounded-md bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-400 transition">
-Access Gov HR System
-</a>
-
-<a href="{{ url_for('payroll_auth_bp.login') }}"
-class="rounded-md bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-green-500 transition">
-Access Gov Payroll
-</a>
-
-<a href="{{url_for('employee_auth_bp.login')}}"
-class="rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-500 transition">
-Gov Employee Portal
-</a>
-
-</div>
-</div>
-
+  <!-- Scroll Indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+    <a href="#systems" class="flex flex-col items-center text-gray-400 hover:text-white transition-colors">
+      <span class="text-xs mb-2">Explore</span>
+      <i class="fas fa-chevron-down text-lg"></i>
+    </a>
+  </div>
 </section>
 
-<!-- SYSTEM CARDS -->
+<!-- SYSTEM CARDS SECTION -->
+<section id="systems" class="py-24 bg-gray-950 relative overflow-hidden">
+  
+  <!-- Background Decorations -->
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent pointer-events-none"></div>
+  
+  <div class="container mx-auto px-4 relative z-10">
+    
+    <!-- Section Header -->
+    <div class="text-center max-w-3xl mx-auto mb-16 animate-fade-up">
+      <span class="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium mb-4 border border-indigo-500/20">
+        Our Solutions
+      </span>
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">
+        Integrated Systems for <span class="text-gradient">Every Need</span>
+      </h2>
+      <p class="text-gray-400 text-lg">
+        Choose the module that fits your role. All systems are seamlessly connected for unified data management.
+      </p>
+    </div>
 
-<section id="systems" class="py-20 bg-gray-950">
+    <!-- Cards Grid -->
+    <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
+      
+      <!-- HR System Card -->
+      <div class="glass-card rounded-2xl p-8 text-center group animate-fade-left delay-200">
+        <div class="relative inline-block mb-6">
+          <div class="absolute inset-0 bg-indigo-500 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+          <div class="relative bg-gradient-to-br from-indigo-500/20 to-purple-600/20 p-4 rounded-2xl border border-indigo-500/30">
+            <i class="fas fa-users text-4xl text-indigo-400"></i>
+          </div>
+        </div>
+        
+        <h3 class="text-xl font-bold mb-3 text-white">HR Management</h3>
+        <p class="text-gray-400 mb-6 leading-relaxed">
+          Comprehensive employee lifecycle management: recruitment, onboarding, attendance, leaves, performance reviews, and documentation.
+        </p>
+        
+        <ul class="text-left text-sm text-gray-500 space-y-2 mb-6">
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Employee Database</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Attendance Tracking</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Leave Management</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Performance Analytics</li>
+        </ul>
+        
+        <a href="{{ url_for('hr_auth_bp.login') }}" 
+           class="inline-flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white font-medium px-6 py-3 rounded-xl transition-all btn-glow-indigo group/btn">
+          Access HR System
+          <i class="fas fa-arrow-right ml-1 group-hover/btn:translate-x-1 transition-transform"></i>
+        </a>
+      </div>
 
-<div class="container mx-auto px-6 grid md:grid-cols-3 gap-10">
+      <!-- Payroll Card -->
+      <div class="glass-card rounded-2xl p-8 text-center group animate-fade-up delay-300">
+        <div class="relative inline-block mb-6">
+          <div class="absolute inset-0 bg-green-500 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+          <div class="relative bg-gradient-to-br from-green-500/20 to-emerald-600/20 p-4 rounded-2xl border border-green-500/30">
+            <i class="fas fa-calculator text-4xl text-green-400"></i>
+          </div>
+        </div>
+        
+        <h3 class="text-xl font-bold mb-3 text-white">Payroll Processing</h3>
+        <p class="text-gray-400 mb-6 leading-relaxed">
+          Automated salary calculations, tax compliance, deductions, benefits management, and instant payslip generation.
+        </p>
+        
+        <ul class="text-left text-sm text-gray-500 space-y-2 mb-6">
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Auto Salary Calculation</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Tax & Deduction Engine</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Digital Payslips</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Compliance Reports</li>
+        </ul>
+        
+        <a href="{{ url_for('payroll_auth_bp.login') }}" 
+           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-medium px-6 py-3 rounded-xl transition-all btn-glow-green group/btn">
+          Access Payroll
+          <i class="fas fa-arrow-right ml-1 group-hover/btn:translate-x-1 transition-transform"></i>
+        </a>
+      </div>
 
-<!-- HR -->
+      <!-- Employee Portal Card -->
+      <div class="glass-card rounded-2xl p-8 text-center group animate-fade-right delay-400">
+        <div class="relative inline-block mb-6">
+          <div class="absolute inset-0 bg-blue-500 rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
+          <div class="relative bg-gradient-to-br from-blue-500/20 to-cyan-600/20 p-4 rounded-2xl border border-blue-500/30">
+            <i class="fas fa-id-badge text-4xl text-blue-400"></i>
+          </div>
+        </div>
+        
+        <h3 class="text-xl font-bold mb-3 text-white">Employee Portal</h3>
+        <p class="text-gray-400 mb-6 leading-relaxed">
+          Self-service dashboard for employees to view profiles, check attendance, apply for leaves, download payslips, and update information.
+        </p>
+        
+        <ul class="text-left text-sm text-gray-500 space-y-2 mb-6">
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Personal Dashboard</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Leave Applications</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Payslip Downloads</li>
+          <li class="flex items-center gap-2"><i class="fas fa-check text-green-400"></i> Profile Management</li>
+        </ul>
+        
+        <a href="{{url_for('employee_auth_bp.login')}}" 
+           class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-3 rounded-xl transition-all btn-glow-blue group/btn">
+          Access Portal
+          <i class="fas fa-arrow-right ml-1 group-hover/btn:translate-x-1 transition-transform"></i>
+        </a>
+      </div>
 
-<div class="bg-gray-800 rounded-2xl p-10 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2 animate-fade-left delay-400">
+    </div>
+  </div>
+</section>
 
-<i class="fas fa-users text-5xl text-indigo-400 mb-4"></i>
+<!-- VALUE PROPOSITION SECTION (Replaces Preview) -->
+<section class="py-20 bg-gradient-to-b from-gray-950 to-gray-900">
+  <div class="container mx-auto px-4">
+    
+    <!-- Section Header -->
+    <div class="text-center max-w-3xl mx-auto mb-16 animate-fade-up">
+      <span class="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-medium mb-4 border border-indigo-500/20">
+        Why GovHRPay
+      </span>
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">
+        Built for <span class="text-gradient">Government Excellence</span>
+      </h2>
+      <p class="text-gray-400 text-lg">
+        Designed with compliance, security, and scalability at its core—empowering public institutions to focus on their mission.
+      </p>
+    </div>
 
-<h3 class="text-2xl font-semibold mb-2">
-HR System
-</h3>
+    <!-- Features Grid -->
+    <div class="grid md:grid-cols-3 gap-8">
+      
+      <!-- Security -->
+      <div class="glass-card rounded-2xl p-6 text-center animate-fade-left delay-200">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+          <i class="fas fa-shield-halved text-2xl text-indigo-400"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Enterprise Security</h3>
+        <p class="text-gray-400 text-sm">
+          Role-based access control, audit trails, and end-to-end encryption compliant with government data protection standards.
+        </p>
+      </div>
 
-<p class="text-gray-400 mb-6">
-Manage employees, attendance, leaves, and HR operations
-</p>
+      <!-- Automation -->
+      <div class="glass-card rounded-2xl p-6 text-center animate-fade-up delay-300">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-green-500/20 flex items-center justify-center">
+          <i class="fas fa-bolt text-2xl text-green-400"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Smart Automation</h3>
+        <p class="text-gray-400 text-sm">
+          Automated workflows for approvals, notifications, and payroll calculations—reducing manual effort and human error.
+        </p>
+      </div>
 
-<a href="{{ url_for('hr_auth_bp.login') }}"
-class="bg-indigo-500 hover:bg-indigo-400 text-white font-semibold px-6 py-3 rounded-lg transition">
+      <!-- Analytics -->
+      <div class="glass-card rounded-2xl p-6 text-center animate-fade-right delay-400">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-blue-500/20 flex items-center justify-center">
+          <i class="fas fa-chart-line text-2xl text-blue-400"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-white mb-2">Actionable Insights</h3>
+        <p class="text-gray-400 text-sm">
+          Real-time dashboards and customizable reports to support data-driven HR and budgetary decisions.
+        </p>
+      </div>
 
-<i class="fas fa-sign-in-alt mr-2"></i>
-Access Gov HR
+    </div>
 
-</a>
+    <!-- Bottom CTA -->
+    <div class="mt-16 text-center animate-fade-up delay-500">
+      <a href="{{url_for('features')}}" class="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-medium transition-colors group">
+        Explore all features
+        <i class="fas fa-arrow-right ml-1 group-hover:translate-x-1 transition-transform"></i>
+      </a>
+    </div>
 
-</div>
-
-<!-- PAYROLL -->
-
-<div class="bg-gray-800 rounded-2xl p-10 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2 animate-fade-up delay-500">
-
-<i class="fas fa-calculator text-5xl text-green-400 mb-4"></i>
-
-<h3 class="text-2xl font-semibold mb-2">
-Payroll System
-</h3>
-
-<p class="text-gray-400 mb-6">
-Handle salary calculations, payslips, and payroll management
-</p>
-
-<a href="{{ url_for('payroll_auth_bp.login') }}"
-class="bg-green-600 hover:bg-green-500 text-white font-semibold px-6 py-3 rounded-lg transition">
-
-<i class="fas fa-sign-in-alt mr-2"></i>
-Access Gov Payroll
-
-</a>
-
-</div>
-
-<!-- EMPLOYEE PORTAL -->
-
-<div class="bg-gray-800 rounded-2xl p-10 text-center shadow-lg hover:shadow-2xl transition-transform hover:-translate-y-2 animate-fade-right delay-600">
-
-<i class="fas fa-id-badge text-5xl text-blue-400 mb-4"></i>
-
-<h3 class="text-2xl font-semibold mb-2">
-Employee Portal
-</h3>
-
-<p class="text-gray-400 mb-6">
-Allow employees to view their profile, attendance, leave status, and payslips.
-</p>
-
-<a href="{{url_for('employee_auth_bp.login')}}"
-class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg transition">
-
-<i class="fas fa-sign-in-alt mr-2"></i>
-Access Employee Portal
-
-</a>
-
-</div>
-
-</div>
-
+  </div>
 </section>
 
 <!-- FOOTER -->
-
-<footer class="bg-gray-950 text-gray-400 text-center py-6 animate-fade-up delay-900">
-
-<p>
-&copy; 2025 GovHRPay. All rights reserved.
-</p>
-
+<footer class="bg-gray-950 border-t border-white/10 py-12">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+      
+      <div class="flex items-center gap-3">
+        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg">
+          <i class="fas fa-building-columns text-white text-lg"></i>
+        </div>
+        <span class="text-lg font-bold">Gov<span class="text-indigo-400">HR</span>Pay</span>
+      </div>
+      
+      <div class="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
+        <a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+        <a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+        <a href="#" class="hover:text-white transition-colors">Support</a>
+        <a href="#" class="hover:text-white transition-colors">Contact</a>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <a href="#" class="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors" aria-label="Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="#" class="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors" aria-label="LinkedIn">
+          <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="#" class="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors" aria-label="Email">
+          <i class="fas fa-envelope"></i>
+        </a>
+      </div>
+      
+    </div>
+    
+    <div class="mt-8 pt-8 border-t border-white/10 text-center text-sm text-gray-500">
+      <p>&copy; 2025 GovHRPay. All rights reserved. | Designed for Government Excellence</p>
+    </div>
+  </div>
 </footer>
+
+<!-- Scripts -->
 <script>
-function toggleMenu() {
-  const menu = document.getElementById('mobileMenu');
-  menu.classList.toggle('hidden');
-}
+  // Mobile Menu Toggle
+  function toggleMenu() {
+    const menu = document.getElementById('mobileMenu');
+    menu.classList.toggle('hidden');
+    
+    if (!menu.classList.contains('hidden')) {
+      const links = menu.querySelectorAll('a');
+      links.forEach((link, index) => {
+        link.style.opacity = '0';
+        link.style.transform = 'translateY(10px)';
+        link.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        setTimeout(() => {
+          link.style.opacity = '1';
+          link.style.transform = 'translateY(0)';
+        }, 100 * index);
+      });
+    }
+  }
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', function(event) {
+    const menu = document.getElementById('mobileMenu');
+    const button = event.target.closest('button');
+    
+    if (!menu.contains(event.target) && !button && !menu.classList.contains('hidden')) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  // Intersection Observer for scroll animations
+  document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.animate-fade-up, .animate-fade-left, .animate-fade-right').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = el.classList.contains('animate-fade-left') ? 'translateX(-30px)' : 
+                          el.classList.contains('animate-fade-right') ? 'translateX(30px)' : 'translateY(30px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  });
 </script>
+
 </body>
 </html>

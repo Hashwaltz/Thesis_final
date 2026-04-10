@@ -144,14 +144,6 @@
               </a>
             </li>
             <li>
-              <a href="{{ url_for('leave_officer_bp.employees') }}"
-                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
-                        {% if request.endpoint == 'leave_officer_bp.employees' %}bg-blue-700/50 text-white{% endif %}">
-                <i class="fa-solid fa-address-card text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Employee Leave Details</span>
-              </a>
-            </li>
-            <li>
               <a href="{{ url_for('leave_officer_bp.late_computation') }}"
                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
                         {% if request.endpoint == 'leave_officer_bp.late_computation' %}bg-blue-700/50 text-white{% endif %}">

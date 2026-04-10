@@ -341,10 +341,11 @@
                   <p class="text-lg font-medium text-gray-300">No attendance records found</p>
                   <p class="text-sm text-gray-500 mt-1">Try adjusting your date range or filters</p>
                 </div>
-                <button id="openAddAttendanceModal" class="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
+                <a href="{{ url_for('hr_admin_bp.import_attendance') }}"
+                  class="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition">
                   <i class="fa-solid fa-plus"></i>
                   Add First Record
-                </button>
+                </a>
               </div>
             </td>
           </tr>

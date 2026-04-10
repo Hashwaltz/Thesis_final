@@ -1,17 +1,17 @@
-from datetime import date, timedelta, datetime, time
-from flask import render_template, redirect, url_for, flash, request, session, current_app
+from datetime import  datetime, time
+from flask import render_template, redirect, url_for, flash, request, session, current_app, after_this_request
 from flask_login import login_required, current_user
-from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
+
 from sqlalchemy import and_
 import os
-import pandas as pd
 from werkzeug.utils import secure_filename
 import re
 from openpyxl import load_workbook
 
 
 from main_app.helpers.decorators import admin_required
-from main_app.models.hr_models import Employee, Department, Leave, Attendance, EmploymentType, Position
+from main_app.models.hr_models import Employee, Department,  Attendance, LateComputation, extract_late_from_attendance
 from main_app.models.user import User
 from main_app.extensions import db
 from main_app.helpers.functions import parse_date, allowed_file, ALLOWED_EXTENSIONS, UPLOAD_FOLDER
@@ -583,6 +583,7 @@ def edit_attendance(attendance_id):
 @login_required  
 def add_manual_attendance():
     try:
+        # ===== Get form data =====
         employee_id = request.form.get('employee_id')
         date_str = request.form.get('date')
         time_in_str = request.form.get('time_in', '').strip()
@@ -590,25 +591,25 @@ def add_manual_attendance():
         status = request.form.get('status')
         remarks = request.form.get('remarks', '').strip()
 
-        # Validate required fields
+        # ===== Validate required fields =====
         if not employee_id or not date_str or not status:
             flash("Employee, Date, and Status are required.", "error")
             return redirect(url_for('hr_admin_bp.view_attendance'))
 
-        # Validate employee exists and is active
+        # ===== Validate employee exists and is active =====
         emp = Employee.query.filter_by(id=int(employee_id), archived=False).first()
         if not emp:
             flash("Employee not found or archived.", "error")
             return redirect(url_for('hr_admin_bp.view_attendance'))
 
-        # Parse date
+        # ===== Parse date =====
         try:
             attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         except ValueError:
             flash("Invalid date format. Use YYYY-MM-DD.", "error")
             return redirect(url_for('hr_admin_bp.view_attendance'))
 
-        # Parse times safely
+        # ===== Parse times safely =====
         time_in_obj = None
         time_out_obj = None
         
@@ -617,7 +618,7 @@ def add_manual_attendance():
                 h, m = map(int, time_in_str.split(":"))
                 if 0 <= h <= 23 and 0 <= m <= 59:
                     time_in_obj = time(hour=h, minute=m)
-            except:
+            except Exception:
                 flash(f"Invalid time_in format: {time_in_str}", "error")
                 return redirect(url_for('hr_admin_bp.view_attendance'))
 
@@ -626,11 +627,11 @@ def add_manual_attendance():
                 h, m = map(int, time_out_str.split(":"))
                 if 0 <= h <= 23 and 0 <= m <= 59:
                     time_out_obj = time(hour=h, minute=m)
-            except:
+            except Exception:
                 flash(f"Invalid time_out format: {time_out_str}", "error")
                 return redirect(url_for('hr_admin_bp.view_attendance'))
 
-        # Check for duplicate
+        # ===== Check for duplicate =====
         existing_att = Attendance.query.filter_by(
             employee_id=emp.id, 
             date=attendance_date
@@ -640,24 +641,59 @@ def add_manual_attendance():
             flash(f"Attendance already exists for {emp.get_full_name()} on {attendance_date}.", "error")
             return redirect(url_for('hr_admin_bp.view_attendance'))
 
-        # Create new attendance record
+        # ✅ CREATE ATTENDANCE WITH KEYWORD ARGUMENTS (FIXES THE ERROR)
         new_attendance = Attendance(
-            employee_id=emp.id,
-            date=attendance_date,
-            time_in=time_in_obj,
-            time_out=time_out_obj,
-            status=status,
-            remarks=remarks if remarks else None
+            employee_id=emp.id,           # ✅ keyword
+            date=attendance_date,          # ✅ keyword
+            time_in=time_in_obj,           # ✅ keyword
+            time_out=time_out_obj,         # ✅ keyword
+            status=status,                 # ✅ keyword
+            remarks=remarks if remarks else None  # ✅ keyword
         )
 
         db.session.add(new_attendance)
-        db.session.commit()
+        db.session.commit()  # ✅ Commit first
+
+        # 🎯 Defer late computation until AFTER this request completes
+        @after_this_request
+        def compute_late_after_response(response):
+            try:
+                late_data = extract_late_from_attendance(new_attendance)
+                if late_data:
+                    existing = LateComputation.query.filter_by(attendance_id=new_attendance.id).first()
+                    if existing:
+                        existing.late_hours = late_data["late_hours"]
+                        existing.late_minutes = late_data["late_minutes"]
+                        existing.day_equivalent = late_data["day_equivalent"]
+                        existing.remarks = "Updated from manual entry"
+                    else:
+                        record = LateComputation(
+                            employee_id=new_attendance.employee_id,
+                            attendance_id=new_attendance.id,
+                            date=new_attendance.date,
+                            late_days=0,
+                            late_hours=late_data["late_hours"],
+                            late_minutes=late_data["late_minutes"],
+                            day_equivalent=late_data["day_equivalent"],
+                            remarks="Auto-generated from manual attendance"
+                        )
+                        db.session.add(record)
+                        db.session.commit()
+            except Exception as e:
+                current_app.logger.error(f"Late computation failed: {e}")
+                db.session.rollback()
+            return response  # Must return response
 
         flash(f"✅ Attendance for {emp.get_full_name()} on {attendance_date} added successfully.", "success")
         return redirect(url_for('hr_admin_bp.view_attendance'))
 
+    except IntegrityError:
+        db.session.rollback()
+        flash("A record with this employee and date already exists.", "error")
+        return redirect(url_for('hr_admin_bp.view_attendance'))
+        
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Add attendance error: {str(e)}")
-        flash(f"Server error: {str(e)}", "error")
+        current_app.logger.error(f"Add attendance error: {str(e)}", exc_info=True)
+        flash("An unexpected error occurred. Please try again.", "error")
         return redirect(url_for('hr_admin_bp.view_attendance'))

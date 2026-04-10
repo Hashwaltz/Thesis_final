@@ -488,7 +488,6 @@ def generate_late_computation(mapper, connection, target):
         )
         db.session.add(record)
 
-    db.session.commit()
 
 
 
