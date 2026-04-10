@@ -509,6 +509,38 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleModal("addAttendanceModal", true);
   });
 
+  // ===== Add Attendance Modal Close Handlers =====
+const closeAddBtn = document.getElementById("closeAddAttendanceModal");
+const cancelAddBtn = document.getElementById("cancelAddAttendance");
+const addModal = document.getElementById("addAttendanceModal");
+
+const closeAddModal = () => {
+  toggleModal("addAttendanceModal", false);
+  // Optional: Reset form when closing
+  if (addForm) {
+    addForm.reset();
+    // Reset character counter
+    const remarksCount = document.getElementById('addRemarksCount');
+    if (remarksCount) remarksCount.textContent = '0/250';
+  }
+};
+
+closeAddBtn?.addEventListener("click", closeAddModal);
+cancelAddBtn?.addEventListener("click", closeAddModal);
+
+// Close modal when clicking outside the content (backdrop click)
+addModal?.addEventListener("click", (e) => {
+  if (e.target === addModal) {
+    closeAddModal();
+  }
+});
+
+// Close on Escape key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && addModal && !addModal.classList.contains("hidden")) {
+    closeAddModal();
+  }
+});
 
   // ===== Edit Attendance Modal =====
   const editModal = document.getElementById("editAttendanceModal");
