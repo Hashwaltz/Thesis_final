@@ -310,7 +310,7 @@ def generate_moa_all(employment_type_id):
 
     if not any(employees_by_type.values()):
         flash("No employees found for the selected type(s).", "warning")
-        return redirect(url_for("hr_admin.view_employees"))
+        return redirect(url_for("hr_admin_bp.view_employees"))
 
     file_stream = generate_moa_excel(employees_by_type)
 

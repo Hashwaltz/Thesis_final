@@ -1,0 +1,94 @@
+{# hr/admin/department/_department_cards.html #}
+{% for dept in departments.items %}
+<a href="{{ url_for('hr_admin_bp.department_details', department_id=dept.id) }}" 
+   class="group relative bg-gradient-to-br from-gray-800 to-gray-800/80 
+          hover:from-gray-750 hover:to-gray-800 
+          border border-gray-700/60 hover:border-blue-500/50 
+          rounded-2xl p-5 shadow-lg hover:shadow-xl hover:shadow-blue-500/10 
+          transition-all duration-300 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+   aria-label="View {{ dept.name }} details">
+  
+  <!-- Decorative gradient orb -->
+  <div class="absolute -top-3 -right-3 w-16 h-16 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all"></div>
+  
+  <!-- Card Header -->
+  <div class="flex items-start justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600/30 to-cyan-500/20 
+                   border border-blue-500/30 flex items-center justify-center 
+                   group-hover:scale-110 transition-transform duration-300">
+          <i class="fa-solid fa-building-columns text-xl text-blue-300"></i>
+        </div>
+        <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-gray-800"></span>
+      </div>
+      <div>
+        <h2 class="font-semibold text-lg group-hover:text-blue-300 transition-colors line-clamp-1">
+          {{ dept.name }}
+        </h2>
+        <p class="text-xs text-gray-500">ID: #{{ dept.id }}</p>
+      </div>
+    </div>
+    <i class="fa-solid fa-chevron-right text-gray-600 group-hover:text-blue-400 
+              group-hover:translate-x-1 transition-all"></i>
+  </div>
+
+  <!-- Card Body -->
+  <div class="space-y-3 text-sm">
+    <div class="flex items-center gap-2.5 p-2.5 bg-gray-700/30 rounded-lg">
+      <i class="fa-solid fa-user-tie text-blue-400 w-5 text-center"></i>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs text-gray-400">Department Head</p>
+        <p class="font-medium text-gray-200 truncate">
+          {% if dept.head %}{{ dept.head.get_full_name() }}{% else %}
+            <span class="text-gray-500 italic">Unassigned</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2.5 p-2.5 bg-gray-700/30 rounded-lg">
+      <i class="fa-solid fa-users text-emerald-400 w-5 text-center"></i>
+      <div class="flex-1">
+        <p class="text-xs text-gray-400">Team Size</p>
+        <p class="font-semibold text-gray-200">{{ employee_counts.get(dept.id, 0) }} members</p>
+      </div>
+    </div>
+
+    {% if dept.description %}
+    <div class="pt-2 border-t border-gray-700/50">
+      <p class="text-xs text-gray-400 line-clamp-2">{{ dept.description }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ✅ Action Buttons (overlay on hover) -->
+  <div class="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
+       onclick="event.preventDefault(); event.stopPropagation();">
+    
+    <!-- Edit Button -->
+    <button type="button"
+            data-edit-dept="{{ dept.id }}"
+            data-dept-name="{{ dept.name }}"
+            data-dept-desc="{{ dept.description or '' }}"
+            data-dept-head="{{ dept.head.id if dept.head else '' }}"
+            class="p-2 bg-blue-600/90 hover:bg-blue-500 text-white rounded-lg 
+                   shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+            aria-label="Edit {{ dept.name }}"
+            title="Edit">
+      <i class="fa-solid fa-pen text-sm"></i>
+    </button>
+    
+    <!-- Delete Button -->
+    <button type="button"
+            data-delete-dept="{{ dept.id }}"
+            data-dept-name="{{ dept.name }}"
+            class="p-2 bg-red-600/90 hover:bg-red-500 text-white rounded-lg 
+                   shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+            aria-label="Delete {{ dept.name }}"
+            title="Delete">
+      <i class="fa-solid fa-trash text-sm"></i>
+    </button>
+  </div>
+</a>
+{% endfor %}

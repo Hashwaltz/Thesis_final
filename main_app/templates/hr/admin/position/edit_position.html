@@ -1,48 +1,184 @@
-<!-- Edit Position Modal (Partial) -->
-<div id="editPositionModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
-  
-  <!-- Modal Panel -->
-  <div class="relative min-h-screen flex items-center justify-center p-4">
-    <div class="relative w-full max-w-2xl bg-[#1e293b] border border-blue-900/40 rounded-2xl shadow-2xl transform transition-all">
-      <!-- Header -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-700/50">
-        <h3 id="modal-title" class="text-xl font-semibold text-white flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-blue-400"></i>
-          Edit Position
-        </h3>
-        <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-white transition p-2 rounded-lg hover:bg-gray-700/50" aria-label="Close modal">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
+{# templates/hr/admin/position/_edit_position_modal.html #}
+
+<div id="editPositionModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeEditPositionModal()"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4">
+    <div class="relative bg-gray-800 rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       
-      <!-- Form -->
-      <form id="modalEditForm" class="p-6 space-y-5">
-        <input type="hidden" id="modalPositionId" name="position_id">
+      <form id="editPositionForm" method="POST" class="p-6 space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        <input type="hidden" name="position_id" id="editPositionId">
         
+        <div class="flex items-center justify-between mb-2 pb-4 border-b border-gray-700/50">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-pen-to-square text-blue-400"></i>
+            Edit Position
+          </h3>
+          <button type="button" onclick="closeEditPositionModal()" class="p-2 text-gray-400 hover:text-white rounded-lg transition-colors" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        
+        <!-- Position Name -->
         <div>
           <label class="block text-sm font-medium text-gray-300 mb-2">Position Name <span class="text-red-400">*</span></label>
-          <input type="text" id="modalPositionName" name="name" required
-                 class="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+          <input type="text" name="name" id="editPositionName" 
+                 class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                 required minlength="3" maxlength="100">
+          <p class="error-msg text-red-400 text-sm mt-1 hidden"></p>
         </div>
         
+        <!-- Description -->
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Description</label>
-          <textarea id="modalPositionDescription" name="description" rows="4"
-                    class="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-xl text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"></textarea>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Description <span class="text-gray-500 font-normal">(Optional)</span></label>
+          <textarea name="description" id="editPositionDescription" rows="4" maxlength="500"
+                    class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none"></textarea>
+          <div class="flex justify-end mt-1">
+            <p class="text-xs text-gray-500"><span id="editDescCounter">0</span>/500</p>
+          </div>
         </div>
         
-        <!-- Actions -->
-        <div class="flex flex-wrap gap-3 pt-2">
-          <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-2.5 rounded-xl shadow-md hover:shadow-blue-500/30 transition">
-            <i class="fa-solid fa-rotate-right"></i> Save Changes
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+          <button type="button" onclick="closeEditPositionModal()"
+                  class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium transition-all">
+            Cancel
           </button>
-          <button type="button" onclick="closeEditModal()" class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white font-medium px-6 py-2.5 rounded-xl transition">
-            <i class="fa-solid fa-xmark"></i> Cancel
+          <button type="submit" id="editPositionSubmitBtn"
+                  class="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-blue-500/25 flex items-center gap-2">
+            <i class="fa-solid fa-check"></i>
+            <span id="editPositionSubmitText">Save Changes</span>
+            <i class="fa-solid fa-spinner fa-spin hidden" id="editPositionSpinner"></i>
           </button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
+<script>
+window.openEditPositionModal = function(positionId) {
+  const modal = document.getElementById('editPositionModal');
+  const form = document.getElementById('editPositionForm');
+  
+  form?.reset();
+  document.querySelectorAll('#editPositionForm .error-msg').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('#editPositionForm input, #editPositionForm textarea').forEach(el => {
+    el.classList.remove('invalid', 'valid');
+  });
+  
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  
+  fetch(`/hr/admin/position/${positionId}/data`, {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to load position');
+    return res.json();
+  })
+  .then(data => {
+    document.getElementById('editPositionId').value = data.id;
+    document.getElementById('editPositionName').value = data.name;
+    document.getElementById('editPositionDescription').value = data.description || '';
+    document.getElementById('editDescCounter').textContent = (data.description || '').length;
+    form.action = "{{ url_for('hr_admin_bp.edit_position', position_id=0) }}".replace('/0', '/' + data.id);
+    document.getElementById('editPositionName')?.focus();
+  })
+  .catch(err => {
+    console.error('Error loading position:', err);
+    if (typeof Swal !== 'undefined') Swal.fire('Error', 'Could not load position data.', 'error');
+    closeEditPositionModal();
+  });
+};
+
+window.closeEditPositionModal = function() {
+  const modal = document.getElementById('editPositionModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+  document.getElementById('editPositionForm')?.reset();
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  const descInput = document.getElementById('editPositionDescription');
+  const descCounter = document.getElementById('editDescCounter');
+  descInput?.addEventListener('input', function() {
+    descCounter.textContent = this.value.length;
+  });
+  const nameInput = document.getElementById('editPositionName');
+  nameInput?.addEventListener('blur', validateEditPositionName);
+});
+
+function validateEditPositionName() {
+  const input = document.getElementById('editPositionName');
+  const value = input?.value.trim();
+  const errorEl = input?.closest('div')?.querySelector('.error-msg');
+  let error = null;
+  
+  if (!value) error = "Position name is required";
+  else if (value.length < 3) error = "Minimum 3 characters required";
+  else if (!/^[A-Za-z0-9\s\-\&\.,']+$/.test(value)) error = "Please enter a valid format";
+  
+  if (error) {
+    input?.classList.add('invalid');
+    input?.classList.remove('valid');
+    if (errorEl) { errorEl.textContent = error; errorEl.classList.remove('hidden'); }
+    return false;
+  } else {
+    input?.classList.remove('invalid');
+    input?.classList.add('valid');
+    if (errorEl) errorEl.classList.add('hidden');
+    return true;
+  }
+}
+
+document.getElementById('editPositionForm')?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!validateEditPositionName()) {
+    document.getElementById('editPositionName')?.focus();
+    return;
+  }
+  
+  const form = this;
+  const positionId = document.getElementById('editPositionId').value;
+  const formData = new FormData(form);
+  const submitBtn = document.getElementById('editPositionSubmitBtn');
+  const submitText = document.getElementById('editPositionSubmitText');
+  const spinner = document.getElementById('editPositionSpinner');
+  
+  submitBtn.disabled = true;
+  submitText.textContent = "Saving...";
+  spinner?.classList.remove('hidden');
+  
+  const doSubmit = () => {
+    fetch(`/hr/admin/position/${positionId}/edit`, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({ icon: 'success', title: 'Updated!', text: data.message, background: '#1e293b', color: '#f1f5f9', customClass: { popup: 'rounded-2xl' }, timer: 1500, showConfirmButton: false })
+            .then(() => { closeEditPositionModal(); location.reload(); });
+        } else { alert(data.message); closeEditPositionModal(); location.reload(); }
+      } else {
+        if (typeof Swal !== 'undefined') Swal.fire('Error', data.message || 'Update failed.', 'error');
+        else alert(data.message || 'Update failed.');
+        submitBtn.disabled = false; submitText.textContent = "Save Changes"; spinner?.classList.add('hidden');
+      }
+    })
+    .catch(() => {
+      if (typeof Swal !== 'undefined') Swal.fire('Error', 'Something went wrong.', 'error');
+      else alert('Something went wrong.');
+      submitBtn.disabled = false; submitText.textContent = "Save Changes"; spinner?.classList.add('hidden');
+    });
+  };
+  
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({ title: 'Confirm Update', text: 'Save these changes?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#2563eb', cancelButtonColor: '#64748b', confirmButtonText: 'Yes, Save', cancelButtonText: 'Cancel', background: '#1e293b', color: '#f1f5f9', customClass: { popup: 'rounded-2xl' } })
+      .then((result) => { if (result.isConfirmed) doSubmit(); else { submitBtn.disabled = false; submitText.textContent = "Save Changes"; spinner?.classList.add('hidden'); } });
+  } else { doSubmit(); }
+});
+</script>

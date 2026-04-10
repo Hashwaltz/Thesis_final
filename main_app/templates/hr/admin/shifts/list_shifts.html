@@ -20,15 +20,15 @@
       
       <!-- Quick Actions -->
       <div class="flex flex-wrap gap-3">
-        <a href="{{ url_for('hr_admin_bp.create_shift') }}"
-           class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-cyan-500/25">
+        <button type="button" onclick="openAddModal()"
+                class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-cyan-500/25">
           <i class="fa-solid fa-plus"></i>
           Add Shift
-        </a>
+        </button>
       </div>
     </header>
 
-    <!-- ===== STATS CARDS - ✅ FIXED ===== -->
+    <!-- ===== STATS CARDS ===== -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50 hover:border-cyan-500/50 transition-colors group">
         <div class="flex items-center justify-between">
@@ -82,8 +82,6 @@
     <!-- ===== SEARCH & FILTERS ===== -->
     <section class="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-gray-700/50">
       <form method="get" id="shiftFilterForm" class="flex flex-col sm:flex-row gap-4">
-        
-        <!-- Search Input -->
         <div class="flex-1 min-w-0">
           <label class="block text-xs font-medium text-gray-400 mb-1.5">Search Shifts</label>
           <div class="relative">
@@ -97,7 +95,6 @@
           </div>
         </div>
         
-        <!-- Action Buttons -->
         <div class="flex items-end gap-3">
           <button type="submit"
                   class="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-cyan-500/25">
@@ -110,14 +107,12 @@
             Clear
           </a>
         </div>
-        
       </form>
     </section>
 
     <!-- ===== SHIFTS TABLE ===== -->
     <section class="bg-gray-800/60 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-700/50 overflow-hidden">
       
-      <!-- Table Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border-b border-gray-700/50">
         <h2 class="text-lg font-semibold text-white flex items-center gap-2">
           <i class="fa-solid fa-list-check text-cyan-400"></i>
@@ -126,7 +121,6 @@
         </h2>
       </div>
 
-      <!-- Responsive Table -->
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
           <thead class="text-xs text-gray-400 uppercase bg-gray-900/60">
@@ -155,7 +149,6 @@
                 data-start="{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}"
                 data-id="{{ shift.id }}">
               
-              <!-- Shift Name -->
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center text-white font-bold shrink-0">
@@ -168,7 +161,6 @@
                 </div>
               </td>
               
-              <!-- Start Time -->
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                   <i class="fa-solid fa-arrow-right-to-bracket"></i>
@@ -176,7 +168,6 @@
                 </span>
               </td>
               
-              <!-- End Time -->
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-500/15 text-blue-400 border border-blue-500/30">
                   <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -184,14 +175,12 @@
                 </span>
               </td>
               
-              <!-- Duration -->
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="text-gray-300 font-mono text-xs">
                   {{ duration_h }}h {{ "%02d"|format(duration_m) }}m
                 </span>
               </td>
               
-              <!-- Actions -->
               <td class="px-4 py-3 text-right">
                 <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}', '{{ shift.end_time.strftime('%H:%M') if shift.end_time else '' }}')"
@@ -205,7 +194,6 @@
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
-                <!-- Mobile: Always show actions -->
                 <div class="sm:hidden flex gap-2">
                   <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}', '{{ shift.end_time.strftime('%H:%M') if shift.end_time else '' }}')"
                           class="p-2 text-cyan-400" title="Edit">
@@ -229,11 +217,11 @@
                     <p class="text-lg font-medium text-gray-300">No shifts configured</p>
                     <p class="text-sm text-gray-500 mt-1">Create your first shift to get started</p>
                   </div>
-                  <a href="{{ url_for('hr_admin_bp.create_shift') }}" 
-                     class="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-all">
+                  <button onclick="openAddModal()"
+                          class="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition-all">
                     <i class="fa-solid fa-plus"></i>
                     Add First Shift
-                  </a>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -242,14 +230,13 @@
         </table>
       </div>
       
-      <!-- Table Footer with Pagination -->
+      <!-- Pagination -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border-t border-gray-700/50">
         <p class="text-sm text-gray-400">
           Showing <span class="text-white font-medium">{{ shifts.items|length }}</span> of 
           <span class="text-white font-medium">{{ shifts.total }}</span> shifts
         </p>
         
-        <!-- Pagination - ✅ PRESERVES FILTERS -->
         {% if shifts.pages > 1 %}
           <nav class="flex items-center gap-1" aria-label="Pagination">
             {% if shifts.has_prev %}
@@ -300,70 +287,9 @@
   </div>
 </main>
 
-<!-- ===== EDIT SHIFT MODAL ===== -->
-<div id="editShiftModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
-  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeEditModal()"></div>
-  <div class="fixed inset-0 flex items-center justify-center p-4">
-    <div class="relative bg-gray-800 rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-md">
-      
-      <form id="editShiftForm" method="POST" class="p-5 space-y-4">
-        <!-- 🔑 CSRF TOKEN - REQUIRED -->
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
-        <input type="hidden" name="shift_id" id="editShiftId">
-        
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-lg font-semibold text-white">Edit Shift</h3>
-          <button type="button" onclick="closeEditModal()" class="p-2 text-gray-400 hover:text-white rounded-lg">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        
-        <!-- Shift Name -->
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">Shift Name <span class="text-red-400">*</span></label>
-          <input type="text" name="name" id="editShiftName" 
-                 class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
-                 placeholder="e.g., Morning Shift, Night Shift" required>
-        </div>
-        
-        <!-- Time Range -->
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Start Time <span class="text-red-400">*</span></label>
-            <input type="time" name="start_time" id="editShiftStart" 
-                   class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all" required>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">End Time <span class="text-red-400">*</span></label>
-            <input type="time" name="end_time" id="editShiftEnd" 
-                   class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all" required>
-          </div>
-        </div>
-        
-        <!-- Warning for overnight shifts -->
-        <div id="overnightWarning" class="hidden p-3 bg-amber-900/20 border border-amber-700/40 rounded-xl">
-          <p class="text-amber-300 text-xs flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            End time is before start time — this is an overnight shift
-          </p>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
-          <button type="button" onclick="closeEditModal()"
-                  class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium transition-all">
-            Cancel
-          </button>
-          <button type="submit"
-                  class="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-cyan-500/25">
-            <i class="fa-solid fa-check mr-1"></i>Update Shift
-          </button>
-        </div>
-      </form>
-      
-    </div>
-  </div>
-</div>
+<!-- ===== INCLUDE MODALS ===== -->
+{% include 'hr/admin/shifts/add_shift.html' %}
+{% include 'hr/admin/shifts/edit_shifts.html' %}
 
 <!-- ===== INTERACTIVE SCRIPTS ===== -->
 <script>
@@ -391,68 +317,16 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // ===== MODAL FUNCTIONS =====
-  const editModal = document.getElementById('editShiftModal');
-  const editForm = document.getElementById('editShiftForm');
-  
-  window.openEditModal = function(id, name, start, end) {
-    document.getElementById('editShiftId').value = id;
-    document.getElementById('editShiftName').value = name;
-    document.getElementById('editShiftStart').value = start;
-    document.getElementById('editShiftEnd').value = end;
-    
-    // ✅ Use url_for pattern for form action
-    editForm.action = "{{ url_for('hr_admin_bp.edit_shift', shift_id=0) }}".replace('/0', '/' + id);
-    
-    // Show overnight warning if applicable
-    checkOvernightShift(start, end);
-    
-    editModal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    document.getElementById('editShiftName').focus();
-  };
-  
-  window.closeEditModal = function() {
-    editModal.classList.add('hidden');
-    document.body.style.overflow = '';
-    editForm.reset();
-    document.getElementById('overnightWarning').classList.add('hidden');
-  };
-  
-  // ===== OVERNIGHT SHIFT DETECTION =====
-  function checkOvernightShift(start, end) {
-    const warning = document.getElementById('overnightWarning');
-    if (!start || !end) {
-      warning.classList.add('hidden');
+  // ===== DELETE CONFIRMATION WITH SWEETALERT2 =====
+  window.confirmDelete = function(shiftId, shiftName) {
+    if (typeof Swal === 'undefined') {
+      // Fallback if SweetAlert2 not loaded
+      if (confirm(`Delete shift "${shiftName}"? This cannot be undone.`)) {
+        submitDeleteForm(shiftId);
+      }
       return;
     }
     
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-    
-    const startMinutes = startH * 60 + startM;
-    const endMinutes = endH * 60 + endM;
-    
-    if (endMinutes <= startMinutes && (endMinutes !== 0 || startMinutes !== 0)) {
-      warning.classList.remove('hidden');
-    } else {
-      warning.classList.add('hidden');
-    }
-  }
-  
-  ['editShiftStart', 'editShiftEnd'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('change', function() {
-        const start = document.getElementById('editShiftStart').value;
-        const end = document.getElementById('editShiftEnd').value;
-        checkOvernightShift(start, end);
-      });
-    }
-  });
-  
-  // ===== DELETE CONFIRMATION WITH SWEETALERT2 =====
-  window.confirmDelete = function(shiftId, shiftName) {
     Swal.fire({
       title: 'Delete Shift?',
       html: `
@@ -475,22 +349,33 @@ document.addEventListener("DOMContentLoaded", function() {
       customClass: { popup: 'rounded-2xl' }
     }).then((result) => {
       if (result.isConfirmed) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/delete/${shiftId}`;
-        form.innerHTML = `<input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">`;
-        document.body.appendChild(form);
-        form.submit();
+        submitDeleteForm(shiftId);
       }
     });
   };
   
+  function submitDeleteForm(shiftId) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{{ url_for('hr_admin_bp.delete_shift', shift_id=0) }}".replace('/0', '/' + shiftId);
+    form.innerHTML = `<input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">`;
+    document.body.appendChild(form);
+    form.submit();
+  }
+  
   // ===== KEYBOARD ACCESSIBILITY =====
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeEditModal();
+    if (e.key === 'Escape') {
+      closeAddModal();
+      closeEditModal();
+    }
   });
   
-  editModal?.addEventListener('click', function(e) {
+  // Close modals when clicking backdrop
+  document.getElementById('addShiftModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAddModal();
+  });
+  document.getElementById('editShiftModal')?.addEventListener('click', function(e) {
     if (e.target === this) closeEditModal();
   });
   
@@ -525,9 +410,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   }
   table tbody td:last-child { border-bottom: none; }
 }
-#editShiftModal:not(.hidden) { animation: fadeIn 0.2s ease-out; }
+#addShiftModal:not(.hidden), #editShiftModal:not(.hidden) { animation: fadeIn 0.2s ease-out; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-#editShiftModal > div > div { animation: slideUp 0.3s ease-out; }
+#addShiftModal > div > div, #editShiftModal > div > div { animation: slideUp 0.3s ease-out; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 {% endblock %}

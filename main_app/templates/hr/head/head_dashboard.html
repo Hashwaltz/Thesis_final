@@ -28,7 +28,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
   {% set stats = [
     {'label': 'Total Employees', 'value': total_employees, 'color': 'text-blue-400', 'icon': '👥'},
-    {'label': 'Present', 'value': attendance_summary.total_present, 'color': 'text-green-400', 'icon': '✅'},
+    {'label': 'On Time', 'value': attendance_summary.total_present, 'color': 'text-green-400', 'icon': '✅'},
     {'label': 'Absent', 'value': attendance_summary.total_absent, 'color': 'text-red-400', 'icon': '❌'},
     {'label': 'Late', 'value': attendance_summary.total_late, 'color': 'text-yellow-400', 'icon': '⏰'}
   ] %}

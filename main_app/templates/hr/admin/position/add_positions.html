@@ -1,382 +1,137 @@
-{% extends 'hr/admin/admin_base.html' %}
-{% block title %}Add Position | HR Admin {% endblock %}
+{# templates/hr/admin/position/_add_position_modal.html #}
 
-{% block content %}
-<main class="p-4 md:p-8 text-gray-100 min-h-screen">
-  <!-- Breadcrumb -->
-  <nav class="mb-6" aria-label="Breadcrumb">
-    <ol class="flex items-center gap-2 text-sm text-gray-400">
-      <li><a href="{{ url_for('hr_admin_bp.hr_dashboard') }}" class="hover:text-blue-400 transition">Dashboard</a></li>
-      <li><i class="fa-solid fa-chevron-right text-xs"></i></li>
-      <li><a href="{{ url_for('hr_admin_bp.view_positions') }}" class="hover:text-blue-400 transition">Positions</a></li>
-      <li><i class="fa-solid fa-chevron-right text-xs"></i></li>
-      <li class="text-blue-400 font-medium">Add Position</li>
-    </ol>
-  </nav>
-
-  <header class="mb-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-bold text-white flex items-center gap-3">
-          <span class="p-2 bg-blue-600/20 rounded-xl">
-            <i class="fa-solid fa-briefcase text-blue-400"></i>
-          </span>
-          Add New Position
-        </h1>
-        <p class="text-gray-400 mt-2">Create a new role by filling in the details below.</p>
-      </div>
-      <a href="{{ url_for('hr_admin_bp.view_positions') }}" 
-         class="inline-flex items-center gap-2 text-gray-400 hover:text-white transition px-4 py-2 rounded-lg hover:bg-gray-800">
-        <i class="fa-solid fa-arrow-left"></i>
-        Back to Positions
-      </a>  
-    </div>
-  </header>
-
-  <div class="grid lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-    <!-- Form Section -->
-    <div class="lg:col-span-2">
-      <div class="bg-[#1e293b] border border-blue-900/40 rounded-2xl shadow-xl p-6 md:p-8">
-        <h2 class="text-xl font-semibold text-white mb-6 pb-4 border-b border-gray-700/50 flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-blue-400"></i>
-          Position Details
-        </h2>
-
-        <form id="positionForm" method="POST" action="{{ url_for('hr_admin_bp.add_position') }}" class="space-y-6" novalidate>
-          
-          <!-- Position Name -->
-          <div class="form-group">
-            <label for="name" class="block text-gray-300 font-medium mb-2">
-              Position Name <span class="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="e.g., Senior Software Engineer"
-              required
-              minlength="3"
-              maxlength="100"
-              pattern="^[A-Za-z0-9\s\-\&\.,']+$"
-              class="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-xl text-gray-100 
-                     placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                     focus:border-transparent transition-all invalid:border-red-500/50"
-            />
-            <p class="mt-1.5 text-xs text-gray-500 flex justify-between">
-              <span>Use clear, standardized job titles</span>
-              <span id="nameCounter">0/100</span>
-            </p>
-            <p class="error-msg text-red-400 text-sm mt-1 hidden"></p>
-          </div>
-
-          <!-- Description -->
-          <div class="form-group">
-            <label for="description" class="block text-gray-300 font-medium mb-2">
-              Description <span class="text-gray-500 font-normal">(Optional)</span>
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              placeholder="Briefly describe the role's purpose, key responsibilities, and expectations..."
-              rows="5"
-              maxlength="500"
-              class="w-full px-4 py-3 bg-[#0f172a] border border-gray-700 rounded-xl text-gray-100 
-                     placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                     focus:border-transparent transition-all resize-none"
-            ></textarea>
-            <div class="flex justify-between items-center mt-1.5">
-              <p class="text-xs text-gray-500">Help candidates understand the role</p>
-              <p class="text-xs text-gray-500"><span id="descCounter">0</span>/500</p>
-            </div>
-          </div>
-          <!-- Status Toggle -->
-          <div class="flex items-center justify-between p-4 bg-[#0f172a] rounded-xl border border-gray-700/50">
-            <div>
-              <p class="font-medium text-gray-200">Position Status</p>
-              <p class="text-sm text-gray-500">Make this position visible for applications</p>
-            </div>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" name="is_active" value="true" checked class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-700 peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full 
-                          peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 
-                          after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white 
-                          after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 
-                          after:transition-all"></div>
-            </label>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-700/50">
-            <button
-              type="submit"
-              id="submitBtn"
-              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 
-                     bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl 
-                     shadow-md hover:shadow-blue-500/30 transition-all duration-200 
-                     disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i class="fa-solid fa-plus-circle"></i>
-              <span id="submitText">Add Position</span>
-              <i class="fa-solid fa-spinner fa-spin hidden" id="submitSpinner"></i>
-            </button>
-            <button
-              type="button"
-              onclick="window.history.back()"
-              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 
-                     bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium px-6 py-3 rounded-xl 
-                     transition-all duration-200"
-            >
-              <i class="fa-solid fa-xmark"></i>
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Preview / Help Sidebar -->
-    <div class="lg:col-span-1 space-y-6">
-      <!-- Live Preview Card -->
-      <div class="bg-[#1e293b] border border-blue-900/40 rounded-2xl p-6 sticky top-6">
-        <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <i class="fa-regular fa-eye text-blue-400"></i>
-          Live Preview
-        </h3>
-        <div class="bg-[#0f172a] rounded-xl p-4 border border-gray-700/50 space-y-3">
-          <div class="flex items-start justify-between">
-            <div>
-              <p id="previewTitle" class="font-semibold text-white text-lg">Position Name</p>
-              <p id="previewDept" class="text-sm text-blue-400 mt-0.5">Department • Employment Type</p>
-            </div>
-            <span id="previewStatus" class="px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full">
-              Active
-            </span>
-          </div>
-          <p id="previewDesc" class="text-sm text-gray-400 line-clamp-3">
-            Position description will appear here...
-          </p>
-          <div class="flex flex-wrap gap-2 pt-2">
-            <span id="previewLocation" class="px-2 py-1 bg-gray-700/50 text-gray-300 text-xs rounded-lg hidden">
-              <i class="fa-solid fa-location-dot mr-1"></i>Location
-            </span>
-            <span id="previewSalary" class="px-2 py-1 bg-gray-700/50 text-gray-300 text-xs rounded-lg hidden">
-              <i class="fa-solid fa-dollar-sign mr-1"></i>Salary
-            </span>
+<div id="addPositionModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAddPositionModal()"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4">
+    <div class="relative bg-gray-800 rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      
+      <form id="addPositionForm" method="POST" action="{{ url_for('hr_admin_bp.add_position') }}" class="p-6 space-y-5">
+        <!-- 🔑 CSRF TOKEN -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        
+        <div class="flex items-center justify-between mb-2 pb-4 border-b border-gray-700/50">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle text-blue-400"></i>
+            Add New Position
+          </h3>
+          <button type="button" onclick="closeAddPositionModal()" class="p-2 text-gray-400 hover:text-white rounded-lg transition-colors" aria-label="Close modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        
+        <!-- Position Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Position Name <span class="text-red-400">*</span></label>
+          <input type="text" name="name" id="addPositionName" 
+                 class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+                 placeholder="e.g., Senior Software Engineer, HR Manager" required minlength="3" maxlength="100">
+          <p class="text-xs text-gray-500 mt-1">Use clear, industry-standard job titles</p>
+          <p class="error-msg text-red-400 text-sm mt-1 hidden"></p>
+        </div>
+        
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">Description <span class="text-gray-500 font-normal">(Optional)</span></label>
+          <textarea name="description" id="addPositionDescription" rows="4" maxlength="500"
+                    class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all resize-none"
+                    placeholder="Briefly describe the role's purpose, key responsibilities, and expectations..."></textarea>
+          <div class="flex justify-end mt-1">
+            <p class="text-xs text-gray-500"><span id="addDescCounter">0</span>/500</p>
           </div>
         </div>
-      </div>
-
-      <!-- Tips Card -->
-      <div class="bg-[#1e293b] border border-blue-900/40 rounded-2xl p-6">
-        <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <i class="fa-regular fa-lightbulb text-yellow-400"></i>
-          Quick Tips
-        </h3>
-        <ul class="space-y-3 text-sm text-gray-400">
-          <li class="flex gap-2">
-            <i class="fa-solid fa-check text-green-400 mt-0.5"></i>
-            <span>Use clear, industry-standard job titles</span>
-          </li>
-          <li class="flex gap-2">
-            <i class="fa-solid fa-check text-green-400 mt-0.5"></i>
-            <span>Keep descriptions concise but informative</span>
-          </li>
-          <li class="flex gap-2">
-            <i class="fa-solid fa-check text-green-400 mt-0.5"></i>
-            <span>Include location & salary to attract quality candidates</span>
-          </li>
-          <li class="flex gap-2">
-            <i class="fa-solid fa-check text-green-400 mt-0.5"></i>
-            <span>Set status to "Inactive" for draft positions</span>
-          </li>
-        </ul>
-      </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
+          <button type="button" onclick="closeAddPositionModal()"
+                  class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium transition-all">
+            Cancel
+          </button>
+          <button type="submit" id="addPositionSubmitBtn"
+                  class="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-blue-500/25 flex items-center gap-2">
+            <i class="fa-solid fa-check"></i>
+            <span id="addPositionSubmitText">Create Position</span>
+            <i class="fa-solid fa-spinner fa-spin hidden" id="addPositionSpinner"></i>
+          </button>
+        </div>
+      </form>
+      
     </div>
   </div>
-</main>
+</div>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("positionForm");
-  const nameInput = document.getElementById("name");
-  const descInput = document.getElementById("description");
-  const nameCounter = document.getElementById("nameCounter");
-  const descCounter = document.getElementById("descCounter");
-  const submitBtn = document.getElementById("submitBtn");
-  const submitText = document.getElementById("submitText");
-  const submitSpinner = document.getElementById("submitSpinner");
-  
-  // Preview elements
-  const previewTitle = document.getElementById("previewTitle");
-  const previewDept = document.getElementById("previewDept");
-  const previewDesc = document.getElementById("previewDesc");
-  const previewLocation = document.getElementById("previewLocation");
-  const previewSalary = document.getElementById("previewSalary");
-  const previewStatus = document.getElementById("previewStatus");
-
-  // Character counters
-  nameInput?.addEventListener("input", function() {
-    nameCounter.textContent = `${this.value.length}/100`;
-    previewTitle.textContent = this.value || "Position Name";
+// Add Position Modal Functions
+window.openAddPositionModal = function() {
+  document.getElementById('addPositionForm')?.reset();
+  document.getElementById('addPositionName').value = '';
+  document.getElementById('addPositionDescription').value = '';
+  document.getElementById('addDescCounter').textContent = '0';
+  document.querySelectorAll('#addPositionForm .error-msg').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('#addPositionForm input, #addPositionForm textarea').forEach(el => {
+    el.classList.remove('invalid', 'valid');
   });
   
-  descInput?.addEventListener("input", function() {
+  const modal = document.getElementById('addPositionModal');
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('addPositionName')?.focus();
+};
+
+window.closeAddPositionModal = function() {
+  const modal = document.getElementById('addPositionModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+  document.getElementById('addPositionForm')?.reset();
+};
+
+// Character counter
+document.addEventListener('DOMContentLoaded', function() {
+  const descInput = document.getElementById('addPositionDescription');
+  const descCounter = document.getElementById('addDescCounter');
+  descInput?.addEventListener('input', function() {
     descCounter.textContent = this.value.length;
-    previewDesc.textContent = this.value || "Position description will appear here...";
   });
+  
+  // Validation
+  const nameInput = document.getElementById('addPositionName');
+  nameInput?.addEventListener('blur', validateAddPositionName);
+});
 
-  // Live preview updates
-  const updatePreview = () => {
-    const dept = document.getElementById("department")?.value;
-    const empType = document.getElementById("employment_type")?.value;
-    const location = document.getElementById("location")?.value;
-    const salary = document.getElementById("salary_range")?.value;
-    const isActive = document.querySelector('input[name="is_active"]')?.checked;
-    
-    if (dept && empType) {
-      const deptLabel = dept.charAt(0).toUpperCase() + dept.slice(1);
-      const typeLabel = empType.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      previewDept.textContent = `${deptLabel} • ${typeLabel}`;
-    }
-    
-    if (location) {
-      previewLocation.classList.remove("hidden");
-      previewLocation.innerHTML = `<i class="fa-solid fa-location-dot mr-1"></i>${location}`;
-    } else {
-      previewLocation.classList.add("hidden");
-    }
-    
-    if (salary) {
-      previewSalary.classList.remove("hidden");
-      previewSalary.innerHTML = `<i class="fa-solid fa-dollar-sign mr-1"></i>${salary}`;
-    } else {
-      previewSalary.classList.add("hidden");
-    }
-    
-    previewStatus.textContent = isActive ? "Active" : "Draft";
-    previewStatus.className = `px-2.5 py-1 text-xs font-medium rounded-full ${
-      isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
-    }`;
-  };
+function validateAddPositionName() {
+  const input = document.getElementById('addPositionName');
+  const value = input?.value.trim();
+  const errorEl = input?.closest('div')?.querySelector('.error-msg');
+  let error = null;
+  
+  if (!value) error = "Position name is required";
+  else if (value.length < 3) error = "Minimum 3 characters required";
+  else if (!/^[A-Za-z0-9\s\-\&\.,']+$/.test(value)) error = "Please enter a valid format";
+  
+  if (error) {
+    input?.classList.add('invalid');
+    input?.classList.remove('valid');
+    if (errorEl) { errorEl.textContent = error; errorEl.classList.remove('hidden'); }
+    return false;
+  } else {
+    input?.classList.remove('invalid');
+    input?.classList.add('valid');
+    if (errorEl) errorEl.classList.add('hidden');
+    return true;
+  }
+}
 
-  // Attach preview updates to all relevant inputs
-  ['department', 'employment_type', 'location', 'salary_range', 'is_active'].forEach(id => {
-    const el = document.getElementById(id) || document.querySelector(`input[name="${id}"]`);
-    el?.addEventListener('input', updatePreview);
-    el?.addEventListener('change', updatePreview);
-  });
-
-  // Real-time validation
-  const validateField = (input, rules = {}) => {
-    const value = input.value.trim();
-    let error = null;
-    
-    if (rules.required && !value) {
-      error = "This field is required";
-    } else if (rules.minlength && value.length < rules.minlength) {
-      error = `Minimum ${rules.minlength} characters required`;
-    } else if (rules.pattern && !rules.pattern.test(value)) {
-      error = "Please enter a valid format";
-    }
-    
-    const errorEl = input.closest('.form-group')?.querySelector('.error-msg');
-    if (error) {
-      input.classList.add('invalid');
-      input.classList.remove('valid');
-      if (errorEl) {
-        errorEl.textContent = error;
-        errorEl.classList.remove('hidden');
-      }
-      return false;
-    } else {
-      input.classList.remove('invalid');
-      input.classList.add('valid');
-      if (errorEl) errorEl.classList.add('hidden');
-      return true;
-    }
-  };
-
-  nameInput?.addEventListener("blur", () => {
-    validateField(nameInput, { required: true, minlength: 3, pattern: /^[A-Za-z0-9\s\-\&\.,']+$/ });
-  });
-
-  // Form submission with loading state
-  form?.addEventListener("submit", function (e) {
+// Submit handler with loading state
+document.getElementById('addPositionForm')?.addEventListener('submit', function(e) {
+  if (!validateAddPositionName()) {
     e.preventDefault();
-    
-    // Validate required fields
-    const isNameValid = validateField(nameInput, { required: true, minlength: 3 });
-    if (!isNameValid) {
-      nameInput?.focus();
-      return;
-    }
-
-    Swal.fire({
-      background: '#1e293b',
-      color: '#f1f5f9',
-      title: "Confirm Position",
-      html: `<p style="color: #94a3b8;">Create position <strong style="color: #60a5fa;">${nameInput.value}</strong>?</p>`,
-      icon: "question",
-      iconColor: "#60a5fa",
-      showCancelButton: true,
-      confirmButtonColor: "#2563eb",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, Create",
-      cancelButtonText: "Cancel",
-      customClass: {
-        popup: 'rounded-2xl shadow-2xl border border-gray-700',
-        title: 'text-lg font-semibold',
-        confirmButton: 'rounded-lg px-5',
-        cancelButton: 'rounded-lg px-5'
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Show loading state
-        submitBtn.disabled = true;
-        submitText.textContent = "Creating...";
-        submitSpinner.classList.remove("hidden");
-        
-        // Submit form
-        form.submit();
-      }
-    });
-  });
-
-  // Keyboard shortcut: Ctrl/Cmd + Enter to submit
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !submitBtn.disabled) {
-      e.preventDefault();
-      form?.requestSubmit();
-    }
-  });
+    document.getElementById('addPositionName')?.focus();
+    return;
+  }
+  const submitBtn = document.getElementById('addPositionSubmitBtn');
+  const submitText = document.getElementById('addPositionSubmitText');
+  const spinner = document.getElementById('addPositionSpinner');
+  submitBtn.disabled = true;
+  submitText.textContent = "Creating...";
+  spinner?.classList.remove('hidden');
 });
 </script>
-
-<style>
-/* Smooth transitions for validation states */
-input.valid {
-  border-color: #22c55e !important;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-input.invalid {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-/* Line clamp for preview description */
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-/* SweetAlert dark theme override */
-.swal2-popup {
-  border: 1px solid #334155 !important;
-}
-.swal2-styled:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5) !important;
-}
-</style>
-{% endblock %}

@@ -1,19 +1,20 @@
-{# templates/hr/admin/shifts/_add_shift_modal.html #}
+{# templates/hr/admin/shifts/_edit_shift_modal.html #}
 
-<div id="addShiftModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
-  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAddModal()"></div>
+<div id="editShiftModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeEditModal()"></div>
   <div class="fixed inset-0 flex items-center justify-center p-4">
     <div class="relative bg-gray-800 rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-md">
       
-      <form id="addShiftForm" method="POST" action="{{ url_for('hr_admin_bp.create_shift') }}" class="p-5 space-y-4">
-        <!-- 🔑 CSRF TOKEN -->
+      <form id="editShiftForm" method="POST" class="p-5 space-y-4">
+        <!-- 🔑 CSRF TOKEN + Hidden ID -->
         <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        <input type="hidden" name="shift_id" id="editShiftId">
         
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-lg font-semibold text-white">
-            <i class="fa-solid fa-plus-circle text-cyan-400 mr-2"></i>Add New Shift
+            <i class="fa-solid fa-pen-to-square text-cyan-400 mr-2"></i>Edit Shift
           </h3>
-          <button type="button" onclick="closeAddModal()" class="p-2 text-gray-400 hover:text-white rounded-lg transition-colors" aria-label="Close modal">
+          <button type="button" onclick="closeEditModal()" class="p-2 text-gray-400 hover:text-white rounded-lg transition-colors" aria-label="Close modal">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -21,43 +22,42 @@
         <!-- Shift Name -->
         <div>
           <label class="block text-sm font-medium text-gray-300 mb-2">Shift Name <span class="text-red-400">*</span></label>
-          <input type="text" name="name" id="addShiftName" 
+          <input type="text" name="name" id="editShiftName" 
                  class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all"
-                 placeholder="e.g., Morning Shift, Night Shift, Weekend Coverage" required>
-          <p class="text-xs text-gray-500 mt-1">Use clear, descriptive names for easy identification</p>
+                 placeholder="e.g., Morning Shift, Night Shift" required>
         </div>
         
         <!-- Time Range -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-2">Start Time <span class="text-red-400">*</span></label>
-            <input type="time" name="start_time" id="addShiftStart" 
+            <input type="time" name="start_time" id="editShiftStart" 
                    class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all" required>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-2">End Time <span class="text-red-400">*</span></label>
-            <input type="time" name="end_time" id="addShiftEnd" 
+            <input type="time" name="end_time" id="editShiftEnd" 
                    class="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all" required>
           </div>
         </div>
         
         <!-- Overnight Shift Warning -->
-        <div id="addOvernightWarning" class="hidden p-3 bg-amber-900/20 border border-amber-700/40 rounded-xl">
+        <div id="editOvernightWarning" class="hidden p-3 bg-amber-900/20 border border-amber-700/40 rounded-xl">
           <p class="text-amber-300 text-xs flex items-center gap-2">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            End time is before start time — this creates an overnight shift
+            End time is before start time — this is an overnight shift
           </p>
         </div>
         
         <!-- Action Buttons -->
         <div class="flex justify-end gap-3 pt-4 border-t border-gray-700/50">
-          <button type="button" onclick="closeAddModal()"
+          <button type="button" onclick="closeEditModal()"
                   class="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-xl text-sm font-medium transition-all">
             Cancel
           </button>
           <button type="submit"
                   class="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-cyan-500/25">
-            <i class="fa-solid fa-check mr-1"></i>Create Shift
+            <i class="fa-solid fa-check mr-1"></i>Update Shift
           </button>
         </div>
       </form>
@@ -67,30 +67,37 @@
 </div>
 
 <script>
-// Add Modal Functions
-window.openAddModal = function() {
-  document.getElementById('addShiftName').value = '';
-  document.getElementById('addShiftStart').value = '';
-  document.getElementById('addShiftEnd').value = '';
-  document.getElementById('addOvernightWarning').classList.add('hidden');
+// Edit Modal Functions
+window.openEditModal = function(id, name, start, end) {
+  document.getElementById('editShiftId').value = id;
+  document.getElementById('editShiftName').value = name;
+  document.getElementById('editShiftStart').value = start;
+  document.getElementById('editShiftEnd').value = end;
   
-  const modal = document.getElementById('addShiftModal');
+  // Set form action dynamically
+  const form = document.getElementById('editShiftForm');
+  form.action = "{{ url_for('hr_admin_bp.edit_shift', shift_id=0) }}".replace('/0', '/' + id);
+  
+  // Check overnight warning
+  checkEditOvernightShift(start, end);
+  
+  const modal = document.getElementById('editShiftModal');
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
-  document.getElementById('addShiftName').focus();
+  document.getElementById('editShiftName').focus();
 };
 
-window.closeAddModal = function() {
-  const modal = document.getElementById('addShiftModal');
+window.closeEditModal = function() {
+  const modal = document.getElementById('editShiftModal');
   modal.classList.add('hidden');
   document.body.style.overflow = '';
-  document.getElementById('addShiftForm')?.reset();
-  document.getElementById('addOvernightWarning').classList.add('hidden');
+  document.getElementById('editShiftForm')?.reset();
+  document.getElementById('editOvernightWarning').classList.add('hidden');
 };
 
-// Overnight detection for Add modal
-function checkAddOvernightShift(start, end) {
-  const warning = document.getElementById('addOvernightWarning');
+// Overnight detection for Edit modal
+function checkEditOvernightShift(start, end) {
+  const warning = document.getElementById('editOvernightWarning');
   if (!start || !end) {
     warning.classList.add('hidden');
     return;
@@ -109,13 +116,13 @@ function checkAddOvernightShift(start, end) {
 
 // Attach listeners when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-  ['addShiftStart', 'addShiftEnd'].forEach(id => {
+  ['editShiftStart', 'editShiftEnd'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('change', function() {
-        const start = document.getElementById('addShiftStart').value;
-        const end = document.getElementById('addShiftEnd').value;
-        checkAddOvernightShift(start, end);
+        const start = document.getElementById('editShiftStart').value;
+        const end = document.getElementById('editShiftEnd').value;
+        checkEditOvernightShift(start, end);
       });
     }
   });

@@ -155,7 +155,7 @@
                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
                         {% if request.endpoint == 'hr_admin_bp.view_attendance' %}bg-blue-700/50 text-white{% endif %}">
                 <i class="fa-solid fa-calendar-check text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Attendance</span>
+                <span>Time Logging</span>
               </a>
             </li>
             <li>
@@ -179,15 +179,7 @@
                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
                         {% if request.endpoint == 'hr_admin_bp.list_shifts' %}bg-blue-700/50 text-white{% endif %}">
                 <i class="fa-solid fa-calendar-days text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Shift Schedule</span>
-              </a>
-            </li>
-            <li>
-              <a href="{{ url_for('hr_admin_bp.create_shift') }}"
-                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
-                        {% if request.endpoint == 'hr_admin_bp.create_shift' %}bg-blue-700/50 text-white{% endif %}">
-                <i class="fa-solid fa-circle-plus text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Add New Shift</span>
+                <span>Shift Management</span>
               </a>
             </li>
           </ul>
@@ -202,15 +194,7 @@
                  class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
                         {% if request.endpoint == 'hr_admin_bp.view_departments' %}bg-blue-700/50 text-white{% endif %}">
                 <i class="fa-solid fa-building-columns text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Departments</span>
-              </a>
-            </li>
-            <li>
-              <a href="{{ url_for('hr_admin_bp.add_department') }}"
-                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
-                        {% if request.endpoint == 'hr_admin_bp.add_department' %}bg-blue-700/50 text-white{% endif %}">
-                <i class="fa-solid fa-plus text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Add Department</span>
+                <span>Departments Management</span>
               </a>
             </li>
             <li>
@@ -220,15 +204,7 @@
                 <i class="fa-solid fa-id-badge text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
                 <span>Positions</span>
               </a>
-            </li>
-            <li>
-              <a href="{{ url_for('hr_admin_bp.add_position') }}"
-                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-700/40 transition group
-                        {% if request.endpoint == 'hr_admin_bp.add_position' %}bg-blue-700/50 text-white{% endif %}">
-                <i class="fa-solid fa-user-plus text-blue-400 w-5 text-center group-hover:text-blue-300"></i>
-                <span>Add Position</span>
-              </a>
-            </li>
+            </li>  
           </ul>
         </div>
 
