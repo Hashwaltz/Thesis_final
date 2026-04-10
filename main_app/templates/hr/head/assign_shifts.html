@@ -2,87 +2,130 @@
 {% block title %}Assign Shifts | HR Head{% endblock %}
 
 {% block content %}
-<main class="p-4 md:p-6 space-y-6">
+<main class="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
 
   <!-- Header -->
   <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    <div class="flex items-center gap-3">
-      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-xl flex items-center justify-center">
-        <i class="fa-solid fa-clock text-xl"></i>
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/10">
+        <i class="fa-solid fa-clock text-2xl"></i>
       </div>
       <div>
-        <h1 class="text-2xl font-semibold text-gray-100">Assign Shifts</h1>
-        <p class="text-sm text-gray-400">Assign shifts to employees under your department</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-100">Assign Shifts</h1>
+        <p class="text-sm text-gray-400 mt-1">Schedule and assign shifts to employees within your department</p>
       </div>
     </div>
+    <a href="{{ url_for('hr_head_bp.current_shifts') }}"
+       class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-xl text-gray-300 text-sm font-medium transition-all">
+      <i class="fa-solid fa-history"></i> View History
+    </a>
   </header>
 
+  <!-- Flash Messages (Optional: Remove if not using Flask flashes) -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="p-4 rounded-xl border {% if category == 'success' %}bg-green-500/10 border-green-500/30 text-green-400{% elif category == 'error' %}bg-red-500/10 border-red-500/30 text-red-400{% else %}bg-blue-500/10 border-blue-500/30 text-blue-400{% endif %}">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid {% if category == 'success' %}fa-check-circle{% elif category == 'error' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+            <span>{{ message }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
   <!-- Assign Shift Form -->
-  <section class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow space-y-6">
-    <form method="POST" class="space-y-6">
+  <section class="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 md:p-8 shadow-xl backdrop-blur-sm">
+    <form method="POST" class="space-y-8">
 
-      <!-- Employee Selection -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Employee</label>
-        <select name="employee_id" required
-                class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
-          <option value="">Select Employee</option>
-          {% for emp in employees %}
-            <option value="{{ emp.id }}">
-              {{ emp.get_full_name() }}{% if emp.position %} - {{ emp.position.name }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+      <!-- Form Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Employee Selection -->
+        <div class="space-y-2">
+          <label for="employee_id" class="block text-sm font-medium text-gray-300">Employee <span class="text-red-400">*</span></label>
+          <div class="relative">
+            <select id="employee_id" name="employee_id" required autocomplete="off"
+                    class="w-full bg-gray-900/50 text-gray-200 rounded-xl px-4 py-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer">
+              <option value="">Select an employee</option>
+              {% for emp in employees %}
+                <option value="{{ emp.id }}">
+                  {{ emp.get_full_name() }}{% if emp.position %} - {{ emp.position.name }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </div>
+          </div>
+        </div>
 
-      <!-- Shift Selection -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Shift</label>
-        <select name="shift_id" required
-                class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
-          <option value="">Select Shift</option>
-          {% for shift in shifts %}
-            <option value="{{ shift.id }}">
-              {{ shift.name }} ({{ shift.start_time.strftime('%I:%M %p') }} - {{ shift.end_time.strftime('%I:%M %p') }})
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+        <!-- Shift Selection -->
+        <div class="space-y-2">
+          <label for="shift_id" class="block text-sm font-medium text-gray-300">Shift <span class="text-red-400">*</span></label>
+          <div class="relative">
+            <select id="shift_id" name="shift_id" required autocomplete="off"
+                    class="w-full bg-gray-900/50 text-gray-200 rounded-xl px-4 py-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer">
+              <option value="">Select a shift</option>
+              {% for shift in shifts %}
+                <option value="{{ shift.id }}">
+                  {{ shift.name }} ({{ shift.start_time.strftime('%I:%M %p') }} - {{ shift.end_time.strftime('%I:%M %p') }})
+                </option>
+              {% endfor %}
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+              <i class="fa-solid fa-chevron-down text-xs"></i>
+            </div>
+          </div>
+        </div>
 
-      <!-- Start Date -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Start Date</label>
-        <input type="date" name="start_date" required
-               class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
-      </div>
-
-      <!-- Weekdays Selection -->
-      <div class="flex flex-col">
-        <label class="text-gray-300 mb-2 font-medium">Days to Apply Shift</label>
-        <div class="flex flex-wrap gap-3">
-          {% for day in weekdays %}
-            <label class="flex items-center gap-2 bg-gray-700/50 px-3 py-1 rounded-lg cursor-pointer hover:bg-blue-700/40 transition">
-              <input type="checkbox" name="weekdays" value="{{ day }}" class="accent-blue-500">
-              <span class="text-gray-200">{{ day }}</span>
-            </label>
-          {% endfor %}
+        <!-- Start Date -->
+        <div class="space-y-2 md:col-span-2">
+          <label for="start_date" class="block text-sm font-medium text-gray-300">Start Date <span class="text-red-400">*</span></label>
+          <input type="date" id="start_date" name="start_date" required
+                 class="w-full md:w-80 bg-gray-900/50 text-gray-200 rounded-xl px-4 py-3 border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer">
         </div>
       </div>
 
-      <!-- Buttons -->
-      <div class="flex justify-end gap-3 mt-4">
-        <a href="{{ url_for('hr_head_bp.current_shifts') }}" 
-           class="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white transition">
-          <i class="fas fa-history text-blue-400"></i> View History
-        </a>
-        <button type="submit" 
-                class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition">
-          <i class="fas fa-calendar-check text-white"></i> Assign Shift
+      <!-- Weekdays Selection -->
+      <div class="space-y-3">
+        <label class="block text-sm font-medium text-gray-300">Days to Apply Shift <span class="text-red-400">*</span></label>
+        <div class="flex flex-wrap gap-3">
+          {% for day in weekdays %}
+            <label class="relative">
+              <input type="checkbox" name="weekdays" value="{{ day }}" class="peer sr-only">
+              <div class="px-4 py-2.5 rounded-xl border border-gray-600 bg-gray-900/30 text-gray-400 text-sm font-medium cursor-pointer select-none transition-all peer-checked:bg-blue-600 peer-checked:border-blue-500 peer-checked:text-white peer-hover:border-gray-500 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500">
+                {{ day }}
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Select one or more weekdays for this shift assignment.</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-700/50">
+        <button type="reset"
+                class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-xl text-gray-300 text-sm font-medium transition-all">
+          Reset
+        </button>
+        <button type="submit"
+                class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+          <i class="fa-solid fa-calendar-check mr-2"></i> Assign Shift
         </button>
       </div>
 
     </form>
   </section>
+
+  <!-- Quick Tip -->
+  <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-start gap-3">
+    <i class="fa-solid fa-lightbulb text-blue-400 mt-1"></i>
+    <div class="text-sm text-blue-300">
+      <p class="font-medium">Pro Tip:</p>
+      <p class="text-blue-400/80 mt-0.5">Ensure selected days comply with employee availability and local labor regulations.</p>
+    </div>
+  </div>
 
 </main>
 {% endblock %}
