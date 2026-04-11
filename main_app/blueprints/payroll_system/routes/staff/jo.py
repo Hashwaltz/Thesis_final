@@ -60,7 +60,7 @@ def jo_select_department(period_id):
         department_status[dept.id] = bool(has_payroll)
 
     return render_template(
-        "payroll/staff/jo/select_department.html",
+        "payroll/staff/JO/select_department.html",
         period=period,
         departments=departments,
         department_status=department_status
@@ -237,9 +237,9 @@ def preview_jo_payroll(period_id, department_id):
             "overtime_pay": overtime_pay
         })
     template = (
-        "payroll/staff/jo/16_end_preview.html"
+        "payroll/staff/JO/16_end_preview.html"
         if second_half else
-        "payroll/staff/jo/1_15_preview.html"
+        "payroll/staff/JO/1_15_preview.html"
     )
 
     return render_template(
