@@ -12,14 +12,14 @@
             Deduction Detail Report
         </h1>
         <p class="text-gray-400 text-sm mt-1">
-            Select a Provider and Period to view and export employee contributions.
+            Select a Pay Period (required) and optionally filter by Provider to view contributions.
         </p>
     </div>
     
-    <!-- Export Button: Only shows if filters are active -->
-    {% if selected_provider and selected_period %}
+    <!-- ✅ Export Button: Shows when period is selected (provider optional) -->
+    {% if selected_period %}
     <a href="{{ url_for('payroll_admin_bp.export_deduction_detail_pdf', 
-                       provider=selected_provider,
+                       provider=selected_provider or '',
                        period_id=selected_period,
                        department_id=selected_department) }}" 
        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 w-fit">
@@ -32,11 +32,11 @@
 <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
     <form method="GET" id="filterForm" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Provider (Required) -->
+            <!-- Provider (Optional - empty = All) -->
             <div>
-                <label class="block text-xs text-gray-400 mb-1">Provider <span class="text-red-400">*</span></label>
-                <select name="provider" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    <option value="">Select Provider</option>
+                <label class="block text-xs text-gray-400 mb-1">Provider</label>
+                <select name="provider" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">All Providers</option>
                     {% for opt in provider_options %}
                         <option value="{{ opt.value }}" {% if selected_provider == opt.value %}selected{% endif %}>
                             {{ opt.label }}
@@ -90,33 +90,59 @@
     </form>
 </div>
 
-<!-- Results Section: Shows ONLY when filters are applied -->
-{% if selected_provider and selected_period %}
+<!-- ✅ Results Section: Shows when period is selected (provider optional) -->
+{% if selected_period %}
 <div class="space-y-6 animate-fade-in">
     
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
-            <p class="text-gray-400 text-xs">Total Records</p>
-            <h3 class="text-2xl font-bold text-white mt-1">{{ summary_stats.total_records }}</h3>
-            <p class="text-emerald-400 text-xs mt-1">{{ summary_stats.total_employees }} employees</p>
-        </div>
-        
-        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
-            <p class="text-gray-400 text-xs">Employee Share</p>
-            <h3 class="text-xl font-bold text-blue-400 mt-1">₱{{ "{:,.2f}".format(summary_stats.total_employee_share) }}</h3>
-        </div>
-        
-        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
-            <p class="text-gray-400 text-xs">Employer Share</p>
-            <h3 class="text-xl font-bold text-green-400 mt-1">₱{{ "{:,.2f}".format(summary_stats.total_employer_share) }}</h3>
-        </div>
-        
-        <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
-            <p class="text-gray-400 text-xs">Total Contributions</p>
-            <h3 class="text-xl font-bold text-emerald-400 mt-1">₱{{ "{:,.2f}".format(summary_stats.total_contributions) }}</h3>
-        </div>
+<!-- ===== SUMMARY CARDS (UPDATED - Employee Share Only) ===== -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  
+  <!-- Total Employee Share -->
+  <div class="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-4 sm:p-5 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-emerald-500/20 rounded-lg border border-emerald-500/30">
+        <i class="fa-solid fa-coins text-emerald-400"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Employee Share</p>
+        <h3 class="text-xl font-bold text-emerald-400 mt-1">
+          ₱{{ "{:,.2f}".format(summary_stats.total_employee_share | default(0)) }}
+        </h3>
+      </div>
     </div>
+  </div>
+
+  <!-- Total Records -->
+  <div class="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-4 sm:p-5 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-blue-500/20 rounded-lg border border-blue-500/30">
+        <i class="fa-solid fa-list-check text-blue-400"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Deductions</p>
+        <h3 class="text-xl font-bold text-blue-400 mt-1">
+          {{ summary_stats.total_records | default(0) }}
+        </h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total Employees -->
+  <div class="bg-gray-800/80 backdrop-blur-sm border border-gray-700 rounded-2xl p-4 sm:p-5 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="p-2.5 bg-purple-500/20 rounded-lg border border-purple-500/30">
+        <i class="fa-solid fa-users text-purple-400"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Employees</p>
+        <h3 class="text-xl font-bold text-purple-400 mt-1">
+          {{ summary_stats.total_employees | default(0) }}
+        </h3>
+      </div>
+    </div>
+  </div>
+
+</div>
 
     <!-- Data Table -->
     <div class="bg-gray-800/50 backdrop-blur p-4 md:p-5 rounded-2xl border border-gray-700/50">
@@ -125,24 +151,24 @@
                 <i class="fa-solid fa-table-list"></i> Deduction Details
             </h3>
             <span class="bg-gray-700 text-gray-300 text-xs px-3 py-1 rounded-full">
-                {{ pagination.total_records }} records
+                {{ pagination.total_records | default(0) }} records
             </span>
         </div>
         
         {% if records %}
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
+                <!-- ✅ Updated Header: 4 columns only -->
                 <thead class="text-gray-400 text-xs uppercase border-b border-gray-700">
                     <tr>
                         <th class="text-left py-3 px-2">Employee</th>
                         <th class="text-left py-3 px-2 hidden md:table-cell">Department</th>
                         <th class="text-left py-3 px-2">Deduction</th>
-                        <th class="text-right py-3 px-2">Employee</th>
-                        <th class="text-right py-3 px-2 hidden lg:table-cell">Employer</th>
-                        <th class="text-right py-3 px-2 hidden lg:table-cell">EC</th>
-                        <th class="text-right py-3 px-2">Total</th>
+                        <th class="text-right py-3 px-2">Employee Share</th>
                     </tr>
                 </thead>
+                
+                <!-- ✅ Updated Body: 4 columns, safe formatting -->
                 <tbody class="text-gray-300 divide-y divide-gray-700/50">
                     {% for rec in records %}
                     <tr class="hover:bg-gray-700/30 transition">
@@ -158,10 +184,9 @@
                                 {{ rec.deduction_name }}
                             </span>
                         </td>
-                        <td class="py-3 px-2 text-right text-blue-400">₱{{ "{:,.2f}".format(rec.employee_share) }}</td>
-                        <td class="py-3 px-2 text-right text-green-400 hidden lg:table-cell">₱{{ "{:,.2f}".format(rec.employer_share) }}</td>
-                        <td class="py-3 px-2 text-right text-gray-400 hidden lg:table-cell">₱{{ "{:,.2f}".format(rec.ec) }}</td>
-                        <td class="py-3 px-2 text-right font-bold text-emerald-400">₱{{ "{:,.2f}".format(rec.total_contribution) }}</td>
+                        <td class="py-3 px-2 text-right font-bold text-emerald-400">
+                            ₱{{ "{:,.2f}".format(rec.employee_share | default(0)) }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -209,6 +234,7 @@
         {% endif %}
         
         {% else %}
+        <!-- ✅ Empty state: colspan=4 to match 4 columns -->
         <div class="text-center py-12">
             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-700/50 flex items-center justify-center">
                 <i class="fa-solid fa-folder-open text-2xl text-gray-500"></i>
@@ -219,11 +245,13 @@
         {% endif %}
     </div>
 </div>
+
 {% else %}
-    <!-- Initial State Message -->
+    <!-- ✅ Initial State: Only period is required -->
     <div class="text-center py-12 bg-gray-800/20 rounded-2xl border border-dashed border-gray-700">
         <i class="fa-solid fa-filter-circle-xmark text-4xl text-gray-600 mb-3"></i>
-        <p class="text-gray-400">Please select a Provider and Pay Period to view the report data.</p>
+        <p class="text-gray-400">Please select a Pay Period to view the report data.</p>
+        <p class="text-sm text-gray-500 mt-1">Provider filter is optional - leave as "All Providers" to see all deductions.</p>
     </div>
 {% endif %}
 
@@ -231,8 +259,16 @@
 
 <script>
 function clearFilters() {
+    // Clear all filters and reload
     window.location.href = "{{ url_for('payroll_admin_bp.deduction_detail_report') }}";
 }
+
+// Auto-submit form when period changes (optional UX improvement)
+document.querySelector('select[name="period_id"]')?.addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('filterForm').submit();
+    }
+});
 </script>
 
 <style>

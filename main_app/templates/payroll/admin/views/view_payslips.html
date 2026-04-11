@@ -59,7 +59,7 @@
                   class="px-4 py-2.5 rounded-xl bg-gray-900/80 border border-gray-700 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition text-gray-200 text-sm appearance-none cursor-pointer min-w-[130px]">
             <option value="">All</option>
             <option value="Generated" {% if selected_status=="Generated" %}selected{% endif %}>Not Claimed</option>
-            <option value="Distributed" {% if selected_status=="Distributed" %}selected{% endif %}>Claimed</option>
+            <option value="Distributed" {% if selected_status=="CLAIMED" %}selected{% endif %}>Claimed</option>
           </select>
           <i class="fa-solid fa-chevron-down absolute right-3.5 top-[38px] text-gray-500 text-xs pointer-events-none"></i>
         </div>
@@ -164,7 +164,7 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 animate-pulse"></span>
                     Not Claimed
                   </span>
-                {% elif p.status == 'Distributed' %}
+                {% elif p.status == 'CLAIMED' %}
                   <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                     <i class="fa-solid fa-check text-[10px] mr-1"></i>
                     Claimed

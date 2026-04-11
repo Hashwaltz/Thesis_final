@@ -265,7 +265,6 @@
                     <th class="text-right py-3 px-2">Gross</th>
                     <th class="text-right py-3 px-2 text-red-400">{{ selected_provider or 'All' }} Ded.</th>
                     <th class="text-right py-3 px-2">Net Pay</th>
-                    <th class="text-center py-3 px-2">Actions</th>
                 </tr>
             </thead>
             <tbody class="text-gray-300 divide-y divide-gray-700/50">
@@ -310,23 +309,6 @@
                     
                     <!-- Net Pay -->
                     <td class="py-3 px-2 text-right font-bold text-emerald-400">₱{{ "{:,.0f}".format(record.net_pay or 0) }}</td>
-                    
-                    <!-- Actions -->
-                    <td class="py-3 px-2 text-center">
-                        <div class="flex items-center justify-center gap-1">
-                            <a href="{{ url_for('payroll_admin_bp.view_payslips') }}?search={{ record.employee_id }}" 
-                               class="p-1.5 text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition" 
-                               title="View Payslip">
-                                <i class="fa-solid fa-eye text-xs"></i>
-                            </a>
-                            <button type="button" 
-                                    class="p-1.5 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition"
-                                    onclick="showDeductionDetails({{ record.deductions|tojson|safe }})"
-                                    title="View Deductions">
-                                <i class="fa-solid fa-list text-xs"></i>
-                            </button>
-                        </div>
-                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

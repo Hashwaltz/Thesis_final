@@ -6,7 +6,7 @@ from flask import render_template, request, redirect, flash, url_for, current_ap
 from flask_login import login_required, current_user
 
 from main_app.models.hr_models import Employee, Leave, Department, EmploymentType
-from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction, DeductionBracket
+from main_app.models.payroll_models import PayrollPeriod, Payroll, Deduction, Payslip, PayrollDeduction, DeductionBracket, LoanPayment
 from main_app.helpers.decorators import payroll_admin_required
 from main_app.extensions import db
 from main_app.helpers.utils import generate_payslip
@@ -239,109 +239,102 @@ def payroll_dashboard():
     )
 
 
+
 @payroll_admin_bp.route('/payrolls')
 @payroll_admin_required
 @login_required
 def view_payrolls():
-
     search = request.args.get('search', '', type=str).strip()
     department_id = request.args.get('department_id', type=int)
     pay_period_id = request.args.get('pay_period_id', type=int)
     page = request.args.get('page', 1, type=int)
+    per_page = 10
 
-    query = Payroll.query.options(
+    # ONLY filter pay_period in SQL
+    base_query = Payroll.query
+    if pay_period_id is not None:
+        base_query = base_query.filter(Payroll.payroll_period_id == pay_period_id)
+    
+    # Fetch ALL with eager loading - NO employee filters in SQL
+    all_payrolls = base_query.options(
         joinedload(Payroll.employee).joinedload(Employee.department),
+        joinedload(Payroll.employee).joinedload(Employee.employment_type),
+        joinedload(Payroll.employee).joinedload(Employee.attendances),
         joinedload(Payroll.period),
-        joinedload(Payroll.employee).joinedload(Employee.employee_allowances),
-        joinedload(Payroll.employee).joinedload(Employee.employee_deductions),
-        joinedload(Payroll.employee).joinedload(Employee.employment_type)
-    )
+        joinedload(Payroll.deduction_breakdown),
+        joinedload(Payroll.loan_payments).joinedload(LoanPayment.loan)
+    ).order_by(Payroll.id.desc()).all()
 
-    if department_id:
-        query = query.join(Employee).filter(Employee.department_id == department_id)
+    # FILTER IN PYTHON - zero SQL joins for filtering
+    filtered = []
+    for p in all_payrolls:
+        emp = p.employee
+        if not emp:
+            continue
+        if department_id is not None and emp.department_id != department_id:
+            continue
+        if search:
+            s = search.lower()
+            if not (s in emp.first_name.lower() or s in emp.last_name.lower() or s in emp.employee_id.lower()):
+                continue
+        filtered.append(p)
 
-    if search:
-        query = query.join(Employee).filter(
-            or_(
-                Employee.first_name.ilike(f"%{search}%"),
-                Employee.last_name.ilike(f"%{search}%"),
-                Employee.employee_id.ilike(f"%{search}%")
-            )
-        )
+    # Manual pagination
+    total = len(filtered)
+    pages = (total + per_page - 1) // per_page if total else 0
+    start = (page - 1) * per_page
+    items = filtered[start:start + per_page]
 
-    if pay_period_id:
-        query = query.filter(Payroll.payroll_period_id == pay_period_id)
+    # Pagination object for template
+    class Pag:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if total else 0
+            self.has_next = page * per_page < total
+            self.has_prev = page > 1
+            self.next_num = page + 1 if self.has_next else None
+            self.prev_num = page - 1 if self.has_prev else None
+    payrolls = Pag(items, page, per_page, total)
 
-    payrolls = query.order_by(Payroll.id.desc()).paginate(
-        page=page,
-        per_page=10,
-        error_out=False
-    )
-
+    # Processing logic
     for payroll in payrolls.items:
-
         employee = payroll.employee
-
-        payroll.employee_type = (
-            employee.employment_type.name
-            if employee and employee.employment_type
-            else "Regular"
-        )
-
+        payroll.employee_type = employee.employment_type.name if employee and employee.employment_type else "Regular"
         if employee and payroll.period:
-
-            attendances = [
-                a for a in employee.attendances
-                if payroll.period.start_date <= a.date <= payroll.period.end_date
-            ]
-
+            attendances = [a for a in employee.attendances if payroll.period.start_date <= a.date <= payroll.period.end_date]
             emp_type = payroll.employee_type
-
             if emp_type == "Regular":
-                payroll.days_worked = sum(
-                    1 for a in attendances if a.status != "Absent"
-                )
-
+                payroll.days_worked = sum(1 for a in attendances if a.status != "Absent")
             elif emp_type == "Part-Time":
-                payroll.working_hours = round(
-                    sum(a.working_hours for a in attendances),
-                    2
-                )
-
+                payroll.working_hours = round(sum(a.working_hours for a in attendances), 2)
             elif emp_type in ["Casual", "Job Order (JO)", "Job Orders"]:
-                payroll.days_worked = sum(
-                    1 for a in attendances if a.status != "Absent"
-                )
-
+                payroll.days_worked = sum(1 for a in attendances if a.status != "Absent")
             else:
                 payroll.days_worked = 0
                 payroll.working_hours = 0
-
         else:
             payroll.days_worked = 0
             payroll.working_hours = 0
-
-        payroll.hourly_rate_value = (
-            employee.salary if payroll.employee_type == "Part-Time" else 0
-        )
-
-        payroll.daily_rate_value = (
-            employee.salary
-            if payroll.employee_type in ["Casual", "Job Order (JO)", "Job Orders"]
-            else 0
-        )
+        payroll.hourly_rate_value = employee.salary if payroll.employee_type == "Part-Time" else 0
+        payroll.daily_rate_value = employee.salary if payroll.employee_type in ["Casual", "Job Order (JO)", "Job Orders"] else 0
+        payroll.allowance_total = payroll.allowance_total or 0
+        payroll.gross_pay = payroll.gross_pay or 0
+        payroll.total_deductions = round(sum(d.employee_share for d in payroll.deduction_breakdown), 2)
+        loan_breakdown, loan_total = [], 0
+        for lp in payroll.loan_payments:
+            amount = lp.amount_paid or 0
+            loan_total += amount
+            loan_breakdown.append({"name": f"{lp.loan.provider} ({lp.loan.loan_type})", "amount": amount})
+        payroll.loan_total = round(loan_total, 2)
+        payroll.loan_breakdown = loan_breakdown
+        payroll.net_pay = round(payroll.gross_pay - payroll.total_deductions - payroll.loan_total, 2)
 
     departments = Department.query.all()
-
-    payroll_periods = PayrollPeriod.query.order_by(
-        PayrollPeriod.start_date.desc()
-    ).all()
-
-    selected_pay_period = (
-        PayrollPeriod.query.get(pay_period_id)
-        if pay_period_id
-        else None
-    )
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
+    selected_pay_period = PayrollPeriod.query.get(pay_period_id) if pay_period_id else None
 
     return render_template(
         "payroll/admin/views/view_payrolls.html",
@@ -352,7 +345,6 @@ def view_payrolls():
         payroll_periods=payroll_periods,
         selected_pay_period=selected_pay_period
     )
-
 
 
 
@@ -644,23 +636,34 @@ def generate_payslips_by_period():
         'payroll/admin/payslips/generate_payslips.html',
         payroll_periods=payroll_periods
     )
+
+
+
 @payroll_admin_bp.route('/payslips')
 @payroll_admin_required
 @login_required
 def view_payslips():
-
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '', type=str)
     department_id = request.args.get('department_id', '', type=str)
     status = request.args.get('status', '', type=str)
     period_id = request.args.get('period_id', '', type=str)
 
+    # Cast IDs to int if numeric
+    if department_id and department_id.isdigit():
+        department_id = int(department_id)
+    else:
+        department_id = None
+        
+    if period_id and period_id.isdigit():
+        period_id = int(period_id)
+    else:
+        period_id = None
+
     # Base query
     query = Payslip.query.join(Employee).join(Department, isouter=True)
 
-    # ========================
     # SEARCH FILTER
-    # ========================
     if search:
         search_pattern = f"%{search}%"
         query = query.filter(
@@ -671,58 +674,36 @@ def view_payslips():
             )
         )
 
-    # ========================
     # DEPARTMENT FILTER
-    # ========================
     if department_id:
         query = query.filter(Employee.department_id == department_id)
 
-    # ========================
-    # STATUS FILTER (FIXED)
-    # ========================
+    # STATUS FILTER — MATCH YOUR ACTUAL DB VALUES!
     if status:
-        if status == "0":  # Not Claimed
-            query = query.filter(Payslip.status != "CLAIMED")
+        if status == "Generated":  # Frontend sends this
+            query = query.filter(Payslip.status == "Generated")  # ← Verify this matches your DB!
+        elif status == "Distributed":
+            query = query.filter(Payslip.status == "CLAIMED")  # ← Verify this matches your DB!
 
-        elif status == "1":  # Claimed
-            query = query.filter(Payslip.status == "CLAIMED")
-
-    # ========================
-    # PERIOD FILTER (FIXED)
-    # ========================
+    # PERIOD FILTER
     if period_id:
         query = query.filter(Payslip.payroll_period_id == period_id)
 
-    # ========================
     # ORDER + PAGINATION
-    # ========================
     payslips = query.order_by(Payslip.generated_at.desc())\
         .paginate(page=page, per_page=20, error_out=False)
 
-    # ========================
     # DROPDOWN DATA
-    # ========================
     departments = Department.query.order_by(Department.name.asc()).all()
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
-    # ========================
-    # SUMMARY COUNTS (FIXED)
-    # ========================
-    base_query = Payslip.query
-
-    not_claimed_count = base_query.filter(Payslip.status != "CLAIMED").count()
-    claimed_count = base_query.filter(Payslip.status == "CLAIMED").count()
-    period_map = {p.id: p for p in payroll_periods}
     return render_template(
         'payroll/admin/views/view_payslips.html',
         payslips=payslips,
         search=search,
         departments=departments,
         selected_department=department_id,
-        selected_status=status,
+        selected_status=status,  # Keep as string for template comparison
         payroll_periods=payroll_periods,
         selected_period=period_id,
-        not_claimed_count=not_claimed_count,
-        claimed_count=claimed_count,
-        period_map=period_map
     )

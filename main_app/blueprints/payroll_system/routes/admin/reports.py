@@ -13,15 +13,11 @@ from main_app.helpers.decorators import payroll_admin_required
 
 from main_app.blueprints.payroll_system.routes.admin import payroll_admin_bp
 
-
 @payroll_admin_bp.route('/earnings-deduction-report')
 @payroll_admin_required
 @login_required
 def earnings_deduction_report():
-    """
-    Generate earnings and deduction report filtered by provider:
-    - SSS, GSIS, PHIC, Tax, Loans
-    """
+    """Generate earnings and deduction report - FILTER IN PYTHON, NO SQL JOIN CONFLICTS."""
     
     # ===== GET FILTERS =====
     provider = request.args.get('provider', '', type=str).strip().upper()
@@ -31,6 +27,7 @@ def earnings_deduction_report():
     date_to = request.args.get('date_to', type=str)
     search = request.args.get('search', '', type=str).strip()
     page = request.args.get('page', 1, type=int)
+    per_page = 20
     
     # ===== PROVIDER MAPPING =====
     PROVIDER_KEYWORDS = {
@@ -42,65 +39,79 @@ def earnings_deduction_report():
         'LOAN': ['LOAN', 'SALARY LOAN', 'EMERGENCY LOAN', 'MPL']
     }
     
-    # ===== BASE QUERY =====
-    query = Payroll.query.options(
+    # ===== 🔑 STEP 1: Fetch ALL payrolls with eager loading (NO employee filters in SQL) =====
+    base_query = Payroll.query.options(
         joinedload(Payroll.employee).joinedload(Employee.department),
         joinedload(Payroll.period),
         joinedload(Payroll.deduction_breakdown)
     )
     
-    # ===== APPLY PERIOD FILTER =====
+    # ONLY filter by period in SQL (safe - no Employee join)
     if period_id:
-        query = query.filter(Payroll.payroll_period_id == period_id)
+        base_query = base_query.filter(Payroll.payroll_period_id == period_id)
     elif date_from or date_to:
-        query = query.join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)
-        
+        base_query = base_query.join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)
         if date_from:
             try:
                 from_date = datetime.strptime(date_from, "%Y-%m-%d").date()
-                query = query.filter(PayrollPeriod.start_date >= from_date)
+                base_query = base_query.filter(PayrollPeriod.start_date >= from_date)
             except (ValueError, TypeError):
                 pass
-                
         if date_to:
             try:
                 to_date = datetime.strptime(date_to, "%Y-%m-%d").date()
-                query = query.filter(PayrollPeriod.end_date <= to_date)
+                base_query = base_query.filter(PayrollPeriod.end_date <= to_date)
             except (ValueError, TypeError):
                 pass
     
-    # ===== APPLY DEPARTMENT FILTER =====
-    if department_id:
-        query = query.join(Employee).filter(Employee.department_id == department_id)
+    # Fetch ALL matching payrolls (no department/search filters in SQL)
+    all_payrolls = base_query.order_by(Payroll.id.desc()).all()
     
-    # ===== APPLY SEARCH FILTER =====
-    if search:
-        search_pattern = f"%{search}%"
-        query = query.join(Employee).filter(
-            or_(
-                Employee.first_name.ilike(search_pattern),
-                Employee.last_name.ilike(search_pattern),
-                Employee.employee_id.ilike(search_pattern)
-            )
-        )
-    
-    # ===== FILTER BY PROVIDER =====
+    # ===== 🔑 STEP 2: Filter by provider in SQL (safe - uses PayrollDeduction, not Employee) =====
     if provider and provider in PROVIDER_KEYWORDS:
         keywords = PROVIDER_KEYWORDS[provider]
         payroll_ids_with_deductions = db.session.query(PayrollDeduction.payroll_id).filter(
             or_(*[PayrollDeduction.deduction_name.ilike(f"%{kw}%") for kw in keywords])
         ).distinct()
-        query = query.filter(Payroll.id.in_(payroll_ids_with_deductions))
+        all_payrolls = [p for p in all_payrolls if p.id in [r[0] for r in payroll_ids_with_deductions.all()]]
     
-    # ===== PAGINATE =====
-    per_page = 20
-    payrolls_paginated = query.order_by(Payroll.id.desc()).paginate(
-        page=page,
-        per_page=per_page,
-        error_out=False
-    )
+    # ===== 🔑 STEP 3: Filter department/search IN PYTHON (zero SQL joins = zero ambiguous errors) =====
+    filtered = []
+    for payroll in all_payrolls:
+        emp = payroll.employee
+        if not emp:
+            continue
+        # Department filter
+        if department_id is not None and emp.department_id != department_id:
+            continue
+        # Search filter
+        if search:
+            s = search.lower()
+            if not (s in emp.first_name.lower() or s in emp.last_name.lower() or s in emp.employee_id.lower()):
+                continue
+        filtered.append(payroll)
     
-    # ===== PROCESS DATA FOR DISPLAY =====
+    # ===== 🔑 STEP 4: Manual pagination =====
+    total = len(filtered)
+    pages = (total + per_page - 1) // per_page if total else 0
+    start = (page - 1) * per_page
+    items = filtered[start:start + per_page]
+    
+    # Pagination object for template compatibility
+    class Pag:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            self.pages = (total + per_page - 1) // per_page if total else 0
+            self.has_next = page * per_page < total
+            self.has_prev = page > 1
+            self.next_num = page + 1 if self.has_next else None
+            self.prev_num = page - 1 if self.has_prev else None
+    payrolls_paginated = Pag(items, page, per_page, total)
+    
+    # ===== PROCESS DATA FOR DISPLAY (unchanged logic) =====
     report_data = []
     total_earnings = 0
     total_deductions = 0
@@ -111,7 +122,6 @@ def earnings_deduction_report():
         if not employee:
             continue
             
-        # Compute initials for avatar (✅ FIX: Pre-compute in Python)
         full_name = employee.get_full_name() or f"{employee.first_name} {employee.last_name}"
         name_parts = full_name.strip().split()
         initials = ''
@@ -122,7 +132,6 @@ def earnings_deduction_report():
         else:
             initials = 'E'
         
-        # Get provider-specific deductions
         provider_deductions = []
         provider_total = 0
         
@@ -131,7 +140,6 @@ def earnings_deduction_report():
                 if provider:
                     keywords = PROVIDER_KEYWORDS.get(provider, [])
                     deduction_name = (deduction.deduction_name or "").upper()
-                    
                     if any(kw in deduction_name for kw in keywords):
                         provider_deductions.append({
                             'name': deduction.deduction_name or 'Unknown',
@@ -149,9 +157,7 @@ def earnings_deduction_report():
                     })
                     provider_total += deduction.employee_share or 0
         
-        # Calculate earnings components (✅ Safe property access)
         overtime_pay = getattr(payroll, 'overtime_pay', 0) or 0
-        
         earnings = {
             'basic_salary': payroll.basic_salary or 0,
             'overtime': overtime_pay,
@@ -165,7 +171,7 @@ def earnings_deduction_report():
             'payroll_id': payroll.id,
             'employee_id': employee.employee_id or 'N/A',
             'employee_name': full_name,
-            'employee_initials': initials,  # ✅ Pass pre-computed initials
+            'employee_initials': initials,
             'department': employee.department.name if employee.department else 'N/A',
             'period': payroll.period.period_name if payroll.period else 'N/A',
             'period_start': payroll.period.start_date if payroll.period else None,
@@ -178,12 +184,11 @@ def earnings_deduction_report():
             'status': payroll.status or 'Unknown'
         })
         
-        # Accumulate totals
         total_earnings += earnings['gross_pay']
         total_deductions += provider_total if provider else (payroll.total_deductions or 0)
         total_net_pay += payroll.net_pay or 0
     
-    # ===== GET SUMMARY STATISTICS =====
+    # ===== SUMMARY STATISTICS =====
     count = len(report_data)
     summary_stats = {
         'total_employees': count,
@@ -194,7 +199,7 @@ def earnings_deduction_report():
         'average_deductions': round(total_deductions / count, 2) if count > 0 else 0
     }
     
-    # ===== DEPARTMENT BREAKDOWN =====
+    # ===== DEPARTMENT BREAKDOWN (separate query - safe) =====
     dept_breakdown = db.session.query(
         Department.name,
         db.func.count(Payroll.id).label('employee_count'),
@@ -212,17 +217,14 @@ def earnings_deduction_report():
         payroll_ids = db.session.query(PayrollDeduction.payroll_id).filter(
             or_(*[PayrollDeduction.deduction_name.ilike(f"%{kw}%") for kw in keywords])
         ).distinct()
-        dept_breakdown = dept_breakdown.filter(Payroll.id.in_(payroll_ids))
+        dept_breakdown = dept_breakdown.filter(Payroll.id.in_([r[0] for r in payroll_ids.all()]))
     
     dept_breakdown = dept_breakdown.group_by(Department.id).all()
     
     # ===== DROPDOWN DATA =====
     departments = Department.query.order_by(Department.name).all()
-    payroll_periods = PayrollPeriod.query.order_by(
-        PayrollPeriod.start_date.desc()
-    ).all()
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
     
-    # ===== PROVIDER OPTIONS =====
     provider_options = [
         {'value': '', 'label': 'All Providers'},
         {'value': 'SSS', 'label': 'SSS (Social Security)'},
@@ -249,7 +251,6 @@ def earnings_deduction_report():
         search=search,
         dept_breakdown=dept_breakdown
     )
-
 
 
 
@@ -662,13 +663,15 @@ def export_earnings_deduction_pdf():
     )
 
 
+
+
 @payroll_admin_bp.route('/deduction-detail-report')
 @payroll_admin_required
 @login_required
 def deduction_detail_report():
     """
     View detailed deduction contributions by provider and period
-    Flow: Select Provider -> Select Period -> View Employee Deductions
+    Flow: Select Period (required) -> Select Provider (optional: empty = All) -> View Employee Deductions
     """
     
     # ===== GET FILTERS =====
@@ -694,15 +697,15 @@ def deduction_detail_report():
         joinedload(Payroll.deduction_breakdown)
     )
     
-    # Apply period filter (required)
+    # Apply period filter (REQUIRED)
     if period_id:
         query = query.filter(Payroll.payroll_period_id == period_id)
     
-    # Apply department filter
+    # Apply department filter (optional)
     if department_id:
         query = query.join(Employee).filter(Employee.department_id == department_id)
     
-    # Apply search filter
+    # Apply search filter (optional)
     if search:
         search_pattern = f"%{search}%"
         query = query.join(Employee).filter(
@@ -717,31 +720,26 @@ def deduction_detail_report():
     
     # Filter and process deduction data
     deduction_records = []
-    total_employee_share = 0
-    total_employer_share = 0
-    total_ec = 0
+    total_employee_share = 0  # ✅ Only track employee share now
     
     for payroll in payrolls:
         employee = payroll.employee
         if not employee:
             continue
         
-        # Check each deduction breakdown
         if payroll.deduction_breakdown:
             for deduction in payroll.deduction_breakdown:
                 deduction_name = (deduction.deduction_name or "").upper()
                 
-                # Check if this deduction matches the selected provider
+                # Filter by provider if selected
                 if provider and provider in PROVIDER_KEYWORDS:
                     keywords = PROVIDER_KEYWORDS[provider]
                     if not any(kw in deduction_name for kw in keywords):
-                        continue  # Skip if doesn't match provider
+                        continue
                 
-                # Calculate employee share
                 emp_share = deduction.employee_share or 0
-                emp_share_total = deduction.employer_share or 0
-                ec_share = deduction.ec or 0
                 
+                # ✅ REMOVED: employer_share and ec fields
                 deduction_records.append({
                     'payroll_id': payroll.id,
                     'employee_id': employee.employee_id,
@@ -749,16 +747,11 @@ def deduction_detail_report():
                     'department': employee.department.name if employee.department else 'N/A',
                     'period': payroll.period.period_name if payroll.period else 'N/A',
                     'deduction_name': deduction.deduction_name or 'Unknown',
-                    'employee_share': emp_share,
-                    'employer_share': emp_share_total,
-                    'ec': ec_share,
-                    'total_contribution': emp_share + emp_share_total + ec_share,
+                    'employee_share': emp_share,  # ✅ Only employee share
                     'status': payroll.status
                 })
                 
                 total_employee_share += emp_share
-                total_employer_share += emp_share_total
-                total_ec += ec_share
     
     # Sort by employee name
     deduction_records.sort(key=lambda x: x['employee_name'])
@@ -766,16 +759,14 @@ def deduction_detail_report():
     # Pagination
     per_page = 20
     total_records = len(deduction_records)
-    total_pages = (total_records + per_page - 1) // per_page
+    total_pages = (total_records + per_page - 1) // per_page if total_records else 0
     start_idx = (page - 1) * per_page
     end_idx = start_idx + per_page
     paginated_records = deduction_records[start_idx:end_idx]
     
     # Get dropdown data
     departments = Department.query.order_by(Department.name).all()
-    payroll_periods = PayrollPeriod.query.order_by(
-        PayrollPeriod.start_date.desc()
-    ).all()
+    payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
     
     # Provider options
     provider_options = [
@@ -787,14 +778,11 @@ def deduction_detail_report():
         {'value': 'PAGIBIG', 'label': 'Pag-IBIG/HDMF'}
     ]
     
-    # Summary stats
+    # ✅ Updated summary stats - only employee share
     summary_stats = {
         'total_employees': len(set(r['employee_id'] for r in deduction_records)),
         'total_records': total_records,
         'total_employee_share': round(total_employee_share, 2),
-        'total_employer_share': round(total_employer_share, 2),
-        'total_ec': round(total_ec, 2),
-        'total_contributions': round(total_employee_share + total_employer_share + total_ec, 2)
     }
     
     return render_template(
@@ -819,11 +807,15 @@ def deduction_detail_report():
     )
 
 
+
+
+
+
 @payroll_admin_bp.route('/deduction-detail-export-pdf')
 @payroll_admin_required
 @login_required
 def export_deduction_detail_pdf():
-    """Export deduction detail report as PDF"""
+    """Export deduction detail report as PDF - Employee Share Only"""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import letter, landscape
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -832,6 +824,7 @@ def export_deduction_detail_pdf():
     from reportlab.lib.enums import TA_CENTER
     from io import BytesIO
     from flask import send_file
+    from datetime import datetime
     
     provider = request.args.get('provider', '', type=str).strip().upper()
     period_id = request.args.get('period_id', type=int)
@@ -860,11 +853,9 @@ def export_deduction_detail_pdf():
     
     payrolls = query.all()
     
-    # Process data
+    # Process data - ✅ Employee share only
     deduction_records = []
     total_employee_share = 0
-    total_employer_share = 0
-    total_ec = 0
     
     for payroll in payrolls:
         employee = payroll.employee
@@ -881,25 +872,18 @@ def export_deduction_detail_pdf():
                         continue
                 
                 emp_share = deduction.employee_share or 0
-                emp_share_total = deduction.employer_share or 0
-                ec_share = deduction.ec or 0
                 
+                # ✅ REMOVED: employer_share and ec
                 deduction_records.append({
                     'employee_id': employee.employee_id,
                     'employee_name': f"{employee.last_name}, {employee.first_name}",
                     'department': employee.department.name if employee.department else '',
                     'deduction_name': deduction.deduction_name or 'Unknown',
-                    'employee_share': emp_share,
-                    'employer_share': emp_share_total,
-                    'ec': ec_share,
-                    'total': emp_share + emp_share_total + ec_share
+                    'employee_share': emp_share,  # ✅ Only employee share
                 })
                 
                 total_employee_share += emp_share
-                total_employer_share += emp_share_total
-                total_ec += ec_share
     
-    # Sort records
     deduction_records.sort(key=lambda x: x['employee_name'])
     
     # Create PDF
@@ -916,7 +900,6 @@ def export_deduction_detail_pdf():
     elements = []
     styles = getSampleStyleSheet()
     
-    # Styles
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
@@ -949,14 +932,15 @@ def export_deduction_detail_pdf():
     elements.append(Spacer(1, 0.2*inch))
     
     # Report title
-    provider_label = provider or 'ALL PROVIDERS'
-    period_name = PayrollPeriod.query.get(period_id).period_name if period_id and PayrollPeriod.query.get(period_id) else "All Periods"
+    provider_label = provider if provider else 'ALL PROVIDERS'
+    period_obj = PayrollPeriod.query.get(period_id) if period_id else None
+    period_name = period_obj.period_name if period_obj else "All Periods"
     
     elements.append(Paragraph(f"{provider_label} DEDUCTION DETAIL REPORT", title_style))
     elements.append(Paragraph(f"Pay Period: {period_name}", subtitle_style))
     elements.append(Spacer(1, 0.2*inch))
     
-    # Metadata
+    # Metadata - ✅ Simplified
     meta_data = [
         ['Date Generated:', datetime.now().strftime("%B %d, %Y at %I:%M %p")],
         ['Provider:', provider_label],
@@ -976,22 +960,20 @@ def export_deduction_detail_pdf():
     elements.append(meta_table)
     elements.append(Spacer(1, 0.25*inch))
     
-    # Main table
-    table_data = [['Employee ID', 'Employee Name', 'Department', 'Deduction', 'Employee Share', 'Employer Share', 'EC', 'Total']]
+    # ✅ Main table - REMOVED Employer Share, EC, and Total columns
+    table_data = [['Employee ID', 'Employee Name', 'Department', 'Deduction', 'Employee Share']]
     
     for rec in deduction_records:
         table_data.append([
             rec['employee_id'],
             rec['employee_name'],
-            rec['department'][:15] + '...' if len(rec['department']) > 15 else rec['department'],
+            rec['department'][:20] + '...' if len(rec['department']) > 20 else rec['department'],
             rec['deduction_name'],
-            f"₱{rec['employee_share']:,.2f}",
-            f"₱{rec['employer_share']:,.2f}",
-            f"₱{rec['ec']:,.2f}",
-            f"₱{rec['total']:,.2f}"
+            f"₱{rec['employee_share']:,.2f}",  # ✅ Only employee share
         ])
     
-    col_widths = [0.7*inch, 1.8*inch, 1.2*inch, 1.5*inch, 1*inch, 1*inch, 0.8*inch, 1*inch]
+    # ✅ Adjusted column widths for 5 columns
+    col_widths = [0.8*inch, 2*inch, 1.5*inch, 2.5*inch, 1.2*inch]
     
     data_table = Table(table_data, colWidths=col_widths)
     data_table.setStyle(TableStyle([
@@ -1002,7 +984,7 @@ def export_deduction_detail_pdf():
         ('FONTSIZE', (0, 0), (-1, 0), 8),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 1), (-1, -1), 7),
-        ('ALIGN', (4, 1), (-1, -1), 'RIGHT'),
+        ('ALIGN', (4, 1), (4, -1), 'RIGHT'),  # ✅ Only column 4 (employee share) is right-aligned
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
         ('GRID', (0, 0), (-1, -1), 0.3, colors.HexColor('#e5e7eb')),
         ('PADDING', (0, 0), (-1, -1), 2),
@@ -1011,33 +993,28 @@ def export_deduction_detail_pdf():
     elements.append(data_table)
     elements.append(Spacer(1, 0.3*inch))
     
-    # Summary
-    elements.append(Paragraph("SUMMARY OF CONTRIBUTIONS", subtitle_style))
+    # ✅ Simplified Summary - Only Employee Share
+    elements.append(Paragraph("SUMMARY OF EMPLOYEE CONTRIBUTIONS", subtitle_style))
     elements.append(Spacer(1, 0.1*inch))
     
     summary_data = [
-        ['Total Employee Share:', f"₱{total_employee_share:,.2f}"],
-        ['Total Employer Share:', f"₱{total_employer_share:,.2f}"],
-        ['Total EC:', f"₱{total_ec:,.2f}"],
-        ['★★ TOTAL CONTRIBUTIONS ★★', f"₱{total_employee_share + total_employer_share + total_ec:,.2f}"],
+        ['★★ TOTAL EMPLOYEE SHARE ★★', f"₱{total_employee_share:,.2f}"],
     ]
     
-    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+    summary_table = Table(summary_data, colWidths=[4*inch, 2*inch])
     summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -2), colors.HexColor('#f9fafb')),
-        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#dbeafe')),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTNAME', (-2, -1), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('TEXTCOLOR', (-2, -1), (-1, -1), colors.HexColor('#1e40af')),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#dbeafe')),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#1e40af')),
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#d1d5db')),
-        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#9ca3af')),
-        ('PADDING', (0, 0), (-1, -1), 5),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#9ca3af')),
+        ('BOX', (0, 0), (-1, -1), 1.5, colors.HexColor('#1e40af')),
+        ('PADDING', (0, 0), (-1, -1), 8),
     ]))
     elements.append(summary_table)
     
-    # Build PDF
+    # Build PDF with header/footer
     def add_header_footer(canvas_obj, doc_obj):
         canvas_obj.saveState()
         canvas_obj.setFont('Helvetica', 7)
@@ -1050,6 +1027,6 @@ def export_deduction_detail_pdf():
     doc.build(elements, onFirstPage=lambda c, d: add_header_footer(c, d), onLaterPages=lambda c, d: add_header_footer(c, d))
     
     buffer.seek(0)
-    filename = f"{provider or 'ALL'}_Deduction_Detail_{datetime.now().strftime('%Y%m%d')}.pdf"
+    filename = f"{provider or 'ALL'}_Employee_Deductions_{datetime.now().strftime('%Y%m%d')}.pdf"
     
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
