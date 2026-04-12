@@ -73,11 +73,18 @@
       <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider px-3">{{ section }}</h3>
       <ul class="space-y-1">
         {% for icon,label,endpoint in links %}
+        {% set current_endpoint = request.endpoint %}
+        {% set is_active = endpoint == current_endpoint %}
         <li>
           <a href="{{ url_for(endpoint) if endpoint != '#' else '#' }}"
-             class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-green-700/40 transition text-sm lg:text-base">
-            <i class="{{ icon }} text-green-400 w-5 flex-shrink-0"></i>
-            <span class="truncate">{{ label }}</span>
+             class="flex items-center gap-3 px-3 py-3 rounded-lg transition text-sm lg:text-base
+                    {% if is_active %}
+                      bg-green-900/60 text-white
+                    {% else %}
+                      hover:bg-green-700/40
+                    {% endif %}">
+            <i class="{{ icon }} w-5 flex-shrink-0 {% if is_active %}text-green-300{% else %}text-green-400{% endif %}"></i>
+            <span class="truncate {% if is_active %}font-semibold{% endif %}">{{ label }}</span>
           </a>
         </li>
         {% endfor %}

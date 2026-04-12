@@ -235,44 +235,42 @@
 </div>
 
 <!-- ================= PAGINATION ================= -->
-{% if payrolls.pages > 1 %}
-<div class="flex items-center justify-center gap-1 pt-4">
-  {% if payrolls.has_prev %}
-  <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=payrolls.prev_num,
-                     search=search, department_id=selected_department,
-                     pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
-     class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
-    <i class="fa-solid fa-chevron-left"></i>
-  </a>
-  {% endif %}
-  
-  {% for page_num in payrolls.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
-    {% if page_num %}
-      {% if page_num == payrolls.page %}
-      <span class="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg font-medium">{{ page_num }}</span>
-      {% else %}
-      <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=page_num,
-                         search=search, department_id=selected_department,
-                         pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
-         class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
-        {{ page_num }}
-      </a>
-      {% endif %}
-    {% else %}
-    <span class="px-3 py-1.5 text-sm text-gray-600">…</span>
+  {% if payrolls.pages > 1 %}
+  <div class="flex items-center justify-center gap-1 pt-4">
+    {% if payrolls.has_prev %}
+    <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=payrolls.prev_num,
+                      search=search, department_id=selected_department,
+                      pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
+      class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
     {% endif %}
-  {% endfor %}
-  
-  {% if payrolls.has_next %}
-  <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=payrolls.next_num,
-                     search=search, department_id=selected_department,
-                     pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
-     class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
-    <i class="fa-solid fa-chevron-right"></i>
-  </a>
+    
+    {% for page_num in range(1, payrolls.pages + 1) %}
+      {% if page_num == payrolls.page %}
+        <span class="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg font-medium">{{ page_num }}</span>
+      {% elif page_num <= 3 or page_num >= payrolls.pages - 2 or (payrolls.page - 1 <= page_num <= payrolls.page + 1) %}
+        <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=page_num,
+                          search=search, department_id=selected_department,
+                          pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
+          class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+          {{ page_num }}
+        </a>
+      {% elif page_num == 4 or page_num == payrolls.pages - 3 %}
+        <span class="px-3 py-1.5 text-sm text-gray-600">…</span>
+      {% endif %}
+    {% endfor %}
+    
+    {% if payrolls.has_next %}
+    <a href="{{ url_for('payroll_admin_bp.view_payrolls', page=payrolls.next_num,
+                      search=search, department_id=selected_department,
+                      pay_period_id=selected_pay_period.id if selected_pay_period else None) }}"
+      class="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition">
+      <i class="fa-solid fa-chevron-right"></i>
+    </a>
+    {% endif %}
+  </div>
   {% endif %}
-</div>
-{% endif %}
 
 </section>
 

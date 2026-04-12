@@ -223,77 +223,60 @@ def staff_dashboard():
         current_user=current_user
     )
 
-
 @payroll_staff_bp.route('/payrolls')
 @staff_required
 @login_required
 def view_payrolls():
-
     search = request.args.get('search', '', type=str).strip()
     department_id = request.args.get('department_id', type=int)
     pay_period_id = request.args.get('pay_period_id', type=int)
     page = request.args.get('page', 1, type=int)
 
+    # Base query with eager loading
     query = Payroll.query.options(
-
-        joinedload(Payroll.employee)
-        .joinedload(Employee.department),
-
-        joinedload(Payroll.employee)
-        .joinedload(Employee.employment_type),
-
-        joinedload(Payroll.employee)
-        .joinedload(Employee.attendances),
-
+        joinedload(Payroll.employee).joinedload(Employee.department),
+        joinedload(Payroll.employee).joinedload(Employee.employment_type),
+        joinedload(Payroll.employee).joinedload(Employee.attendances),
         joinedload(Payroll.period),
-
         joinedload(Payroll.deduction_breakdown),
-
-        # ✅ ADD LOANS
-        joinedload(Payroll.loan_payments)
-        .joinedload(LoanPayment.loan)
-
+        joinedload(Payroll.loan_payments).joinedload(LoanPayment.loan)
     )
 
     # -------------------------
-    # FILTERS
+    # ✅ FIXED FILTERS: Join Employee ONLY ONCE
     # -------------------------
-
-    if department_id:
-        query = query.join(Employee).filter(
-            Employee.department_id == department_id
-        )
-
-    if search:
-        query = query.join(Employee).filter(
-            or_(
-                Employee.first_name.ilike(f"%{search}%"),
-                Employee.last_name.ilike(f"%{search}%"),
-                Employee.employee_id.ilike(f"%{search}%")
+    if department_id or search:
+        query = query.join(Employee)
+        
+        if department_id:
+            query = query.filter(Employee.department_id == department_id)
+        
+        if search:
+            query = query.filter(
+                or_(
+                    Employee.first_name.ilike(f"%{search}%"),
+                    Employee.last_name.ilike(f"%{search}%"),
+                    Employee.employee_id.ilike(f"%{search}%")
+                )
             )
-        )
 
     if pay_period_id:
-        query = query.filter(
-            Payroll.payroll_period_id == pay_period_id
-        )
+        query = query.filter(Payroll.payroll_period_id == pay_period_id)
 
-    payrolls = query.order_by(
-        Payroll.id.desc()
-    ).paginate(
+    # Pagination
+    payrolls = query.order_by(Payroll.id.desc()).paginate(
         page=page,
         per_page=10,
         error_out=False
     )
 
     # -------------------------
-    # PROCESSING
+    # PROCESSING: Enrich payroll objects for template
     # -------------------------
-
     for payroll in payrolls.items:
-
         employee = payroll.employee
 
+        # Determine employment type
         payroll.employee_type = (
             employee.employment_type.name
             if employee and employee.employment_type
@@ -301,11 +284,9 @@ def view_payrolls():
         )
 
         # -------------------------
-        # ATTENDANCE
+        # ATTENDANCE CALCULATIONS
         # -------------------------
-
         if employee and payroll.period:
-
             attendances = [
                 a for a in employee.attendances
                 if payroll.period.start_date <= a.date <= payroll.period.end_date
@@ -317,65 +298,53 @@ def view_payrolls():
                 payroll.days_worked = sum(
                     1 for a in attendances if a.status != "Absent"
                 )
-
             elif emp_type == "Part-Time":
                 payroll.working_hours = round(
-                    sum(a.working_hours for a in attendances),
-                    2
+                    sum(a.working_hours for a in attendances), 2
                 )
-
             elif emp_type in ["Casual", "Job Order (JO)", "Job Orders"]:
                 payroll.days_worked = sum(
                     1 for a in attendances if a.status != "Absent"
                 )
-
             else:
                 payroll.days_worked = 0
                 payroll.working_hours = 0
-
         else:
             payroll.days_worked = 0
             payroll.working_hours = 0
 
         # -------------------------
-        # RATES
+        # RATE VALUES
         # -------------------------
-
         payroll.hourly_rate_value = (
             employee.salary if payroll.employee_type == "Part-Time" else 0
         )
-
         payroll.daily_rate_value = (
             employee.salary
             if payroll.employee_type in ["Casual", "Job Order (JO)", "Job Orders"]
             else 0
         )
 
-        payroll.allowance_total = payroll.allowance_total or 0
-        payroll.gross_pay = payroll.gross_pay or 0
-
         # -------------------------
         # DEDUCTIONS
         # -------------------------
+        payroll.allowance_total = payroll.allowance_total or 0
+        payroll.gross_pay = payroll.gross_pay or 0
 
         total_deductions = sum(
             d.employee_share for d in payroll.deduction_breakdown
         )
-
         payroll.total_deductions = round(total_deductions, 2)
 
         # -------------------------
-        # 💥 LOAN DEDUCTIONS (NEW)
+        # 💥 LOAN DEDUCTIONS
         # -------------------------
-
         loan_breakdown = []
         loan_total = 0
 
         for lp in payroll.loan_payments:
-
             amount = lp.amount_paid or 0
             loan_total += amount
-
             loan_breakdown.append({
                 "name": f"{lp.loan.provider} ({lp.loan.loan_type})",
                 "amount": amount
@@ -385,20 +354,20 @@ def view_payrolls():
         payroll.loan_breakdown = loan_breakdown
 
         # -------------------------
-        # NET PAY
+        # NET PAY CALCULATION
         # -------------------------
-
         payroll.net_pay = round(
             payroll.gross_pay - payroll.total_deductions - payroll.loan_total,
             2
         )
 
+    # -------------------------
+    # DROPDOWNS FOR TEMPLATE
+    # -------------------------
     departments = Department.query.all()
-
     payroll_periods = PayrollPeriod.query.order_by(
         PayrollPeriod.start_date.desc()
     ).all()
-
     selected_pay_period = (
         PayrollPeriod.query.get(pay_period_id)
         if pay_period_id else None
@@ -413,7 +382,6 @@ def view_payrolls():
         payroll_periods=payroll_periods,
         selected_pay_period=selected_pay_period
     )
-
 
 @payroll_staff_bp.route("/payroll-departments")
 @login_required

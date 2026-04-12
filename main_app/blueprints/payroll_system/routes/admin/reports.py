@@ -690,25 +690,32 @@ def deduction_detail_report():
         'PAGIBIG': ['PAG-IBIG', 'HDMF', 'HOUSING']
     }
     
-    # Base query for payrolls with deductions
-    query = Payroll.query.options(
-        joinedload(Payroll.employee).joinedload(Employee.department),
+    # ===== FIX: Explicit join for Employee (used in filters) + eager loading for nested data =====
+    from sqlalchemy.orm import joinedload
+    
+    # Start with explicit join to Employee (for filtering)
+    query = Payroll.query.join(Employee, Payroll.employee_id == Employee.id)
+    
+    # Add eager loading for relationships we need in templates (but NOT Employee itself - already joined)
+    query = query.options(
         joinedload(Payroll.period),
-        joinedload(Payroll.deduction_breakdown)
+        joinedload(Payroll.deduction_breakdown),
+        # Still load Employee's department through the relationship
+        joinedload(Payroll.employee).joinedload(Employee.department)
     )
     
     # Apply period filter (REQUIRED)
     if period_id:
         query = query.filter(Payroll.payroll_period_id == period_id)
     
-    # Apply department filter (optional)
+    # Apply department filter (optional) - NOW references the explicitly-joined Employee
     if department_id:
-        query = query.join(Employee).filter(Employee.department_id == department_id)
+        query = query.filter(Employee.department_id == department_id)
     
-    # Apply search filter (optional)
+    # Apply search filter (optional) - references the same explicit Employee join
     if search:
         search_pattern = f"%{search}%"
-        query = query.join(Employee).filter(
+        query = query.filter(
             or_(
                 Employee.first_name.ilike(search_pattern),
                 Employee.last_name.ilike(search_pattern),
@@ -720,7 +727,7 @@ def deduction_detail_report():
     
     # Filter and process deduction data
     deduction_records = []
-    total_employee_share = 0  # ✅ Only track employee share now
+    total_employee_share = 0
     
     for payroll in payrolls:
         employee = payroll.employee
@@ -739,7 +746,6 @@ def deduction_detail_report():
                 
                 emp_share = deduction.employee_share or 0
                 
-                # ✅ REMOVED: employer_share and ec fields
                 deduction_records.append({
                     'payroll_id': payroll.id,
                     'employee_id': employee.employee_id,
@@ -747,7 +753,7 @@ def deduction_detail_report():
                     'department': employee.department.name if employee.department else 'N/A',
                     'period': payroll.period.period_name if payroll.period else 'N/A',
                     'deduction_name': deduction.deduction_name or 'Unknown',
-                    'employee_share': emp_share,  # ✅ Only employee share
+                    'employee_share': emp_share,
                     'status': payroll.status
                 })
                 
@@ -778,7 +784,7 @@ def deduction_detail_report():
         {'value': 'PAGIBIG', 'label': 'Pag-IBIG/HDMF'}
     ]
     
-    # ✅ Updated summary stats - only employee share
+    # Summary stats
     summary_stats = {
         'total_employees': len(set(r['employee_id'] for r in deduction_records)),
         'total_records': total_records,
@@ -805,8 +811,6 @@ def deduction_detail_report():
         selected_department=department_id,
         search=search
     )
-
-
 
 
 

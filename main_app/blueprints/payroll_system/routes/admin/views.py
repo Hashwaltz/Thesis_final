@@ -109,15 +109,28 @@ def payroll_dashboard():
      .group_by(func.strftime('%Y-%m', PayrollPeriod.start_date))\
      .order_by(func.strftime('%Y-%m', PayrollPeriod.start_date)).all()
     
+    ALLOWED_DEDUCTIONS = [
+        "PhilHealth",
+        "GSIS", 
+        "Withholding Tax (1–15)",
+        "Pag-IBIG",
+        "SSS",
+        "Withholding Tax (16–End)",
+        "CTW Tax",
+        "GMP-PT"
+    ]
     # ================= DEDUCTION BREAKDOWN =================
     deduction_summary = db.session.query(
         PayrollDeduction.deduction_name,
         func.sum(PayrollDeduction.employee_share).label('total')
     ).join(Payroll, PayrollDeduction.payroll_id == Payroll.id)\
-     .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
-     .filter(period_overlap)\
-     .group_by(PayrollDeduction.deduction_name)\
-     .order_by(func.sum(PayrollDeduction.employee_share).desc()).all()
+    .join(PayrollPeriod, Payroll.payroll_period_id == PayrollPeriod.id)\
+    .filter(
+        period_overlap,
+        PayrollDeduction.deduction_name.in_(ALLOWED_DEDUCTIONS)  # ✅ Filter to statutory deductions only
+    )\
+    .group_by(PayrollDeduction.deduction_name)\
+    .order_by(func.sum(PayrollDeduction.employee_share).desc()).all()
     
     # ================= LEAVE & OVERTIME IMPACT =================
     leave_impact = db.session.query(func.count(Leave.id))\
@@ -569,75 +582,137 @@ def deductions():
         search=search
     )
 
+import logging
 
-# =========================================================
-# GENERATE PAYSLIPS BY PAYROLL PERIOD (SELECT PERIOD)
-# =========================================================
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+logger = logging.getLogger(__name__)
+
+
 @payroll_admin_bp.route('/payslips/generate', methods=['GET', 'POST'])
 @payroll_admin_required
 @login_required
 def generate_payslips_by_period():
-
-    # Get all payroll periods
-    payroll_periods = PayrollPeriod.query.order_by(
-        PayrollPeriod.start_date.desc()
-    ).all()
-
-    if request.method == 'POST':
-
+    
+    # GET: Show period selection form
+    if request.method == 'GET':
+        payroll_periods = PayrollPeriod.query.order_by(
+            PayrollPeriod.start_date.desc()
+        ).all()
+        
+        return render_template(
+            'payroll/admin/payslips/generate_payslips.html',
+            payroll_periods=payroll_periods
+        )
+    
+    # POST: Generate payslips
+    try:
         pay_period_id = request.form.get('pay_period_id')
-
+        
         if not pay_period_id:
             flash("Please select a payroll period.", "warning")
             return redirect(url_for('payroll_admin_bp.generate_payslips_by_period'))
-
-        # Convert to integer (safer)
+        
         pay_period_id = int(pay_period_id)
-
-        # Fetch payrolls for selected period
+        payroll_period = PayrollPeriod.query.get_or_404(pay_period_id)
+        
+        # Fetch payrolls for this period
         payrolls = Payroll.query.filter_by(
             payroll_period_id=pay_period_id
-        ).all()
-
+        ).join(Employee).all()
+        
         if not payrolls:
-            flash("No payrolls found for this pay period.", "warning")
+            flash(f"No payrolls found for period {payroll_period.start_date.strftime('%B %Y')}.", "warning")
             return redirect(url_for('payroll_admin_bp.generate_payslips_by_period'))
-
-        generated_by_id = current_user.id
+        
         generated_count = 0
-
+        skipped_count = 0
+        errors = []
+        
         for payroll in payrolls:
-
-            # Prevent duplicate payslips
-            existing = Payslip.query.filter_by(
-                payroll_id=payroll.id
-            ).first()
-
-            if existing:
+            try:
+                # 🔍 Check for existing payslip (employee + payroll combo)
+                existing = Payslip.query.filter_by(
+                    employee_id=payroll.employee_id,
+                    payroll_id=payroll.id
+                ).first()
+                
+                if existing:
+                    skipped_count += 1
+                    continue
+                
+                # 🔢 Generate unique payslip number
+                payslip_number = generate_unique_payslip_number(payroll_period)
+                
+                # 📊 Calculate totals (adjust to your business logic)
+                gross_pay = payroll.gross_pay or 0.0
+                # Example: 6.5% total deductions - customize as needed
+                total_deductions = round(gross_pay * 0.065, 2)
+                net_pay = round(gross_pay - total_deductions, 2)
+                
+                # 📝 Create payslip - ONLY fields your model actually has
+                new_payslip = Payslip(
+                    employee_id=payroll.employee_id,
+                    payroll_id=payroll.id,
+                    payslip_number=payslip_number,
+                    gross_pay=gross_pay,
+                    total_deductions=total_deductions,
+                    net_pay=net_pay,
+                    generated_at=datetime.utcnow(),
+                    status='Generated'
+                    # ❌ Removed: generated_by (not in your model)
+                    # ❌ Removed: any other fields not defined in your Payslip class
+                )
+                
+                db.session.add(new_payslip)
+                generated_count += 1
+                logger.info(f"✓ Generated {payslip_number} for employee {payroll.employee_id}")
+                
+            except IntegrityError as ie:
+                db.session.rollback()
+                error_msg = f"Integrity error payroll {payroll.id}: {str(ie)}"
+                logger.error(error_msg)
+                errors.append(error_msg)
                 continue
-
-            # Generate payslip
-            payslip = generate_payslip(payroll, generated_by_id)
-
-            db.session.add(payslip)
-            generated_count += 1
-
-        db.session.commit()
-
-        flash(
-            f"{generated_count} payslips successfully generated for the selected period.",
-            "success"
-        )
-
+                
+            except Exception as e:
+                db.session.rollback()
+                error_msg = f"Error payroll {payroll.id}: {str(e)}"
+                logger.exception(error_msg)
+                errors.append(error_msg)
+                continue
+        
+        # 🎯 Final commit
+        if errors and generated_count == 0:
+            db.session.rollback()
+            flash("Failed to generate payslips. Check logs.", "danger")
+        else:
+            db.session.commit()
+            
+            # 📢 Build feedback message
+            messages = []
+            if generated_count > 0:
+                messages.append(f"✅ {generated_count} payslip(s) generated")
+            if skipped_count > 0:
+                messages.append(f"⏭️ {skipped_count} duplicate(s) skipped")
+            if errors:
+                messages.append(f"⚠️ {len(errors)} error(s) - see logs")
+            
+            flash(" | ".join(messages), "success" if not errors else "warning")
+        
         return redirect(url_for('payroll_admin_bp.view_payslips'))
-
-    # GET: Render selection form
-    return render_template(
-        'payroll/admin/payslips/generate_payslips.html',
-        payroll_periods=payroll_periods
-    )
-
-
+        
+    except SQLAlchemyError as db_err:
+        db.session.rollback()
+        logger.exception(f"DB error: {db_err}")
+        flash("Database error. Please try again.", "danger")
+        return redirect(url_for('payroll_admin_bp.generate_payslips_by_period'))
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.exception(f"Unexpected error: {e}")
+        flash("An error occurred. Please try again.", "danger")
+        return redirect(url_for('payroll_admin_bp.view_payslips_by_period'))
+    
 
 @payroll_admin_bp.route('/payslips')
 @payroll_admin_required
@@ -707,3 +782,57 @@ def view_payslips():
         payroll_periods=payroll_periods,
         selected_period=period_id,
     )
+
+
+
+
+def generate_unique_payslip_number(payroll_period) -> str:
+    """
+    Generate unique payslip number: PS{YYYYMM}{SEQ:04d}
+    Queries DB to find next available sequence.
+    """
+    base = f"PS{payroll_period.start_date.strftime('%Y%m')}"
+    
+    # Find highest existing sequence for this base
+    last = db.session.query(Payslip).filter(
+        Payslip.payslip_number.like(f"{base}%")
+    ).order_by(Payslip.payslip_number.desc()).first()
+    
+    if last:
+        try:
+            last_seq = int(last.payslip_number[-4:])
+            next_seq = last_seq + 1
+        except (ValueError, TypeError, IndexError):
+            next_seq = 1
+    else:
+        next_seq = 1
+    
+    return f"{base}{next_seq:04d}"
+
+def calculate_payslip_totals(payroll) -> dict:
+    """
+    Calculate gross_pay, deductions, and net_pay from payroll data.
+    Adjust logic to match your business rules.
+    """
+    gross_pay = payroll.gross_pay or 0.0
+    
+    # Example deduction calculations - customize as needed
+    sss_contribution = gross_pay * 0.045  # 4.5%
+    philhealth = gross_pay * 0.0275       # 2.75%
+    pagibig = min(gross_pay * 0.02, 100)  # 2% capped at 100
+    tax_withholding = max(0, (gross_pay - 20833) * 0.15) if gross_pay > 20833 else 0
+    
+    total_deductions = round(sss_contribution + philhealth + pagibig + tax_withholding, 2)
+    net_pay = round(gross_pay - total_deductions, 2)
+    
+    return {
+        'gross_pay': round(gross_pay, 2),
+        'total_deductions': total_deductions,
+        'net_pay': net_pay,
+        'breakdown': {
+            'sss': round(sss_contribution, 2),
+            'philhealth': round(philhealth, 2),
+            'pagibig': round(pagibig, 2),
+            'tax': round(tax_withholding, 2)
+        }
+    }

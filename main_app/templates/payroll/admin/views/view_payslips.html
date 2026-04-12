@@ -64,22 +64,6 @@
           <i class="fa-solid fa-chevron-down absolute right-3.5 top-[38px] text-gray-500 text-xs pointer-events-none"></i>
         </div>
 
-        <!-- Period -->
-        <div class="relative flex-1 min-w-[180px]">
-          <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Period</label>
-          <select name="period_id"
-                  onchange="this.form.submit()"
-                  class="w-full px-4 py-2.5 rounded-xl bg-gray-900/80 border border-gray-700 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition text-gray-200 text-sm appearance-none cursor-pointer">
-            <option value="">All Periods</option>
-            {% for period in payroll_periods %}
-            <option value="{{ period.id }}" {% if period.id == selected_period %}selected{% endif %}>
-              {{ period.start_date.strftime('%b %d') }} – {{ period.end_date.strftime('%Y') }}
-            </option>
-            {% endfor %}
-          </select>
-          <i class="fa-solid fa-chevron-down absolute right-3.5 top-[38px] text-gray-500 text-xs pointer-events-none"></i>
-        </div>
-
         <!-- Clear -->
         {% if search or selected_department or selected_status or selected_period %}
         <div class="self-end pb-0.5">

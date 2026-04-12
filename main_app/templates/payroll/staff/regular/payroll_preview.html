@@ -56,11 +56,34 @@
         <!-- Info Banner -->
         <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-800/40 py-2 px-4 rounded-lg border border-slate-700/40">
             <i class="fa-solid fa-circle-info text-emerald-400/80"></i>
-            <span>Gross = Monthly Rate + Allowance + Overtime • Adjustment (1–15) is reference only • All deductions editable</span>
+            <span>Gross = Monthly Rate + Allowance + Overtime • AWOP = Daily Rate × Absent Days • Late deductions auto-apply leave credits (VL→SL)</span>
         </div>
     </header>
 
-    <!-- ================= PAYROLL FORM ================= -->
+    <!-- ================= EMPTY STATE HANDLER ================= -->
+    {% if not payroll_data %}
+    <div class="flex flex-col items-center justify-center py-16 px-4">
+        <div class="bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-700/60 p-8 max-w-md w-full text-center shadow-xl">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-700/60 flex items-center justify-center">
+                <i class="fa-solid fa-users-slash text-2xl text-slate-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">No Employees Found</h3>
+            <p class="text-sm text-slate-400 mb-6">
+                There are no active regular employees assigned to <strong class="text-emerald-400">{{ department.name }}</strong> for this pay period.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="{{ url_for('payroll_staff_bp.regular_select_department', period_id=period.id) }}"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700/60 hover:bg-slate-600/80 
+                          text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-600">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Select Another Department</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- ================= PAYROLL FORM (Only shown if employees exist) ================= -->
     <form method="POST"
           action="{{ url_for('payroll_staff_bp.process_regular_payroll', period_id=period.id, department_id=department.id) }}"
           class="space-y-6">
@@ -169,7 +192,7 @@
                         </div>
                     </div>
 
-                    <!-- Gross Pay (computed from Monthly + Allowance + Overtime) -->
+                    <!-- Gross Pay -->
                     <div class="space-y-3 pt-4 border-t border-slate-700/40">
                         <div class="flex justify-between items-center py-2 bg-emerald-900/15 rounded-lg px-3">
                             <span class="text-sm font-semibold text-emerald-300">Gross Pay</span>
@@ -179,7 +202,7 @@
                         </div>
                     </div>
 
-                    <!-- Adjustment Pay (1–15) - DISPLAY ONLY, pre-filled as Gross/2 -->
+                    <!-- Adjustment Pay (reference only) -->
                     <div class="mt-4 p-3 bg-slate-800/40 rounded-lg border border-slate-700/40">
                         <label class="text-xs font-medium text-slate-400 flex items-center gap-1 mb-2">
                             <i class="fa-solid fa-calculator"></i> Adjustment Pay (1–15) <span class="text-[10px] text-slate-500">(Reference Only)</span>
@@ -219,7 +242,7 @@
                     </div>
                 </section>
 
-                <!-- DEDUCTIONS SECTION (ALL AUTO-COMPUTED BUT EDITABLE) -->
+                <!-- DEDUCTIONS SECTION -->
                 <section class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/40 space-y-5">
                     <div class="flex items-center gap-2 pb-3 border-b border-slate-700/40">
                         <div class="w-8 h-8 rounded-lg bg-red-600/20 flex items-center justify-center">
@@ -228,7 +251,7 @@
                         <h4 class="font-semibold text-red-400">Deductions</h4>
                     </div>
 
-                    <!-- Deductions Grid - All Visible, 2-column layout -->
+                    <!-- Deductions Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         
                         {% for ded in data.deductions %}
@@ -311,10 +334,13 @@
                             </div>
 
                             {% elif ded.key == "gsis" %}
+                            <!-- ✅ GSIS with Auto-Compute Display -->
                             <div class="space-y-1.5">
                                 <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
                                     <span><i class="fa-solid fa-shield-halved"></i> GSIS</span>
-                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Auto: Fixed</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                                        Auto: {{ ded.auto_info or "Fixed" }}
+                                    </span>
                                 </label>
                                 <input type="number"
                                        name="gsis_{{ emp.id }}"
@@ -328,44 +354,42 @@
                                               outline-none transition-all placeholder-slate-500"
                                        data-deduction-type="statutory"
                                        data-auto-value="{{ ded.auto_value or 0 }}">
+                                <p class="text-[10px] text-slate-500 mt-1">Gov't Share: ₱ {{ '{:,.2f}'.format(ded.employer_share or 0) }}</p>
                                 <button type="button" 
                                         class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
                                         data-target="gsis_{{ emp.id }}">
                                     <i class="fa-solid fa-rotate-left"></i> Reset to auto
                                 </button>
                             </div>
+
                             {% elif ded.key == "awop" %}
-                            <!-- Absence Without Pay - Based on ACTUAL Records -->
+                            <!-- ✅ AWOP: Simple Calculation Display (NO credits applied) -->
                             <div class="sm:col-span-2 space-y-2 p-3 bg-amber-900/10 rounded-lg border border-amber-700/40">
                                 <label class="text-xs font-medium text-slate-300 flex items-center justify-between">
                                     <span><i class="fa-regular fa-calendar-xmark"></i> Absence Without Pay (AWOP)</span>
-                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Based on Actual Records</span>
+                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Daily Rate × Absent Days</span>
                                 </label>
                                 
-                                <!-- Actual Attendance/Leave Summary -->
-                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                                <!-- Simple Calculation Breakdown -->
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3 text-xs">
                                     <div class="text-center p-2 bg-slate-800/60 rounded">
-                                        <p class="text-[10px] text-slate-400">Actual Absences</p>
-                                        <p class="text-sm font-mono text-red-300">{{ data.actual_attendance.absent }}</p>
+                                        <p class="text-[10px] text-slate-400">Total Absences</p>
+                                        <p class="text-sm font-mono text-red-300">{{ ded.total_absent_days or 0 }} days</p>
                                     </div>
                                     <div class="text-center p-2 bg-slate-800/60 rounded">
-                                        <p class="text-[10px] text-slate-400">Leave Days Used</p>
-                                        <p class="text-sm font-mono text-amber-300">{{ data.actual_leave.days_in_period }}</p>
+                                        <p class="text-[10px] text-slate-400">Daily Rate</p>
+                                        <p class="text-sm font-mono text-white">₱{{ '{:,.2f}'.format(ded.daily_rate or 0) }}</p>
                                     </div>
-                                    <div class="text-center p-2 bg-slate-800/60 rounded">
-                                        <p class="text-[10px] text-slate-400">Credits Remaining</p>
-                                        <p class="text-sm font-mono text-emerald-300">{{ data.actual_leave.credits_remaining }}</p>
-                                    </div>
-                                    <div class="text-center p-2 bg-slate-800/60 rounded">
-                                        <p class="text-[10px] text-slate-400">Uncovered Days</p>
-                                        <p class="text-sm font-mono text-red-400">{{ ded.days_uncovered or 0 }}</p>
+                                    <div class="text-center p-2 bg-slate-800/60 rounded sm:col-span-1">
+                                        <p class="text-[10px] text-slate-400">AWOP Amount</p>
+                                        <p class="text-sm font-mono text-amber-300">₱{{ '{:,.2f}'.format(ded.auto_value or 0) }}</p>
                                     </div>
                                 </div>
                                 
-                                <!-- AWOP Input -->
+                                <!-- AWOP Input with Formula -->
                                 <div class="space-y-1.5">
                                     <label class="text-xs text-slate-400 flex items-center gap-1">
-                                        <i class="fa-solid fa-calculator"></i> AWOP Amount (Daily Rate × Uncovered Days)
+                                        <i class="fa-solid fa-calculator"></i> AWOP Amount
                                     </label>
                                     <input type="number"
                                         name="awop_{{ emp.id }}"
@@ -374,15 +398,22 @@
                                         step="0.01"
                                         placeholder="0.00"
                                         class="ded auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-amber-600/40 
-                                                rounded-lg text-right font-mono tabular-nums text-amber-300
-                                                focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
-                                                outline-none transition-all placeholder-slate-500"
+                                               rounded-lg text-right font-mono tabular-nums text-amber-300
+                                               focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                               outline-none transition-all placeholder-slate-500"
                                         data-deduction-type="awop"
                                         data-auto-value="{{ ded.auto_value or 0 }}"
                                         data-daily-rate="{{ ded.daily_rate }}">
-                                    <p class="text-[10px] text-slate-500">
+                                    
+                                    <!-- Clear Formula Display -->
+                                    <p class="text-[10px] text-slate-500 font-mono bg-slate-900/40 p-2 rounded border border-slate-700/40">
+                                        <span class="text-amber-400">Formula:</span> 
+                                        {{ ded.total_absent_days or 0 }} days × ₱{{ '{:,.2f}'.format(ded.daily_rate or 0) }}/day 
+                                        <span class="text-emerald-400">= ₱{{ '{:,.2f}'.format(ded.auto_value or 0) }}</span>
+                                    </p>
+                                    <p class="text-[10px] text-slate-500 mt-1">
                                         <i class="fa-solid fa-circle-info mr-1"></i>
-                                        Calculation: {{ ded.days_uncovered or 0 }} days × ₱{{ '{:,.2f}'.format(ded.daily_rate) }}/day = ₱{{ '{:,.2f}'.format(ded.auto_value or 0) }}
+                                        Leave credits do NOT offset AWOP • Credits only apply to late/undertime deductions
                                     </p>
                                 </div>
                                 
@@ -393,6 +424,52 @@
                                 </button>
                             </div>
 
+                            {% elif ded.key == "late_deduction" %}
+                            <!-- ✅ LATE/UNDERTIME DEDUCTION WITH CREDIT APPLICATION DISPLAY -->
+                            <div class="sm:col-span-2 space-y-2 p-3 bg-amber-900/10 rounded-lg border border-amber-700/40">
+                                <label class="text-xs font-medium text-amber-300 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-clock-rotate-left"></i> {{ ded.name }}</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30 font-mono">
+                                        Auto: {{ ded.late_formatted or "00:00:00" }}
+                                    </span>
+                                </label>
+                                
+                                <!-- Credit Application Summary -->
+                                {% if ded.credits_applied and ded.credits_applied > 0 %}
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-1 text-[10px] text-emerald-400 bg-emerald-900/20 rounded p-2 border border-emerald-700/30">
+                                    <span>✅ Credits Applied: {{ ded.credits_applied }}d</span>
+                                    {% if ded.vl_used > 0 %}<span>VL: {{ ded.vl_used }}d</span>{% endif %}
+                                    {% if ded.sl_used > 0 %}<span>SL: {{ ded.sl_used }}d</span>{% endif %}
+                                    <span class="text-right">Saved: ₱{{ '{:,.2f}'.format((ded.credits_applied or 0) * (ded.daily_rate or 0)) }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Read-only deduction input -->
+                                <input type="number"
+                                       name="late_deduction_{{ emp.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0" step="0.01"
+                                       readonly
+                                       class="late-deduction employee-share w-full p-2 bg-gray-800/50 border border-amber-700/40 
+                                              rounded text-right font-mono text-amber-300 cursor-not-allowed opacity-90"
+                                       data-deduction-type="late"
+                                       title="Auto-calculated • Credits applied if available">
+                                
+                                <!-- Breakdown display -->
+                                <p class="text-[10px] text-gray-500 font-mono flex flex-col gap-0.5">
+                                    <span>
+                                        <i class="fa-solid fa-calculator text-emerald-400/70"></i>
+                                        Original: {{ ded.original_day_equiv or 0 }} day-equiv (₱{{ '{:,.2f}'.format(ded.original_amount or 0) }})
+                                        {% if ded.credits_applied and ded.credits_applied > 0 %}
+                                        → Covered: {{ ded.credits_applied }}d → Remaining: {{ ded.remaining_day_equiv or 0 }}d (₱{{ '{:,.2f}'.format(ded.employee_share or 0) }})
+                                        {% endif %}
+                                    </span>
+                                    <span class="pl-4">
+                                        ({{ ded.late_hours or 0 }}h × ₱{{ '{:,.2f}'.format(daily_rate/8) }}/hr) + 
+                                        ({{ ded.late_minutes or 0 }}m × ₱{{ '{:,.2f}'.format(daily_rate/480) }}/min)
+                                    </span>
+                                </p>
+                            </div>
 
                             {% elif "loan" in ded.key %}
                             <!-- Loan Deductions -->
@@ -449,7 +526,7 @@
                             </p>
                         </div>
 
-                        <!-- Tax Breakdown (Now Editable with Proper Form Names) -->
+                        <!-- Tax Breakdown -->
                         <div class="sm:col-span-2 space-y-2 p-3 bg-slate-800/40 rounded-lg border border-slate-700/40">
                             <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Tax Breakdown</p>
                             <div class="grid grid-cols-2 gap-3">
@@ -532,12 +609,14 @@
                 <i class="fa-solid fa-circle-info text-emerald-400/80 mt-0.5"></i>
                 <p>
                     Gross = Monthly Rate + Allowance + Overtime • 
-                    Adjustment (1–15) is reference only • 
+                    AWOP = Daily Rate × Absent Days (no credits applied) • 
+                    Late deductions auto-apply leave credits (VL→SL) • 
                     All deductions can be <strong class="text-amber-300">manually overridden</strong>. 
                     Use "Reset" buttons to restore calculated values. All amounts in ₱.
                 </p>
             </div>
             <button type="submit"
+                    id="process-payroll-btn"
                     class="inline-flex items-center gap-2 px-7 py-3.5 font-semibold text-white rounded-xl
                            bg-gradient-to-r from-emerald-600 to-emerald-700 
                            hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
@@ -548,6 +627,7 @@
         </div>
 
     </form>
+    {% endif %}
 
     <!-- Footer Note -->
     <footer class="text-center pt-4 pb-8">
@@ -559,8 +639,11 @@
 
 </div>
 
-<!-- Enhanced JavaScript: Auto-Compute + Editable Deductions with Correct Gross Logic -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- JavaScript: Auto-Compute + Editable Deductions -->
 <script>
+// Only initialize payroll logic if employees exist
+{% if payroll_data %}
 document.querySelectorAll('.employee-card').forEach(card => {
     const empId = card.dataset.employeeId;
     const monthlyRate = parseFloat(card.dataset.salary) || 0;
@@ -573,13 +656,11 @@ document.querySelectorAll('.employee-card').forEach(card => {
     const totalDedEl = card.querySelector('.total-deduction');
     const netEl = card.querySelector('.net-pay');
     
-    // Deduction inputs
     const allDeductions = card.querySelectorAll('.ded');
     const ctwCheckbox = card.querySelector('.ctw');
     const ctwTaxInput = card.querySelector('[name="ctw_tax_' + empId + '"]');
     const gmpPtTaxInput = card.querySelector('[name="gmp_pt_tax_' + empId + '"]');
     
-    // Auto-computed deductions
     const grossDependentDeductions = card.querySelectorAll('.auto-deduction[data-gross-dependent="true"]');
     const fixedValueDeductions = card.querySelectorAll('.auto-deduction[data-auto-value]');
 
@@ -591,7 +672,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
     }
 
     function computeAutoDeductions(gross) {
-        // Update gross-dependent deductions (PhilHealth)
         grossDependentDeductions.forEach(input => {
             const autoRate = parseFloat(input.dataset.autoRate) || 0;
             if (autoRate > 0) {
@@ -606,7 +686,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
             }
         });
 
-        // Fixed-value deductions (SSS, Pag-IBIG, GSIS, AWOP, Loans)
         fixedValueDeductions.forEach(input => {
             if (!input.dataset.originalAuto) {
                 input.dataset.originalAuto = input.dataset.autoValue || '0';
@@ -619,14 +698,10 @@ document.querySelectorAll('.employee-card').forEach(card => {
     }
 
     function computeTaxes(gross) {
-        // CTW: 5% if checked, 10% if unchecked
         const ctwRate = ctwCheckbox?.checked ? 0.05 : 0.10;
         const ctw = gross * ctwRate;
-        
-        // GMP-PT: Fixed 2%
         const gmp = gross * 0.02;
         
-        // Update editable tax inputs if not manually edited
         if (ctwTaxInput && !ctwTaxInput.dataset.manualEdit) {
             ctwTaxInput.value = ctw.toFixed(2);
         }
@@ -638,45 +713,34 @@ document.querySelectorAll('.employee-card').forEach(card => {
     }
 
     function compute() {
-        // 1. Compute Gross Pay: Monthly Rate + Allowance + Overtime (NOT adjustment)
         const a = parseFloat(allowance?.value) || 0;
         const ot = parseFloat(overtime?.value) || 0;
         const gross = monthlyRate + a + ot;
         
         if (grossEl) grossEl.value = format(gross);
 
-        // 2. Update Adjustment Display (reference only, pre-filled as Gross/2)
         if (adjustmentDisplay) {
-            const adjustmentValue = gross / 2;
-            adjustmentDisplay.value = format(adjustmentValue);
+            adjustmentDisplay.value = format(gross / 2);
         }
 
-        // 3. Auto-compute deductions based on gross
         computeAutoDeductions(gross);
-
-        // 4. Compute taxes (CTW + GMP-PT)
         const { ctw, gmp } = computeTaxes(gross);
 
-        // 5. Sum all deductions
         let totalDed = 0;
         
-        // Manual deductions (SSS, PhilHealth, Pag-IBIG, GSIS, AWOP, Loans)
         allDeductions.forEach(input => {
             totalDed += parseFloat(input.value) || 0;
         });
         
-        // Add tax values from editable inputs
         if (ctwTaxInput) totalDed += parseFloat(ctwTaxInput.value) || 0;
         if (gmpPtTaxInput) totalDed += parseFloat(gmpPtTaxInput.value) || 0;
         
         if (totalDedEl) totalDedEl.value = format(totalDed);
 
-        // 6. Net Pay = Gross - Total Deductions (prevent negative)
         const net = Math.max(gross - totalDed, 0);
         if (netEl) netEl.value = format(net);
     }
 
-    // Handle manual edits on deduction inputs
     allDeductions.forEach(input => {
         input.addEventListener('input', function() {
             this.dataset.manualEdit = 'true';
@@ -688,12 +752,10 @@ document.querySelectorAll('.employee-card').forEach(card => {
         input.addEventListener('blur', compute);
     });
 
-    // Handle manual edits on tax inputs
     [ctwTaxInput, gmpPtTaxInput].forEach(input => {
         if (input) {
             input.addEventListener('input', function() {
                 this.dataset.manualEdit = 'true';
-                this.classList.remove('border-emerald-500/60', 'ring-1', 'ring-emerald-500/30');
                 compute();
             });
             input.addEventListener('change', compute);
@@ -701,7 +763,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
         }
     });
 
-    // Handle CTW checkbox toggle (recalculates CTW tax if not manually edited)
     if (ctwCheckbox) {
         ctwCheckbox.addEventListener('change', function() {
             if (ctwTaxInput && !ctwTaxInput.dataset.manualEdit) {
@@ -713,7 +774,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
         });
     }
 
-    // Handle earnings inputs (allowance, overtime)
     [allowance, overtime].forEach(input => {
         if (input) {
             input.addEventListener('input', compute);
@@ -721,7 +781,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
         }
     });
 
-    // Reset button: restore auto-computed or fixed value
     card.querySelectorAll('.reset-deduction').forEach(btn => {
         btn.addEventListener('click', function() {
             const targetName = this.dataset.target;
@@ -729,15 +788,12 @@ document.querySelectorAll('.employee-card').forEach(card => {
             
             if (targetInput) {
                 if (targetInput.dataset.grossDependent === 'true') {
-                    // Gross-dependent: recalculate from current gross
                     const gross = parseFloat(grossEl?.value.replace(/[₱,]/g, '')) || 0;
                     const autoRate = parseFloat(targetInput.dataset.autoRate) || 0;
                     targetInput.value = (gross * autoRate).toFixed(2);
                 } else {
-                    // Fixed-value: use stored original
                     targetInput.value = targetInput.dataset.originalAuto || '0';
                 }
-                // Clear manual flag and visual indicators
                 delete targetInput.dataset.manualEdit;
                 targetInput.classList.remove('border-emerald-500/60', 'ring-1', 'ring-emerald-500/30',
                                            'border-amber-500/60', 'ring-1', 'ring-amber-500/30');
@@ -746,9 +802,81 @@ document.querySelectorAll('.employee-card').forEach(card => {
         });
     });
 
-    // Initial compute on load
     compute();
 });
+
+// SweetAlert2 Form Confirmation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[method="POST"]');
+    const processBtn = document.getElementById('process-payroll-btn');
+    if (!form || !processBtn) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const deptName = document.querySelector('h1')?.textContent?.trim() || 'Unknown Department';
+        const periodText = document.querySelector('.font-mono.tabular-nums')?.textContent?.trim() || '';
+        const empCount = document.querySelectorAll('.employee-card').length;
+
+        Swal.fire({
+            title: 'Process Regular Payroll?',
+            html: `
+                <div class="text-left text-sm space-y-2 mt-3">
+                    <div class="flex justify-between py-1 border-b border-slate-700/50">
+                        <span class="text-slate-400">Department</span>
+                        <span class="text-white font-medium">${deptName}</span>
+                    </div>
+                    <div class="flex justify-between py-1 border-b border-slate-700/50">
+                        <span class="text-slate-400">Pay Period</span>
+                        <span class="text-white font-medium">${periodText}</span>
+                    </div>
+                    <div class="flex justify-between py-1">
+                        <span class="text-slate-400">Employees</span>
+                        <span class="text-emerald-400 font-bold">${empCount}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 pt-2 border-t border-slate-700/50 mt-2 flex items-start gap-2">
+                        <i class="fa-solid fa-circle-info mt-0.5"></i>
+                        <span>This action will finalize calculations and generate payroll records. Double-check all adjustments before proceeding.</span>
+                    </p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#475569',
+            confirmButtonText: '<i class="fa-solid fa-check mr-1"></i> Yes, Process Payroll',
+            cancelButtonText: 'Cancel',
+            background: '#0f172a',
+            color: '#cbd5e1',
+            customClass: {
+                popup: 'rounded-2xl border border-slate-700 shadow-2xl',
+                title: 'text-lg font-bold text-white',
+                confirmButton: 'px-4 py-2.5 rounded-lg font-semibold transition hover:bg-emerald-500',
+                cancelButton: 'px-4 py-2.5 rounded-lg font-semibold transition hover:bg-slate-500'
+            },
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing Payroll...',
+                    text: 'Please do not close or refresh this page.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                    background: '#0f172a',
+                    color: '#cbd5e1',
+                    customClass: {
+                        popup: 'rounded-2xl border border-slate-700'
+                    }
+                });
+                form.submit();
+            }
+        });
+    });
+});
+{% endif %}
 </script>
 
 {% endblock %}

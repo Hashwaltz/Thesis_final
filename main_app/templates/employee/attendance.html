@@ -21,7 +21,7 @@
     <!-- Summary Badges -->
     <div class="flex flex-wrap gap-2">
       {% set stats = [
-        ('Present', summary.present, 'fa-check', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'),
+        ('On Time', summary.present, 'fa-check', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'),
         ('Absent', summary.absent, 'fa-xmark', 'bg-red-500/20 text-red-300 border-red-500/30'),
         ('Late', summary.late, 'fa-clock', 'bg-amber-500/20 text-amber-300 border-amber-500/30'),
         ('Total Hours', '%.2f hrs'|format(summary.total_hours), 'fa-hourglass-half', 'bg-purple-500/20 text-purple-300 border-purple-500/30')

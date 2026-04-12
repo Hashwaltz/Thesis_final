@@ -54,68 +54,127 @@
   </button>
 </header>
 
-<!-- ================= SIDEBAR ================= -->
-<aside
-  id="sidebar"
-  class="bg-gray-950 w-64 sm:w-72 fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 z-40 flex flex-col border-r border-gray-800"
->
+  <!-- ================= SIDEBAR ================= -->
+  <aside
+    id="sidebar"
+    class="bg-gray-950 w-64 sm:w-72 fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 z-40 flex flex-col border-r border-gray-800"
+  >
 
-  <!-- Sidebar Header -->
-  <div class="px-6 py-5 border-b border-gray-800 flex items-center gap-3">
-    <img src="{{ url_for('static', filename='img/logo2.png') }}" class="w-12 h-12 rounded-full">
-    <div>
-      <h2 class="text-lg font-semibold text-primary">GovHRPay</h2>
-      <p class="text-xs text-gray-400">Employee</p>
-      <p class="text-sm mt-1">
-        Welcome, <b>{{ current_user.get_full_name() }}</b>
-      </p>
+    <!-- Sidebar Header -->
+    <div class="px-6 py-5 border-b border-gray-800 flex items-center gap-3">
+      <img src="{{ url_for('static', filename='img/logo2.png') }}" class="w-12 h-12 rounded-full">
+      <div>
+        <h2 class="text-lg font-semibold text-primary">GovHRPay</h2>
+        <p class="text-xs text-gray-400">Employee</p>
+        <p class="text-sm mt-1">
+          Welcome, <b>{{ current_user.get_full_name() }}</b>
+        </p>
+      </div>
     </div>
-  </div>
 
   <!-- ================= NAVIGATION ================= -->
   <nav class="flex-1 overflow-y-auto px-4 py-4 text-gray-300">
 
-    {% set menu = {
-      "Dashboard": [("fa-gauge", "Dashboard", "employee_bp.dashboard")],
-      "Attendance & Leave": [
-        ("fa-calendar-check", "Attendance", "employee_bp.attendance"),
-        ("fa-plane-departure", "Leave Requests", "employee_bp.leaves"),
-        ("fa-calendar-alt", "Leave Credits", "employee_bp.leave_history")
-      ],
-      "Payslips": [
-        ("fa-file-invoice", "Payslip", "employee_bp.my_payslips")
-      ],
-      "Career": [
-        ("fa-briefcase", "Job History", "employee_bp.employee_job_history"),
-        ("fa-sitemap", "Organization Chart", "employee_bp.my_department")
-      ],
-      "Settings": [("fa-gear", "Account Settings", "employee_bp.profile")]
-    } %}
+    {# ✅ Build menu conditionally based on employment type #}
+    {% set emp_type = current_user.employee_profile.employment_type_id if current_user.employee_profile else None %}
+    {% set show_leave_credits = emp_type not in [2, 5] %}
 
-    {% for section, links in menu.items() %}
+    {# Dashboard - Always visible #}
     <div class="mb-6">
-      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">
-        {{ section }}
-      </h3>
-
+      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">Dashboard</h3>
       <ul class="space-y-1">
-        {% for icon, label, endpoint in links %}
         <li>
-          <a
-            href="{{ url_for(endpoint) }}"
-            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition"
-          >
-            <i class="fa-solid {{ icon }} w-5 text-primary"></i>
-            <span>{{ label }}</span>
+          <a href="{{ url_for('employee_bp.dashboard') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-gauge w-5 text-primary"></i>
+            <span>Dashboard</span>
           </a>
         </li>
-        {% endfor %}
       </ul>
     </div>
-    {% endfor %}
+
+    {# Attendance & Leave - Conditional Leave Credits #}
+    <div class="mb-6">
+      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">Attendance & Leave</h3>
+      <ul class="space-y-1">
+        <li>
+          <a href="{{ url_for('employee_bp.attendance') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-calendar-check w-5 text-primary"></i>
+            <span>Attendance</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('employee_bp.leaves') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-plane-departure w-5 text-primary"></i>
+            <span>Leave Requests</span>
+          </a>
+        </li>
+        
+        {# 🔥 CONDITIONAL: Hide Leave Credits for employment_type_id 2 or 5 #}
+        {% if show_leave_credits %}
+        <li>
+          <a href="{{ url_for('employee_bp.leave_history') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-calendar-alt w-5 text-primary"></i>
+            <span>Leave Credits</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    {# Payslips - Always visible #}
+    <div class="mb-6">
+      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">Payslips</h3>
+      <ul class="space-y-1">
+        <li>
+          <a href="{{ url_for('employee_bp.my_payslips') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-file-invoice w-5 text-primary"></i>
+            <span>Payslip</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    {# Career - Always visible #}
+    <div class="mb-6">
+      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">Career</h3>
+      <ul class="space-y-1">
+        <li>
+          <a href="{{ url_for('employee_bp.employee_job_history') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-briefcase w-5 text-primary"></i>
+            <span>Job History</span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('employee_bp.my_department') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-sitemap w-5 text-primary"></i>
+            <span>Organization Chart</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    {# Settings - Always visible #}
+    <div class="mb-6">
+      <h3 class="text-xs uppercase text-gray-500 mb-2 tracking-wider">Settings</h3>
+      <ul class="space-y-1">
+        <li>
+          <a href="{{ url_for('employee_bp.profile') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-primary/30 transition">
+            <i class="fa-solid fa-gear w-5 text-primary"></i>
+            <span>Account Settings</span>
+          </a>
+        </li>
+      </ul>
+    </div>
 
   </nav>
-
   <!-- ================= LOGOUT ================= -->
   <div class="p-4 border-t border-gray-800">
     <button

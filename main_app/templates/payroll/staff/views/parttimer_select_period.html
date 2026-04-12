@@ -11,7 +11,7 @@
             
             <!-- Title Section -->
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 
                            flex items-center justify-center text-white shadow-lg">
                     <i class="fa-solid fa-clock text-xl"></i>
                 </div>
@@ -26,7 +26,7 @@
             <!-- Quick Stats -->
             <div class="flex items-center gap-4 text-sm">
                 <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-lg border border-slate-700/60">
-                    <span class="w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="text-slate-300">{{ periods|selectattr('status', 'equalto', 'Open')|list|length }} Open Periods</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 bg-slate-900/60 rounded-lg border border-slate-700/60">
@@ -43,7 +43,7 @@
         <!-- Table Header -->
         <div class="px-6 py-4 border-b border-slate-700/50 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
-                <i class="fa-solid fa-list text-violet-400"></i>
+                <i class="fa-solid fa-list text-emerald-400"></i>
                 Payroll Periods
             </h2>
             <div class="flex items-center gap-2 text-xs text-slate-400">
@@ -124,8 +124,8 @@
                                 </span>
                             {% else %}
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold 
-                                           rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/30">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+                                           rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                     Open
                                 </span>
                             {% endif %}
@@ -140,13 +140,12 @@
                                     View Only
                                 </span>
                             {% else %}
-                                <!-- ✅ UPDATED: Link to Select Department -->
                                 <a href="{{ url_for('payroll_staff_bp.parttimer_select_department', period_id=period.id) }}"
                                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white 
-                                          bg-gradient-to-r from-violet-600 to-violet-700 rounded-lg 
-                                          hover:from-violet-500 hover:to-violet-600 active:from-violet-700 active:to-violet-800
-                                          transition-all shadow-md hover:shadow-violet-500/25 hover:-translate-y-0.5
-                                          border border-violet-500/30">
+                                          bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg 
+                                          hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
+                                          transition-all shadow-md hover:shadow-emerald-500/25 hover:-translate-y-0.5
+                                          border border-emerald-500/30">
                                     <i class="fa-solid fa-sitemap text-xs"></i>
                                     Select Department
                                 </a>
@@ -183,43 +182,43 @@
         </div>
     </section>
 
-    <!-- ================= HELP SECTION (UPDATED FLOW) ================= -->
+    <!-- ================= HELP SECTION ================= -->
     <section class="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-6">
         <h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2 mb-4">
-            <i class="fa-regular fa-circle-question text-amber-400"></i>
+            <i class="fa-regular fa-circle-question text-emerald-400"></i>
             How to Process Part-Timer Payroll
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-violet-500/30 transition-colors">
-                <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center flex-shrink-0">
-                    <span class="text-violet-400 font-bold text-sm">1</span>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">1</span>
                 </div>
                 <div>
                     <p class="font-medium text-slate-200 text-sm">Select Period</p>
                     <p class="text-xs text-slate-400 mt-1">Choose an open payroll period from the table above.</p>
                 </div>
             </div>
-            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-violet-500/30 transition-colors">
-                <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center flex-shrink-0">
-                    <span class="text-violet-400 font-bold text-sm">2</span>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">2</span>
                 </div>
                 <div>
                     <p class="font-medium text-slate-200 text-sm">Select Department</p>
                     <p class="text-xs text-slate-400 mt-1">Pick the department whose part-timers you want to process.</p>
                 </div>
             </div>
-            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-violet-500/30 transition-colors">
-                <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center flex-shrink-0">
-                    <span class="text-violet-400 font-bold text-sm">3</span>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">3</span>
                 </div>
                 <div>
                     <p class="font-medium text-slate-200 text-sm">Preview & Edit</p>
                     <p class="text-xs text-slate-400 mt-1">Review hours, rates, allowances, and optional deductions.</p>
                 </div>
             </div>
-            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-violet-500/30 transition-colors">
-                <div class="w-8 h-8 rounded-lg bg-violet-600/20 flex items-center justify-center flex-shrink-0">
-                    <span class="text-violet-400 font-bold text-sm">4</span>
+            <div class="flex items-start gap-3 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 hover:border-emerald-500/30 transition-colors">
+                <div class="w-8 h-8 rounded-lg bg-emerald-600/20 flex items-center justify-center flex-shrink-0">
+                    <span class="text-emerald-400 font-bold text-sm">4</span>
                 </div>
                 <div>
                     <p class="font-medium text-slate-200 text-sm">Confirm & Submit</p>
@@ -230,14 +229,14 @@
     </section>
 
     <!-- ================= FLOW VISUALIZER ================= -->
-    <section class="bg-gradient-to-r from-violet-900/30 to-slate-900/30 border border-violet-700/30 rounded-2xl p-5">
+    <section class="bg-gradient-to-r from-emerald-900/30 to-slate-900/30 border border-emerald-700/30 rounded-2xl p-5">
         <div class="flex items-center justify-center gap-2 text-sm text-slate-300 flex-wrap">
             <span class="px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-600">📅 Select Period</span>
-            <i class="fa-solid fa-arrow-right text-violet-400"></i>
+            <i class="fa-solid fa-arrow-right text-emerald-400"></i>
             <span class="px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-600">🏢 Select Department</span>
-            <i class="fa-solid fa-arrow-right text-violet-400"></i>
+            <i class="fa-solid fa-arrow-right text-emerald-400"></i>
             <span class="px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-600">👁️ Preview Payroll</span>
-            <i class="fa-solid fa-arrow-right text-violet-400"></i>
+            <i class="fa-solid fa-arrow-right text-emerald-400"></i>
             <span class="px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300">✅ Process</span>
         </div>
     </section>

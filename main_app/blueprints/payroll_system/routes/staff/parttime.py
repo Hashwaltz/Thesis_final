@@ -149,7 +149,7 @@ def preview_parttimer_payroll(period_id, department_id):
             return emp_ded, ded
 
         # SSS
-        sss_cfg = get_deduction_config("SSS")
+        sss_cfg = get_deduction_config("SSS Contribution")
         if sss_cfg:
             emp_ded, ded_obj = sss_cfg
             auto_value = emp_ded.override_amount if emp_ded and emp_ded.override_amount is not None else 0
@@ -161,7 +161,7 @@ def preview_parttimer_payroll(period_id, department_id):
             deductions.append({"key": "sss", "name": "SSS", "employee_share": auto_value, "editable": True, "auto_value": auto_value, "type": "fixed", "optional": True})
 
         # PhilHealth
-        ph_cfg = get_deduction_config("PhilHealth")
+        ph_cfg = get_deduction_config("PhilHealth Contribution")
         if ph_cfg:
             emp_ded, ded_obj = ph_cfg
             auto_value = emp_ded.override_amount if emp_ded and emp_ded.override_amount is not None else None
@@ -174,14 +174,14 @@ def preview_parttimer_payroll(period_id, department_id):
             deductions.append({"key": "philhealth", "name": "PhilHealth", "employee_share": auto_value, "editable": True, "auto_value": auto_value, "type": "percentage", "optional": True})
 
         # Pag-IBIG
-        pag_cfg = get_deduction_config("Pag-IBIG")
+        pag_cfg = get_deduction_config("Pag-IBIG Contribution")
         if pag_cfg:
             emp_ded, ded_obj = pag_cfg
             auto_value = emp_ded.override_amount if emp_ded and emp_ded.override_amount is not None else 100.00
             deductions.append({"key": "pagibig", "name": "Pag-IBIG", "employee_share": auto_value, "editable": True, "auto_value": auto_value, "type": "fixed", "optional": True})
 
         # GSIS
-        gsis_cfg = get_deduction_config("GSIS")
+        gsis_cfg = get_deduction_config("GSIS Contribution")
         if gsis_cfg:
             emp_ded, ded_obj = gsis_cfg
             auto_value = emp_ded.override_amount if emp_ded and emp_ded.override_amount is not None else round(gross_pay * 0.09, 2)
@@ -264,7 +264,6 @@ def process_parttimer_payroll(period_id, department_id):
             employee_id=emp.id,
             payroll_period_id=period.id,
             hours_worked=total_hours_decimal,
-            hourly_rate=hourly_rate,  # Store the actual hourly rate
             basic_salary=salary_based_gross,
             allowance_total=allowance_total,
             gross_pay=gross_pay,

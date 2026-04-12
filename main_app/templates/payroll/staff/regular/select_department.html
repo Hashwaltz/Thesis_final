@@ -45,6 +45,8 @@
                     <span class="text-emerald-400 font-medium">CTW (5% / 10%)</span>, 
                     <span class="text-emerald-400 font-medium">GMP-PT (2%)</span>, 
                     full statutory deductions (SSS, PhilHealth, Pag-IBIG, Withholding Tax), and active loan amortizations.
+                    <br><br>
+                    <span class="text-amber-400 font-medium">✨ New:</span> Late/undertime deductions automatically apply available leave credits (Vacation Leave → Sick Leave) to reduce salary deductions.
                 </p>
             </div>
         </div>
@@ -54,8 +56,18 @@
     <section>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for dept in departments %}
+            {% set status = dept_status.get(dept.id, 'pending') %}
             <article class="group bg-slate-800/70 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-6 flex flex-col justify-between 
-                           hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 relative overflow-hidden">
+                           hover:border-emerald-500/40 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 relative overflow-hidden
+                           {% if status == 'processed' %}opacity-75{% endif %}">
+                
+                <!-- Status Badge -->
+                {% if status == 'processed' %}
+                <div class="absolute top-4 right-4 px-2 py-1 text-[10px] font-semibold text-emerald-300 
+                           bg-emerald-900/40 border border-emerald-600/40 rounded-full">
+                    ✅ Processed
+                </div>
+                {% endif %}
                 
                 <!-- Subtle gradient overlay on hover -->
                 <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -75,6 +87,14 @@
                 </div>
 
                 <!-- Action Button -->
+                {% if status == 'processed' %}
+                <button disabled
+                        class="relative z-10 mt-4 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold 
+                               text-slate-400 bg-slate-700/40 rounded-lg cursor-not-allowed border border-slate-600/40">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                    <span>Already Processed</span>
+                </button>
+                {% else %}
                 <a href="{{ url_for('payroll_staff_bp.preview_regular_payroll', period_id=period.id, department_id=dept.id) }}"
                    class="relative z-10 mt-4 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white
                           bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg
@@ -83,6 +103,7 @@
                     <i class="fa-solid fa-arrow-right text-xs"></i>
                     <span>Process Payroll</span>
                 </a>
+                {% endif %}
             </article>
             {% else %}
             <!-- Empty State -->

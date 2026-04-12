@@ -217,7 +217,6 @@
               <th class="px-4 py-3 hidden lg:table-cell">Reason</th>
               <th class="px-4 py-3">Status</th>
               <th class="px-4 py-3 hidden sm:table-cell">Requested</th>
-              <th class="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-700/50" id="leaveTableBody">
@@ -295,41 +294,6 @@
               <!-- Requested At (Desktop) -->
               <td class="px-4 py-3 hidden sm:table-cell text-gray-500 text-xs whitespace-nowrap">
                 {{ leave.created_at.strftime('%m/%d %H:%M') }}
-              </td>
-              
-              <!-- Actions -->
-              <td class="px-4 py-3 text-right">
-                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {% if leave.status == 'Pending' %}
-                    <button onclick="viewLeaveDetails({{ leave.id }})"
-                            class="p-2 text-violet-400 hover:text-violet-300 hover:bg-violet-500/15 rounded-lg transition-colors" 
-                            title="Review">
-                      <i class="fa-solid fa-eye"></i>
-                    </button>
-                    <button onclick="updateLeaveStatus({{ leave.id }}, 'Approved')"
-                            class="p-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/15 rounded-lg transition-colors" 
-                            title="Approve">
-                      <i class="fa-solid fa-check"></i>
-                    </button>
-                    <button onclick="openRejectModal({{ leave.id }}, '{{ emp_name }}')"
-                            class="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/15 rounded-lg transition-colors" 
-                            title="Reject">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
-                  {% else %}
-                    <button onclick="viewLeaveDetails({{ leave.id }})"
-                            class="p-2 text-gray-400 hover:text-gray-300 hover:bg-gray-500/15 rounded-lg transition-colors" 
-                            title="View Details">
-                      <i class="fa-solid fa-eye"></i>
-                    </button>
-                  {% endif %}
-                </div>
-                <!-- Mobile: Always show view button -->
-                <button onclick="viewLeaveDetails({{ leave.id }})"
-                        class="sm:hidden p-2 text-gray-400 hover:text-gray-300" 
-                        title="View">
-                  <i class="fa-solid fa-ellipsis-vertical"></i>
-                </button>
               </td>
             </tr>
             {% else %}

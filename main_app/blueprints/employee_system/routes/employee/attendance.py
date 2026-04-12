@@ -1,35 +1,32 @@
-
 from flask import Blueprint, render_template, flash, url_for, redirect, request
 from flask_login import login_required, current_user
 from main_app.models.hr_models import Employee, Attendance, LeaveCredit
 from main_app.models.payroll_models import Payslip
 from main_app.helpers.decorators import employee_required
-from datetime import datetime
-
+from datetime import datetime, timedelta, time  
 
 from main_app.blueprints.employee_system.routes.employee import employee_bp 
 
 def calculate_worked_hours(time_in, time_out, employee_type_id):
     """
     Calculate worked hours based on employee type and work schedule rules.
-    
-    Rules:
-    - Schedule: 8:00 AM - 5:00 PM (9 hours total, 8 hours net after lunch)
-    - Early arrival before 8 AM is NOT counted
-    - Late departure after 5 PM is NOT counted  
-    - 12:00 PM - 1:00 PM lunch break is EXCLUDED
-    - Only applies to employee types: 1 (Regular), 3 (Casual), 5 (JO)
     """
     if not time_in or not time_out:
         return 0.0
     
     # Only apply special rules to specific employee types
     if employee_type_id not in [1, 3, 5]:
-        # For other types: return actual hours or 0 (customize as needed)
-        delta = time_out - time_in
+        # ✅ FIX: Convert time objects to datetime before subtracting
+        base_date = datetime.min.date()
+        dt_in = datetime.combine(base_date, time_in)
+        dt_out = datetime.combine(base_date, time_out)
+        
+        # Handle overnight shifts
+        if dt_out < dt_in:
+            dt_out += timedelta(days=1)
+            
+        delta = dt_out - dt_in
         return max(0, delta.total_seconds() / 3600)
-    
-    from datetime import datetime, timedelta, time
     
     # Define schedule boundaries (using dummy date for time comparison)
     base_date = datetime.min.date()
@@ -42,7 +39,7 @@ def calculate_worked_hours(time_in, time_out, employee_type_id):
     check_in = datetime.combine(base_date, time_in)
     check_out = datetime.combine(base_date, time_out)
     
-    # Handle overnight shifts (if time_out < time_in, assume next day)
+    # Handle overnight shifts
     if check_out < check_in:
         check_out += timedelta(days=1)
         work_end += timedelta(days=1)
@@ -70,6 +67,9 @@ def calculate_worked_hours(time_in, time_out, employee_type_id):
     
     # Convert to hours (rounded to 2 decimals)
     return round(max(0, total_minutes / 60), 2)
+
+# ... (rest of your routes remain exactly the same)
+
 
 @employee_bp.route('/attendance')
 @login_required

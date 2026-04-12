@@ -4,12 +4,69 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 text-gray-100">
+    <!-- ================= BREADCRUMB NAVIGATION ================= -->
+    <nav class="flex items-center gap-2 text-sm text-gray-400" aria-label="Breadcrumb">
+        <ol class="flex items-center gap-2">
+            <li>
+                <a href="{{ url_for('payroll_staff_bp.jo_select_period') }}" 
+                class="hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-house"></i>
+                    <span>JO Payroll</span>
+                </a>
+            </li>
+            <li>
+                <i class="fa-solid fa-chevron-right text-xs text-gray-600"></i>
+            </li>
+            <li>
+                <a href="{{ url_for('payroll_staff_bp.jo_select_department', period_id=period.id) }}" 
+                class="hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-building-columns"></i>
+                    <span>Select Department</span>
+                </a>
+            </li>
+            <li>
+                <i class="fa-solid fa-chevron-right text-xs text-gray-600"></i>
+            </li>
+            <li class="text-gray-200 font-medium flex items-center gap-1.5" aria-current="page">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>Preview Payroll (16–End)</span>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- ================= NO EMPLOYEES HANDLER ================= -->
+    {% if not payroll_data %}
+    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/60 rounded-2xl p-12 text-center shadow-lg">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-700/50 flex items-center justify-center">
+            <i class="fa-solid fa-users-slash text-3xl text-slate-400"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">No Job Order Employees Found</h3>
+        <p class="text-slate-400 mb-6 max-w-md mx-auto">
+            There are no Job Order employees assigned to <strong>{{ department.name }}</strong> 
+            for this pay period, or no payroll records have been generated yet.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="{{ url_for('payroll_staff_bp.jo_select_department', period_id=period.id) }}"
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-700/60 
+                      hover:bg-slate-600/80 text-slate-200 rounded-xl text-sm font-medium 
+                      transition-all border border-slate-600">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Choose Another Department</span>
+            </a>
+            <a href="{{ url_for('payroll_staff_bp.jo_select_period') }}"
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600/80 
+                      hover:bg-emerald-500 text-white rounded-xl text-sm font-medium 
+                      transition-all shadow-lg hover:shadow-emerald-500/30">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>Select Different Period</span>
+            </a>
+        </div>
+    </div>
+    {% else %}
 
     <!-- ================= HEADER ================= -->
     <header class="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
         <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
-            
-            <!-- Back Button -->
             <a href="{{ url_for('payroll_staff_bp.jo_select_department', period_id=period.id) }}"
                class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700/60 hover:bg-slate-600/80 
                       text-slate-200 rounded-xl text-sm font-medium transition-all border border-slate-600 
@@ -18,7 +75,6 @@
                 <span>Back to Departments</span>
             </a>
 
-            <!-- Center Title -->
             <div class="text-center flex-1">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-widest">
                     LGU Municipality of Norzagaray
@@ -31,7 +87,6 @@
                 </p>
             </div>
 
-            <!-- Payroll Reference -->
             <div class="text-right bg-slate-900/60 px-5 py-3 rounded-xl border border-slate-700/60 min-w-[180px]">
                 <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Payroll Reference</p>
                 <p class="text-lg font-bold text-emerald-400 font-mono tracking-tight">
@@ -40,11 +95,10 @@
             </div>
         </div>
 
-        <!-- Period Banner -->
         <div class="mt-6 pt-4 border-t border-slate-700/50">
             <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                     <span class="text-sm font-medium text-slate-300">Pay Period:</span>
                 </div>
                 <p class="text-lg font-semibold text-white font-mono tabular-nums">
@@ -53,38 +107,39 @@
             </div>
         </div>
 
-        <!-- Info Banner -->
         <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-400 bg-slate-800/40 py-2 px-4 rounded-lg border border-slate-700/40">
             <i class="fa-solid fa-circle-info text-emerald-400/80"></i>
-            <span>1–15 Tax is fixed from previous payroll • Other deductions auto-compute but editable • Gross Pay updates in real-time</span>
+            <span>1–15 Tax fixed from previous payroll • Late deduction auto-calculated but editable • Gross updates real-time</span>
         </div>
     </header>
 
     <!-- ================= PAYROLL FORM ================= -->
     <form method="POST"
           action="{{ url_for('payroll_staff_bp.process_jo_payroll', period_id=period.id, department_id=department.id) }}"
-          class="space-y-6">
+          class="space-y-6" id="jo-payroll-form-2nd">
 
         {% for data in payroll_data %}
         {% set payroll = data.payroll %}
         {% set rate = (data.employee.salary or 0) | float %}
+        {% set hourly_rate = rate / 8 %}
 
         <!-- Employee Card -->
         <article class="employee-card bg-slate-800/70 backdrop-blur-sm rounded-2xl border border-slate-700/60 
                        shadow-lg hover:shadow-xl transition-shadow duration-200"
                  data-rate="{{ rate }}"
+                 data-hourly-rate="{{ hourly_rate }}"
                  data-employee-id="{{ data.employee.id }}">
 
             <!-- Card Header -->
             <div class="px-6 py-5 border-b border-slate-700/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 
                                flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         {{ data.employee.get_full_name().split()|first|first|upper }}
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-white leading-tight">
-                            <span class="text-amber-400/90 font-mono text-sm">#{{ data.employee.employee_id }}</span>
+                            <span class="text-emerald-400/90 font-mono text-sm">#{{ data.employee.employee_id }}</span>
                             {{ data.employee.get_full_name() }}
                         </h3>
                         <p class="text-sm text-slate-400 mt-0.5">
@@ -106,7 +161,7 @@
                 </div>
             </div>
 
-            <!-- Card Body: Earnings & Deductions -->
+            <!-- Card Body -->
             <div class="p-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                 <!-- EARNINGS SECTION -->
@@ -126,8 +181,7 @@
                             <input type="number"
                                    name="days_worked_{{ data.employee.id }}"
                                    value="{{ payroll.days_worked or 0 }}"
-                                   min="0"
-                                   max="16"
+                                   min="0" max="16"
                                    class="days w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
                                           rounded-lg text-right font-mono tabular-nums text-white
                                           focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
@@ -139,9 +193,8 @@
                             </label>
                             <input type="number"
                                    name="overtime_{{ data.employee.id }}"
-                                   value="{{ data.overtime_pay or 0 }}" 
-                                   min="0"
-                                   step="0.01"
+                                   value="{{ data.overtime_pay or 0 }}"
+                                   min="0" step="0.01"
                                    class="overtime w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
                                           rounded-lg text-right font-mono tabular-nums text-white
                                           focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
@@ -165,7 +218,7 @@
                     </div>
                 </section>
 
-                <!-- DEDUCTIONS SECTION (ALL AUTO-COMPUTED BUT EDITABLE) -->
+                <!-- DEDUCTIONS SECTION -->
                 <section class="bg-slate-900/50 rounded-xl p-5 border border-slate-700/40 space-y-5">
                     <div class="flex items-center gap-2 pb-3 border-b border-slate-700/40">
                         <div class="w-8 h-8 rounded-lg bg-red-600/20 flex items-center justify-center">
@@ -174,45 +227,41 @@
                         <h4 class="font-semibold text-red-400">Deductions</h4>
                     </div>
 
-                    <!-- Deductions Grid - All Visible, 2-column layout -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {% for ded in data.deductions %}
-
-                            {% if ded.name == "SSS" %}
+                            {% if ded.type == "statutory" and ded.name == "SSS" %}
                             <div class="space-y-1.5">
                                 <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
                                     <span><i class="fa-solid fa-hand-holding-dollar"></i> SSS Contribution</span>
-                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Auto: Fixed</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Auto</span>
                                 </label>
                                 <input type="number"
                                        name="sss_{{ data.employee.id }}"
                                        value="{{ ded.employee_share or 0 }}"
-                                       min="0"
-                                       step="0.01"
+                                       min="0" step="0.01"
                                        class="employee-share auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
                                               rounded-lg text-right font-mono tabular-nums text-white
-                                              focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                              focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
                                               outline-none transition-all placeholder-slate-500"
                                        data-deduction-type="statutory"
                                        data-auto-value="{{ ded.employee_share or 0 }}">
                                 <button type="button" 
-                                        class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        class="reset-deduction mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
                                         data-target="sss_{{ data.employee.id }}">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset to auto
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
                                 </button>
                             </div>
 
-                            {% elif ded.name == "PhilHealth" %}
+                            {% elif ded.type == "statutory" and ded.name == "PhilHealth" %}
                             <div class="space-y-1.5">
                                 <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
                                     <span><i class="fa-solid fa-heart-pulse"></i> PhilHealth</span>
-                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Auto: 2.5%</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">2.5%</span>
                                 </label>
                                 <input type="number"
                                        name="philhealth_{{ data.employee.id }}"
                                        value="{{ ded.employee_share or 0 }}"
-                                       min="0"
-                                       step="0.01"
+                                       min="0" step="0.01"
                                        class="employee-share auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-emerald-600/40 
                                               rounded-lg text-right font-mono tabular-nums text-emerald-300
                                               focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
@@ -220,25 +269,23 @@
                                        data-deduction-type="statutory"
                                        data-auto-rate="0.025"
                                        data-gross-dependent="true">
-                                <p class="text-[10px] text-slate-500 mt-1">Gov't Share: ₱ {{ '{:,.2f}'.format(ded.employer_share) }}</p>
                                 <button type="button" 
                                         class="reset-deduction mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
                                         data-target="philhealth_{{ data.employee.id }}">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset to auto
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
                                 </button>
                             </div>
 
-                            {% elif ded.name == "Withholding Tax (1–15)" %}
+                            {% elif ded.type == "tax" and "1–15" in ded.name %}
                             <div class="space-y-1.5">
                                 <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
-                                    <span><i class="fa-solid fa-file-invoice"></i> Withholding Tax (1–15)</span>
-                                    <span class="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30">Fixed: From 1–15 Payroll</span>
+                                    <span><i class="fa-solid fa-file-invoice"></i> {{ ded.name }}</span>
+                                    <span class="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/30">Fixed</span>
                                 </label>
                                 <input type="number"
                                        name="tax_prev_{{ data.employee.id }}"
                                        value="{{ ded.employee_share or 0 }}"
-                                       min="0"
-                                       step="0.01"
+                                       min="0" step="0.01"
                                        class="employee-share auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-blue-600/40 
                                               rounded-lg text-right font-mono tabular-nums text-blue-300
                                               focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 
@@ -246,25 +293,23 @@
                                        data-deduction-type="tax"
                                        data-auto-value="{{ ded.employee_share or 0 }}"
                                        data-fixed-value="true">
-                                <p class="text-[10px] text-slate-500 mt-1">Based on previous payroll gross: ₱ {{ '{:,.2f}'.format(data.deductions|selectattr('name', 'equalto', 'Withholding Tax (1–15)')|map(attribute='employee_share')|first or 0) }}</p>
                                 <button type="button" 
                                         class="reset-deduction mt-1 text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1"
                                         data-target="tax_prev_{{ data.employee.id }}">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset to fixed value
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
                                 </button>
                             </div>
 
-                            {% elif ded.name == "Withholding Tax (16–End)" %}
+                            {% elif ded.type == "tax" and "16–End" in ded.name %}
                             <div class="space-y-1.5">
                                 <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
-                                    <span><i class="fa-solid fa-file-invoice"></i> Withholding Tax (16–End)</span>
-                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Auto: 2%</span>
+                                    <span><i class="fa-solid fa-file-invoice"></i> {{ ded.name }}</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">2%</span>
                                 </label>
                                 <input type="number"
                                        name="tax_curr_{{ data.employee.id }}"
                                        value="{{ ded.employee_share or 0 }}"
-                                       min="0"
-                                       step="0.01"
+                                       min="0" step="0.01"
                                        class="employee-share auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-emerald-600/40 
                                               rounded-lg text-right font-mono tabular-nums text-emerald-300
                                               focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
@@ -275,53 +320,75 @@
                                 <button type="button" 
                                         class="reset-deduction mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
                                         data-target="tax_curr_{{ data.employee.id }}">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset to auto
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
                                 </button>
                             </div>
 
-                            {% else %}
-                            <!-- Loans and other deductions -->
+                            {% elif ded.type == "late" %}
+                            <!-- ✅ LATE/UNDERTIME DEDUCTION -->
+                            <div class="space-y-1.5 sm:col-span-2">
+                                <label class="text-xs font-medium text-emerald-400 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-clock-rotate-left"></i> {{ ded.name }}</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                                        {{ ded.late_hours }}h {{ ded.late_minutes }}m late
+                                    </span>
+                                </label>
+                                <input type="number"
+                                       name="late_deduction_{{ data.employee.id }}"
+                                       value="{{ ded.employee_share or 0 }}"
+                                       min="0" step="0.01"
+                                       class="late-deduction w-full px-4 py-2.5 bg-emerald-900/10 border border-emerald-700/40 
+                                              rounded-lg text-right font-mono tabular-nums text-emerald-300
+                                              focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
+                                              outline-none transition-all placeholder-slate-500"
+                                       data-deduction-type="late"
+                                       data-late-hours="{{ ded.late_hours or 0 }}"
+                                       data-late-minutes="{{ ded.late_minutes or 0 }}">
+                                <p class="text-[10px] text-slate-500 mt-1">
+                                    Calculation: ({{ ded.late_hours or 0 }}h × ₱{{ '{:,.2f}'.format(hourly_rate) }}/hr) + 
+                                    ({{ ded.late_minutes or 0 }}m × ₱{{ '{:,.2f}'.format(hourly_rate/60) }}/min)
+                                </p>
+                            </div>
+
+                            {% elif ded.type == "loan" %}
                             <div class="space-y-1.5">
                                 <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
                                     <span><i class="fa-solid fa-file-invoice-dollar"></i> {{ ded.name }}</span>
-                                    <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Auto: Fixed</span>
+                                    <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Fixed</span>
                                 </label>
                                 <input type="number"
                                        name="loan_{{ ded.loan_id }}"
                                        value="{{ ded.employee_share or 0 }}"
-                                       min="0"
-                                       step="0.01"
+                                       min="0" step="0.01"
                                        class="employee-share auto-deduction w-full px-4 py-2.5 bg-slate-800/80 border border-slate-600 
                                               rounded-lg text-right font-mono tabular-nums text-white
-                                              focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                              focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
                                               outline-none transition-all placeholder-slate-500"
                                        data-deduction-type="loan"
                                        data-auto-value="{{ ded.employee_share or 0 }}">
                                 <button type="button" 
-                                        class="reset-deduction mt-1 text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                        class="reset-deduction mt-1 text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
                                         data-target="loan_{{ ded.loan_id }}">
-                                    <i class="fa-solid fa-rotate-left"></i> Reset to auto
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
                                 </button>
                             </div>
                             {% endif %}
-
                         {% endfor %}
 
-                        <!-- Absence Without Pay (always show, manual entry) -->
+                        <!-- Absence Without Pay -->
                         <div class="space-y-1.5">
                             <label class="text-xs font-medium text-slate-400 flex items-center justify-between">
                                 <span><i class="fa-regular fa-calendar-xmark"></i> Absence Without Pay</span>
-                                <span class="text-[10px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">Manual Entry</span>
+                                <span class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Manual</span>
                             </label>
                             <input type="number"
                                    name="awop_{{ data.employee.id }}"
                                    value="0"
-                                   min="0"
-                                   step="0.01"
+                                   min="0" step="0.01"
                                    placeholder="0.00"
-                                   class="awop w-full px-4 py-2.5 bg-amber-900/10 border border-amber-700/40 
+                                   class="awop w-full px-4 py-2.5 bg-emerald-900/10 border border-emerald-700/40 
                                           rounded-lg text-right font-mono tabular-nums text-white
-                                          focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 
+                                          focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 
                                           outline-none transition-all placeholder-slate-500"
                                    data-deduction-type="awop">
                         </div>
@@ -363,16 +430,17 @@
             <div class="flex items-start gap-3 text-sm text-slate-400">
                 <i class="fa-solid fa-circle-info text-emerald-400/80 mt-0.5"></i>
                 <p>
-                    <strong class="text-blue-300">1–15 Tax</strong> is fixed from previous payroll • 
-                    <strong class="text-emerald-300">PhilHealth & 16–End Tax</strong> auto-compute from current Gross Pay • 
-                    All fields editable • Use "Reset" buttons to restore auto values • All amounts in ₱
+                    <strong class="text-blue-300">1–15 Tax</strong> fixed from previous payroll • 
+                    <strong class="text-emerald-300">PhilHealth & 16–End Tax</strong> auto-compute from Gross • 
+                    <strong class="text-emerald-300">Late deduction</strong> = late hrs/mins × hourly rate • 
+                    All fields editable • Use "Reset" to restore auto values • All amounts in ₱
                 </p>
             </div>
-            <button type="submit"
+            <button type="submit" id="process-jo-btn-2nd"
                     class="inline-flex items-center gap-2 px-7 py-3.5 font-semibold text-white rounded-xl
-                           bg-gradient-to-r from-amber-600 to-amber-700 
-                           hover:from-amber-500 hover:to-amber-600 active:from-amber-700 active:to-amber-800
-                           transition-all shadow-lg hover:shadow-amber-500/30 hover:-translate-y-0.5">
+                           bg-gradient-to-r from-emerald-600 to-emerald-700 
+                           hover:from-emerald-500 hover:to-emerald-600 active:from-emerald-700 active:to-emerald-800
+                           transition-all shadow-lg hover:shadow-emerald-500/30 hover:-translate-y-0.5">
                 <i class="fa-solid fa-check-circle"></i>
                 <span>Process 2nd Half Payroll</span>
             </button>
@@ -380,21 +448,104 @@
 
     </form>
 
-    <!-- Footer Note -->
     <footer class="text-center pt-4 pb-8">
         <p class="text-xs text-slate-500">
             <i class="fa-solid fa-shield-halved mr-1"></i>
-            Payroll data is encrypted and compliant with Data Privacy Act of 2012
+            Payroll data encrypted • Data Privacy Act 2012 compliant
         </p>
     </footer>
 
+    {% endif %}
 </div>
 
-<!-- Enhanced JavaScript: Real-time Gross + Smart Deduction Auto-Compute -->
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- JavaScript: SweetAlert Confirmation + Real-time Calculations + Reset Logic -->
 <script>
+// SweetAlert Confirmation for JO Payroll Processing (2nd Half)
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('jo-payroll-form-2nd');
+    const processBtn = document.getElementById('process-jo-btn-2nd');
+    
+    if (form && processBtn) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            Swal.fire({
+                title: 'Confirm 2nd Half JO Payroll',
+                html: `
+                    <div class="text-left">
+                        <p class="text-gray-300 mb-3">
+                            Are you sure you want to process the <strong class="text-emerald-400">2nd Half (Days 16–End)</strong> 
+                            Job Order payroll for <strong class="text-white">{{ department.name }}</strong>?
+                        </p>
+                        <p class="text-sm text-gray-400">
+                            <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i>
+                            This action will finalize payroll records for the period:
+                        </p>
+                        <p class="text-sm font-mono text-gray-200 mt-1">
+                            {{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}
+                        </p>
+                        <div class="mt-4 p-3 bg-emerald-900/20 border border-emerald-700/40 rounded-lg">
+                            <p class="text-xs text-emerald-300">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                                <strong>Warning:</strong> Once processed, edits may require supervisor approval or payroll reversal.
+                            </p>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-check"></i> Yes, Process Payroll',
+                cancelButtonText: '<i class="fa-solid fa-xmark"></i> Cancel',
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#6b7280',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'bg-slate-800 border border-slate-700',
+                    title: 'text-white font-bold',
+                    htmlContainer: 'text-gray-300',
+                    confirmButton: 'font-semibold px-6 py-2.5 rounded-lg',
+                    cancelButton: 'font-semibold px-6 py-2.5 rounded-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show processing state
+                    const originalBtnContent = processBtn.innerHTML;
+                    
+                    processBtn.disabled = true;
+                    processBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Processing...';
+                    processBtn.classList.add('opacity-75', 'cursor-not-allowed');
+                    
+                    // Optional: Show progress toast
+                    Swal.fire({
+                        title: 'Processing...',
+                        text: 'Finalizing 2nd half payroll records. Please wait.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                        customClass: {
+                            popup: 'bg-slate-800 border border-slate-700',
+                            title: 'text-white',
+                            htmlContainer: 'text-gray-300'
+                        }
+                    });
+                    
+                    // Submit the form
+                    form.submit();
+                }
+            });
+        });
+    }
+});
+
+// Existing payroll calculation logic
 document.querySelectorAll('.employee-card').forEach(card => {
     const empId = card.dataset.employeeId;
-    const rate = parseFloat(card.dataset.rate) || 0;
+    const dailyRate = parseFloat(card.dataset.rate) || 0;
+    const hourlyRate = dailyRate / 8;
 
     const days = card.querySelector('.days');
     const overtime = card.querySelector('.overtime');
@@ -403,12 +554,9 @@ document.querySelectorAll('.employee-card').forEach(card => {
     const totalDedEl = card.querySelector('.total-deduction');
     const netEl = card.querySelector('.net-pay');
     
-    // All deduction inputs
     const allDeductions = card.querySelectorAll('[data-deduction-type]');
-    // Gross-dependent deductions (PhilHealth, Tax 16-End) - auto-recalculate when gross changes
     const grossDependentDeductions = card.querySelectorAll('.auto-deduction[data-gross-dependent="true"]');
-    // Fixed-value deductions (SSS, Loans, Tax 1-15) - keep original value unless reset
-    const fixedValueDeductions = card.querySelectorAll('.auto-deduction[data-auto-value]');
+    const lateDeductionInput = card.querySelector('.late-deduction');
 
     function format(n) {
         return "₱ " + (n || 0).toLocaleString('en-PH', {
@@ -417,62 +565,35 @@ document.querySelectorAll('.employee-card').forEach(card => {
         });
     }
 
+    function computeLateDeduction(hours, minutes) {
+        const h = parseFloat(hours) || 0;
+        const m = parseFloat(minutes) || 0;
+        return (h * hourlyRate) + (m * hourlyRate / 60);
+    }
+
     function computeAutoDeductions(gross) {
-        // Update ONLY gross-dependent deductions (PhilHealth, Tax 16-End)
         grossDependentDeductions.forEach(input => {
             const autoRate = parseFloat(input.dataset.autoRate) || 0;
-            if (autoRate > 0) {
-                const autoValue = gross * autoRate;
-                // Store original auto value for reset functionality
-                if (!input.dataset.originalAuto) {
-                    input.dataset.originalAuto = autoValue.toFixed(2);
-                }
-                // Only auto-update if user hasn't manually edited
-                if (!input.dataset.manualEdit) {
-                    input.value = autoValue.toFixed(2);
-                    input.classList.add('border-emerald-500/60', 'ring-1', 'ring-emerald-500/30');
-                }
-            }
-        });
-
-        // Fixed-value deductions (SSS, Loans, Tax 1-15) keep their original value unless reset
-        fixedValueDeductions.forEach(input => {
-            // Skip if this is the fixed 1-15 tax (has data-fixed-value attribute)
-            if (input.dataset.fixedValue === 'true') {
-                if (!input.dataset.originalAuto) {
-                    input.dataset.originalAuto = input.dataset.autoValue || '0';
-                }
-                if (!input.dataset.manualEdit) {
-                    input.value = input.dataset.originalAuto;
-                    input.classList.add('border-blue-500/60', 'ring-1', 'ring-blue-500/30');
-                }
-            } else {
-                // Other fixed deductions (SSS, Loans)
-                if (!input.dataset.originalAuto) {
-                    input.dataset.originalAuto = input.dataset.autoValue || '0';
-                }
-                if (!input.dataset.manualEdit) {
-                    input.value = input.dataset.originalAuto;
-                    input.classList.add('border-amber-500/60', 'ring-1', 'ring-amber-500/30');
-                }
+            if (autoRate > 0 && !input.dataset.manualEdit) {
+                input.value = (gross * autoRate).toFixed(2);
             }
         });
     }
 
     function compute() {
-        // 1. Compute earnings - REAL-TIME GROSS UPDATE
+        // Earnings
         const d = parseFloat(days.value) || 0;
         const ot = parseFloat(overtime.value) || 0;
-        const basic = d * rate;
-        const gross = basic + ot;  // ✅ Gross = Basic + Overtime (updates instantly)
+        const basic = d * dailyRate;
+        const gross = basic + ot;
 
         basicEl.value = format(basic);
-        grossEl.value = format(gross);  // ✅ Gross Pay field updates in real-time
+        grossEl.value = format(gross);
 
-        // 2. Auto-compute ONLY gross-dependent deductions based on NEW gross value
+        // Auto-update gross-dependent deductions
         computeAutoDeductions(gross);
 
-        // 3. Compute total deductions (all fields)
+        // Total deductions
         let totalDed = 0;
         allDeductions.forEach(input => {
             const val = parseFloat(input.value) || 0;
@@ -480,58 +601,56 @@ document.querySelectorAll('.employee-card').forEach(card => {
         });
         totalDedEl.value = format(totalDed);
 
-        // 4. Net Pay = Gross - Total Deductions (prevent negative)
+        // Net pay
         const net = Math.max(gross - totalDed, 0);
         netEl.value = format(net);
     }
 
-    // Handle manual edits on deductions: mark as manually edited
+    // Late deduction auto-fill on load
+    if (lateDeductionInput && !lateDeductionInput.value) {
+        const hrs = lateDeductionInput.dataset.lateHours || 0;
+        const mins = lateDeductionInput.dataset.lateMinutes || 0;
+        const calc = computeLateDeduction(hrs, mins);
+        if (calc > 0) {
+            lateDeductionInput.value = calc.toFixed(2);
+        }
+    }
+
+    // Input listeners
     allDeductions.forEach(input => {
         input.addEventListener('input', function() {
             this.dataset.manualEdit = 'true';
-            // Remove all auto-compute visual indicators
-            this.classList.remove('border-emerald-500/60', 'ring-1', 'ring-emerald-500/30', 
-                                'border-amber-500/60', 'ring-1', 'ring-amber-500/30',
-                                'border-blue-500/60', 'ring-1', 'ring-blue-500/30');
-            compute(); // Recalculate totals immediately
+            compute();
         });
         input.addEventListener('change', compute);
         input.addEventListener('blur', compute);
     });
 
-    // Reset button: restore auto-computed or fixed value
+    // Reset buttons
     card.querySelectorAll('.reset-deduction').forEach(btn => {
         btn.addEventListener('click', function() {
             const targetName = this.dataset.target;
             const targetInput = card.querySelector(`[name="${targetName}"]`);
-            
             if (targetInput) {
                 if (targetInput.dataset.grossDependent === 'true') {
-                    // Gross-dependent: recalculate from current gross
                     const gross = parseFloat(grossEl.value.replace(/[₱,]/g, '')) || 0;
-                    const autoRate = parseFloat(targetInput.dataset.autoRate) || 0;
-                    targetInput.value = (gross * autoRate).toFixed(2);
+                    const rate = parseFloat(targetInput.dataset.autoRate) || 0;
+                    targetInput.value = (gross * rate).toFixed(2);
                 } else {
-                    // Fixed-value (SSS, Loans, Tax 1-15): use stored original
-                    targetInput.value = targetInput.dataset.originalAuto || '0';
+                    targetInput.value = targetInput.dataset.autoValue || '0';
                 }
-                // Clear manual flag and visual indicators
                 delete targetInput.dataset.manualEdit;
-                targetInput.classList.remove('border-emerald-500/60', 'ring-1', 'ring-emerald-500/30',
-                                           'border-amber-500/60', 'ring-1', 'ring-amber-500/30',
-                                           'border-blue-500/60', 'ring-1', 'ring-blue-500/30');
-                compute(); // Recalculate totals
+                compute();
             }
         });
     });
 
-    // ✅ REAL-TIME: Listen to Days and Overtime for instant Gross Pay updates
+    // Real-time earnings updates
     [days, overtime].forEach(input => {
-        input.addEventListener('input', compute);  // Real-time as user types
-        input.addEventListener('change', compute);  // On blur/commit
+        input.addEventListener('input', compute);
+        input.addEventListener('change', compute);
     });
 
-    // Initial compute on page load
     compute();
 });
 </script>
