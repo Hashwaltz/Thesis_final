@@ -243,23 +243,28 @@ document.addEventListener("DOMContentLoaded", function() {
   const modal = document.getElementById('editUserModal');
   
   function toggleModal(show) {
-    if (!modal) return;
-    if (show) {
-      modal.classList.remove('hidden');
-      // Trigger reflow for transition
-      void modal.offsetWidth;
-      modal.style.opacity = '1';
-      document.body.style.overflow = 'hidden';
-      // Focus first interactive element
-      setTimeout(() => roleSelect?.focus(), 100);
-    } else {
-      modal.style.opacity = '0';
-      setTimeout(() => {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-      }, 300);
-    }
+  const toggleModal = (show) => {
+  if (!modal) return;
+
+  if (show) {
+    modal.classList.remove("hidden");
+    modal.style.opacity = "1";
+    document.body.style.overflow = "hidden";
+
+    setTimeout(() => {
+      roleSelect?.focus();
+    }, 50);
+
+  } else {
+    modal.style.opacity = "0";
+    document.body.style.overflow = "";
+
+    // wait for fade-out then hide
+    setTimeout(() => {
+      modal.classList.add("hidden");
+    }, 200);
   }
+};
   
   // Close handlers
   document.getElementById('closeEditUserModal')?.addEventListener('click', () => toggleModal(false));

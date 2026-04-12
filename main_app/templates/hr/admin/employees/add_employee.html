@@ -608,20 +608,24 @@ const toggleAddModal = (show) => {
   const modal = document.getElementById('addEmployeeModal');
   if (!modal) return;
   
-  if (show) {
+   if (show) {
     modal.classList.remove('hidden');
-    // Trigger reflow for transition
-    void modal.offsetWidth;
     modal.style.opacity = '1';
     document.body.style.overflow = 'hidden';
-    // Reset to step 1 when opening
-    resetFormSteps();
+
+    // reset steps AFTER render
+    requestAnimationFrame(() => {
+      resetFormSteps();
+    });
+
   } else {
     modal.style.opacity = '0';
+    document.body.style.overflow = '';
+
     setTimeout(() => {
       modal.classList.add('hidden');
-      document.body.style.overflow = '';
-    }, 300);
+      modal.style.opacity = '1'; // 🔥 IMPORTANT RESET
+    }, 200);
   }
 };
 
