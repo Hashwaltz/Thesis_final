@@ -208,24 +208,22 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===== Modal Toggle Helper =====
   const modal = document.getElementById('editAttendanceModal');
   
-  function toggleModal(show) {
-    if (!modal) return;
-    if (show) {
-      modal.classList.remove('hidden');
-      // Trigger reflow for transition
-      void modal.offsetWidth;
-      modal.style.opacity = '1';
-      document.body.style.overflow = 'hidden';
-      // Focus first input
-      setTimeout(() => document.getElementById('date')?.focus(), 100);
-    } else {
-      modal.style.opacity = '0';
-      setTimeout(() => {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
-      }, 300);
-    }
+ function toggleModal(show) {
+  if (!modal) return;
+
+  if (show) {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+      document.getElementById('date')?.focus();
+    }, 100);
+  } else {
+    document.body.style.overflow = '';
+
+    modal.classList.add('hidden');
   }
+}
   
   // Close handlers
   document.getElementById('closeEditAttendanceModal')?.addEventListener('click', () => toggleModal(false));
