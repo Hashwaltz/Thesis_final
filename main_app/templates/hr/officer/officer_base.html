@@ -263,11 +263,6 @@
          aria-label="Page header">
       <i class="fa-solid fa-user-tie text-xl"></i>
       <h1 class="text-lg font-semibold">HR Officer Panel</h1>
-      {% if request.endpoint %}
-      <span class="ml-auto text-xs bg-blue-700/50 px-3 py-1 rounded-full">
-        {{ request.endpoint.replace('hr_officer_bp.', '') }}
-      </span>
-      {% endif %}
     </div>
 
     <!-- Flash Messages -->

@@ -341,18 +341,34 @@
     const confirmLogout = (e) => {
       e.preventDefault();
       Swal.fire({
-        title: "Log out?",
-        text: "You will need to sign in again to continue.",
+        title: "Sign Out?",
+        text: "You will need to sign out again to continue.",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#2563eb",
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: "Yes, log out",
+        confirmButtonColor: "#3b82f6",
+        cancelButtonColor: "#475569",
+        confirmButtonText: "Yes, Sign Out",
         cancelButtonText: "Cancel",
-        reverseButtons: true
-      }).then((result) => {
+        background: "#1e293b",
+        color: "#f1f5f9",
+        reverseButtons: true,
+        customClass: {
+          popup: 'rounded-2xl border border-slate-700 shadow-2xl',
+          title: 'text-white font-semibold',
+          content: 'text-slate-300',
+          confirmButton: 'rounded-xl px-5 py-2.5 font-medium',
+          cancelButton: 'rounded-xl px-5 py-2.5 font-medium'
+        },
+      })..then((result) => {
         if (result.isConfirmed) {
-          // Add small delay for animation
+          Swal.fire({
+            title: 'Signing out...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            background: "#1e293b",
+            color: "#f1f5f9",
+            customClass: { popup: 'rounded-2xl border border-slate-700' }
+          });
           setTimeout(() => {
             window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
           }, 150);
