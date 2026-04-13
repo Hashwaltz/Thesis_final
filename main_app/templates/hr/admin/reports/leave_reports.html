@@ -129,25 +129,31 @@
     <!-- ================== Leave Records Table ================== -->
     <section class="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden shadow-xl">
       <!-- Table Header with Pagination Info -->
-      <div class="px-5 py-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-900/40">
-        <p class="text-slate-400 text-sm">
-          Showing <span class="font-semibold text-slate-200">{{ pagination.per_page * (pagination.page - 1) + 1 }}</span> to 
-          <span class="font-semibold text-slate-200">{{ [pagination.per_page * pagination.page, pagination.total]|min }}</span> of 
-          <span class="font-semibold text-slate-200">{{ pagination.total }}</span> records
-        </p>
-        <!-- Per Page Selector -->
-        <form method="get" class="flex items-center gap-2" id="perPageForm">
-          {% for key, value in current_filters.items() %}
-            {% if value %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
-          {% endfor %}
-          <label class="text-xs text-slate-500">Show:</label>
-          <select name="per_page" onchange="document.getElementById('perPageForm').submit()" class="px-2 py-1 rounded bg-slate-900/60 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-            {% for option in [10, 25, 50, 100] %}
-              <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }}</option>
-            {% endfor %}
-          </select>
-        </form>
-      </div>
+  <!-- Table Header with Pagination Info -->
+<div class="px-5 py-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-900/40">
+  {% if pagination.total > 0 %}
+  <p class="text-slate-400 text-sm">
+    Showing <span class="font-semibold text-slate-200">{{ (pagination.per_page * (pagination.page - 1)) + 1 }}</span> to 
+    <span class="font-semibold text-slate-200">{{ [pagination.per_page * pagination.page, pagination.total] | min }}</span> of 
+    <span class="font-semibold text-slate-200">{{ pagination.total }}</span> records
+  </p>
+  {% else %}
+  <p class="text-slate-400 text-sm">No records match your current filters.</p>
+  {% endif %}
+  
+  <!-- Per Page Selector -->
+  <form method="get" class="flex items-center gap-2" id="perPageForm">
+    {% for key, value in current_filters.items() %}
+      {% if value %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+    {% endfor %}
+    <label class="text-xs text-slate-500">Show:</label>
+    <select name="per_page" onchange="document.getElementById('perPageForm').submit()" class="px-2 py-1 rounded bg-slate-900/60 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+      {% for option in [10, 25, 50, 100] %}
+        <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
 
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-700/50 text-sm md:text-base">
