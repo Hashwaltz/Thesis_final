@@ -181,30 +181,24 @@
                 </span>
               </td>
               
-              <td class="px-4 py-3 text-right">
-                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}', '{{ shift.end_time.strftime('%H:%M') if shift.end_time else '' }}')"
-                          class="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/15 rounded-lg transition-colors" 
-                          title="Edit Shift">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                  </button>
-                  <button onclick="confirmDelete({{ shift.id }}, '{{ shift.name }}')"
-                          class="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/15 rounded-lg transition-colors" 
-                          title="Delete Shift">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-                <div class="sm:hidden flex gap-2">
-                  <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}', '{{ shift.end_time.strftime('%H:%M') if shift.end_time else '' }}')"
-                          class="p-2 text-cyan-400" title="Edit">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                  </button>
-                  <button onclick="confirmDelete({{ shift.id }}, '{{ shift.name }}')"
-                          class="p-2 text-red-400" title="Delete">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              </td>
+            <td class="px-4 py-3 text-right">
+              <!-- Desktop: Always visible actions -->
+              <div class="flex items-center justify-end gap-1">
+                <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}', '{{ shift.end_time.strftime('%H:%M') if shift.end_time else '' }}')"
+                        class="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/15 rounded-lg transition-colors" 
+                        title="Edit Shift">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
+              
+              <!-- Mobile: Already always visible, kept for consistency -->
+              <div class="sm:hidden flex gap-2 mt-2 sm:mt-0">
+                <button onclick="openEditModal({{ shift.id }}, '{{ shift.name }}', '{{ shift.start_time.strftime('%H:%M') if shift.start_time else '' }}', '{{ shift.end_time.strftime('%H:%M') if shift.end_time else '' }}')"
+                        class="p-2 text-cyan-400" title="Edit">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
+            </td>
             </tr>
             {% else %}
             <tr>
