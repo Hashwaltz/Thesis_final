@@ -206,6 +206,177 @@ def count_eligible_work_days(employee, year, month):
     return eligible_worked_days, last_day
 
 
+
+# =========================================================
+# 🆕 HELPER: DEDUCT CREDITS FOR APPROVED LEAVES
+# =========================================================
+def deduct_credits_for_approved_leaves(employee_id, leave_id=None):
+    """
+    Deducts leave credits when a leave is approved.
+    If leave_id is provided, process only that leave.
+    Otherwise, sync all approved leaves for the employee.
+    """
+    query = Leave.query.filter_by(employee_id=employee_id, status="Approved")
+    if leave_id:
+        query = query.filter_by(id=leave_id)
+    
+    leaves = query.all()
+    results = []
+    
+    for leave in leaves:
+        leave_type = leave.leave_type
+        if not leave_type or leave_type.name not in ["Vacation Leave", "Sick Leave"]:
+            continue
+        
+        # Calculate days (exclude weekends if your policy requires)
+        current_date = leave.start_date
+        days_to_deduct = 0
+        while current_date <= leave.end_date:
+            # Optional: skip weekends
+            # if current_date.weekday() < 5:
+            days_to_deduct += 1
+            current_date += timedelta(days=1)
+        
+        if days_to_deduct <= 0:
+            continue
+        
+        # Get or create LeaveCredit record
+        credit = LeaveCredit.query.filter_by(
+            employee_id=employee_id,
+            leave_type_id=leave_type.id
+        ).first()
+        
+        if not credit:
+            credit = LeaveCredit(
+                employee_id=employee_id,
+                leave_type_id=leave_type.id,
+                total_credits=0,
+                used_credits=0
+            )
+            db.session.add(credit)
+        
+        # Check if already deducted (prevent double-deduction)
+        history_exists = LeaveCreditHistory.query.filter_by(
+            employee_id=employee_id,
+            leave_type_id=leave_type.id,
+            month=leave.start_date.strftime("%b %Y"),  # Approximate month
+            used=days_to_deduct  # Rough check
+        ).first()
+        
+        if not history_exists:
+            # Deduct from credits
+            credit.used_credits += days_to_deduct
+            
+            # Record in history
+            history_entry = LeaveCreditHistory(
+                employee_id=employee_id,
+                leave_type_id=leave_type.id,
+                earned=0,
+                used=days_to_deduct,
+                month=leave.start_date.strftime("%b %Y")
+            )
+            db.session.add(history_entry)
+            
+            results.append({
+                "leave_id": leave.id,
+                "type": leave_type.name,
+                "days_deducted": days_to_deduct,
+                "month": leave.start_date.strftime("%B %Y")
+            })
+    
+    if results:
+        db.session.commit()
+    
+    return results
+
+
+
+# =========================================================
+# 🆕 CORE HELPER: CONSUME LEAVE CREDITS WITH HISTORY TRACKING
+# =========================================================
+def consume_leave_from_history(employee_id, leave_type_id, consumption_date, amount=1.0):
+    """
+    Deducts leave credits for an approved leave day.
+    
+    Args:
+        employee_id: Target employee
+        leave_type_id: The leave type being consumed (e.g., Vacation Leave)
+        consumption_date: The specific date being deducted (for history month)
+        amount: Days/hours to deduct (default=1.0 for full day)
+    
+    Returns:
+        float: Remaining balance AFTER deduction (0.0 if exhausted)
+    
+    Policy:
+        - Vacation Leave (VL) is consumed first for late deductions
+        - Sick Leave (SL) is fallback when VL exhausted
+        - Records deduction in LeaveCreditHistory for UI sync
+    """
+    from main_app.models.hr_models import LeaveCredit, LeaveCreditHistory, LeaveType
+    from main_app.extensions import db
+    from datetime import date
+    
+    # Get the leave type being consumed
+    leave_type = LeaveType.query.get(leave_type_id)
+    if not leave_type:
+        return 0.0
+    
+    # 🔥 STEP 1: Get or create LeaveCredit record
+    credit = LeaveCredit.query.filter_by(
+        employee_id=employee_id,
+        leave_type_id=leave_type_id
+    ).first()
+    
+    if not credit:
+        # Initialize with zero balance if doesn't exist
+        credit = LeaveCredit(
+            employee_id=employee_id,
+            leave_type_id=leave_type_id,
+            total_credits=0.0,
+            used_credits=0.0
+        )
+        db.session.add(credit)
+        db.session.flush()  # Get ID without committing yet
+    
+    # 🔥 STEP 2: Calculate current available balance
+    available_balance = max(0.0, credit.total_credits - credit.used_credits)
+    
+    # 🔥 STEP 3: Determine how much we can actually deduct
+    amount_to_deduct = min(amount, available_balance)
+    
+    if amount_to_deduct > 0:
+        # Deduct from the credit record
+        credit.used_credits += amount_to_deduct
+        
+        # 🔥 STEP 4: Record in LeaveCreditHistory for UI sync
+        month_label = consumption_date.strftime("%b %Y")  # e.g., "Apr 2026"
+        
+        # Check if history entry already exists for this month/type (prevent double-entry)
+        existing_history = LeaveCreditHistory.query.filter_by(
+            employee_id=employee_id,
+            leave_type_id=leave_type_id,
+            month=month_label
+        ).first()
+        
+        if existing_history:
+            # Update existing entry (cumulative)
+            existing_history.used += amount_to_deduct
+        else:
+            # Create new history entry
+            history_entry = LeaveCreditHistory(
+                employee_id=employee_id,
+                leave_type_id=leave_type_id,
+                earned=0.0,  # This is a deduction, not earning
+                used=amount_to_deduct,
+                month=month_label
+            )
+            db.session.add(history_entry)
+    
+    # 🔥 STEP 5: Calculate and return remaining balance
+    remaining_balance = max(0.0, credit.total_credits - credit.used_credits)
+    
+    # Note: db.session.commit() should be called by the caller after all deductions
+    return round(remaining_balance, 3)
 # =========================================================
 # EMPLOYEE LIST
 # =========================================================

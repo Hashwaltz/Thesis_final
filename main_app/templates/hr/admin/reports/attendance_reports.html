@@ -68,7 +68,6 @@
     <!-- ================== Actionable Insights ================== -->
     {% if top_absentees or top_latecomers %}
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Top Absentees -->
       {% if top_absentees %}
       <div class="bg-slate-800/40 border border-rose-500/30 rounded-2xl p-5">
         <h3 class="text-lg font-semibold text-rose-400 mb-4 flex items-center gap-2">
@@ -77,18 +76,17 @@
         <div class="space-y-3">
           {% for emp in top_absentees %}
           <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-xl hover:bg-slate-900/80 transition">
-            <div>
-              <p class="font-medium text-slate-200">{{ emp.employee_name }}</p>
-              <p class="text-xs text-slate-500">{{ emp.department_name }}</p>
+            <div class="min-w-0">
+              <p class="font-medium text-slate-200 truncate">{{ emp.employee_name }}</p>
+              <p class="text-xs text-slate-500 truncate">{{ emp.department_name }}</p>
             </div>
-            <span class="px-3 py-1 bg-rose-500/20 text-rose-300 rounded-full text-sm font-semibold">{{ emp.days_absent }} days</span>
+            <span class="px-3 py-1 bg-rose-500/20 text-rose-300 rounded-full text-sm font-semibold whitespace-nowrap">{{ emp.days_absent }} days</span>
           </div>
           {% endfor %}
         </div>
       </div>
       {% endif %}
 
-      <!-- Top Latecomers -->
       {% if top_latecomers %}
       <div class="bg-slate-800/40 border border-amber-500/30 rounded-2xl p-5">
         <h3 class="text-lg font-semibold text-amber-400 mb-4 flex items-center gap-2">
@@ -97,11 +95,11 @@
         <div class="space-y-3">
           {% for emp in top_latecomers %}
           <div class="flex justify-between items-center p-3 bg-slate-900/50 rounded-xl hover:bg-slate-900/80 transition">
-            <div>
-              <p class="font-medium text-slate-200">{{ emp.employee_name }}</p>
-              <p class="text-xs text-slate-500">{{ emp.department_name }}</p>
+            <div class="min-w-0">
+              <p class="font-medium text-slate-200 truncate">{{ emp.employee_name }}</p>
+              <p class="text-xs text-slate-500 truncate">{{ emp.department_name }}</p>
             </div>
-            <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-sm font-semibold">{{ emp.late_count }} times</span>
+            <span class="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-sm font-semibold whitespace-nowrap">{{ emp.late_count }} times</span>
           </div>
           {% endfor %}
         </div>
@@ -157,7 +155,7 @@
         </form>
 
         <a href="{{ url_for('hr_admin_bp.attendance_report_word', start_date=start_date, end_date=end_date, department_id=department_id) }}"
-           class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl text-white font-medium transition shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98]">
+           class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl text-white font-medium transition shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] no-print">
            <i class="fa-solid fa-file-word"></i> Export .docx
         </a>
       </div>
@@ -169,13 +167,13 @@
         <table class="min-w-full divide-y divide-slate-700/50 text-sm md:text-base">
           <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider">
             <tr>
-              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Employee</th>
-              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Department</th>
-              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Present</th>
-              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Absent</th>
-              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Late</th>
-              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Punctuality</th>
-              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur">Hours</th>
+              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Employee</th>
+              <th class="px-5 py-4 text-left font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Department</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Present</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Absent</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Late</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Punctuality</th>
+              <th class="px-5 py-4 text-center font-semibold sticky top-0 bg-slate-900/80 backdrop-blur z-10">Hours</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-700/50">
@@ -195,7 +193,7 @@
               </td>
               <td class="px-5 py-4 text-center">
                 {% if row.late_count > 3 %}
-                  <span class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-medium">⚠️ {{ row.late_count }}</span>
+                  <span class="px-2 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-medium">{{ row.late_count }}</span>
                 {% elif row.late_count > 0 %}
                   <span class="px-2 py-1 rounded-full bg-slate-700 text-slate-300 text-xs">{{ row.late_count }}</span>
                 {% else %}
@@ -233,25 +231,36 @@
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for dept in department_summary %}
-        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600 transition relative overflow-hidden">
-          {% if best_dept == dept.name %}
-          <div class="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-xs rounded-full">🏆 Best</div>
-          {% elif worst_dept == dept.name %}
-          <div class="absolute top-2 right-2 px-2 py-0.5 bg-rose-500/20 text-rose-300 text-xs rounded-full">⚠️ Review</div>
-          {% endif %}
-          
-          <div class="flex justify-between items-center mb-2">
-            <span class="font-medium text-slate-200">{{ dept.name }}</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">{{ dept.avg_attendance }}% Att.</span>
+        <div class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600 transition relative overflow-hidden group">
+          <!-- ✅ FIX: Badge positioning with padding and flex layout -->
+          <div class="flex items-start justify-between mb-3 pr-2">
+            <div class="min-w-0 flex-1">
+              <span class="font-medium text-slate-200 block truncate" title="{{ dept.name }}">{{ dept.name }}</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 inline-block mt-1">{{ dept.avg_attendance }}% Att.</span>
+            </div>
+            <!-- Badge container with proper spacing -->
+            <div class="flex-shrink-0 ml-2">
+              {% if best_dept == dept.name %}
+              <span class="inline-flex items-center px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full whitespace-nowrap">
+                <i class="fa-regular fa-trophy mr-1.5"></i> Best
+              </span>
+              {% elif worst_dept == dept.name %}
+              <span class="inline-flex items-center px-2 py-1 bg-rose-500/20 text-rose-300 text-xs rounded-full whitespace-nowrap">
+                <i class="fa-regular fa-triangle-exclamation mr-1.5"></i> Review
+              </span>
+              {% endif %}
+            </div>
           </div>
+          
           <div class="space-y-2">
             <div class="flex justify-between text-sm text-slate-400">
               <span>Avg. Hours</span>
               <span class="font-mono text-amber-400">{{ dept.avg_hours }}h</span>
             </div>
             <div class="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full" style="width: {{ dept.avg_attendance }}%"></div>
+              <div class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-500" style="width: {{ dept.avg_attendance }}%"></div>
             </div>
+            <p class="text-xs text-slate-500">{{ dept.employee_count }} employee{{ 's' if dept.employee_count != 1 else '' }}</p>
           </div>
         </div>
         {% endfor %}
@@ -260,8 +269,8 @@
     {% endif %}
 
     <!-- ================== Footer ================== -->
-    <footer class="text-center text-slate-500 text-sm pt-6 border-t border-slate-800/50">
-      Generated by <span class="text-slate-300 font-medium">{{ current_user.get_full_name() }}</span> • HR Admin Portal • Municipality of Norzagaray
+    <footer class="text-center text-slate-500 text-sm pt-6 border-t border-slate-800/50 no-print">
+        {{ current_user.get_full_name() if current_user and current_user.get_full_name else 'HR Admin' }}
     </footer>
   </div>
 </main>
@@ -285,6 +294,9 @@
     .text-amber-400 { color: #d97706 !important; }
     .text-slate-400, .text-slate-500 { color: #4b5563 !important; }
     .bg-gradient-to-r { background: none !important; }
+    /* Ensure badges print properly */
+    .bg-emerald-500\/20 { background: #d1fae5 !important; color: #065f46 !important; }
+    .bg-rose-500\/20 { background: #fee2e2 !important; color: #991b1b !important; }
   }
 </style>
 {% endblock %}

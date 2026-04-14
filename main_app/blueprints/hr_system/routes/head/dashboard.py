@@ -1,11 +1,12 @@
-from flask import render_template, request, flash, redirect, url_for, jsonify
+from flask import render_template, request, flash, redirect, url_for,current_app,  jsonify
 from flask_login import login_required, current_user
 from types import SimpleNamespace
 from collections import defaultdict
 from datetime import date
 from calendar import monthrange, monthcalendar
-
-from main_app.extensions import db
+from flask_mail import Message
+import threading
+from main_app.extensions import db, mail
 from main_app.models.user import User
 from main_app.models.hr_models import Department, Employee, Attendance, Leave
 from main_app.helpers.decorators import dept_head_required
@@ -52,14 +53,29 @@ def dashboard():
     ).all()
     total_employees = len(department_employees)
 
-    # ===============================
-    # Date Filter
+       # ===============================
+    # Date Filter (FIXED)
     # ===============================
     today = date.today()
-    year = request.args.get("year", type=int) or today.year
-    month = request.args.get("month", type=int) or today.month
+    
+    # Option A: Handle combined "YYYY-MM" format from <input type="month">
+    month_param = request.args.get("month")  # e.g., "2026-03"
+    
+    if month_param:
+        try:
+            year, month = map(int, month_param.split("-"))
+            # Validate reasonable range
+            if not (2020 <= year <= 2030 and 1 <= month <= 12):
+                raise ValueError
+        except (ValueError, AttributeError):
+            # Fallback to current date if parsing fails
+            year, month = today.year, today.month
+    else:
+        # Fallback: support legacy ?year=XXX&month=XXX params
+        year = request.args.get("year", type=int) or today.year
+        month = request.args.get("month", type=int) or today.month
 
-    # Correct month overflow
+    # Correct month overflow (if manually crafted URL)
     if month > 12:
         month = 1
         year += 1
@@ -184,6 +200,8 @@ def profile():
     )
 
 
+
+
 @hr_head_bp.route('/profile/edit', methods=['POST'])
 @login_required
 @dept_head_required
@@ -197,11 +215,11 @@ def edit_profile():
     new_password = data.get('new_password')
     confirm_password = data.get('confirm_password')
 
-    # Verify current password
+    # 🔐 Verify current password (plain-text comparison)
     if current_password != user.password:
         return jsonify({'status': 'error', 'message': 'Current password is incorrect.'}), 400
 
-    # Update email
+    # 📧 Update email if provided
     if new_email and new_email != user.email:
         existing_user = User.query.filter_by(email=new_email).first()
         if existing_user:
@@ -210,11 +228,62 @@ def edit_profile():
         if employee:
             employee.email = new_email
 
-    # Update password
+    # 🔑 Update password if provided
+    password_changed = False
     if new_password:
         if new_password != confirm_password:
             return jsonify({'status': 'error', 'message': 'Passwords do not match.'}), 400
-        user.password = new_password  # plain text for now
+        user.password = new_password  # ✅ Plain text per your request
+        password_changed = True
 
-    db.session.commit()
-    return jsonify({'status': 'success', 'message': 'Profile updated successfully.'})
+    try:
+        db.session.commit()
+
+        # 📬 Send email notification asynchronously if password was changed
+        if password_changed and user.email:
+            # ✅ Pass actual app instance to avoid context errors in threads
+            _send_head_password_notification(current_app._get_current_object(), user)
+
+        return jsonify({'status': 'success', 'message': 'Profile updated successfully.'})
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating department head profile: {e}")
+        return jsonify({'status': 'error', 'message': 'An error occurred. Please try again.'}), 500
+
+
+# =====================================================
+# 📧 EMAIL HELPER FUNCTIONS (Thread-Safe)
+# =====================================================
+def _send_head_password_notification(app, user):
+    """Send password change notification - receives actual Flask app instance"""
+    
+    def _send_async_email(app_instance, msg):
+        """Inner function that runs within proper app context"""
+        with app_instance.app_context():
+            try:
+                mail.send(msg)
+                app_instance.logger.info(f"Password notification sent to {user.email}")
+            except Exception as e:
+                app_instance.logger.error(f"Failed to send email to {user.email}: {str(e)}")
+    
+    msg = Message(
+        subject="🔐 Your Password Has Been Successfully Updated",
+        sender=app.config.get("MAIL_DEFAULT_SENDER", "noreply@yourdomain.com"),
+        recipients=[user.email]
+    )
+    msg.body = f"""Hello {user.first_name or 'User'},
+
+Your account password has been successfully updated.
+
+🔑 New Password: {user.password}
+
+⚠️ For your security, please keep this password confidential. If you did not request this change, contact your system administrator immediately.
+
+Regards,
+{app.config.get('APP_NAME', 'HR System')} Admin Team
+"""
+    # ✅ Start background thread with daemon mode and proper args
+    thread = threading.Thread(target=_send_async_email, args=(app, msg))
+    thread.daemon = True  # Allows app to shut down cleanly even if email is sending
+    thread.start()

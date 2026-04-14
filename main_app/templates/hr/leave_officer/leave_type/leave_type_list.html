@@ -29,53 +29,52 @@
     </button>
   </header>
 
-  {# ===== STATS CARDS (Safe counting with loop) ===== #}
-  {% set paid_count = 0 %}
-  {% set duration_count = 0 %}
-  {% for type in leave_types|default([]) %}
-    {% if type.max_paid_days and type.max_paid_days > 0 %}
-      {% set paid_count = paid_count + 1 %}
-    {% endif %}
-    {% if type.max_duration_days and type.max_duration_days > 0 %}
-      {% set duration_count = duration_count + 1 %}
-    {% endif %}
-  {% endfor %}
-  
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-          <i class="fa-solid fa-list text-blue-400"></i>
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-white">{{ leave_types|length|default(0) }}</p>
-          <p class="text-xs text-gray-400">Total Types</p>
-        </div>
+{# ===== STATS CARDS (Fixed with namespace) ===== #}
+{% set ns = namespace(paid_count=0, duration_count=0) %}
+{% for type in leave_types|default([]) %}
+  {% if type.max_paid_days and type.max_paid_days > 0 %}
+    {% set ns.paid_count = ns.paid_count + 1 %}
+  {% endif %}
+  {% if type.max_duration_days and type.max_duration_days > 0 %}
+    {% set ns.duration_count = ns.duration_count + 1 %}
+  {% endif %}
+{% endfor %}
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  <div class="bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+        <i class="fa-solid fa-list text-blue-400"></i>
       </div>
-    </div>
-    <div class="bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-          <i class="fa-solid fa-coins text-green-400"></i>
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-white">{{ paid_count }}</p>
-          <p class="text-xs text-gray-400">Paid Leave Types</p>
-        </div>
-      </div>
-    </div>
-    <div class="bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-          <i class="fa-solid fa-clock text-yellow-400"></i>
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-white">{{ duration_count }}</p>
-          <p class="text-xs text-gray-400">With Duration Limits</p>
-        </div>
+      <div>
+        <p class="text-2xl font-bold text-white">{{ leave_types|length|default(0) }}</p>
+        <p class="text-xs text-gray-400">Total Types</p>
       </div>
     </div>
   </div>
+  <div class="bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+        <i class="fa-solid fa-coins text-green-400"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-white">{{ ns.paid_count }}</p>
+        <p class="text-xs text-gray-400">Paid Leave Types</p>
+      </div>
+    </div>
+  </div>
+  <div class="bg-gray-800/60 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+        <i class="fa-solid fa-clock text-yellow-400"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-white">{{ ns.duration_count }}</p>
+        <p class="text-xs text-gray-400">With Duration Limits</p>
+      </div>
+    </div>
+  </div>
+</div>
 
   {# ===== SEARCH & FILTER BAR ===== #}
   <div class="bg-gray-800/60 backdrop-blur-sm rounded-2xl p-4 border border-gray-700/50">
@@ -162,58 +161,33 @@
               {% endif %}
             </td>
 
-            {# Actions #}
-            <td class="px-4 py-3.5 whitespace-nowrap text-right">
-              <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                
-                {# Edit Button #}
-                <button type="button"
-                        class="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition
-                               focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                        onclick="openEditModal(
-                          '{{ type.id|default(0) }}',
-                          '{{ type.name|default('')|replace("'", "\\'") }}',
-                          `{{ type.description|default('')|replace('`', '\\`') }}`,
-                          '{{ type.max_paid_days if type.max_paid_days is not none else '' }}',
-                          '{{ type.max_duration_days if type.max_duration_days is not none else '' }}'
-                        )"
-                        aria-label="Edit {{ type.name|default('leave type') }}"
-                        title="Edit">
-                  <i class="fa-solid fa-pen"></i>
-                </button>
-                
-                {# Delete Button #}
-                <button type="button"
-                        class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition
-                               focus:outline-none focus:ring-2 focus:ring-red-500"
-                        onclick="confirmDelete('{{ type.id|default(0) }}', '{{ type.name|default('this type')|replace("'", "\\'") }}')"
-                        aria-label="Delete {{ type.name|default('leave type') }}"
-                        title="Delete">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-              {# Mobile: Always show actions #}
-              <div class="flex items-center justify-end gap-1.5 md:hidden">
-                <button type="button"
-                        class="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition"
-                        onclick="openEditModal(
-                          '{{ type.id|default(0) }}',
-                          '{{ type.name|default('')|replace("'", "\\'") }}',
-                          `{{ type.description|default('')|replace('`', '\\`') }}`,
-                          '{{ type.max_paid_days if type.max_paid_days is not none else '' }}',
-                          '{{ type.max_duration_days if type.max_duration_days is not none else '' }}'
-                        )"
-                        aria-label="Edit">
-                  <i class="fa-solid fa-pen"></i>
-                </button>
-                <button type="button"
-                        class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                        onclick="confirmDelete('{{ type.id|default(0) }}', '{{ type.name|default('this type')|replace("'", "\\'") }}')"
-                        aria-label="Delete">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-            </td>
+        {# Actions #}
+          <td class="px-4 py-3.5 whitespace-nowrap text-right">
+            {# Desktop + Mobile: Always visible actions #}
+            <div class="flex items-center justify-end gap-1.5">
+              
+              {# Edit Button #}
+              <button type="button"
+                      class="p-2 text-gray-400 hover:text-yellow-400 hover:bg-yellow-500/10 rounded-lg transition
+                            focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      onclick="openEditModal(
+                        '{{ type.id|default(0) }}',
+                        '{{ type.name|default('')|replace("'", "\\'") }}',
+                        `{{ type.description|default('')|replace('`', '\\`') }}`,
+                        '{{ type.max_paid_days if type.max_paid_days is not none else '' }}',
+                        '{{ type.max_duration_days if type.max_duration_days is not none else '' }}'
+                      )"
+                      aria-label="Edit {{ type.name|default('leave type') }}"
+                      title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+            
+            {# Mobile: Hidden on desktop, shown on small screens (redundant but safe) #}
+            <div class="flex items-center justify-end gap-1.5 md:hidden sr-only">
+              {# Kept for accessibility consistency; visually hidden on desktop #}
+            </div>
+          </td>
           </tr>
           {% else %}
           {# Empty State #}

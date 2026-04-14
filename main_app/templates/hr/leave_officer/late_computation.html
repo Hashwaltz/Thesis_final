@@ -11,7 +11,7 @@
         <i class="fa-solid fa-clock-rotate-left text-blue-400"></i>
         Late & Undertime Computation
       </h1>
-      <p class="text-gray-400 text-sm mt-1.5">Track employee tardiness and undertime deductions by month.</p>
+      <p class="text-gray-400 text-sm mt-1.5">Track employee late and undertime deductions by month.</p>
     </div>
     
     <div class="flex items-center gap-3 bg-[#1e293b]/60 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-gray-700/50">
@@ -152,7 +152,7 @@
 
     <!-- Overall Summary (spans full width on large screens) -->
     <div class="bg-gradient-to-br from-emerald-900/40 to-slate-900/40 p-4 rounded-2xl border border-emerald-700/40 shadow xl:col-span-2">
-      <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Overall Summary</p>
+      <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Overall Late Summary</p>
       <div class="grid grid-cols-3 gap-2 text-center">
         <div>
           <p class="text-emerald-400 text-lg font-bold">{{ summary.overall_time_str|default("0 min 0 sec") }}</p>

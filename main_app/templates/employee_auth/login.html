@@ -3,144 +3,297 @@
 {% block title %}Login | Employee Portal{% endblock %}
 
 {% block content %}
-
-<!-- Background Section -->
-<div class="relative w-full min-h-screen flex items-center justify-center bg-cover bg-center px-4"
+<!-- Background Section with Purple Gradient Overlay -->
+<div class="relative w-full min-h-screen flex items-center justify-center bg-cover bg-center px-4 animate-fade-up"
      style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');">
 
-  <!-- Blur Overlay -->
-  <div class="absolute inset-0 bg-purple-900/70 backdrop-blur-sm"></div>
+  <!-- 🔮 PURPLE GRADIENT OVERLAY - This creates the purple background effect -->
+  <div class="absolute inset-0 bg-gradient-to-br from-employee-950/90 via-employee-900/85 to-purple-950/90 backdrop-blur-md"></div>
 
-  <!-- Login Card -->
-  <div class="relative z-10 w-full max-w-md bg-white/90 dark:bg-gray-900/90 
-              shadow-xl rounded-2xl p-6 sm:p-8 
-              border border-purple-200 dark:border-gray-700">
-
+  <!-- Login Card - Premium Styling -->
+  <div class="relative z-10 bg-white/95 dark:bg-gray-900/95 
+              shadow-2xl shadow-employee-900/30 
+              rounded-2xl p-6 sm:p-8 w-full max-w-md 
+              border border-employee-700/50 dark:border-employee-600/50
+              hover-lift transition-all duration-300">
+    
     <!-- Logo & Header -->
     <div class="text-center mb-6">
-      <img src="{{ url_for('static', filename='img/logo2.png') }}"
-           alt="Logo"
-           class="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-full mb-3 shadow-md border border-purple-300">
-
-      <h2 class="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-400">
+      <div class="relative inline-block">
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" 
+             alt="GovHRPay Logo" 
+             class="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-xl mb-3 
+                    shadow-lg shadow-employee-700/40 
+                    border-2 border-employee-600 dark:border-employee-500
+                    ring-4 ring-employee-500/10">
+        <span class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></span>
+      </div>
+      
+      <h2 class="text-xl sm:text-2xl font-bold 
+                 bg-gradient-to-r from-employee-700 to-purple-600 
+                 dark:from-employee-400 dark:to-purple-300 
+                 bg-clip-text text-transparent">
         Welcome Back
       </h2>
-
-      <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
+      <p class="text-gray-700 dark:text-gray-300 text-sm mt-1 font-medium">
         Sign in to your Employee Portal
       </p>
     </div>
 
     <!-- Login Form -->
-    <form id="loginForm"
-          method="POST"
-          action="{{ url_for('employee_auth_bp.login') }}"
-          class="space-y-5">
+    <form id="loginForm" 
+          method="POST" 
+          action="{{ url_for('employee_auth_bp.login') }}" 
+          class="space-y-5"
+          novalidate>
 
-      <!-- Email -->
+      <!-- Email Field with Icon -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Email
+        <label for="email" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+          <i class="fa-regular fa-envelope icon-outline mr-1.5 text-employee-600 dark:text-employee-400"></i>
+          Email Address
         </label>
-
-        <input
-          type="email"
-          name="email"
-          required
-          autocomplete="email"
-          placeholder="you@example.com"
-          class="w-full bg-white text-gray-900 placeholder-gray-400
-                 border border-gray-300 rounded-lg px-3 py-2
-                 focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                 outline-none transition-all duration-200
-                 dark:bg-gray-800 dark:text-white dark:border-gray-600">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-employee-600 dark:text-employee-400 pointer-events-none">
+            <i class="fa-regular fa-user icon-outline"></i>
+          </span>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            required 
+            autocomplete="email" 
+            class="w-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 
+                  border border-employee-300/60 dark:border-employee-700/60 rounded-lg 
+                  pl-10 pr-3 py-2.5 
+                  focus:ring-2 focus:ring-employee-600 focus:border-employee-600 
+                  outline-none transition-all duration-200 
+                  hover:border-employee-400 dark:hover:border-employee-500
+                  focus-visible:ring-2 focus-visible:ring-employee-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-gray-900"
+            placeholder="you@example.com"
+            aria-describedby="email-hint">
+        </div>
+        <p id="email-hint" class="sr-only">Enter your government-issued email address</p>
       </div>
 
-      <!-- Password -->
+      <!-- Password Field with Icon -->
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label for="password" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+          <i class="fa-solid fa-lock icon-outline mr-1.5 text-employee-600 dark:text-employee-400"></i>
           Password
         </label>
-
-        <input
-          type="password"
-          id="password"
-          name="password"
-          required
-          autocomplete="current-password"
-          placeholder="••••••••"
-          class="w-full bg-white text-gray-900 placeholder-gray-400
-                 border border-gray-300 rounded-lg px-3 py-2
-                 focus:ring-2 focus:ring-purple-500 focus:border-purple-500
-                 outline-none transition-all duration-200
-                 dark:bg-gray-800 dark:text-white dark:border-gray-600">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-employee-600 dark:text-employee-400 pointer-events-none">
+            <i class="fa-solid fa-key icon-outline"></i>
+          </span>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required 
+            autocomplete="current-password" 
+            class="w-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 
+                  border border-employee-300/60 dark:border-employee-700/60 rounded-lg 
+                  pl-10 pr-10 py-2.5 
+                  focus:ring-2 focus:ring-employee-600 focus:border-employee-600 
+                  outline-none transition-all duration-200 
+                  hover:border-employee-400 dark:hover:border-employee-500
+                  focus-visible:ring-2 focus-visible:ring-employee-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-50 dark:focus-visible:ring-offset-gray-900"
+            placeholder="••••••••"
+            aria-describedby="password-hint">
+          
+          <!-- Password Visibility Toggle -->
+          <button 
+            type="button"
+            id="togglePassword"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-employee-600 dark:hover:text-employee-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 rounded-r-lg"
+            aria-label="Toggle password visibility"
+            aria-pressed="false">
+            <i class="fa-regular fa-eye icon-outline" id="eyeIcon"></i>
+          </button>
+        </div>
+        <p id="password-hint" class="sr-only">Enter your secure password</p>
       </div>
 
-      <!-- Password Actions: Show Password (left) | Forgot Password (right) -->
+      <!-- Options Row: Show Password + Forgot Password -->
       <div class="flex items-center justify-between text-sm">
-        <!-- Show Password - Left -->
-        <label class="flex items-center text-gray-600 dark:text-gray-400 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-          <input type="checkbox"
-                 id="showPassword"
-                 class="mr-2 h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
-          Show Password
+        <!-- Show Password Toggle -->
+        <label class="flex items-center text-gray-700 dark:text-gray-300 cursor-pointer hover:text-employee-700 dark:hover:text-employee-400 transition-colors group">
+          <input type="checkbox" 
+                 id="showPassword" 
+                 class="mr-2 h-4 w-4 text-employee-600 border-employee-400 rounded 
+                        focus:ring-employee-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900
+                        checked:bg-employee-600 checked:border-employee-600">
+          <span class="group-hover:underline">Show Password</span>
         </label>
 
-        <!-- Forgot Password - Right -->
+        <!-- Forgot Password Link -->
         <a href="{{ url_for('employee_auth_bp.forgot_password') }}" 
-           class="text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 font-medium transition-colors">
+           class="text-employee-600 hover:text-employee-800 
+                  dark:text-employee-400 dark:hover:text-employee-300 
+                  font-medium transition-colors hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 rounded">
           Forgot Password?
         </a>
       </div>
 
-      <!-- Submit -->
-      <button
-        type="submit"
-        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg shadow-md transition duration-200">
-        Sign In
+      <!-- Submit Button - Premium Gradient -->
+      <button 
+        type="submit" 
+        class="w-full bg-gradient-to-r from-employee-700 to-purple-700 
+               hover:from-employee-800 hover:to-purple-800 
+               text-white font-semibold py-2.5 rounded-lg 
+               shadow-lg shadow-employee-700/40 
+               hover:shadow-xl hover:shadow-employee-800/50 
+               transform hover:-translate-y-0.5
+               transition-all duration-200 
+               focus:ring-4 focus:ring-employee-500/50 
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900">
+        Sign In Securely
       </button>
 
     </form>
 
+    <!-- Security Footer -->
+    <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+      <div class="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <i class="fa-solid fa-shield-halved text-employee-600 dark:text-employee-400"></i>
+        <span>End-to-End Encrypted • Government Compliant</span>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<!-- SweetAlert -->
+<!-- SweetAlert2 CDN -->
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+{% block scripts %}
+{{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-
   const passwordInput = document.getElementById('password');
   const showPasswordCheckbox = document.getElementById('showPassword');
+  const togglePasswordBtn = document.getElementById('togglePassword');
+  const eyeIcon = document.getElementById('eyeIcon');
 
+  // Toggle password visibility - Checkbox method
   showPasswordCheckbox.addEventListener('change', () => {
     passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
+    updateEyeIcon(showPasswordCheckbox.checked);
   });
 
+  // Toggle password visibility - Button method (enhanced UX)
+  togglePasswordBtn.addEventListener('click', () => {
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    showPasswordCheckbox.checked = isPassword;
+    updateEyeIcon(isPassword);
+    togglePasswordBtn.setAttribute('aria-pressed', isPassword);
+    passwordInput.focus();
+  });
+
+  function updateEyeIcon(isVisible) {
+    if (isVisible) {
+      eyeIcon.classList.remove('fa-eye');
+      eyeIcon.classList.add('fa-eye-slash');
+      togglePasswordBtn.setAttribute('aria-label', 'Hide password');
+    } else {
+      eyeIcon.classList.remove('fa-eye-slash');
+      eyeIcon.classList.add('fa-eye');
+      togglePasswordBtn.setAttribute('aria-label', 'Show password');
+    }
+  }
+
+  // Form validation feedback
+  const form = document.getElementById('loginForm');
+  form.addEventListener('submit', (e) => {
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    
+    if (!email.checkValidity()) {
+      e.preventDefault();
+      email.classList.add('border-red-500', 'focus:ring-red-500');
+      email.classList.remove('border-employee-300', 'focus:ring-employee-600');
+      setTimeout(() => {
+        email.classList.remove('border-red-500', 'focus:ring-red-500');
+        email.classList.add('border-employee-300', 'focus:ring-employee-600');
+      }, 2000);
+    }
+    
+    if (!password.checkValidity()) {
+      e.preventDefault();
+      password.classList.add('border-red-500', 'focus:ring-red-500');
+      password.classList.remove('border-employee-300', 'focus:ring-employee-600');
+      setTimeout(() => {
+        password.classList.remove('border-red-500', 'focus:ring-red-500');
+        password.classList.add('border-employee-300', 'focus:ring-employee-600');
+      }, 2000);
+    }
+  });
+
+  // SweetAlert2 with Employee Theme - Flask Flash Messages
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
       {% if category == 'error' %}
         Swal.fire({
           icon: 'error',
-          title: 'Login Failed',
+          title: 'Sign In Failed',
           text: '{{ msg }}',
-          timer: 2000,
-          showConfirmButton: false
+          background: '#0f172a',
+          color: '#f1f5f9',
+          confirmButtonColor: '#7e22ce',
+          cancelButtonColor: '#64748b',
+          iconColor: '#f87171',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          customClass: {
+            popup: 'rounded-xl border border-employee-700/50',
+            title: 'text-lg font-semibold',
+            confirmButton: 'bg-employee-600 hover:bg-employee-700 focus:ring-employee-500'
+          }
         });
       {% elif category == 'success' %}
         Swal.fire({
           icon: 'success',
-          title: 'Success',
+          title: 'Welcome!',
           text: '{{ msg }}',
+          background: '#0f172a',
+          color: '#f1f5f9',
+          confirmButtonColor: '#7e22ce',
+          iconColor: '#4ade80',
           timer: 2000,
-          showConfirmButton: false
+          timerProgressBar: true,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rounded-xl border border-employee-700/50',
+            title: 'text-lg font-semibold'
+          }
+        });
+      {% elif category == 'info' %}
+        Swal.fire({
+          icon: 'info',
+          title: 'Notice',
+          text: '{{ msg }}',
+          background: '#0f172a',
+          color: '#f1f5f9',
+          confirmButtonColor: '#7e22ce',
+          iconColor: '#60a5fa',
+          timer: 2500,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rounded-xl border border-employee-700/50'
+          }
         });
       {% endif %}
     {% endfor %}
   {% endwith %}
 
+  // Auto-focus email field on load for faster login
+  setTimeout(() => {
+    document.getElementById('email')?.focus();
+  }, 300);
 });
 </script>
-
+{% endblock %}
 {% endblock %}

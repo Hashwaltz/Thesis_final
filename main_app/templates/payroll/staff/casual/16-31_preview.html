@@ -111,6 +111,58 @@
                 </div>
             </div>
 
+            {# ===== STATUTORY PAID LEAVE SUMMARY (NEW) ===== #}
+            {% if data.statutory_leaves or data.paid_leave_days > 0 %}
+            <div class="bg-gradient-to-r from-indigo-900/30 to-purple-900/20 border border-indigo-700/40 rounded-xl p-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-calendar-check text-indigo-300"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-semibold text-indigo-300 flex items-center gap-2">
+                            <i class="fa-solid fa-gift"></i> Statutory Paid Leave Applied
+                        </h4>
+                        <p class="text-xs text-gray-400 mt-1">
+                            These leaves count as <strong>8 working hours/day</strong> for payroll. 
+                            <span class="text-emerald-400">VL/SL credits are NOT consumed.</span>
+                        </p>
+                        
+                        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {% for leave in data.statutory_leaves %}
+                            <div class="bg-gray-800/50 border border-gray-700/50 rounded-lg p-3">
+                                <p class="text-sm font-medium text-gray-200">{{ leave.leave_type }}</p>
+                                <div class="flex items-center gap-4 mt-2 text-xs">
+                                    <span class="text-emerald-400">
+                                        <i class="fa-solid fa-check"></i> Paid: {{ leave.paid_days }}d
+                                    </span>
+                                    {% if leave.unpaid_days > 0 %}
+                                    <span class="text-amber-400">
+                                        <i class="fa-solid fa-circle-exclamation"></i> Unpaid: {{ leave.unpaid_days }}d
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-[10px] text-gray-500 mt-1">
+                                    Overlapping with period: {{ leave.total_overlapping }} calendar days
+                                </p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mt-3 pt-3 border-t border-indigo-700/30 flex flex-wrap gap-4 text-sm">
+                            <span class="text-gray-300">
+                                <strong class="text-emerald-400">{{ data.paid_leave_days }}</strong> paid leave days added to earnings
+                            </span>
+                            {% if data.unpaid_leave_days > 0 %}
+                            <span class="text-gray-300">
+                                <strong class="text-amber-400">{{ data.unpaid_leave_days }}</strong> unpaid days added to AWOP
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="grid md:grid-cols-2 gap-6">
                 <!-- EARNINGS -->
                 <div class="bg-gray-900 p-4 rounded-xl space-y-3 border border-gray-800">
@@ -121,6 +173,11 @@
                         <label class="text-xs text-gray-400 block mb-1">Days Worked</label>
                         <input type="number" name="days_worked_{{ data.employee.id }}" value="{{ payroll.days_worked or 0 }}"
                                class="days w-full p-2 bg-gray-800 border border-gray-700 rounded text-right font-mono focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none">
+                        {% if data.paid_leave_days > 0 %}
+                        <p class="text-[10px] text-indigo-400 mt-1">
+                            <i class="fa-solid fa-info-circle"></i> Includes {{ data.paid_leave_days }} paid leave day(s)
+                        </p>
+                        {% endif %}
                     </div>
                     <div>
                         <label class="text-xs text-gray-400 block mb-1">Allowance</label>
@@ -180,6 +237,11 @@
                                 <span>Credits: {{ ded.credits_used }}d</span>
                                 <span>Uncovered: {{ ded.uncovered_days }}d</span>
                             </div>
+                            {% if data.unpaid_leave_days > 0 %}
+                            <p class="text-[10px] text-amber-400/80 mt-1">
+                                <i class="fa-solid fa-circle-info"></i> Includes {{ data.unpaid_leave_days }} unpaid statutory leave day(s)
+                            </p>
+                            {% endif %}
                             <input type="number" name="awop_{{ data.employee.id }}" value="0"
                                    class="employee-share w-full p-2 bg-gray-800 border border-amber-600/50 rounded text-right font-mono text-amber-300 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 outline-none">
                             <p class="text-[10px] text-gray-500 text-right">
@@ -188,7 +250,6 @@
                         </div>
 
                         {% elif ded.type == "late" %}
-                        <!-- ✅ LATE/UNDERTIME: Credits Applied = ₱0 Deduction from Salary -->
                         <div class="bg-gradient-to-br from-amber-900/20 to-purple-900/10 border border-amber-700/40 rounded-lg p-4 space-y-3">
                             <label class="text-xs font-medium text-amber-300 flex items-center justify-between">
                                 <span><i class="fa-solid fa-clock-rotate-left"></i> {{ ded.name }}</span>
@@ -197,19 +258,22 @@
                                 </span>
                             </label>
                             
-                            <!-- Leave Credit Balances (Read-only from Leave Officer) -->
+                            <!-- Leave Credit Balances (VL/SL ONLY) -->
                             <div class="grid grid-cols-2 gap-2 text-[11px]">
                                 <div class="bg-blue-900/20 border border-blue-700/40 rounded p-2">
-                                    <p class="text-blue-300 font-medium">🏖️ Vacation Leave</p>
+                                    <p class="text-blue-300 font-medium">Vacation Leave</p>
                                     <p class="text-gray-400">Balance: <span class="font-mono text-blue-300">{{ ded.vl_balance }} days</span></p>
                                     <p class="text-gray-500 text-[10px]">Earned: {{ ded.vl_total }} | Used: {{ ded.vl_used }}</p>
                                 </div>
                                 <div class="bg-green-900/20 border border-green-700/40 rounded p-2">
-                                    <p class="text-green-300 font-medium">🤒 Sick Leave</p>
+                                    <p class="text-green-300 font-medium">Sick Leave</p>
                                     <p class="text-gray-400">Balance: <span class="font-mono text-green-300">{{ ded.sl_balance }} days</span></p>
                                     <p class="text-gray-500 text-[10px]">Earned: {{ ded.sl_total }} | Used: {{ ded.sl_used }}</p>
                                 </div>
                             </div>
+                            <p class="text-[10px] text-indigo-400/80">
+                                <i class="fa-solid fa-shield-check"></i> VL/SL credits apply to late deductions only • Statutory leaves handled separately above
+                            </p>
                             
                             <!-- Credit Application Option -->
                             {% if ded.credit_preview.would_apply %}
@@ -222,11 +286,10 @@
                                            class="apply-credits-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500/30"
                                            data-employee-id="{{ data.employee.id }}">
                                     <span class="text-xs text-emerald-300 font-medium">
-                                        <i class="fa-solid fa-hand-holding-heart"></i> Apply leave credits to offset this late deduction
+                                        <i class="fa-solid fa-hand-holding-heart"></i> Apply VL/SL credits to offset this late deduction
                                     </span>
                                 </label>
                                 
-                                <!-- Preview of what will happen -->
                                 <div class="credit-preview hidden ml-6 space-y-1 text-[11px] text-gray-300">
                                     <p class="text-emerald-400 font-medium">If applied:</p>
                                     <div class="flex justify-between">
@@ -256,13 +319,12 @@
                             <div class="bg-gray-800/50 border border-gray-700/40 rounded p-3 text-center">
                                 <p class="text-xs text-gray-400">
                                     <i class="fa-solid fa-circle-info"></i> 
-                                    No available credits to apply, or late amount is ₱0
+                                    No available VL/SL credits to apply, or late amount is ₱0
                                 </p>
                             </div>
                             {% endif %}
                             
-                            <!-- Final Deduction Amount (Read-only) -->
-                            <!-- RULE: If credits applied → use remaining_deduction; else → use original amount -->
+                            <!-- Final Deduction Amount -->
                             <div class="space-y-1">
                                 <label class="text-xs text-gray-400 block">
                                     Deduction from Salary 
@@ -284,7 +346,6 @@
                                        data-with-credits="{{ ded.credit_preview.remaining_deduction }}"
                                        data-credits-applied="false">
                                 
-                                <!-- Calculation breakdown -->
                                 <p class="text-[10px] text-gray-500 font-mono breakdown-text">
                                     Late: ₱{{ '{:,.2f}'.format(ded.late_amount_original) }}
                                     <span class="credit-breakdown hidden">
@@ -297,14 +358,13 @@
                                 </p>
                             </div>
                             
-                            <!-- Hidden fields for form submission -->
+                            <!-- Hidden fields -->
                             <input type="hidden" name="late_hours_{{ data.employee.id }}" value="{{ ded.late_hours or 0 }}">
                             <input type="hidden" name="late_minutes_{{ data.employee.id }}" value="{{ ded.late_minutes or 0 }}">
                             <input type="hidden" name="late_seconds_{{ data.employee.id }}" value="{{ ded.late_seconds or 0 }}">
                             <input type="hidden" name="late_credits_applied_{{ data.employee.id }}" id="late_credits_flag_{{ data.employee.id }}" value="false">
                         </div>
 
-                        {# ===== LOAN (EXPLICIT HANDLING - MATCHES 1-15 TEMPLATE) ===== #}
                         {% elif ded.type == "loan" %}
                         <div class="bg-purple-900/10 border border-purple-700/30 rounded-lg p-3 space-y-2">
                             <label class="text-xs font-medium text-purple-300 flex items-center gap-1">
@@ -320,7 +380,6 @@
                             {% endif %}
                         </div>
 
-                        {# ===== FALLBACK FOR UNKNOWN TYPES ===== #}
                         {% else %}
                         <div class="bg-gray-800/30 border border-gray-700/30 rounded p-2">
                             <p class="text-[10px] text-gray-500">
@@ -361,15 +420,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// Utility: Format currency
 function formatCurrency(n) {
     return "₱ " + (n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Initialize employee cards (only if they exist)
 document.querySelectorAll('.employee-card').forEach(card => {
     const rate = parseFloat(card.dataset.rate) || 0;
-    const hourlyRate = rate / 8;
     const empId = card.dataset.employeeId;
     
     const days = card.querySelector('.days');
@@ -384,7 +440,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
     const allDeductions = card.querySelectorAll('.employee-share');
     const editableDeductions = card.querySelectorAll('.employee-share:not([readonly])');
     
-    // Credit application elements
     const applyCheckbox = card.querySelector('.apply-credits-checkbox');
     const creditPreview = card.querySelector('.credit-preview');
     const lateAmountInput = card.querySelector('.late-deduction');
@@ -414,9 +469,6 @@ document.querySelectorAll('.employee-card').forEach(card => {
         netEl.value = formatCurrency(Math.max(gross - totalDed, 0));
     }
 
-    // Handle credit application checkbox
-    // RULE: If checked → credits cover late → deduction = remaining (could be ₱0)
-    //       If unchecked → no credits → deduction = original full amount
     if (applyCheckbox && lateAmountInput) {
         const original = parseFloat(lateAmountInput.dataset.original) || 0;
         const withCredits = parseFloat(lateAmountInput.dataset.withCredits) || original;
@@ -425,20 +477,15 @@ document.querySelectorAll('.employee-card').forEach(card => {
             const isApplied = this.checked;
             
             if (isApplied) {
-                // ✅ Credits applied: Use remaining amount after credits
                 creditPreview?.classList.remove('hidden');
                 creditBreakdown?.classList.remove('hidden');
                 lateAmountInput.value = withCredits;
                 lateAmountInput.dataset.creditsApplied = "true";
                 creditsFlag.value = "true";
                 
-                // Update display
                 if (finalAmount) finalAmount.textContent = formatCurrency(withCredits);
-                if (creditsValue) {
-                    creditsValue.textContent = formatCurrency(original - withCredits);
-                }
+                if (creditsValue) creditsValue.textContent = formatCurrency(original - withCredits);
                 
-                // Show salary impact
                 if (salaryImpact) {
                     if (withCredits === 0) {
                         salaryImpact.textContent = "• Covered by credits";
@@ -449,14 +496,12 @@ document.querySelectorAll('.employee-card').forEach(card => {
                     }
                 }
             } else {
-                // ❌ No credits: Use original full amount
                 creditPreview?.classList.add('hidden');
                 creditBreakdown?.classList.add('hidden');
                 lateAmountInput.value = original;
                 lateAmountInput.dataset.creditsApplied = "false";
                 creditsFlag.value = "false";
                 
-                // Update display
                 if (finalAmount) finalAmount.textContent = formatCurrency(original);
                 if (salaryImpact) {
                     salaryImpact.textContent = "• Deducted from salary";
@@ -467,23 +512,19 @@ document.querySelectorAll('.employee-card').forEach(card => {
         });
     }
 
-    // Editable deductions trigger recalc
     editableDeductions.forEach(i => {
         i.addEventListener('input', compute);
         i.addEventListener('change', compute);
     });
 
-    // Days, allowance, overtime trigger recalc
     [days, allowance, overtime].forEach(input => {
         input.addEventListener('input', compute);
         input.addEventListener('change', compute);
     });
 
-    // Initial compute
     compute();
 });
 
-// SweetAlert2 Confirmation on Form Submit (only if form exists)
 const payrollForm = document.getElementById('payroll-form');
 if (payrollForm) {
     payrollForm.addEventListener('submit', function(e) {
@@ -493,7 +534,6 @@ if (payrollForm) {
         const departmentName = "{{ department.name }}";
         const periodLabel = "{{ period.start_date.strftime('%B %d') }} – {{ period.end_date.strftime('%d, %Y') }}";
         
-        // Gather summary data
         let employeeSummaries = [];
         let grandTotalNet = 0;
         
@@ -505,7 +545,6 @@ if (payrollForm) {
             employeeSummaries.push({ name, netPay: netPayText });
         });
         
-        // Build summary HTML for SweetAlert
         let summaryHTML = `
             <div class="text-left text-sm">
                 <p class="mb-2"><strong>Department:</strong> ${departmentName}</p>
@@ -548,21 +587,15 @@ if (payrollForm) {
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // Show processing state
                 Swal.fire({
                     title: 'Processing...',
                     html: 'Please wait while payroll is being processed.',
                     allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    },
+                    didOpen: () => Swal.showLoading(),
                     background: '#1f2937',
                     color: '#e5e7eb',
-                    customClass: {
-                        popup: 'rounded-2xl border border-gray-700'
-                    }
+                    customClass: { popup: 'rounded-2xl border border-gray-700' }
                 });
-                // Submit the form
                 form.submit();
             }
         });

@@ -38,9 +38,9 @@
                   class="w-full bg-gray-700/80 text-gray-100 px-3.5 py-2.5 pr-10 rounded-lg border border-gray-600 
                         focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none transition">
             <option value="">All Statuses</option>
-            <option value="Pending" {% if status_filter|default('') == "Pending" %}selected{% endif %}>⏳ Pending</option>
-            <option value="Approved" {% if status_filter|default('') == "Approved" %}selected{% endif %}>✅ Approved</option>
-            <option value="Rejected" {% if status_filter|default('') == "Rejected" %}selected{% endif %}>❌ Rejected</option>
+            <option value="Pending" {% if status_filter|default('') == "Pending" %}selected{% endif %}>Pending</option>
+            <option value="Approved" {% if status_filter|default('') == "Approved" %}selected{% endif %}>Approved</option>
+            <option value="Rejected" {% if status_filter|default('') == "Rejected" %}selected{% endif %}>Rejected</option>
           </select>
           <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
         </div>

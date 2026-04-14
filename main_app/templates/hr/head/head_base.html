@@ -272,11 +272,6 @@
          aria-label="Page header">
       <i class="fa-solid fa-building-user text-xl"></i>
       <h1 class="text-lg font-semibold">Department Head Panel</h1>
-      {% if request.endpoint %}
-      <span class="ml-auto text-xs bg-blue-700/50 px-3 py-1 rounded-full">
-        {{ request.endpoint.replace('hr_head_bp.', '') }}
-      </span>
-      {% endif %}
     </div>
 
     <!-- Flash Messages -->
@@ -355,18 +350,33 @@
       
       Swal.fire({
         title: "Sign Out?",
-        text: "You will need to log in again to access your account.",
-        icon: "question",
+        text: "You will need to sign out again to continue.",
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#2563eb",
+        confirmButtonColor: "#ef4444",
         cancelButtonColor: "#475569",
-        confirmButtonText: "Yes, sign out",
+        confirmButtonText: "Yes, Sign Out",
         cancelButtonText: "Cancel",
-        reverseButtons: true,
         background: "#1e293b",
-        color: "#f1f5f9"
+        color: "#f1f5f9",
+        reverseButtons: true,
+        customClass: {
+          popup: 'rounded-2xl border border-slate-700 shadow-2xl',
+          title: 'text-white font-semibold',
+          content: 'text-slate-300',
+          confirmButton: 'rounded-xl px-5 py-2.5 font-medium',
+          cancelButton: 'rounded-xl px-5 py-2.5 font-medium'
+        },
       }).then((result) => {
         if (result.isConfirmed) {
+            Swal.fire({
+              title: 'Signing out...',
+              allowOutsideClick: false,
+              didOpen: () => Swal.showLoading(),
+              background: "#1e293b",
+              color: "#f1f5f9",
+              customClass: { popup: 'rounded-2xl border border-slate-700' }
+            });
           setTimeout(() => {
             window.location.href = "{{ url_for('hr_auth_bp.logout') }}";
           }, 150);

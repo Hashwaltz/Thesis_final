@@ -159,7 +159,17 @@
     <!-- Table Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-gray-700/50 bg-gray-900/50">
       <span class="text-sm text-gray-400">
-        Showing <strong class="text-white">{{ users.from }}</strong>-<strong class="text-white">{{ users.to }}</strong> of <strong class="text-white">{{ users.total }}</strong> users
+        {% set from_item = ((users.page - 1) * users.per_page) + 1 if users.total > 0 else 0 %}
+        {% set to_item = [users.page * users.per_page, users.total]|min %}
+        <span class="text-sm text-gray-400">
+          {% if users.total == 0 %}
+            No users found
+          {% else %}
+            Showing <strong class="text-white">{{ from_item }}</strong>-
+            <strong class="text-white">{{ to_item }}</strong> of 
+            <strong class="text-white">{{ users.total }}</strong> users
+          {% endif %}
+        </span>
       </span>
       <span class="text-xs text-gray-500 flex items-center gap-1">
         <i class="fa-regular fa-shield-halved"></i>

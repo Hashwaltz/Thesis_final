@@ -1,5 +1,5 @@
 from datetime import  datetime, time
-from flask import render_template, redirect, url_for, flash, request, session, current_app, after_this_request
+from flask import render_template, redirect, url_for, flash, request, session, current_app, after_this_request, send_file
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 
@@ -697,3 +697,31 @@ def add_manual_attendance():
         current_app.logger.error(f"Add attendance error: {str(e)}", exc_info=True)
         flash("An unexpected error occurred. Please try again.", "error")
         return redirect(url_for('hr_admin_bp.view_attendance'))
+
+
+
+
+
+@hr_admin_bp.route('/download/attendance-template')
+@login_required
+@admin_required
+def download_attendance_template():
+    # Define the template filename
+    file_name = '1_(October)Employee Attendance Record.xls'
+    
+    # Build a portable path relative to your app's root directory
+    file_path = os.path.join(current_app.root_path, 'templates', 'documents', file_name)
+
+    # Fallback if the file is missing
+    if not os.path.exists(file_path):
+        flash('Attendance template file not found. Please contact support.', 'danger')
+        # Replace 'hr_admin_bp.index' with your actual dashboard/home route
+        return redirect(url_for('hr_admin_bp.index'))
+
+    # Serve the file for download
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name='Employee_Attendance_Record_Template.xls',
+        mimetype='application/vnd.ms-excel'
+    )

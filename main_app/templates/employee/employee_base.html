@@ -225,15 +225,34 @@
   function confirmLogout(e) {
     e.preventDefault();
     Swal.fire({
-      title: "Logout?",
-      text: "You will be logged out of the system.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#7c3aed",
-      cancelButtonColor: "#dc2626",
-      confirmButtonText: "Yes, logout"
+       title: "Sign Out?",
+        text: "You will need to sign out again to continue.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#475569",
+        confirmButtonText: "Yes, Sign Out",
+        cancelButtonText: "Cancel",
+        background: "#1e293b",
+        color: "#f1f5f9",
+        reverseButtons: true,
+        customClass: {
+          popup: 'rounded-2xl border border-slate-700 shadow-2xl',
+          title: 'text-white font-semibold',
+          content: 'text-slate-300',
+          confirmButton: 'rounded-xl px-5 py-2.5 font-medium',
+          cancelButton: 'rounded-xl px-5 py-2.5 font-medium'
+        },
     }).then((result) => {
       if (result.isConfirmed) {
+         Swal.fire({
+            title: 'Signing out...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            background: "#1e293b",
+            color: "#f1f5f9",
+            customClass: { popup: 'rounded-2xl border border-slate-700' }
+          });
         window.location.href = "{{ url_for('employee_auth_bp.logout') }}";
       }
     });

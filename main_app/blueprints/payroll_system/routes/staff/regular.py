@@ -20,10 +20,10 @@ REGULAR_ID = 1
 WORKING_DAYS_PER_MONTH = 22
 DEFAULT_SHIFT_START = time(8, 0, 0)
 
-# GSIS Configuration (adjust based on your policy)
-GSIS_FIXED_RATE = 900.00  # Default fixed monthly contribution
-GSIS_PERCENTAGE_RATE = 0.03  # 3% of basic salary (alternative method)
-GSIS_USE_PERCENTAGE = False  # Set True to use percentage instead of fixed
+# GSIS Configuration
+GSIS_FIXED_RATE = 900.00
+GSIS_PERCENTAGE_RATE = 0.03
+GSIS_USE_PERCENTAGE = False
 
 
 # ========================= HELPERS =========================
@@ -36,10 +36,7 @@ def safe_float(value):
 
 
 def late_time_to_day_equivalent(hours=0, minutes=0, seconds=0):
-    """
-    Convert late time to day equivalent for leave credit deduction.
-    Uses Excel-equivalent constants: 1hr=0.125 day, 1min=0.002 day
-    """
+    """Convert late time to day equivalent for leave credit deduction."""
     total_minutes = minutes + (seconds / 60.0)
     day_equiv = (hours * 0.125) + (total_minutes * 0.002)
     return round(day_equiv, 3)
@@ -57,10 +54,71 @@ def get_shift_start_for_date(employee, date):
     return DEFAULT_SHIFT_START
 
 
+def get_paid_leave_days_for_period(employee_id, period):
+    """
+    Get paid leave days from approved leaves with max_paid_days limit.
+    Returns: (paid_days, unpaid_days, leave_details_list)
+    
+    ✅ Statutory leaves (Maternity, Paternity, etc.) with max_paid_days:
+    - Paid days count as 8 working hours for payroll
+    - Days exceeding max_paid_days count as absent/unpaid
+    - These do NOT consume VL/SL credits
+    """
+    leaves = Leave.query.filter(
+        Leave.employee_id == employee_id,
+        Leave.status == "Approved",
+        Leave.end_date >= period.start_date,
+        Leave.start_date <= period.end_date
+    ).all()
+    
+    total_paid_days = 0.0
+    total_unpaid_days = 0.0
+    leave_details = []
+    
+    for leave in leaves:
+        leave_type = leave.leave_type
+        
+        # Only process leave types with paid day limits (statutory leaves)
+        if not leave_type or not leave_type.max_paid_days:
+            continue
+            
+        # Calculate overlapping days with payroll period
+        overlap_start = max(leave.start_date, period.start_date)
+        overlap_end = min(leave.end_date, period.end_date)
+        
+        if overlap_end < overlap_start:
+            continue
+            
+        # Count calendar days
+        overlapping_days = (overlap_end - overlap_start).days + 1
+        
+        # Track remaining paid days for this leave type
+        # Use leave.paid_days if tracked, otherwise calculate from LeaveCreditHistory
+        used_paid = leave.paid_days or 0
+        remaining_paid = max(0, leave_type.max_paid_days - used_paid)
+        
+        # Allocate paid vs unpaid
+        paid_for_period = min(overlapping_days, remaining_paid)
+        unpaid_for_period = max(0, overlapping_days - paid_for_period)
+        
+        total_paid_days += paid_for_period
+        total_unpaid_days += unpaid_for_period
+        
+        leave_details.append({
+            "leave_type": leave_type.name,
+            "paid_days": paid_for_period,
+            "unpaid_days": unpaid_for_period,
+            "total_overlapping": overlapping_days,
+            "max_paid": leave_type.max_paid_days,
+            "used_paid": used_paid
+        })
+    
+    return round(total_paid_days, 3), round(total_unpaid_days, 3), leave_details
+
+
 def compute_late_from_attendance(employee, period, apply_credits=False):
     """
     Calculate total late time from Attendance.time_in with optional credit application.
-    
     Returns dict with deduction amount, time breakdown, and credit application details.
     """
     if not employee or not period:
@@ -131,10 +189,7 @@ def compute_late_from_attendance(employee, period, apply_credits=False):
 
 
 def _apply_credits_to_late(employee, late_day_equiv, period):
-    """
-    Internal: Apply VL→SL credits to offset late deduction.
-    Returns dict with applied credits and remaining deduction.
-    """
+    """Internal: Apply VL→SL credits to offset late deduction."""
     if late_day_equiv <= 0:
         return {
             'credits_applied': 0, 'vl_used': 0, 'sl_used': 0,
@@ -204,26 +259,12 @@ def compute_philhealth(gross):
 
 
 def compute_gsis(monthly_salary, use_percentage=GSIS_USE_PERCENTAGE):
-    """
-    GSIS: Fixed amount OR percentage of basic salary.
-    
-    Args:
-        monthly_salary: Employee's monthly basic salary
-        use_percentage: If True, use GSIS_PERCENTAGE_RATE; else use GSIS_FIXED_RATE
-    
-    Returns:
-        tuple: (employee_share, employer_share)
-    """
+    """GSIS: Fixed amount OR percentage of basic salary."""
     if use_percentage:
-        # Percentage-based: e.g., 3% of salary
         emp_share = monthly_salary * GSIS_PERCENTAGE_RATE
     else:
-        # Fixed amount: e.g., ₱900/month
         emp_share = GSIS_FIXED_RATE
-    
-    # Employer share typically matches employee share for GSIS
     employer_share = emp_share
-    
     return round(emp_share, 2), round(employer_share, 2)
 
 
@@ -242,7 +283,6 @@ def regular_select_department(period_id):
     period = PayrollPeriod.query.get_or_404(period_id)
     departments = Department.query.order_by(Department.name).all()
 
-    # Check which departments already have processed payroll
     dept_status = {}
     for dept in departments:
         has_processed = Payroll.query.join(Employee).filter(
@@ -260,6 +300,7 @@ def regular_select_department(period_id):
         dept_status=dept_status
     )
 
+
 # ========================= PREVIEW =========================
 
 @payroll_staff_bp.route("/regular/preview/<int:period_id>/<int:department_id>")
@@ -273,7 +314,6 @@ def preview_regular_payroll(period_id, department_id):
         flash("Payroll period is locked.", "warning")
         return redirect(url_for("payroll_staff_bp.regular_select_department", period_id=period.id))
 
-    # Check if already processed
     existing = Payroll.query.join(Employee).filter(
         Payroll.payroll_period_id == period.id,
         Payroll.status == "Processed",
@@ -303,37 +343,29 @@ def preview_regular_payroll(period_id, department_id):
             Attendance.date.between(period.start_date, period.end_date)
         ).all()
         
-        present_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
-        absent_days = sum(1 for a in attendances if a.status == "Absent")
+        present_from_attendance = sum(1 for a in attendances if a.status in ("Present", "Late"))
+        absent_from_attendance = sum(1 for a in attendances if a.status == "Absent")
         
-        # Get approved leaves in period
-        leaves = Leave.query.filter(
-            Leave.employee_id == emp.id,
-            Leave.start_date <= period.end_date,
-            Leave.end_date >= period.start_date,
-            Leave.status == "Approved"
-        ).all()
+        # ✅ STATUTORY PAID LEAVE (Maternity, Paternity, etc.)
+        paid_leave_days, unpaid_leave_days, leave_details = get_paid_leave_days_for_period(emp.id, period)
         
-        leave_days_in_period = 0
-        for leave in leaves:
-            start = max(leave.start_date, period.start_date)
-            end = min(leave.end_date, period.end_date)
-            if start <= end:
-                leave_days_in_period += (end - start).days + 1
+        # Combine: paid leave counts as worked days; unpaid portion counts as absent
+        present_days = present_from_attendance + paid_leave_days
+        absent_days = absent_from_attendance + unpaid_leave_days
         
-        # Leave credits (for display/reference only - NOT applied to AWOP)
+        # Leave credits (VL/SL) - ONLY for late deduction coverage, NOT for absences
         leave_credits = LeaveCredit.query.filter_by(employee_id=emp.id).all()
         total_credits = sum(lc.total_credits for lc in leave_credits)
         used_credits = sum(lc.used_credits for lc in leave_credits)
         remaining_credits = max(total_credits - used_credits, 0)
         
-        # ✅ AWOP calculation: daily_rate × absent_days (NO credits applied)
-        # Credits are ONLY applied to late/undertime deductions, not absences
+        # ✅ AWOP: Only attendance-based absences + statutory unpaid days (NO VL/SL credits applied)
+        # Credits are ONLY applied to late/undertime deductions
         awop_amount = round(absent_days * daily_rate, 2)
         uncovered_days = absent_days  # All absences are billable as AWOP
         
         # Earnings
-        basic_pay = daily_rate * present_days
+        basic_pay = daily_rate * present_days  # ✅ Paid leave days count toward basic pay
         allowance_total = sum(
             ea.allowance.amount for ea in emp.employee_allowances 
             if ea.active and ea.allowance
@@ -389,22 +421,19 @@ def preview_regular_payroll(period_id, department_id):
             "source": "employee_deduction"
         })
         
-        # ✅ GSIS with Auto-Compute
+        # GSIS with Auto-Compute
         gsis_ded = EmployeeDeduction.query.filter_by(
             employee_id=emp.id,
             deduction_id=Deduction.query.filter_by(name="GSIS").first().id if Deduction.query.filter_by(name="GSIS").first() else None
         ).filter_by(active=True).first()
         
-        # Check if there's an override value
         gsis_override = gsis_ded.override_amount if gsis_ded and gsis_ded.override_amount else None
         
         if gsis_override is not None:
-            # Use stored override value
             gsis_value = gsis_override
             gsis_gov = 0
             gsis_auto_info = f"Override: ₱{gsis_value:,.2f}"
         else:
-            # Auto-compute based on configuration
             gsis_emp, gsis_gov = compute_gsis(monthly_salary)
             gsis_value = gsis_emp
             gsis_auto_info = f"{'3% of salary' if GSIS_USE_PERCENTAGE else f'Fixed: ₱{GSIS_FIXED_RATE:,.2f}'}"
@@ -413,7 +442,7 @@ def preview_regular_payroll(period_id, department_id):
             "key": "gsis", "name": "GSIS", "employee_share": gsis_value,
             "editable": True, "auto_value": gsis_value, "type": "fixed_or_percentage",
             "employer_share": gsis_gov, "source": "auto_computed_or_override",
-            "auto_info": gsis_auto_info  # For display in template
+            "auto_info": gsis_auto_info
         })
         
         # ✅ AWOP with NO credit application (credits only for late deductions)
@@ -426,33 +455,28 @@ def preview_regular_payroll(period_id, department_id):
             "type": "awop",
             "daily_rate": daily_rate, 
             "total_absent_days": absent_days,
-            "credits_applied": 0,           # ✅ Explicitly zero - credits don't apply to AWOP
-            "uncovered_days": absent_days,  # ✅ All absences = AWOP days
+            "credits_applied": 0,
+            "uncovered_days": absent_days,
             "calculation": f"{absent_days} × ₱{daily_rate:,.2f} = ₱{awop_amount:,.2f}",
             "source": "attendance_records"
         })
         
         # ✅ LATE/UNDERTIME DEDUCTION WITH CREDIT APPLICATION (credits ONLY apply here)
         late_result = compute_late_from_attendance(emp, period, apply_credits=True)
-        
-        # Calculate original deduction amount from day_equivalent × daily_rate
         original_late_amount = round(late_result['day_equivalent'] * daily_rate, 2)
         
-        # Only add late deduction if there's actual late time recorded
         if late_result['hours'] > 0 or late_result['minutes'] > 0 or late_result['seconds'] > 0:
             deductions.append({
                 "key": "late_deduction",
                 "name": f"Undertime/Late ({late_result['formatted']})",
                 "employee_share": late_result['deduction_amount'],
                 "employer_share": 0,
-                "editable": False,  # 🔒 Read-only - auto-calculated
+                "editable": False,
                 "type": "late",
-                # Time breakdown for display
                 "late_hours": late_result['hours'],
                 "late_minutes": late_result['minutes'],
                 "late_seconds": late_result['seconds'],
                 "late_formatted": late_result['formatted'],
-                # Credit application details (VL→SL)
                 "credits_applied": late_result['credits_applied'],
                 "vl_used": late_result['vl_used'],
                 "sl_used": late_result['sl_used'],
@@ -480,7 +504,7 @@ def preview_regular_payroll(period_id, department_id):
         payroll_data.append({
             "employee": emp,
             "days_worked": present_days,
-            "leave_days": leave_days_in_period,
+            "leave_days": paid_leave_days,  # ✅ Only statutory paid leaves
             "absences": absent_days,
             "basic_pay": basic_pay,
             "allowance_total": allowance_total,
@@ -488,10 +512,10 @@ def preview_regular_payroll(period_id, department_id):
             "adjustment_pay": adjustment_pay,
             "deductions": deductions,
             "awop_suggested": awop_amount,
-            "awop_days": absent_days,  # Changed from uncovered_days
+            "awop_days": absent_days,
             "daily_rate": daily_rate,
-            "available_credits": remaining_credits,  # For display only
-            # Late deduction data for template
+            "available_credits": remaining_credits,
+            # Late deduction data
             "late_deduction": late_result['deduction_amount'],
             "late_formatted": late_result['formatted'],
             "late_credits_applied": late_result['credits_applied'],
@@ -500,14 +524,19 @@ def preview_regular_payroll(period_id, department_id):
             "late_original_equiv": late_result['day_equivalent'],
             "late_remaining_equiv": late_result['remaining_day_equiv'],
             "late_original_amount": original_late_amount,
+            # ✅ Statutory leave summary for template
+            "statutory_leaves": leave_details,
+            "paid_leave_days": paid_leave_days,
+            "unpaid_leave_days": unpaid_leave_days,
             # For display
             "actual_attendance": {
-                "present": present_days,
-                "absent": absent_days,
+                "present": present_from_attendance,
+                "absent": absent_from_attendance,
                 "late": sum(1 for a in attendances if a.status == "Late")
             },
             "actual_leave": {
-                "days_in_period": leave_days_in_period,
+                "statutory_paid_days": paid_leave_days,
+                "statutory_unpaid_days": unpaid_leave_days,
                 "credits_used": used_credits,
                 "credits_remaining": remaining_credits
             }
@@ -520,6 +549,7 @@ def preview_regular_payroll(period_id, department_id):
         payroll_data=payroll_data
     )
 
+
 # ========================= PROCESS =========================
 
 @payroll_staff_bp.route("/regular/process/<int:period_id>/<int:department_id>", methods=["POST"])
@@ -529,7 +559,6 @@ def process_regular_payroll(period_id, department_id):
     period = PayrollPeriod.query.get_or_404(period_id)
     department = Department.query.get_or_404(department_id)
 
-    # Double-check not already processed
     existing = Payroll.query.join(Employee).filter(
         Payroll.payroll_period_id == period.id,
         Payroll.status == "Processed",
@@ -558,7 +587,15 @@ def process_regular_payroll(period_id, department_id):
             Attendance.employee_id == emp.id,
             Attendance.date.between(period.start_date, period.end_date)
         ).all()
-        worked_days = sum(1 for a in attendances if a.status in ("Present", "Late"))
+        present_from_attendance = sum(1 for a in attendances if a.status in ("Present", "Late"))
+        absent_from_attendance = sum(1 for a in attendances if a.status == "Absent")
+        
+        # ✅ STATUTORY PAID LEAVE
+        paid_leave_days, unpaid_leave_days, _ = get_paid_leave_days_for_period(emp.id, period)
+        
+        # Combine for payroll calculation
+        worked_days = present_from_attendance + paid_leave_days
+        absent_days = absent_from_attendance + unpaid_leave_days
 
         basic_pay = daily_rate * worked_days
         allowance_total = safe_float(request.form.get(f"allowance_{emp.id}", 0))
@@ -677,7 +714,6 @@ def process_regular_payroll(period_id, department_id):
         
         processed_count += 1
 
-    # ✅ MARK DEPARTMENT AS PROCESSED FOR THIS PERIOD
     db.session.commit()
     
     flash(f"✅ Processed payroll for {processed_count} employee(s) in {department.name}. Department marked as processed.", "success")

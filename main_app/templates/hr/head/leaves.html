@@ -22,25 +22,68 @@
 
 <!-- FILTER -->
 <form method="get" id="statusFilterForm"
-class="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+      class="bg-gray-800 border border-gray-700 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-end">
 
-<div class="flex flex-col w-full sm:w-64">
-<label class="text-xs uppercase tracking-wide text-gray-400 mb-1">
-Status
-</label>
+    <div class="flex flex-col w-full sm:w-52">
+        <label class="text-xs uppercase tracking-wide text-gray-400 mb-1">Status</label>
+        <select name="status"
+                onchange="document.getElementById('statusFilterForm').submit()"
+                class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600 h-[42px]">
+            <option value="">All</option>
+            <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
+            <option value="Approved" {% if status_filter == "Approved" %}selected{% endif %}>Approved</option>
+            <option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+        </select>
+    </div>
 
-<select name="status"
-onchange="document.getElementById('statusFilterForm').submit()"
-class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600">
+    <div class="flex flex-col w-full sm:w-44">
+        <label class="text-xs uppercase tracking-wide text-gray-400 mb-1">From</label>
+        <input type="date" name="date_from" value="{{ date_from }}"
+               class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600 h-[42px] [color-scheme:dark]">
+    </div>
 
-<option value="">All</option>
-<option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
-<option value="Approved" {% if status_filter == "Approved" %}selected{% endif %}>Approved</option>
-<option value="Rejected" {% if status_filter == "Rejected" %}selected{% endif %}>Rejected</option>
+    <div class="flex flex-col w-full sm:w-44">
+        <label class="text-xs uppercase tracking-wide text-gray-400 mb-1">To</label>
+        <input type="date" name="date_to" value="{{ date_to }}"
+               class="bg-gray-700 text-gray-200 rounded-lg px-3 py-2 border border-gray-600 h-[42px] [color-scheme:dark]">
+    </div>
 
-</select>
-</div>
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition h-[42px] flex items-center justify-center whitespace-nowrap">
+            <i class="fa-solid fa-filter mr-2"></i>Apply
+        </button>
+
+        <a href="{{ url_for('hr_head_bp.leaves') }}"
+           class="bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white px-4 py-2 rounded-lg transition h-[42px] flex items-center justify-center whitespace-nowrap">
+            <i class="fa-solid fa-rotate-left mr-2"></i>Clear
+        </a>
+    </div>
 </form>
+<!-- TABLE --> (keep your existing table code as is)
+
+<!-- PAGINATION -->
+{% if leaves.pages > 1 %}
+<div class="flex justify-center gap-4 text-gray-400">
+
+    {% if leaves.has_prev %}
+    <a href="{{ url_for('hr_head_bp.leaves', page=leaves.prev_num, status=status_filter, date_from=date_from, date_to=date_to) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
+        Previous
+    </a>
+    {% endif %}
+
+    <span>{{ leaves.page }} of {{ leaves.pages }}</span>
+
+    {% if leaves.has_next %}
+    <a href="{{ url_for('hr_head_bp.leaves', page=leaves.next_num, status=status_filter, date_from=date_from, date_to=date_to) }}"
+       class="px-4 py-2 bg-gray-700 rounded-xl hover:bg-gray-600 transition">
+        Next
+    </a>
+    {% endif %}
+
+</div>
+{% endif %}
 
 <!-- TABLE -->
 <div class="overflow-x-auto bg-gray-800 border border-gray-700 rounded-2xl shadow">

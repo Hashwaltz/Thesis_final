@@ -47,7 +47,10 @@
         <label class="block text-xs font-medium text-slate-400 mb-1.5">Department</label>
         <select name="department"
                 class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-right-3 bg-[length:1rem] pr-9">
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition 
+                       cursor-pointer appearance-none 
+                       bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] 
+                       bg-no-repeat bg-[right_1rem_center] bg-[length:1rem] pr-10">
           <option value="">All Departments</option>
           {% for dept in departments %}
           <option value="{{ dept.id }}" {% if request.args.get('department') == dept.id|string %}selected{% endif %}>
@@ -62,7 +65,10 @@
         <label class="block text-xs font-medium text-slate-400 mb-1.5">Status</label>
         <select name="status"
                 class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-2.5 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-right-3 bg-[length:1rem] pr-9">
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition 
+                       cursor-pointer appearance-none 
+                       bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] 
+                       bg-no-repeat bg-[right_1rem_center] bg-[length:1rem] pr-10">
           <option value="">All Status</option>
           {% for status in ['Active', 'Resigned', 'Terminated'] %}
           <option value="{{ status }}" {% if request.args.get('status') == status %}selected{% endif %}>

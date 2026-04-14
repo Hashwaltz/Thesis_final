@@ -220,8 +220,17 @@
     
     <!-- Table Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-gray-700/50 bg-gray-900/50">
+      {% set from_item = ((attendances.page - 1) * attendances.per_page) + 1 if attendances.total > 0 else 0 %}
+      {% set to_item = [attendances.page * attendances.per_page, attendances.total]|min %}
+
       <span class="text-sm text-gray-400">
-        Showing <strong class="text-white">{{ attendances.from }}</strong>-<strong class="text-white">{{ attendances.to }}</strong> of <strong class="text-white">{{ attendances.total }}</strong> records
+        {% if attendances.total == 0 %}
+          No attendance records found
+        {% else %}
+          Showing <strong class="text-white">{{ from_item }}</strong>-
+          <strong class="text-white">{{ to_item }}</strong> of 
+          <strong class="text-white">{{ attendances.total }}</strong> records
+        {% endif %}
       </span>
       <span class="text-xs text-gray-500 flex items-center gap-1">
         <i class="fa-regular fa-clock"></i>

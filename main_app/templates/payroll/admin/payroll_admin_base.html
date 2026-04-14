@@ -1,126 +1,157 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Payroll Admin | GovHRPay{% endblock %}</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GovHRPay Payroll Admin Dashboard - Manage payroll, payslips, deductions, and reports">
+  <title>{% block title %}Payroll Admin | GovHRPay{% endblock %}</title>
 
-    <!-- Favicon -->
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='img/favicon.avif') }}"
-    />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.avif') }}">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4lKZrM5P4k5f5Z4bYx5m5F0+g=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Font Awesome -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-      crossorigin="anonymous"
-    />
-  </head>
-  <body
-    class="bg-gray-900 text-gray-100 flex flex-col md:flex-row min-h-screen font-sans"
-  >
-    <!-- ================= MOBILE HEADER ================= -->
-    <header
-      class="md:hidden bg-green-800 text-white flex justify-between items-center p-4 shadow sticky top-0 z-30"
-    >
-      <div class="flex items-center gap-3">
-        <button id="mobileMenuBtn">
-          <i class="fa-solid fa-bars text-2xl"></i>
-        </button>
-        <span class="font-semibold text-lg">GovHRPay</span>
-      </div>
-      <button id="logoutBtnMobile">
-        <i class="fa-solid fa-right-from-bracket text-xl"></i>
+  <!-- Font Awesome (Icon Library) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+
+  <!-- Custom Tailwind Config - GREEN THEME -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'gov-green': { 
+              400: '#34d399', 
+              500: '#10b981', 
+              600: '#059669', 
+              700: '#047857', 
+              800: '#065f46',
+              900: '#064e3b'
+            },
+            'gov-dark': { 900: '#0f172a', 950: '#020617' }
+          },
+          transitionDuration: { '250': '250ms' }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Smooth sidebar transition */
+    #sidebar { transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1); }
+    /* Skip link for accessibility */
+    .skip-link {
+      position: absolute; top: -40px; left: 0; background: #065f46; color: white;
+      padding: 8px 16px; z-index: 100; border-radius: 0 0 4px 4px;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+    /* Focus visible for keyboard users */
+    :focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
+    /* Hide scrollbar but allow scroll */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 flex flex-col md:flex-row min-h-screen font-sans antialiased">
+
+  <!-- ♿ Skip to Content Link -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ================= MOBILE NAVBAR ================= -->
+  <header class="md:hidden bg-green-800 text-white flex justify-between items-center p-4 shadow-md sticky top-0 z-20"
+          role="banner">
+    <div class="flex items-center gap-3">
+      <button id="mobileMenuBtn" 
+              class="p-2 hover:bg-green-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Toggle navigation menu"
+              aria-expanded="false"
+              aria-controls="sidebar">
+        <i class="fa-solid fa-bars text-2xl"></i>
       </button>
-    </header>
+      <h1 class="font-semibold text-lg">GovHRPay</h1>
+    </div>
+
+    <button id="logoutBtnMobile"
+            class="p-2 hover:bg-green-700 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-white"
+            aria-label="Log out">
+      <i class="fa-solid fa-right-from-bracket text-lg"></i>
+    </button>
+  </header>
 
   <!-- ================= SIDEBAR ================= -->
-    <aside
-      id="sidebar"
-      class="bg-[#0a0f1c] w-64 sm:w-72 fixed md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition duration-300 z-40 flex flex-col border-r border-gray-800/50"
-    >
-      <!-- Sidebar Header -->
-      <div
-        class="px-6 py-5 border-b border-gray-800/50 flex items-center gap-3 sticky top-0 bg-[#0a0f1c] z-10"
-      >
-        <img
-          src="{{ url_for('static', filename='img/logo2.png') }}"
-          class="w-12 h-12 rounded-full"
-        />
-        <div>
-          <h2 class="text-lg font-semibold text-emerald-400">GovHRPay</h2>
-          <p class="text-xs text-gray-500">Payroll Admin</p>
-          <p class="text-sm mt-1 text-gray-300">
-            Welcome,
-            <b class="text-gray-100">{{ current_user.first_name }} {{ current_user.last_name }}</b>
+  <aside id="sidebar"
+    class="bg-gray-950 text-white w-64 sm:w-72 flex-shrink-0 fixed md:static inset-y-0 left-0
+           transform -translate-x-full md:translate-x-0 z-30 flex flex-col justify-between 
+           border-r border-gray-800 shadow-xl"
+    role="navigation"
+    aria-label="Main navigation">
+
+    <div class="overflow-y-auto flex-grow no-scrollbar">
+
+      <!-- LOGO & USER -->
+      <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-800 sticky top-0 bg-gray-950 z-10">
+        <img src="{{ url_for('static', filename='img/logo2.png') }}"
+             alt="GovHRPay Logo"
+             class="w-12 h-12 rounded-full object-cover ring-2 ring-green-500/30">
+
+        <div class="min-w-0">
+          <h2 class="text-lg font-semibold text-green-400">GovHRPay</h2>
+          <p class="text-sm text-gray-400">Payroll Administrator</p>
+          <p class="text-sm text-gray-300 mt-1 truncate">
+            Welcome, <span class="font-medium">{{ current_user.get_full_name() }}</span>
           </p>
         </div>
       </div>
 
-      <!-- ================= NAVIGATION ================= -->
-      <nav class="flex-1 overflow-y-auto px-3 py-4 text-gray-400">
+      <!-- NAVIGATION -->
+      <nav class="mt-4 px-4 text-gray-300 space-y-6" role="menubar">
+
         {% set menu = { 
-        "EMPLOYEE PAYROLL": 
-        [
-          ("fa-solid fa-chart-pie","Dashboard", "payroll_admin_bp.payroll_dashboard"),
-          ("fa-solid fa-money-check-dollar", "View Payrolls", "payroll_admin_bp.view_payrolls"),
-          ("fa-solid fa-users", "View Employees", "payroll_admin_bp.view_employees"),
-          ("fa-solid fa-cash-register", "Department Payrolls","payroll_admin_bp.payroll_departments")
-        ],
-        
-        "PAYROLL MANAGEMENT": 
-        [
-          ("fa-solid fa-calendar-days", "Payroll Periods","payroll_admin_bp.view_payroll_periods"),
-          ("fa-solid fa-clock-rotate-left","Payroll History", "payroll_admin_bp.payroll_history_dashboard"),
-          ("fa-solid fa-calculator", "Deduction Management","payroll_admin_bp.deductions"),
-          ("fa-solid fa-table", "Deduction Brackets and Formulas","payroll_admin_bp.deduction_brackets"),
-          ("fa-solid fa-hand-holding-dollar", "Loans", "payroll_admin_bp.loans")
-        ], 
-
-        "PAYSLIPS": 
-        [ 
-          ("fa-solid fa-file-invoice-dollar", "Generate Payslips", "payroll_admin_bp.generate_payslips_by_period"),
-          ("fa-solid fa-paper-plane", "Distribute/View Payslips", "payroll_admin_bp.view_payslips") 
-        ],
-
-        "REPORTS": 
-        [
-          ("fa-solid fa-chart-line", "Earnings Report", "payroll_admin_bp.earnings_deduction_report"),
-          ("fa-solid fa-receipt", "Deductions Report", "payroll_admin_bp.deduction_detail_report")
-        ]
+          "EMPLOYEE PAYROLL": [
+            ("fa-solid fa-chart-pie", "Dashboard", "payroll_admin_bp.payroll_dashboard"),
+            ("fa-solid fa-money-check-dollar", "View Payrolls", "payroll_admin_bp.view_payrolls"),
+            ("fa-solid fa-users", "View Employees", "payroll_admin_bp.view_employees"),
+            ("fa-solid fa-cash-register", "Department Payrolls", "payroll_admin_bp.payroll_departments")
+          ],
+          "PAYROLL MANAGEMENT": [
+            ("fa-solid fa-calendar-days", "Payroll Periods", "payroll_admin_bp.view_payroll_periods"),
+            ("fa-solid fa-clock-rotate-left", "Payroll History", "payroll_admin_bp.payroll_history_dashboard"),
+            ("fa-solid fa-calculator", "Deduction Management", "payroll_admin_bp.deductions"),
+            ("fa-solid fa-table", "Deduction Brackets", "payroll_admin_bp.deduction_brackets"),
+            ("fa-solid fa-hand-holding-dollar", "Loans", "payroll_admin_bp.loans")
+          ],
+          "PAYSLIPS": [
+            ("fa-solid fa-file-invoice-dollar", "Generate Payslips", "payroll_admin_bp.generate_payslips_by_period"),
+            ("fa-solid fa-paper-plane", "Distribute/View Payslips", "payroll_admin_bp.view_payslips")
+          ],
+          "REPORTS": [
+            ("fa-solid fa-chart-line", "Earnings Report", "payroll_admin_bp.earnings_deduction_report"),
+            ("fa-solid fa-receipt", "Deductions Report", "payroll_admin_bp.deduction_detail_report")
+          ]
         } %}
-        {% for section, links in
-        menu.items() %}
-        <div class="mb-6">
-          <h3 class="text-xs uppercase text-gray-600 mb-2 tracking-wider px-3 font-semibold">
-            {{ section }}
-          </h3>
+
+        {% for section, links in menu.items() %}
+        <div role="menuitem">
+          <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2 px-2">{{ section }}</h3>
           <ul class="space-y-1">
             {% for icon, label, endpoint in links %}
             {% set is_active = request.endpoint == endpoint %}
             <li>
-              <a
-                href="{{ url_for(endpoint) }}"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
-                      {{ 'bg-emerald-900/40 text-emerald-400 border border-emerald-700/30' if is_active 
-                        else 'hover:bg-gray-800/60 text-gray-400 hover:text-gray-200' }}"
-              >
-                <i class="{{ icon }} w-5 {{ 'text-emerald-400' if is_active else 'text-gray-500 group-hover:text-emerald-400' }}"></i>
-                <span class="font-medium">{{ label }}</span>
+              <a href="{{ url_for(endpoint) }}"
+                 class="flex items-center gap-3 p-2 rounded-lg hover:bg-green-700/40 transition group
+                        {{ 'bg-green-700/50 text-white border border-green-600/30' if is_active else '' }}"
+                 aria-current="{{ 'page' if is_active else undefined }}">
+                <i class="{{ icon }} w-5 text-center 
+                          {{ 'text-green-400' if is_active else 'text-green-400/80 group-hover:text-green-300' }}"></i>
+                <span>{{ label }}</span>
                 {% if is_active %}
                 <i class="fa-solid fa-chevron-right ml-auto text-xs opacity-60"></i>
                 {% endif %}
@@ -130,78 +161,185 @@
           </ul>
         </div>
         {% endfor %}
+
       </nav>
+    </div>
 
-      <!-- ================= LOGOUT ================= -->
-      <div class="p-4 border-t border-gray-800/50">
-        <button
-          id="logoutBtn"
-          class="w-full flex items-center justify-center gap-2 bg-red-900/40 hover:bg-red-900/60 border border-red-800/50 text-red-400 hover:text-red-300 py-2.5 rounded-lg transition-all duration-200 font-medium"
-        >
-          <i class="fa-solid fa-right-from-bracket"></i>
-          Logout
-        </button>
-      </div>
-    </aside>
-    <!-- ================= OVERLAY ================= -->
-    <div
-      id="overlay"
-      class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"
-    ></div>
+    <!-- LOGOUT -->
+    <div class="p-4 border-t border-gray-800">
+      <button id="logoutBtn"
+        class="flex items-center gap-2 w-full justify-center py-2.5 rounded-lg
+               bg-red-600 hover:bg-red-700 active:bg-red-800 transition 
+               focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 focus:ring-offset-gray-950"
+        aria-label="Log out of GovHRPay">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
 
-    <!-- ================= MAIN CONTENT ================= -->
-    <main class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
-      <div
-        class="hidden md:flex items-center gap-3 bg-green-800 text-white p-4 rounded-lg shadow mb-6 sticky top-0 z-20"
-      >
-        <i class="fa-solid fa-money-bill-wave text-xl"></i>
-        <h1 class="text-lg font-semibold">Payroll Management System</h1>
-      </div>
+  <!-- ♿ Overlay for mobile (focus trap helper) -->
+  <div id="overlay" 
+       class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 hidden md:hidden"
+       aria-hidden="true"></div>
 
-      {% block content %}{% endblock %}
-    </main>
+  <!-- ================= MAIN CONTENT ================= -->
+  <main id="main-content" 
+        class="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto bg-gray-900 scroll-smooth"
+        role="main"
+        tabindex="-1">
 
-    <!-- ================= SCRIPTS ================= -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-      const sidebar = document.getElementById("sidebar");
-      const overlay = document.getElementById("overlay");
+    <!-- TOP BAR (Desktop) -->
+    <div class="bg-green-800 text-white rounded-xl p-4 mb-6 hidden md:flex items-center gap-3 shadow-lg"
+         role="region"
+         aria-label="Page header">
+      <i class="fa-solid fa-money-bill-wave text-xl"></i>
+      <h1 class="text-lg font-semibold">Payroll Management System</h1>
+    </div>
 
-      document
-        .getElementById("mobileMenuBtn")
-        ?.addEventListener("click", () => {
-          sidebar.classList.toggle("-translate-x-full");
-          overlay.classList.toggle("hidden");
-        });
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-6 space-y-2" role="status" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="p-4 rounded-xl border 
+                      {% if category == 'success' %}bg-green-900/30 border-green-700 text-green-200
+                      {% elif category == 'error' %}bg-red-900/30 border-red-700 text-red-200
+                      {% else %}bg-green-900/30 border-green-700 text-green-200{% endif %}">
+              <i class="fa-solid 
+                      {% if category == 'success' %}fa-circle-check
+                      {% elif category == 'error' %}fa-circle-exclamation
+                      {% else %}fa-circle-info{% endif %} mr-2"></i>
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
-      overlay?.addEventListener("click", () => {
+    {% block content %}{% endblock %}
+    
+    <!-- Footer -->
+    <footer class="mt-12 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
+      <p>&copy; {{ now.year if now else 2026 }} GovHRPay. All rights reserved.</p>
+      <p class="mt-1">Payroll Management System v2.1</p>
+    </footer>
+  </main>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script>
+    // ===== DOM Elements =====
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const logoutBtns = [document.getElementById("logoutBtn"), document.getElementById("logoutBtnMobile")].filter(Boolean);
+    
+    // ===== Mobile Sidebar Toggle with Focus Management =====
+    const toggleSidebar = (show) => {
+      if (show) {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+        mobileMenuBtn?.setAttribute("aria-expanded", "true");
+        // Focus first nav link for keyboard users
+        setTimeout(() => sidebar.querySelector("a[href]")?.focus(), 300);
+        document.body.style.overflow = "hidden"; // Prevent background scroll
+      } else {
         sidebar.classList.add("-translate-x-full");
         overlay.classList.add("hidden");
-      });
-
-      document
-        .getElementById("logoutBtn")
-        ?.addEventListener("click", confirmLogout);
-      document
-        .getElementById("logoutBtnMobile")
-        ?.addEventListener("click", confirmLogout);
-
-      function confirmLogout(e) {
-        e.preventDefault();
-        Swal.fire({
-          title: "Logout?",
-          text: "You will be logged out of the system.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#16a34a",
-          cancelButtonColor: "#dc2626",
-          confirmButtonText: "Yes, logout",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            window.location.href = "{{ url_for('payroll_auth_bp.logout') }}";
-          }
-        });
+        mobileMenuBtn?.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = "";
+        mobileMenuBtn?.focus(); // Return focus to trigger
       }
-    </script>
-  </body>
+    };
+
+    mobileMenuBtn?.addEventListener("click", () => {
+      const isOpen = !sidebar.classList.contains("-translate-x-full");
+      toggleSidebar(!isOpen);
+    });
+
+    overlay?.addEventListener("click", () => toggleSidebar(false));
+
+    // Close sidebar on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !sidebar.classList.contains("-translate-x-full")) {
+        toggleSidebar(false);
+      }
+    });
+
+    // ===== Logout Confirmation =====
+    const confirmLogout = (e) => {
+      e.preventDefault();
+      Swal.fire({
+        title: "Sign Out?",
+        text: "You will need to sign in again to continue.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#475569",
+        confirmButtonText: "Yes, Sign Out",
+        cancelButtonText: "Cancel",
+        background: "#1e293b",
+        color: "#f1f5f9",
+        reverseButtons: true,
+        customClass: {
+          popup: 'rounded-2xl border border-slate-700 shadow-2xl',
+          title: 'text-white font-semibold',
+          content: 'text-slate-300',
+          confirmButton: 'rounded-xl px-5 py-2.5 font-medium',
+          cancelButton: 'rounded-xl px-5 py-2.5 font-medium'
+        },
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Signing out...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading(),
+            background: "#1e293b",
+            color: "#f1f5f9",
+            customClass: { popup: 'rounded-2xl border border-slate-700' }
+          });
+          setTimeout(() => {
+            window.location.href = "{{ url_for('payroll_auth_bp.logout') }}";
+          }, 150);
+        }
+      });
+    };
+
+    logoutBtns.forEach(btn => btn?.addEventListener("click", confirmLogout));
+
+    // ===== Auto-hide flash messages after 5 seconds =====
+    document.addEventListener("DOMContentLoaded", () => {
+      const flashMsgs = document.querySelectorAll('[role="status"] > div');
+      flashMsgs.forEach(msg => {
+        setTimeout(() => {
+          msg.style.transition = "opacity 0.3s, transform 0.3s";
+          msg.style.opacity = "0";
+          msg.style.transform = "translateY(-10px)";
+          setTimeout(() => msg.remove(), 300);
+        }, 5000);
+      });
+    });
+
+    // ===== Prevent FOUC on sidebar init (mobile) =====
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.innerWidth < 768) {
+        sidebar.classList.add("-translate-x-full");
+      }
+    });
+  </script>
+
+  <!-- ♿ Announce page loads for screen readers -->
+  <div id="aria-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <script>
+    // Update aria-live region on page navigation (for SPA-like feel)
+    document.addEventListener('DOMContentLoaded', () => {
+      const liveRegion = document.getElementById('aria-live');
+      const mainContent = document.getElementById('main-content');
+      if (liveRegion && mainContent) {
+        // Announce initial load
+        liveRegion.textContent = `Loaded: ${document.title}`;
+      }
+    });
+  </script>
+</body>
 </html>

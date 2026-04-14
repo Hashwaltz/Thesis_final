@@ -81,7 +81,7 @@
       <h2 id="moaTitle" class="text-xl font-bold text-blue-400 flex items-center gap-2">
         <i class="fa-solid fa-file-excel"></i> Generate MOA List
       </h2>
-      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal">
+      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal" data-modal="moa">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
     </div>
@@ -93,7 +93,9 @@
         </label>
         <select id="employmentTypeSelect" name="employment_type" required
           class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer">
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer appearance-none 
+                 bg-[url('image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] 
+                 bg-no-repeat bg-[right_1rem_center] bg-[length:1rem] pr-10">
           <option value="">Choose a type...</option>
           {% for etype in employment_types %}
           <option value="{{ etype.id }}">{{ etype.name }}</option>
@@ -103,7 +105,7 @@
       </div>
 
       <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
-        <button type="button" class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition">
+        <button type="button" class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition" data-modal="moa">
           Cancel
         </button>
         <button type="submit" id="moaGenerateBtn" class="bg-blue-600 hover:bg-blue-700 active:scale-95 px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition shadow-lg shadow-blue-500/20">
@@ -126,7 +128,7 @@
       <h2 id="serviceTitle" class="text-xl font-bold text-green-400 flex items-center gap-2">
         <i class="fa-solid fa-file-lines"></i> Service Record Export
       </h2>
-      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal">
+      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal" data-modal="service">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
     </div>
@@ -138,7 +140,9 @@
         </label>
         <select id="serviceEmployeeId"
           class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 
-                 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition cursor-pointer">
+                 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition cursor-pointer appearance-none 
+                 bg-[url('image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] 
+                 bg-no-repeat bg-[right_1rem_center] bg-[length:1rem] pr-10">
           <option value="">Search or select...</option>
           {% for emp in employees %}
           <option value="{{ emp.id }}">{{ emp.get_full_name() }} {% if emp.employee_id %}(#{{ emp.employee_id }}){% endif %}</option>
@@ -154,7 +158,7 @@
       </div>
 
       <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
-        <button class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition">
+        <button class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition" data-modal="service">
           Cancel
         </button>
         <button id="generateServiceRecordBtn" class="bg-green-600 hover:bg-green-700 active:scale-95 px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition shadow-lg shadow-green-500/20">
@@ -177,7 +181,7 @@
       <h2 id="coeTitle" class="text-xl font-bold text-yellow-400 flex items-center gap-2">
         <i class="fa-solid fa-file-pdf"></i> Certificate of Employment
       </h2>
-      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal">
+      <button class="closeModal text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg p-2 transition" aria-label="Close modal" data-modal="coe">
         <i class="fa-solid fa-xmark text-lg"></i>
       </button>
     </div>
@@ -189,7 +193,9 @@
         </label>
         <select id="coeEmployeeId"
           class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 
-                 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition cursor-pointer">
+                 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition cursor-pointer appearance-none 
+                 bg-[url('image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] 
+                 bg-no-repeat bg-[right_1rem_center] bg-[length:1rem] pr-10">
           <option value="">Search or select...</option>
           {% for emp in employees %}
           <option value="{{ emp.id }}">{{ emp.get_full_name() }} {% if emp.employee_id %}(#{{ emp.employee_id }}){% endif %}</option>
@@ -220,7 +226,7 @@
       </fieldset>
 
       <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
-        <button class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition">
+        <button class="closeModal bg-slate-700 hover:bg-slate-600 px-6 py-2.5 rounded-xl text-slate-200 transition" data-modal="coe">
           Cancel
         </button>
         <button id="generateCOEBtn" class="bg-yellow-600 hover:bg-yellow-700 active:scale-95 px-6 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition shadow-lg shadow-yellow-500/20">
@@ -248,11 +254,20 @@
     transform: scale(1);
     opacity: 1;
   }
+  
+  /* Success animation */
+  @keyframes pulse-success {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .success-pulse {
+    animation: pulse-success 0.4s ease-in-out;
+  }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // Modal management
+  // ===== MODAL MANAGEMENT =====
   const modals = {
     moa: { el: document.getElementById("moaModal"), backdrop: document.getElementById("moaBackdrop") },
     service: { el: document.getElementById("serviceRecordModal"), backdrop: document.getElementById("serviceBackdrop") },
@@ -260,50 +275,139 @@ document.addEventListener("DOMContentLoaded", function() {
   };
 
   function openModal(modal) {
-    // Close all first
     Object.values(modals).forEach(m => {
       m.el.classList.add("hidden");
       m.el.classList.remove("flex");
     });
-    
-    // Open target
     modal.el.classList.remove("hidden");
     modal.el.classList.add("flex");
     document.body.style.overflow = "hidden";
-    
-    // Focus first input
     const firstInput = modal.el.querySelector("select, input");
-    if (firstInput) firstInput.focus();
+    if (firstInput) setTimeout(() => firstInput.focus(), 100);
   }
 
   function closeModal(modal) {
     modal.el.classList.add("hidden");
     modal.el.classList.remove("flex");
     document.body.style.overflow = "";
+    resetModalState(modal.el);
   }
 
   function closeAllModals() {
     Object.values(modals).forEach(m => closeModal(m));
   }
 
+  function resetModalState(modalEl) {
+    const form = modalEl.querySelector("form");
+    if (form) form.reset();
+    modalEl.querySelectorAll("button[type='submit'], button[id$='Btn']").forEach(btn => {
+      btn.disabled = false;
+      const spin = btn.querySelector("[id$='Spinner']");
+      if (spin) spin.classList.add("hidden");
+      const originalText = btn.querySelector("span:not([id])");
+      if (originalText) originalText.textContent = originalText.dataset.originalText || originalText.textContent;
+    });
+    modalEl.querySelectorAll(".coe-field").forEach(cb => cb.checked = cb.defaultChecked);
+  }
+
+  // Store original button text for restoration
+  document.querySelectorAll("button[id$='Btn'] span:not([id])").forEach(span => {
+    span.dataset.originalText = span.textContent;
+  });
+
   // Open triggers
   document.getElementById("openMoaModal").addEventListener("click", () => openModal(modals.moa));
   document.getElementById("openServiceRecordModal").addEventListener("click", () => openModal(modals.service));
   document.getElementById("openCOEModal").addEventListener("click", () => openModal(modals.coe));
 
-  // Close triggers
-  document.querySelectorAll(".closeModal").forEach(btn => 
-    btn.addEventListener("click", closeAllModals)
-  );
+  // Close triggers - use data-modal attribute for specificity
+  document.querySelectorAll(".closeModal").forEach(btn => {
+    btn.addEventListener("click", function() {
+      const modalName = this.dataset.modal;
+      if (modalName && modals[modalName]) {
+        closeModal(modals[modalName]);
+      } else {
+        closeAllModals();
+      }
+    });
+  });
+  
   Object.values(modals).forEach(m => 
     m.backdrop.addEventListener("click", () => closeModal(m))
   );
+  
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeAllModals();
   });
 
-  // ===== MOA EXPORT =====
-  document.getElementById("moaForm").addEventListener("submit", function(e){
+  // ===== UTILITY: Download file from blob =====
+  async function downloadFile(url, filename, btn, spinner) {
+    try {
+      btn.disabled = true;
+      spinner.classList.remove("hidden");
+      const originalText = btn.querySelector("span:not([id])");
+      if (originalText) originalText.textContent = "Processing...";
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Accept': 'application/octet-stream' }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename || 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      // Success feedback
+      if (originalText) {
+        originalText.textContent = "✓ Downloaded!";
+        btn.classList.add("success-pulse");
+        setTimeout(() => {
+          btn.classList.remove("success-pulse");
+          closeModalByButton(btn);
+        }, 1200);
+      }
+      return true;
+    } catch (error) {
+      console.error("Download error:", error);
+      if (typeof Swal !== 'undefined') {
+        Swal.fire("Download Failed", error.message || "Please try again", "error");
+      } else {
+        alert("Error: " + error.message);
+      }
+      // Reset button on error
+      const originalText = btn.querySelector("span:not([id])");
+      if (originalText && originalText.dataset.originalText) {
+        originalText.textContent = originalText.dataset.originalText;
+      }
+      btn.disabled = false;
+      spinner.classList.add("hidden");
+      return false;
+    }
+  }
+
+  function closeModalByButton(btn) {
+    const modalEl = btn.closest('[role="dialog"]');
+    if (modalEl) {
+      const modalName = modalEl.id.replace('Modal', '').toLowerCase();
+      const nameMap = { 'moa': 'moa', 'servicerecord': 'service', 'coe': 'coe' };
+      const key = nameMap[modalName] || Object.keys(modals).find(k => modals[k].el === modalEl);
+      if (key && modals[key]) closeModal(modals[key]);
+    }
+  }
+
+  // ===== MOA EXPORT (AJAX) =====
+  document.getElementById("moaForm").addEventListener("submit", async function(e){
     e.preventDefault();
     const typeId = document.getElementById("employmentTypeSelect").value;
     const btn = document.getElementById("moaGenerateBtn");
@@ -318,15 +422,15 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     
-    btn.disabled = true;
-    spinner.classList.remove("hidden");
-    
     const baseUrl = "{{ url_for('hr_officer_bp.generate_moa_all', employment_type_id=0) }}".replace("/0", "");
-    window.location.href = baseUrl + "/" + typeId;
+    const url = baseUrl + "/" + typeId;
+    const filename = `MOA_Employee_List_Type${typeId}.xlsx`;
+    
+    await downloadFile(url, filename, btn, spinner);
   });
 
-  // ===== SERVICE RECORD =====
-  document.getElementById("generateServiceRecordBtn").addEventListener("click", function(){
+  // ===== SERVICE RECORD (AJAX) =====
+  document.getElementById("generateServiceRecordBtn").addEventListener("click", async function(){
     const employeeId = document.getElementById("serviceEmployeeId").value;
     const btn = this;
     const spinner = document.getElementById("serviceSpinner");
@@ -340,15 +444,15 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     
-    btn.disabled = true;
-    spinner.classList.remove("hidden");
-    
     const baseUrl = "{{ url_for('hr_officer_bp.export_service_record', employee_id=0) }}";
-    window.location.href = baseUrl.replace("0", employeeId);
+    const url = baseUrl.replace("0", employeeId);
+    const filename = `Service_Record_Employee${employeeId}.docx`;
+    
+    await downloadFile(url, filename, btn, spinner);
   });
 
-  // ===== COE =====
-  document.getElementById("generateCOEBtn").addEventListener("click", function(){
+  // ===== COE (AJAX) =====
+  document.getElementById("generateCOEBtn").addEventListener("click", async function(){
     const employeeId = document.getElementById("coeEmployeeId").value;
     const btn = this;
     const spinner = document.getElementById("coeSpinner");
@@ -370,26 +474,15 @@ document.addEventListener("DOMContentLoaded", function() {
       url += "?fields=" + selectedFields.join("&fields=");
     }
     
-    btn.disabled = true;
-    spinner.classList.remove("hidden");
-    window.location.href = url;
+    const filename = `COE_Employee${employeeId}.pdf`;
+    await downloadFile(url, filename, btn, spinner);
   });
 
-  // Reset buttons when modals close (for UX)
-  Object.values(modals).forEach(modal => {
-    modal.el.addEventListener("transitionend", (e) => {
-      if (modal.el.classList.contains("hidden")) {
-        // Reset form & buttons
-        const form = modal.el.querySelector("form");
-        if (form) form.reset();
-        modal.el.querySelectorAll("button[type='submit'], button[id$='Btn']").forEach(b => {
-          b.disabled = false;
-          const spin = b.querySelector("[id$='Spinner']");
-          if (spin) spin.classList.add("hidden");
-        });
-      }
-    });
-  });
+  // ===== FALLBACK: Direct download if JS fails =====
+  // Add data-fallback attributes to buttons for progressive enhancement
+  document.getElementById("moaGenerateBtn").dataset.fallback = "{{ url_for('hr_officer_bp.generate_moa_all', employment_type_id=0) }}";
+  document.getElementById("generateServiceRecordBtn").dataset.fallback = "{{ url_for('hr_officer_bp.export_service_record', employee_id=0) }}";
+  document.getElementById("generateCOEBtn").dataset.fallback = "{{ url_for('hr_officer_bp.generate_coe', employee_id=0) }}";
 });
 </script>
 {% endblock %}

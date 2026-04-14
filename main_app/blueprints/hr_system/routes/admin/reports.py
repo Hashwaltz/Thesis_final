@@ -77,9 +77,6 @@ def reports():
 
 
 
-
-
-
 @hr_admin_bp.route('/attendance-report', methods=['GET'])
 @login_required
 @admin_required
@@ -102,15 +99,15 @@ def attendance_report():
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
 
     # ------------------------------
-    # Fetch Employees
+    # Fetch Employees (with eager loading)
     # ------------------------------
-    employees_query = Employee.query.filter(Employee.status == "Active")
+    employees_query = Employee.query.filter(Employee.status == "Active", Employee.archived == False)
     if department_id:
         employees_query = employees_query.filter(Employee.department_id == department_id)
     employees = employees_query.all()
     total_employees = len(employees)
     departments = Department.query.all()
-    total_days = ((end_date - start_date).days + 1)
+    total_days = max(1, (end_date - start_date).days + 1)  # Prevent division by zero
 
     if total_employees == 0:
         return render_template(
@@ -124,11 +121,12 @@ def attendance_report():
         )
 
     # ------------------------------
-    # Efficient Attendance Fetch (1 Query instead of N+1)
+    # Efficient Attendance Fetch (1 Query)
     # ------------------------------
     all_attendance = Attendance.query.filter(
         Attendance.date >= start_date,
-        Attendance.date <= end_date
+        Attendance.date <= end_date,
+        Attendance.employee_id.in_([emp.id for emp in employees])
     ).all()
 
     emp_att_map = defaultdict(list)
@@ -147,12 +145,27 @@ def attendance_report():
 
     for emp in employees:
         atts = emp_att_map.get(emp.id, [])
-        days_present = sum(1 for a in atts if a.status in ["Present", "Late"])
-        days_absent = sum(1 for a in atts if a.status == "Absent")
-        late_count = sum(1 for a in atts if a.status == "Late")
-        hours_worked = sum(a.working_hours for a in atts)
+        
+        # Count present/absent/late with safe status check
+        days_present = sum(1 for a in atts if a.status and a.status.lower() in ["present", "late"])
+        days_absent = sum(1 for a in atts if a.status and a.status.lower() == "absent")
+        late_count = sum(1 for a in atts if a.status and a.status.lower() == "late")
+        
+        # ✅ FIX: Safe hours calculation with fallback
+        hours_worked = sum((a.working_hours or 0) for a in atts)
+        
+        # If working_hours is still 0 but we have time_in/time_out, calculate fallback
+        if hours_worked == 0 and atts:
+            for a in atts:
+                if a.time_in and a.time_out:
+                    # Fallback: calculate from time_in/time_out (8hr day assumption)
+                    from datetime import datetime as dt
+                    start = dt.combine(a.date, a.time_in)
+                    end = dt.combine(a.date, a.time_out)
+                    diff_hours = (end - start).total_seconds() / 3600
+                    hours_worked += max(0, diff_hours - 1) if diff_hours > 4 else diff_hours  # 1hr break
 
-        punctuality_rate = round(((days_present - late_count) / days_present) * 100, 2) if days_present > 0 else 0
+        punctuality_rate = round(((days_present - late_count) / days_present) * 100, 2) if days_present > 0 else 100
 
         total_hours_worked += hours_worked
         total_present_days += days_present
@@ -183,12 +196,14 @@ def attendance_report():
     top_latecomers.sort(key=lambda x: x['late_count'], reverse=True)
 
     # Overall Stats
-    avg_attendance_rate = round((total_present_days / (total_employees * total_days)) * 100, 2) if total_employees > 0 else 0
+    total_possible_days = total_employees * total_days
+    avg_attendance_rate = round((total_present_days / total_possible_days) * 100, 2) if total_possible_days > 0 else 0
     avg_punctuality_rate = round(sum(r['punctuality_rate'] for r in report_data) / len(report_data), 2) if report_data else 0
 
     # Department Summary
     department_summary = []
     dept_metrics = {}
+    
     for dept in departments:
         dept_emps = [r for r in report_data if r['department_id'] == dept.id]
         if not dept_emps:
@@ -200,7 +215,12 @@ def attendance_report():
         avg_att = round((dept_att_days / num_days) * 100, 2) if num_days > 0 else 0
         avg_hours = round(dept_hours / len(dept_emps), 2)
 
-        department_summary.append({"name": dept.name, "avg_attendance": avg_att, "avg_hours": avg_hours})
+        department_summary.append({
+            "name": dept.name, 
+            "avg_attendance": avg_att, 
+            "avg_hours": avg_hours,
+            "employee_count": len(dept_emps)
+        })
         dept_metrics[dept.id] = avg_att
 
     best_dept = None
@@ -208,8 +228,8 @@ def attendance_report():
     if dept_metrics:
         best_dept_id = max(dept_metrics, key=dept_metrics.get)
         worst_dept_id = min(dept_metrics, key=dept_metrics.get)
-        best_dept = next((d for d in departments if d.id == best_dept_id), None)
-        worst_dept = next((d for d in departments if d.id == worst_dept_id), None)
+        best_dept = next((d.name for d in departments if d.id == best_dept_id), None)
+        worst_dept = next((d.name for d in departments if d.id == worst_dept_id), None)
 
     return render_template(
         "hr/admin/reports/attendance_reports.html",
@@ -218,8 +238,8 @@ def attendance_report():
         top_absentees=top_absentees[:5],
         top_latecomers=top_latecomers[:5],
         perfect_attendees=perfect_attendees,
-        best_dept=best_dept.name if best_dept else None,
-        worst_dept=worst_dept.name if worst_dept else None,
+        best_dept=best_dept,
+        worst_dept=worst_dept,
         total_employees=total_employees,
         total_hours_worked=round(total_hours_worked, 2),
         avg_attendance_rate=avg_attendance_rate,
@@ -233,10 +253,14 @@ def attendance_report():
     )
 
 
+
+
 @hr_admin_bp.route('/attendance/reports/word')
 @login_required
 @admin_required
 def attendance_report_word():
+    from datetime import datetime as dt, time as dt_time
+    
     # -----------------------------
     # Filters from GET
     # -----------------------------
@@ -244,26 +268,90 @@ def attendance_report_word():
     end_date_str = request.args.get('end_date')
     department_id = request.args.get('department_id')
 
-    # Default date range: last 30 days
     if start_date_str:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     else:
-        start_date = date.today() - timedelta(days=30)
+        start_date = date.today().replace(day=1)
 
     if end_date_str:
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
     else:
         end_date = date.today()
 
-    total_days = (end_date - start_date).days + 1
+    total_days = max(1, (end_date - start_date).days + 1)
 
     # -----------------------------
-    # Fetch employees (optional filter by department)
+    # Fetch employees
     # -----------------------------
-    employees = Employee.query.filter(Employee.archived == False)
+    employees = Employee.query.filter(
+        Employee.archived == False, 
+        Employee.status == "Active"
+    )
     if department_id:
         employees = employees.filter(Employee.department_id == department_id)
     employees = employees.all()
+
+    # Pre-fetch all attendance in date range for efficiency
+    emp_ids = [emp.id for emp in employees]
+    all_att = Attendance.query.filter(
+        Attendance.employee_id.in_(emp_ids),
+        Attendance.date >= start_date,
+        Attendance.date <= end_date
+    ).all() if emp_ids else []
+    
+    att_map = defaultdict(list)
+    for a in all_att:
+        att_map[a.employee_id].append(a)
+
+    # -----------------------------
+    # ✅ HELPER: Calculate hours with fallback logic
+    # -----------------------------
+    def calculate_hours_safe(attendance):
+        """
+        Returns working hours with fallback calculation.
+        Mirrors Attendance.calculate_working_hours() logic.
+        """
+        # If working_hours is already populated, use it
+        if attendance.working_hours and attendance.working_hours > 0:
+            return attendance.working_hours
+        
+        # Fallback: calculate from time_in/time_out
+        if not attendance.time_in or not attendance.time_out:
+            return 0.0
+        
+        # Get shift for this attendance (with fallback to default 8AM-5PM)
+        shift = None
+        if hasattr(attendance, 'get_shift'):
+            shift = attendance.get_shift()
+        
+        # Default shift if none found: 8:00 AM to 5:00 PM (1hr break = 8hrs)
+        work_start = dt_time(8, 0)
+        work_end = dt_time(17, 0)
+        
+        if shift:
+            work_start = shift.start_time
+            work_end = shift.end_time
+        
+        # Combine date with times
+        shift_start = dt.combine(attendance.date, work_start)
+        shift_end = dt.combine(attendance.date, work_end)
+        actual_in = dt.combine(attendance.date, attendance.time_in)
+        actual_out = dt.combine(attendance.date, attendance.time_out)
+        
+        # Calculate overlap between actual time and shift
+        start = max(actual_in, shift_start)
+        end = min(actual_out, shift_end)
+        
+        if end <= start:
+            return 0.0
+        
+        total_hours = (end - start).total_seconds() / 3600
+        
+        # Subtract 1 hour break if worked more than 4 hours (matches your model)
+        if total_hours > 4:
+            total_hours -= 1
+        
+        return round(max(0, total_hours), 2)
 
     # -----------------------------
     # Create Word Document
@@ -275,91 +363,94 @@ def attendance_report_word():
     header.alignment = 1  # center
     header.add_run("MUNICIPALITY OF NORZAGARAY\n").bold = True
     header.add_run("Attendance Report\n").bold = True
-    header.add_run(f"From {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}\n").italic = True
+    header.add_run(f"Period: {start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}\n").italic = True
+    
+    # ✅ Safe user name call
+    user_name = 'HR Admin'
+    if current_user and hasattr(current_user, 'get_full_name') and current_user.get_full_name:
+        try:
+            user_name = current_user.get_full_name()
+        except:
+            user_name = 'HR Admin'
+    
+    header.add_run(f"Generated: {date.today().strftime('%B %d, %Y')} by {user_name}").italic = True
 
     # Table header
-    table = doc.add_table(rows=1, cols=5)
+    table = doc.add_table(rows=1, cols=6)
     table.style = 'Table Grid'
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Employee Name"
     hdr_cells[1].text = "Department"
-    hdr_cells[2].text = "Days Present"
-    hdr_cells[3].text = "Days Absent"
-    hdr_cells[4].text = "Total Hours Worked"
+    hdr_cells[2].text = "Present"
+    hdr_cells[3].text = "Absent"
+    hdr_cells[4].text = "Late"
+    hdr_cells[5].text = "Hours Worked"
 
     # Attendance data
     for emp in employees:
-        emp_att = Attendance.query.filter(
-            Attendance.employee_id == emp.id,
-            Attendance.date >= start_date,
-            Attendance.date <= end_date
-        ).all()
-
-        days_present = sum(1 for a in emp_att if a.status in ["Present", "Late"])
-        days_absent = sum(1 for a in emp_att if a.status == "Absent")
-        total_hours = sum(a.working_hours for a in emp_att)
+        emp_att = att_map.get(emp.id, [])
+        
+        days_present = sum(1 for a in emp_att if a.status and a.status.lower() in ["present", "late"])
+        days_absent = sum(1 for a in emp_att if a.status and a.status.lower() == "absent")
+        late_count = sum(1 for a in emp_att if a.status and a.status.lower() == "late")
+        
+        # ✅ FIX: Use safe calculation for hours
+        total_hours = sum(calculate_hours_safe(a) for a in emp_att)
 
         row_cells = table.add_row().cells
         row_cells[0].text = emp.get_full_name()
         row_cells[1].text = emp.department.name if emp.department else "N/A"
         row_cells[2].text = str(days_present)
         row_cells[3].text = str(days_absent)
-        row_cells[4].text = f"{total_hours:.2f}"
+        row_cells[4].text = str(late_count)
+        row_cells[5].text = f"{total_hours:.2f}"
 
     # -----------------------------
-    # Insights Section
+    # Summary Section
     # -----------------------------
-    doc.add_paragraph('\nOverall Insights', style='Heading 2')
+    doc.add_paragraph('\n' + '='*60)
+    doc.add_paragraph('SUMMARY', style='Heading 2')
+    
+    total_att_days = sum(
+        sum(1 for a in att_map.get(emp.id, []) if a.status and a.status.lower() in ["present", "late"])
+        for emp in employees
+    )
+    total_possible = total_days * len(employees) if employees else 1
+    avg_att = round((total_att_days / total_possible) * 100, 2)
+    
+    # ✅ Use safe hours calculation for summary too
+    total_hrs = sum(
+        sum(calculate_hours_safe(a) for a in att_map.get(emp.id, []))
+        for emp in employees
+    )
+    
+    doc.add_paragraph(f"• Total Employees: {len(employees)}")
+    doc.add_paragraph(f"• Reporting Period: {total_days} days")
+    doc.add_paragraph(f"• Overall Attendance Rate: {avg_att}%")
+    doc.add_paragraph(f"• Total Hours Worked: {total_hrs:.2f} hrs")
+    doc.add_paragraph(f"• Avg Hours per Employee: {round(total_hrs/len(employees), 2) if employees else 0} hrs")
 
-    if employees:
-        total_attendance_days = sum(
-            sum(1 for a in Attendance.query.filter(
-                Attendance.employee_id == emp.id,
-                Attendance.date >= start_date,
-                Attendance.date <= end_date
-            ).all() if a.status in ["Present", "Late"]) for emp in employees
-        )
-        total_possible_days = total_days * len(employees)
-        avg_attendance = round((total_attendance_days / total_possible_days) * 100, 2) if total_possible_days > 0 else 0
-
-        total_working_hours = sum(
-            sum(a.working_hours for a in Attendance.query.filter(
-                Attendance.employee_id == emp.id,
-                Attendance.date >= start_date,
-                Attendance.date <= end_date
-            ).all()) for emp in employees
-        )
-        avg_hours_per_employee = round(total_working_hours / len(employees), 2)
-
-        doc.add_paragraph(f"Total Employees: {len(employees)}")
-        doc.add_paragraph(f"Average Attendance: {avg_attendance}%")
-        doc.add_paragraph(f"Average Hours Worked per Employee: {avg_hours_per_employee} hrs")
-
-    # Department-wise insights
-    doc.add_paragraph('\nDepartment-wise Insights', style='Heading 2')
+    # Department breakdown
     departments = Department.query.all()
-    for dept in departments:
-        dept_emps = [e for e in employees if e.department_id == dept.id]
-        if not dept_emps:
-            continue
-
-        dept_attendance_days = 0
-        dept_total_hours = 0
-
-        for emp in dept_emps:
-            emp_att = Attendance.query.filter(
-                Attendance.employee_id == emp.id,
-                Attendance.date >= start_date,
-                Attendance.date <= end_date
-            ).all()
-            dept_attendance_days += sum(1 for a in emp_att if a.status in ["Present", "Late"])
-            dept_total_hours += sum(a.working_hours for a in emp_att)
-
-        num_days = total_days * len(dept_emps)
-        avg_att = round((dept_attendance_days / num_days) * 100, 2) if num_days > 0 else 0
-        avg_hours = round(dept_total_hours / len(dept_emps), 2) if dept_emps else 0
-
-        doc.add_paragraph(f"{dept.name}: Avg Attendance: {avg_att}%, Avg Hours: {avg_hours}")
+    if departments:
+        doc.add_paragraph('\nDEPARTMENT BREAKDOWN', style='Heading 2')
+        for dept in departments:
+            dept_emps = [e for e in employees if e.department_id == dept.id]
+            if not dept_emps:
+                continue
+            
+            dept_att = sum(
+                sum(1 for a in att_map.get(emp.id, []) if a.status and a.status.lower() in ["present", "late"])
+                for emp in dept_emps
+            )
+            dept_hrs = sum(
+                sum(calculate_hours_safe(a) for a in att_map.get(emp.id, []))
+                for emp in dept_emps
+            )
+            dept_days = total_days * len(dept_emps)
+            dept_avg_att = round((dept_att / dept_days) * 100, 2) if dept_days > 0 else 0
+            
+            doc.add_paragraph(f"• {dept.name}: {dept_avg_att}% attendance, {dept_hrs:.1f} total hrs")
 
     # -----------------------------
     # Return as Word file
@@ -378,7 +469,6 @@ def attendance_report_word():
 
 
 
-
 # ------------------------------
 # Leave Report - Main View
 # ------------------------------
@@ -387,7 +477,7 @@ def attendance_report_word():
 @login_required
 def leave_report():
     try:
-        # --- Parse & Validate Filters ---
+        # --- Parse Filters (NO DEFAULTS) ---
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
         department_id = request.args.get('department_id', type=int)
@@ -395,25 +485,27 @@ def leave_report():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 25, type=int)
 
-        # Default date range: last 30 days
-        try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else date.today() - timedelta(days=30)
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else date.today()
-        except ValueError:
-            flash("Invalid date format. Using default 30-day range.", "warning")
-            start_date = date.today() - timedelta(days=30)
-            end_date = date.today()
+        # Parse dates ONLY if explicitly provided
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
 
-        if start_date > end_date:
+        if start_date and end_date and start_date > end_date:
             flash("Start date cannot be after end date.", "error")
             start_date, end_date = end_date, start_date
+            start_date_str, end_date_str = str(start_date), str(end_date)
 
         # --- Build Base Query ---
         leave_query = Leave.query.join(Employee).join(Department, isouter=True).join(LeaveType, isouter=True).filter(
-            Employee.archived == False,
-            Leave.start_date <= end_date,  # Overlap logic: leave starts before range ends
-            Leave.end_date >= start_date   # AND leave ends after range starts
+            Employee.archived == False
         )
+
+        # --- Apply Conditional Filters ---
+        if start_date and end_date:
+            leave_query = leave_query.filter(Leave.start_date <= end_date, Leave.end_date >= start_date)
+        elif start_date:
+            leave_query = leave_query.filter(Leave.start_date >= start_date)
+        elif end_date:
+            leave_query = leave_query.filter(Leave.end_date <= end_date)
 
         if department_id:
             leave_query = leave_query.filter(Employee.department_id == department_id)
@@ -426,13 +518,9 @@ def leave_report():
         )
         leave_data = pagination.items
 
-        # --- Insights (Efficient Aggregation) ---
-        insights = _calculate_leave_insights(leave_query, start_date, end_date)
-
-        # --- Department Summary (Cached) ---
+        # --- Insights & Dept Summary ---
+        insights = _calculate_leave_insights(leave_query)
         dept_summary = _get_department_summary(leave_query)
-
-        # --- Preload Departments for Filter ---
         departments = Department.query.order_by(Department.name).all()
 
         return render_template(
@@ -469,36 +557,34 @@ def leave_report():
 @admin_required
 def leave_report_word():
     try:
-        # --- Reuse Filter Logic ---
         start_date_str = request.args.get("start_date")
         end_date_str = request.args.get("end_date")
         department_id = request.args.get("department_id", type=int)
-        status_filter = request.args.get("status")  # ✅ Now included
+        status_filter = request.args.get("status")
 
-        try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
-        except ValueError:
-            start_date = end_date = None
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
 
-        # --- Build Query (Matches Main View) ---
         query = Leave.query.join(Employee).join(Department, isouter=True).join(LeaveType, isouter=True).filter(
             Employee.archived == False
         )
-        
-        if start_date:
+
+        # Apply same conditional filters as main view
+        if start_date and end_date:
             query = query.filter(Leave.start_date <= end_date, Leave.end_date >= start_date)
+        elif start_date:
+            query = query.filter(Leave.start_date >= start_date)
+        elif end_date:
+            query = query.filter(Leave.end_date <= end_date)
+
         if department_id:
             query = query.filter(Employee.department_id == department_id)
         if status_filter:
             query = query.filter(Leave.status == status_filter)
 
         all_leaves = query.order_by(Leave.start_date.asc(), Employee.last_name.asc()).all()
-
-        # --- Generate Document ---
         doc = _generate_leave_report_doc(all_leaves, start_date_str, end_date_str, department_id, status_filter)
 
-        # --- Stream Response ---
         file_stream = BytesIO()
         doc.save(file_stream)
         file_stream.seek(0)
@@ -520,7 +606,7 @@ def leave_report_word():
 # ------------------------------
 # Helper: Calculate Insights
 # ------------------------------
-def _calculate_leave_insights(query, start_date, end_date):
+def _calculate_leave_insights(query):
     """Efficiently compute report insights using SQLAlchemy aggregation."""
     total_leaves = query.count()
     
@@ -535,7 +621,6 @@ def _calculate_leave_insights(query, start_date, end_date):
             "total_days_requested": 0
         }
 
-    # Aggregations
     stats = query.with_entities(
         func.sum(Leave.days_requested).label('total_days'),
         func.avg(Leave.days_requested).label('avg_days')
@@ -564,6 +649,7 @@ def _calculate_leave_insights(query, start_date, end_date):
 # ------------------------------
 def _get_department_summary(query):
     """Generate department-wise breakdown."""
+    from collections import defaultdict
     dept_summary = defaultdict(lambda: {"total": 0, "total_days": 0})
     
     for leave in query.with_entities(Leave, Department.name, Employee.department_id).all():
@@ -571,7 +657,6 @@ def _get_department_summary(query):
         dept_summary[dept_name]["total"] += 1
         dept_summary[dept_name]["total_days"] += leave[0].days_requested
 
-    # Calculate averages
     return {
         dept: {
             "total": data["total"],
@@ -589,19 +674,17 @@ def _generate_leave_report_doc(leaves, start_date_str, end_date_str, dept_id, st
     """Create a professionally formatted Word document."""
     doc = Document()
     
-    # Header
     title = doc.add_heading("Municipality of Norzagaray", 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     subtitle = doc.add_paragraph("Human Resources Department")
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
     subtitle.style = 'Subtitle'
     
-    doc.add_paragraph()  # Spacer
+    doc.add_paragraph()
     
-    # Report Title & Metadata
     doc.add_heading("Leave Activity Report", level=1)
     meta = doc.add_paragraph()
-    meta.add_run(f"Period: {start_date_str or 'N/A'} to {end_date_str or 'N/A'}\n")
+    meta.add_run(f"Period: {start_date_str or 'All Dates'} to {end_date_str or 'All Dates'}\n")
     if dept_id:
         dept = Department.query.get(dept_id)
         meta.add_run(f"Department: {dept.name if dept else 'N/A'}\n")
@@ -611,7 +694,6 @@ def _generate_leave_report_doc(leaves, start_date_str, end_date_str, dept_id, st
     
     doc.add_paragraph()
     
-    # Data Table
     table = doc.add_table(rows=1, cols=8)
     table.style = 'Light Grid Accent 1'
     headers = ["Employee", "Department", "Leave Type", "Start", "End", "Days", "Status", "Reason"]
@@ -628,11 +710,9 @@ def _generate_leave_report_doc(leaves, start_date_str, end_date_str, dept_id, st
         row[4].text = leave.end_date.strftime("%Y-%m-%d")
         row[5].text = str(leave.days_requested)
         row[6].text = leave.status.title()
-        # Truncate long reasons
         reason = (leave.reason or "")[:100] + ("..." if len(leave.reason or "") > 100 else "")
         row[7].text = reason
 
-    # Insights Section
     doc.add_page_break()
     doc.add_heading("Summary Insights", level=2)
     
@@ -651,7 +731,6 @@ def _generate_leave_report_doc(leaves, start_date_str, end_date_str, dept_id, st
         insights_table.rows[i].cells[0].text = label
         insights_table.rows[i].cells[1].text = value
 
-    # Department Summary
     if leaves:
         doc.add_paragraph()
         doc.add_heading("Department Breakdown", level=2)

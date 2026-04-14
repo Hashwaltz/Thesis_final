@@ -61,7 +61,7 @@
   <div class="flex flex-wrap items-center gap-2 pb-2">
     <span class="text-sm text-gray-400">Active filters:</span>
     {% if selected_department %}
-      {% set dept_name = 'Unknown' %}
+      {% set dept_name = 'selected' %}
       {% for dept in departments if dept.id|string == selected_department %}
         {% set dept_name = dept.name %}
       {% endfor %}
@@ -204,15 +204,18 @@
       </div>
     </form>
   </section>
-
+  {% set from_item = ((employees.page - 1) * employees.per_page) + 1 %}
+  {% set to_item = [employees.page * employees.per_page, employees.total]|min %}
   <!-- Employee Table Card -->
   <section class="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-700/50 overflow-hidden">
     
     <!-- Table Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 border-b border-gray-700/50 bg-gray-900/50">
-      <span class="text-sm text-gray-400">
-        Showing <strong class="text-white">{{ employees.from }}</strong>-<strong class="text-white">{{ employees.to }}</strong> of <strong class="text-white">{{ employees.total }}</strong>
-      </span>
+    <span class="text-sm text-gray-400">
+      Showing <strong class="text-white">{{ from_item if employees.total > 0 else 0 }}</strong>-
+      <strong class="text-white">{{ to_item }}</strong> of 
+      <strong class="text-white">{{ employees.total }}</strong>
+    </span>
     </div>
 
     <!-- Table -->

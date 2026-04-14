@@ -2,9 +2,10 @@ from flask import render_template, request, current_app, url_for, flash, redirec
 from flask_sqlalchemy import pagination
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta, date
+from flask_mail import Message
 from calendar import month_name
-
-from main_app.extensions import db
+import threading
+from main_app.extensions import db, mail
 from main_app.models.user import User
 from main_app.models.hr_models import Attendance, Employee, Leave
 from main_app.helpers.decorators import hr_officer_required
@@ -173,6 +174,7 @@ def profile():
     )
 
 
+
 @hr_officer_bp.route('/profile/edit', methods=['POST'])
 @login_required
 @hr_officer_required
@@ -186,11 +188,11 @@ def edit_profile():
     new_password = data.get('new_password')
     confirm_password = data.get('confirm_password')
 
-    # Verify current password
+    # 🔐 Verify current password (plain-text comparison)
     if current_password != user.password:
         return jsonify({'status': 'error', 'message': 'Current password is incorrect.'}), 400
 
-    # Update email
+    # 📧 Update email if provided
     if new_email and new_email != user.email:
         existing_user = User.query.filter_by(email=new_email).first()
         if existing_user:
@@ -199,16 +201,58 @@ def edit_profile():
         if employee:
             employee.email = new_email
 
-    # Update password
+    # 🔑 Update password if provided
+    password_changed = False
     if new_password:
         if new_password != confirm_password:
             return jsonify({'status': 'error', 'message': 'Passwords do not match.'}), 400
-        user.password = new_password  # plain text for now
+        user.password = new_password  # ✅ Plain text per your request
+        password_changed = True
 
     try:
         db.session.commit()
+
+        # 📬 Send email notification asynchronously if password was changed
+        if password_changed and user.email:
+            # ✅ Pass the actual app instance to the thread
+            _send_officer_password_notification(current_app._get_current_object(), user)
+
         return jsonify({'status': 'success', 'message': 'Profile updated successfully.'})
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error updating officer profile: {e}")
         return jsonify({'status': 'error', 'message': 'An error occurred. Please try again.'}), 500
+
+
+# =====================================================
+# 📧 EMAIL HELPER FUNCTIONS (FIXED FOR THREADING)
+# =====================================================
+def _send_officer_password_notification(app, user):
+    """Send password change notification - receives actual app instance"""
+    
+    def _send_async_email(app_instance, msg):
+        """Inner function that runs within app context"""
+        with app_instance.app_context():
+            mail.send(msg)
+    
+    msg = Message(
+        subject="🔐 Your Password Has Been Successfully Updated",
+        sender=app.config.get("MAIL_DEFAULT_SENDER", "noreply@yourdomain.com"),
+        recipients=[user.email]
+    )
+    msg.body = f"""Hello {user.first_name or 'User'},
+
+Your account password has been successfully updated.
+
+🔑 New Password: {user.password}
+
+⚠️ For your security, please keep this password confidential. If you did not request this change, contact your system administrator immediately.
+
+Regards,
+{app.config.get('APP_NAME', 'HR System')} Admin Team
+"""
+    # ✅ Start thread with app instance passed as argument
+    thread = threading.Thread(target=_send_async_email, args=(app, msg))
+    thread.daemon = True  # Optional: allows main app to exit even if thread is running
+    thread.start()

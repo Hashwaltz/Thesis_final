@@ -3,14 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="GovHRPay - Secure Payroll Management for Government Organizations">
     <title>{% block title %}GovHRPay | Payroll System{% endblock %}</title>
+    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.avif') }}" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    
+    <!-- Font Awesome (Outline + Solid Icons) -->
     <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='img/favicon.avif') }}"
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      referrerpolicy="no-referrer"
+      crossorigin="anonymous"
     />
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -19,33 +27,93 @@
           extend: {
             colors: {
               primary: {
-                DEFAULT: "#16a34a",   /* green-600 */
-                dark: "#166534",      /* green-800 */
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                400: '#4ade80',
+                500: '#22c55e',
+                600: '#16a34a',
+                700: '#15803d',
+                800: '#166534',
+                900: '#14532d',
               },
+              dark: {
+                900: '#0f172a',
+                950: '#020617',
+              }
             },
+            animation: {
+              'fade-up': 'fadeUp 0.4s ease-out forwards',
+            },
+            keyframes: {
+              fadeUp: {
+                '0%': { opacity: '0', transform: 'translateY(12px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
           },
         },
-      };
+      }
     </script>
+    
     <style>
+      /* Smooth scrolling */
+      html { scroll-behavior: smooth; }
+      
+      /* Autofill fix for dark mode */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+        transition: background-color 9999s ease-in-out 0s;
+      }
+      
+      /* Skip link for accessibility */
+      .skip-link {
+        position: absolute;
+        top: -48px;
+        left: 0;
+        background: #166534;
+        color: white;
+        padding: 12px 24px;
+        z-index: 100;
+        border-radius: 0 0 8px 8px;
+        transition: top 0.2s ease;
+        font-weight: 500;
+      }
+      .skip-link:focus {
+        top: 0;
+        outline: 2px solid #4ade80;
+        outline-offset: 2px;
+      }
+      
+      /* Focus visible for keyboard users */
+      :focus-visible {
+        outline: 2px solid #4ade80;
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      
       /* Loader Styles */
       #loader {
         position: fixed;
         inset: 0;
-        background: #111827; /* same as bg-gray-950 */
+        background: #020617;
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 9999;
-        transition: opacity 0.5s ease, visibility 0.5s ease;
+        transition: opacity 0.4s ease, visibility 0.4s ease;
       }
       #loader.fade-out {
         opacity: 0;
         visibility: hidden;
+        pointer-events: none;
       }
       .spinner {
-        border: 4px solid rgba(255, 255, 255, 0.2);
-        border-top: 4px solid #16a34a; /* primary color */
+        border: 4px solid rgba(255, 255, 255, 0.15);
+        border-top: 4px solid #16a34a;
         border-radius: 50%;
         width: 50px;
         height: 50px;
@@ -55,118 +123,340 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
       }
+      
+      /* Subtle hover lift */
+      .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3);
+      }
     </style>
   </head>
 
   <body
-    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-green-600 selection:text-white"
+    class="bg-dark-950 text-gray-100 min-h-screen flex flex-col font-sans antialiased selection:bg-primary-600 selection:text-white"
   >
+    <!-- ♿ Skip to Content Link -->
+    <a href="#main-content" class="skip-link">
+      <i class="fa-regular fa-arrow-down-to-line mr-2"></i>
+      Skip to main content
+    </a>
+
     <!-- Loader -->
-    <div id="loader">
+    <div id="loader" role="status" aria-label="Loading page">
       <div class="spinner"></div>
+      <span class="sr-only">Loading...</span>
     </div>
 
-    <!-- Navbar -->
-    <header class="bg-gray-900 shadow-md sticky top-0 z-50">
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16"
-      >
-        <!-- Logo -->
-        <a
-          href="/"
-          class="flex items-center space-x-2 text-white"
-        >
-          <img
-            src="{{ url_for('static', filename='img/logo2.png') }}"
-            alt="Logo"
-            class="w-10 h-10 rounded-full object-cover"
-          />
-          <span class="text-xl font-semibold">GovHRPay Payroll System</span>
-        </a>
+    <!-- ================= NAVBAR ================= -->
+    <header 
+      class="bg-dark-900/95 backdrop-blur-sm border-b border-gray-800 sticky top-0 z-50"
+      role="banner"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-14">
+          
+          <!-- Logo Section -->
+          <a
+            href="{{ url_for('index') }}"
+            class="flex items-center gap-3 group"
+            aria-label="GovHRPay Home"
+          >
+            <div class="relative">
+              <img
+                src="{{ url_for('static', filename='img/logo2.png') }}"
+                alt="GovHRPay Logo"
+                class="w-9 h-9 rounded-lg object-cover ring-2 ring-primary-500/20"
+              />
+              <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-dark-950"></span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-base font-bold text-white leading-tight">GovHRPay</span>
+              <span class="text-xs text-gray-400 -mt-0.5">Payroll System</span>
+            </div>
+          </a>
 
-        <!-- Desktop Nav -->
-        <nav class="hidden md:flex space-x-8 text-gray-300 font-medium">
-          <a
-            href="/"
-            class="hover:text-green-400 transition-colors"
-            >Home</a
-          >
-          <a
-            href="{{ url_for('payroll_auth_bp.login') }}"
-            class="hover:text-green-400 transition-colors"
-            >Login</a
-          >
-          <a
-            href="{{ url_for('payroll_auth_bp.about_payroll') }}"
-            class="hover:text-green-400 transition-colors"
-            >About</a
-          >
-          <a
-            href="{{ url_for('payroll_auth_bp.payroll_features') }}"
-            class="hover:text-green-400 transition-colors"
-            >Features</a
-          >
-        </nav>
+          <!-- Desktop Navigation -->
+          <nav class="hidden md:flex items-center gap-1" role="navigation" aria-label="Main navigation">
+            {% set nav_items = [
+              ('index', 'fa-solid fa-house', 'Home'),
+              ('payroll_auth_bp.login', 'fa-solid fa-right-to-bracket', 'Login'),
+              ('payroll_auth_bp.about_payroll', 'fa-solid fa-circle-info', 'About'),
+              ('payroll_auth_bp.payroll_features', 'fa-regular fa-star', 'Features')
+            ] %}
+            
+            {% for endpoint, icon, label in nav_items %}
+            <a
+              href="{{ url_for(endpoint) }}"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-200 text-sm font-medium
+                     {% if request.endpoint == endpoint %}text-white bg-primary-600/20 border border-primary-500/30{% endif %}"
+              aria-current="{% if request.endpoint == endpoint %}page{% endif %}"
+            >
+              <i class="{{ icon }} w-4 text-center"></i>
+              <span>{{ label }}</span>
+            </a>
+            {% endfor %}
+            
+            <!-- CTA Button -->
+            <a
+              href="{{ url_for('payroll_auth_bp.login') }}"
+              class="ml-3 flex items-center gap-2 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
+            >
+              <i class="fa-regular fa-user w-4 text-center"></i>
+              <span>Sign In</span>
+            </a>
+          </nav>
 
-        <!-- Mobile Menu Button -->
-        <button
-          id="menu-toggle"
-          class="md:hidden text-gray-300 hover:text-white focus:outline-none"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+          <!-- Mobile Menu Toggle -->
+          <button
+            id="menu-toggle"
+            class="md:hidden p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+            aria-label="Toggle navigation menu"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16m-7 6h7"
-            />
-          </svg>
-        </button>
+            <i class="fa-solid fa-bars w-5 text-center"></i>
+          </button>
+        </div>
       </div>
 
-      <!-- Mobile Dropdown Menu -->
-      <div id="mobile-menu" class="hidden md:hidden bg-gray-800 border-t border-gray-700">
-        <nav class="flex flex-col items-center py-3 space-y-3">
-          <a href="{{ url_for('index') }}" class="text-gray-300 hover:text-green-400">Home</a>
-          <a href="{{ url_for('payroll_auth_bp.login') }}" class="text-gray-300 hover:text-green-400">Payroll Login</a>
-          <a href="{{ url_for('payroll_auth_bp.about_payroll') }}" class="text-gray-300 hover:text-green-400">About</a>
-          <a href="{{ url_for('payroll_auth_bp.payroll_features') }}" class="text-gray-300 hover:text-green-400">Features</a>
+      <!-- Mobile Menu Dropdown -->
+      <div 
+        id="mobile-menu" 
+        class="md:hidden hidden bg-dark-900 border-t border-gray-800"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+      >
+        <nav class="px-4 py-3 space-y-1" role="menubar">
+          {% for endpoint, icon, label in nav_items %}
+          <a
+            href="{{ url_for(endpoint) }}"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-200 text-sm font-medium"
+            role="menuitem"
+          >
+            <i class="{{ icon }} w-5 text-center text-gray-400"></i>
+            <span>{{ label }}</span>
+          </a>
+          {% endfor %}
+          
+          <!-- Mobile CTA -->
+          <div class="pt-3 mt-2 border-t border-gray-800">
+            <a
+              href="{{ url_for('payroll_auth_bp.login') }}"
+              class="flex items-center justify-center gap-2 w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+            >
+              <i class="fa-regular fa-user w-4 text-center"></i>
+              <span>Sign In to Payroll</span>
+            </a>
+          </div>
         </nav>
       </div>
     </header>
 
-    <!-- Page Content -->
-    <main class="flex-1 flex justify-center items-center py-10 px-4">
-      {% block content %}{% endblock %}
+    <!-- ================= MAIN CONTENT ================= -->
+    <main 
+      id="main-content" 
+      class="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8"
+      role="main"
+      tabindex="-1"
+    >
+      {% block content %}
+      <!-- Default hero content -->
+      <div class="text-center max-w-3xl mx-auto animate-fade-up">
+        <div class="inline-flex items-center gap-2 bg-primary-600/10 border border-primary-500/20 text-primary-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <i class="fa-regular fa-shield-check"></i>
+          <span>Secure Payroll Processing</span>
+        </div>
+        
+        <h1 class="text-4xl sm:text-5xl font-bold text-white mb-6 tracking-tight">
+          Manage <span class="text-primary-400">Payroll</span> with Confidence
+        </h1>
+        
+        <p class="text-lg text-gray-400 mb-8 leading-relaxed">
+          A compliant, automated payroll system built for government agencies. 
+          Process salaries, manage deductions, generate payslips, and stay audit-ready.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="{{ url_for('payroll_auth_bp.login') }}"
+            class="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 hover-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
+          >
+            <i class="fa-regular fa-right-to-bracket"></i>
+            Access Payroll Dashboard
+          </a>
+          <a
+            href="{{ url_for('payroll_auth_bp.payroll_features') }}"
+            class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 hover-lift border border-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
+          >
+            <i class="fa-regular fa-circle-play"></i>
+            Explore Features
+          </a>
+        </div>
+        
+        <!-- Trust Indicators -->
+        <div class="mt-12 pt-8 border-t border-gray-800">
+          <p class="text-sm text-gray-500 mb-4">Compliant with government payroll standards</p>
+          <div class="flex flex-wrap justify-center gap-6 opacity-60">
+            <i class="fa-solid fa-file-invoice-dollar text-2xl text-gray-400 hover:text-gray-300 transition" title="Payslip Generation"></i>
+            <i class="fa-solid fa-calculator text-2xl text-gray-400 hover:text-gray-300 transition" title="Tax Calculations"></i>
+            <i class="fa-solid fa-shield-halved text-2xl text-gray-400 hover:text-gray-300 transition" title="Data Security"></i>
+            <i class="fa-solid fa-chart-line text-2xl text-gray-400 hover:text-gray-300 transition" title="Reporting"></i>
+          </div>
+        </div>
+      </div>
+      {% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-gray-400 py-6 text-center text-sm border-t border-gray-800">
-      &copy; {{ current_year or '2025' }} GovHRPay | Payroll System. All rights reserved.
+    <!-- ================= FOOTER ================= -->
+    <footer
+      class="bg-dark-900 border-t border-gray-800 text-gray-400 py-8"
+      role="contentinfo"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          
+          <!-- Brand Column -->
+          <div class="md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+              <img
+                src="{{ url_for('static', filename='img/logo2.png') }}"
+                alt="GovHRPay"
+                class="w-9 h-9 rounded-lg ring-2 ring-primary-500/20"
+              />
+              <span class="text-lg font-bold text-white">GovHRPay</span>
+            </div>
+            <p class="text-sm leading-relaxed mb-4">
+              Streamlined payroll processing for government organizations with full compliance, security, and audit support.
+            </p>
+            <div class="flex items-center gap-3">
+              <a href="#" class="p-2 text-gray-400 hover:text-primary-400 hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" aria-label="Twitter">
+                <i class="fa-brands fa-twitter"></i>
+              </a>
+              <a href="#" class="p-2 text-gray-400 hover:text-primary-400 hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" aria-label="LinkedIn">
+                <i class="fa-brands fa-linkedin-in"></i>
+              </a>
+              <a href="#" class="p-2 text-gray-400 hover:text-primary-400 hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400" aria-label="GitHub">
+                <i class="fa-brands fa-github"></i>
+              </a>
+            </div>
+          </div>
+          
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Quick Links</h3>
+            <ul class="space-y-2 text-sm">
+              <li><a href="{{ url_for('index') }}" class="hover:text-primary-400 transition">Home</a></li>
+              <li><a href="{{ url_for('payroll_auth_bp.about_payroll') }}" class="hover:text-primary-400 transition">About Payroll</a></li>
+              <li><a href="{{ url_for('payroll_auth_bp.payroll_features') }}" class="hover:text-primary-400 transition">Features</a></li>
+              <li><a href="#" class="hover:text-primary-400 transition">Documentation</a></li>
+            </ul>
+          </div>
+          
+          <!-- Support -->
+          <div>
+            <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Support</h3>
+            <ul class="space-y-2 text-sm">
+              <li><a href="#" class="hover:text-primary-400 transition">Help Center</a></li>
+              <li><a href="#" class="hover:text-primary-400 transition">Contact Payroll Team</a></li>
+              <li><a href="#" class="hover:text-primary-400 transition">Privacy Policy</a></li>
+              <li><a href="#" class="hover:text-primary-400 transition">Terms of Service</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Bottom Bar -->
+        <div class="mt-8 pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+          <p>&copy; {{ current_year or '2026' }} GovHRPay. All rights reserved.</p>
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5 text-green-400">
+              <i class="fa-solid fa-circle-check text-xs"></i>
+              <span>Payroll System Operational</span>
+            </span>
+            <span class="text-gray-600">|</span>
+            <span>v2.1.0</span>
+          </div>
+        </div>
+      </div>
     </footer>
 
-    <!-- Scripts -->
+    <!-- ================= SCRIPTS ================= -->
     {% block scripts %}
     <script>
-      // Mobile menu toggle
+      // ===== Mobile Menu Toggle with Accessibility =====
       const menuToggle = document.getElementById("menu-toggle");
       const mobileMenu = document.getElementById("mobile-menu");
-      menuToggle.addEventListener("click", () => {
-        mobileMenu.classList.toggle("hidden");
-      });
-
-      // Loader fade-out on page load
+      
+      if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener("click", () => {
+          const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
+          menuToggle.setAttribute("aria-expanded", !isExpanded);
+          mobileMenu.classList.toggle("hidden");
+          
+          // Focus management
+          if (!isExpanded) {
+            setTimeout(() => mobileMenu.querySelector("a[href]")?.focus(), 100);
+          } else {
+            menuToggle.focus();
+          }
+        });
+        
+        // Close on Escape key
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !mobileMenu.classList.contains("hidden")) {
+            mobileMenu.classList.add("hidden");
+            menuToggle.setAttribute("aria-expanded", "false");
+            menuToggle.focus();
+          }
+        });
+      }
+      
+      // ===== Loader Fade-Out =====
       window.addEventListener("load", () => {
         const loader = document.getElementById("loader");
-        loader.classList.add("fade-out");
+        setTimeout(() => {
+          loader.classList.add("fade-out");
+          // Remove from DOM after transition for performance
+          setTimeout(() => loader.remove(), 500);
+        }, 300);
+      });
+      
+      // ===== Smooth anchor scroll =====
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          if (href !== '#') {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              if (target.tabIndex === -1) target.tabIndex = -1;
+              target.focus();
+            }
+          }
+        });
+      });
+      
+      // ===== Screen reader announcement =====
+      document.addEventListener('DOMContentLoaded', () => {
+        const liveRegion = document.createElement('div');
+        liveRegion.className = 'sr-only';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'true');
+        liveRegion.id = 'page-announce';
+        document.body.appendChild(liveRegion);
+        
+        setTimeout(() => {
+          liveRegion.textContent = `Page loaded: ${document.title}`;
+        }, 500);
       });
     </script>
     {% endblock %}
+    
+    <!-- ♿ Live region for dynamic announcements -->
+    <div id="aria-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

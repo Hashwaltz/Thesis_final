@@ -6,19 +6,25 @@
 <!-- Background Section -->
 <div class="relative w-full h-screen flex items-center justify-center bg-cover bg-center"
      style="background-image: url('{{ url_for('static', filename='img/muni.jpg') }}');">
-  <!-- Blur Overlay -->
-  <div class="absolute inset-0 bg-blue-900/70 backdrop-blur-sm"></div>
+  
+  <!-- Enhanced Blur Overlay - Deep Blue Gradient -->
+  <div class="absolute inset-0 bg-gradient-to-br from-blue-950/90 via-blue-900/85 to-indigo-950/90 backdrop-blur-md"></div>
 
-  <!-- Login Card -->
-  <div class="relative z-10 bg-gray-900/90 backdrop-blur-md shadow-xl rounded-2xl p-8 w-full max-w-md border border-blue-100 dark:border-gray-700">
+  <!-- Login Card - Richer Blue Accents -->
+  <div class="relative z-10 bg-white/95 dark:bg-gray-900/95 shadow-2xl shadow-blue-900/30 rounded-2xl p-8 w-full max-w-md border border-blue-700/50 dark:border-blue-600/50">
     
     <!-- Logo & Header -->
     <div class="text-center mb-6">
       <img src="{{ url_for('static', filename='img/logo2.png') }}" 
            alt="Logo" 
-           class="w-24 h-24 mx-auto rounded-full mb-3 shadow-md border border-blue-300">
-      <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400">Welcome Back</h2>
-      <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Sign in to continue</p>
+           class="w-24 h-24 mx-auto rounded-full mb-3 shadow-lg shadow-blue-700/40 border-2 border-blue-600 dark:border-blue-500">
+      
+      <h2 class="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-600 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">
+        Welcome Back
+      </h2>
+      <p class="text-gray-700 dark:text-gray-300 text-sm mt-1 font-medium">
+        Sign in to access HR Portal
+      </p>
     </div>
 
     <!-- Login Form -->
@@ -26,44 +32,79 @@
 
       <!-- Email -->
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          required 
-          autocomplete="email" 
-          class="w-full bg-white text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 dark:bg-gray-800 dark:text-white dark:border-gray-600"
-          placeholder="you@example.com">
+        <label for="email" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+          Email Address
+        </label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9v-1a2 2 0 012-2h2a2 2 0 012 2v1" />
+            </svg>
+          </span>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            required 
+            autocomplete="email" 
+            class="w-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 
+                  border border-blue-300/60 dark:border-blue-700/60 rounded-lg pl-10 pr-3 py-2.5 
+                  focus:ring-2 focus:ring-blue-600 focus:border-blue-600 
+                  outline-none transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-500"
+            placeholder="you@example.com">
+        </div>
       </div>
 
       <!-- Password -->
-      <div class="relative">
-        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          required 
-          autocomplete="current-password" 
-          class="w-full bg-white text-gray-900 placeholder-gray-400 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 dark:bg-gray-800 dark:text-white dark:border-gray-600"
-          placeholder="••••••••">
+      <div>
+        <label for="password" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+          Password
+        </label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600 dark:text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </span>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            required 
+            autocomplete="current-password" 
+            class="w-full bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 
+                  border border-blue-300/60 dark:border-blue-700/60 rounded-lg pl-10 pr-3 py-2.5 
+                  focus:ring-2 focus:ring-blue-600 focus:border-blue-600 
+                  outline-none transition-all duration-200 hover:border-blue-400 dark:hover:border-blue-500"
+            placeholder="••••••••">
+        </div>
       </div>
 
-      <!-- Show Password Toggle -->
-      <div class="flex justify-end items-center">
-        <label class="flex items-center text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-          <input type="checkbox" id="showPassword" class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+      <!-- Options Row -->
+      <div class="flex items-center justify-between text-sm">
+        <label class="flex items-center text-gray-700 dark:text-gray-300 cursor-pointer hover:text-blue-700 dark:hover:text-blue-400 transition-colors">
+          <input type="checkbox" id="showPassword" class="mr-2 h-4 w-4 text-blue-600 border-blue-400 rounded focus:ring-blue-500">
           Show Password
         </label>
       </div>
 
-      <!-- Submit Button -->
+      <!-- Submit Button - Enhanced Gradient -->
       <button type="submit" 
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg shadow-md transition duration-200">
-        Sign In
+              class="w-full bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 
+                     text-white font-semibold py-2.5 rounded-lg shadow-lg shadow-blue-700/40 
+                     hover:shadow-xl hover:shadow-blue-800/50 transform hover:-translate-y-0.5
+                     transition-all duration-200 focus:ring-4 focus:ring-blue-500/50">
+        Sign In Securely
       </button>
     </form>
+
+    <!-- Footer -->
+    <div class="mt-6 text-center">
+      <p class="text-xs text-gray-500 dark:text-gray-400">
+         Secure HR Access • Encrypted Connection
+      </p>
+    </div>
+
   </div>
 </div>
 
@@ -79,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     passwordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
   });
 
-  // SweetAlert for login errors
+  // SweetAlert for flash messages
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, msg in messages %}
       {% if category == 'error' %}
@@ -87,6 +128,20 @@ document.addEventListener('DOMContentLoaded', () => {
           icon: 'error',
           title: 'Login Failed',
           text: '{{ msg }}',
+          background: '#1a2332',
+          color: '#fff',
+          confirmButtonColor: '#1e40af',
+          timer: 2500,
+          showConfirmButton: false
+        });
+      {% elif category == 'success' %}
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: '{{ msg }}',
+          background: '#1a2332',
+          color: '#fff',
+          confirmButtonColor: '#1e40af',
           timer: 2000,
           showConfirmButton: false
         });
@@ -95,4 +150,5 @@ document.addEventListener('DOMContentLoaded', () => {
   {% endwith %}
 });
 </script>
+
 {% endblock %}

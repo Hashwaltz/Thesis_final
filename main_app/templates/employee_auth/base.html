@@ -3,173 +3,429 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="GovHRPay Employee Portal - Secure access to your HR information, payroll, and benefits">
     <title>{% block title %}GovHRPay | Employee Portal{% endblock %}</title>
 
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='img/favicon.avif') }}"
-    />
-
-    <!-- Font Awesome -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.avif') }}" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    
+    <!-- Font Awesome (Outline Icons: fa-regular + fa-solid) -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      referrerpolicy="no-referrer"
+      crossorigin="anonymous"
     />
-
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Tailwind Config -->
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
               employee: {
-                DEFAULT: "#9333ea",
-                dark: "#7e22ce",
+                50: '#faf5ff',
+                100: '#f3e8ff',
+                400: '#c084fc',
+                500: '#a855f7',
+                600: '#9333ea',
+                700: '#7e22ce',
+                800: '#6b21a8',
+                900: '#581c87',
               },
+              dark: {
+                900: '#0f172a',
+                950: '#020617',
+              }
             },
+            animation: {
+              'fade-up': 'fadeUp 0.4s ease-out forwards',
+              'slide-in': 'slideIn 0.3s ease-out forwards',
+            },
+            keyframes: {
+              fadeUp: {
+                '0%': { opacity: '0', transform: 'translateY(12px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideIn: {
+                '0%': { transform: 'translateX(-100%)' },
+                '100%': { transform: 'translateX(0)' },
+              }
+            }
           },
         },
-      };
+      }
     </script>
+
+    <style>
+      /* Smooth scrolling */
+      html { scroll-behavior: smooth; }
+      
+      /* Autofill fix for dark mode */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+        transition: background-color 9999s ease-in-out 0s;
+      }
+      
+      /* Skip link for accessibility */
+      .skip-link {
+        position: absolute;
+        top: -48px;
+        left: 0;
+        background: #7e22ce;
+        color: white;
+        padding: 12px 24px;
+        z-index: 100;
+        border-radius: 0 0 8px 8px;
+        transition: top 0.2s ease;
+        font-weight: 500;
+      }
+      .skip-link:focus {
+        top: 0;
+        outline: 2px solid #c084fc;
+        outline-offset: 2px;
+      }
+      
+      /* Focus visible for keyboard users */
+      :focus-visible {
+        outline: 2px solid #c084fc;
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      
+      /* Subtle hover lift effect */
+      .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3);
+      }
+      
+      /* Icon stroke consistency for outline style */
+      .icon-outline {
+        font-weight: 300;
+      }
+    </style>
   </head>
 
   <body
-    class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans selection:bg-purple-600 selection:text-white"
+    class="bg-dark-950 text-gray-100 min-h-screen flex flex-col font-sans antialiased selection:bg-employee-600 selection:text-white"
   >
+    <!-- ♿ Skip to Content Link -->
+    <a href="#main-content" class="skip-link">
+      <i class="fa-regular fa-arrow-down-to-line icon-outline mr-2"></i>
+      Skip to main content
+    </a>
 
-    <!-- Navbar -->
-    <header class="bg-gray-900 shadow-md sticky top-0 z-50">
-      <div
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16"
-      >
-
-        <!-- Logo -->
-        <a href="/" class="flex items-center space-x-2 text-white">
-          <img
-            src="{{ url_for('static', filename='img/logo2.png') }}"
-            alt="Logo"
-            class="w-10 h-10 rounded-full object-cover"
-          />
-
-          <span class="text-xl font-semibold">
-            GovHRPay Employee Portal
-          </span>
-        </a>
-
-        <!-- Desktop Navigation -->
-        <nav class="hidden md:flex space-x-8 text-gray-300 font-medium">
-
+    <!-- ================= NAVBAR ================= -->
+    <header 
+      class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50"
+      role="banner"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-14">
+          
+          <!-- Logo Section -->
           <a
             href="{{ url_for('index') }}"
-            class="hover:text-purple-400 transition-colors"
+            class="flex items-center gap-3 group"
+            aria-label="GovHRPay Employee Portal Home"
           >
-            Home
+            <div class="relative">
+              <img
+                src="{{ url_for('static', filename='img/logo2.png') }}"
+                alt="GovHRPay Logo"
+                class="w-9 h-9 rounded-lg object-cover ring-2 ring-employee-500/20"
+              />
+              <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-slate-900"></span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-base font-bold text-white leading-tight">GovHRPay</span>
+              <span class="text-xs text-slate-400 -mt-0.5">Employee Portal</span>
+            </div>
           </a>
 
-          <a
-            href="{{ url_for('employee_auth_bp.login') }}"
-            class="hover:text-purple-400 transition-colors"
+          <!-- Desktop Navigation -->
+          <nav class="hidden md:flex items-center gap-1" role="navigation" aria-label="Main navigation">
+            {% set nav_items = [
+              ('index', 'fa-solid fa-house', 'Home'),
+              ('employee_auth_bp.login', 'fa-solid fa-right-to-bracket', 'Login'),
+              ('employee_auth_bp.about_employee', 'fa-solid fa-circle-info', 'About'),
+              ('employee_auth_bp.features_employee', 'fa-regular fa-star', 'Features')
+            ] %}
+            
+            {% for endpoint, icon, label in nav_items %}
+            <a
+              href="{{ url_for(endpoint) }}"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 text-sm font-medium
+                     {% if request.endpoint == endpoint %}text-white bg-employee-600/20 border border-employee-500/30{% endif %}"
+              aria-current="{% if request.endpoint == endpoint %}page{% endif %}"
+            >
+              <i class="{{ icon }} w-4 text-center"></i>
+              <span>{{ label }}</span>
+            </a>
+            {% endfor %}
+            
+            <!-- CTA Button -->
+            <a
+              href="{{ url_for('employee_auth_bp.login') }}"
+              class="ml-3 flex items-center gap-2 bg-employee-600 hover:bg-employee-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <i class="fa-regular fa-user w-4 text-center"></i>
+              <span>Sign In</span>
+            </a>
+          </nav>
+
+          <!-- Mobile Menu Toggle -->
+          <button
+            id="menu-toggle"
+            class="md:hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition"
+            aria-label="Toggle navigation menu"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
           >
-            Login
-          </a>
-
-          <a
-            href="{{ url_for('employee_auth_bp.about_employee') }}"
-            class="hover:text-purple-400 transition-colors"
-          >
-            About
-          </a>
-
-          <a
-            href="{{ url_for('employee_auth_bp.features_employee') }}"
-            class="hover:text-purple-400 transition-colors"
-          >
-            Features
-          </a>
-
-        </nav>
-
-        <!-- Mobile Menu Button -->
-        <button
-          id="menu-toggle"
-          class="md:hidden text-gray-300 hover:text-white focus:outline-none"
-        >
-          <i class="fas fa-bars text-xl"></i>
-        </button>
-
+            <i class="fa-solid fa-bars w-5 text-center"></i>
+          </button>
+        </div>
       </div>
 
-      <!-- Mobile Menu -->
-      <div
-        id="mobile-menu"
-        class="hidden md:hidden bg-gray-800 border-t border-gray-700"
+      <!-- Mobile Menu Dropdown -->
+      <div 
+        id="mobile-menu" 
+        class="md:hidden hidden bg-slate-900 border-b border-slate-800"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
       >
-
-        <nav class="flex flex-col items-center py-3 space-y-3">
-
+        <nav class="px-4 py-3 space-y-1" role="menubar">
+          {% for endpoint, icon, label in nav_items %}
           <a
-            href="{{ url_for('index') }}"
-            class="text-gray-300 hover:text-purple-400 transition-colors"
+            href="{{ url_for(endpoint) }}"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 text-sm font-medium"
+            role="menuitem"
           >
-            Home
+            <i class="{{ icon }} w-5 text-center text-slate-400"></i>
+            <span>{{ label }}</span>
           </a>
-
-          <a
-            href="{{ url_for('employee_auth_bp.login') }}"
-            class="text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            Login
-          </a>
-
-          <a
-            href="{{ url_for('employee_auth_bp.about_employee') }}"
-            class="text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            About
-          </a>
-
-          <a
-            href="{{ url_for('employee_auth_bp.features_employee') }}"
-            class="text-gray-300 hover:text-purple-400 transition-colors"
-          >
-            Features
-          </a>
-
+          {% endfor %}
+          
+          <!-- Mobile CTA -->
+          <div class="pt-3 mt-2 border-t border-slate-800">
+            <a
+              href="{{ url_for('employee_auth_bp.login') }}"
+              class="flex items-center justify-center gap-2 w-full bg-employee-600 hover:bg-employee-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+            >
+              <i class="fa-regular fa-user w-4 text-center"></i>
+              <span>Sign In</span>
+            </a>
+          </div>
         </nav>
-
       </div>
     </header>
 
-    <!-- Page Content -->
-    <main class="flex-1 flex justify-center items-center py-10 px-4">
+    <!-- ================= MAIN CONTENT ================= -->
+    <main 
+      id="main-content" 
+      class="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8"
+      role="main"
+      tabindex="-1"
+    >
       {% block content %}
-      <!-- Employee Portal Content -->
+      <!-- Default hero content for Employee Portal -->
+      <div class="text-center max-w-3xl mx-auto animate-fade-up">
+        <div class="inline-flex items-center gap-2 bg-employee-600/10 border border-employee-500/20 text-employee-400 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <i class="fa-regular fa-id-badge icon-outline"></i>
+          <span>Employee Self-Service</span>
+        </div>
+        
+        <h1 class="text-4xl sm:text-5xl font-bold text-white mb-6 tracking-tight">
+          Welcome to Your <span class="text-employee-400">Employee Portal</span>
+        </h1>
+        
+        <p class="text-lg text-gray-400 mb-8 leading-relaxed">
+          Access your pay stubs, update personal information, request time off, and manage benefits—all from one secure, government-compliant platform.
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="{{ url_for('employee_auth_bp.login') }}"
+            class="inline-flex items-center justify-center gap-2 bg-employee-600 hover:bg-employee-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 hover-lift focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
+          >
+            <i class="fa-regular fa-right-to-bracket icon-outline"></i>
+            Access Portal
+          </a>
+          <a
+            href="{{ url_for('employee_auth_bp.features_employee') }}"
+            class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-8 py-3.5 rounded-xl font-semibold transition-all duration-200 hover-lift border border-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 focus-visible:ring-offset-dark-950"
+          >
+            <i class="fa-regular fa-circle-play icon-outline"></i>
+            Explore Features
+          </a>
+        </div>
+        
+        <!-- Trust Badges -->
+        <div class="mt-12 pt-8 border-t border-gray-800">
+          <p class="text-sm text-gray-500 mb-4">Secure & Compliant for Government Employees</p>
+          <div class="flex flex-wrap justify-center gap-6 opacity-60">
+            <i class="fa-solid fa-shield-halved text-2xl text-gray-400 hover:text-gray-300 transition" title="SOC 2 Compliant"></i>
+            <i class="fa-solid fa-lock text-2xl text-gray-400 hover:text-gray-300 transition" title="End-to-End Encryption"></i>
+            <i class="fa-solid fa-building-columns text-2xl text-gray-400 hover:text-gray-300 transition" title="Government Grade"></i>
+            <i class="fa-solid fa-user-shield text-2xl text-gray-400 hover:text-gray-300 transition" title="Privacy First"></i>
+          </div>
+        </div>
+      </div>
       {% endblock %}
     </main>
 
-    <!-- Footer -->
+    <!-- ================= FOOTER ================= -->
     <footer
-      class="bg-gray-900 text-gray-400 py-6 text-center text-sm border-t border-gray-800"
+      class="bg-dark-900 border-t border-gray-800 text-gray-400 py-8"
+      role="contentinfo"
     >
-      &copy; {{ current_year or '2025' }} GovHRPay | Employee Portal. All rights
-      reserved.
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          
+          <!-- Brand Column -->
+          <div class="md:col-span-2">
+            <div class="flex items-center gap-3 mb-4">
+              <img
+                src="{{ url_for('static', filename='img/logo2.png') }}"
+                alt="GovHRPay"
+                class="w-9 h-9 rounded-lg ring-2 ring-employee-500/20"
+              />
+              <span class="text-lg font-bold text-white">GovHRPay</span>
+            </div>
+            <p class="text-sm leading-relaxed mb-4">
+              Empowering government employees with secure, intuitive access to HR services, payroll information, and benefits management.
+            </p>
+            <div class="flex items-center gap-3">
+              <a href="#" class="p-2 text-gray-400 hover:text-employee-400 hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400" aria-label="Twitter">
+                <i class="fa-brands fa-twitter icon-outline"></i>
+              </a>
+              <a href="#" class="p-2 text-gray-400 hover:text-employee-400 hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400" aria-label="LinkedIn">
+                <i class="fa-brands fa-linkedin-in icon-outline"></i>
+              </a>
+              <a href="#" class="p-2 text-gray-400 hover:text-employee-400 hover:bg-gray-800 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400" aria-label="Support">
+                <i class="fa-regular fa-life-ring icon-outline"></i>
+              </a>
+            </div>
+          </div>
+          
+          <!-- Quick Links -->
+          <div>
+            <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Quick Links</h3>
+            <ul class="space-y-2 text-sm">
+              <li><a href="{{ url_for('index') }}" class="hover:text-employee-400 transition">Home</a></li>
+              <li><a href="{{ url_for('employee_auth_bp.about_employee') }}" class="hover:text-employee-400 transition">About Portal</a></li>
+              <li><a href="{{ url_for('employee_auth_bp.features_employee') }}" class="hover:text-employee-400 transition">Features</a></li>
+              <li><a href="#" class="hover:text-employee-400 transition">Help Center</a></li>
+            </ul>
+          </div>
+          
+          <!-- Support -->
+          <div>
+            <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Support</h3>
+            <ul class="space-y-2 text-sm">
+              <li><a href="#" class="hover:text-employee-400 transition">Contact IT Helpdesk</a></li>
+              <li><a href="#" class="hover:text-employee-400 transition">Password Reset</a></li>
+              <li><a href="#" class="hover:text-employee-400 transition">Privacy Policy</a></li>
+              <li><a href="#" class="hover:text-employee-400 transition">Terms of Use</a></li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Bottom Bar -->
+        <div class="mt-8 pt-6 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+          <p>&copy; {{ current_year or '2026' }} GovHRPay. All rights reserved.</p>
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5 text-green-400">
+              <i class="fa-solid fa-circle-check icon-outline text-xs"></i>
+              <span>Portal Operational</span>
+            </span>
+            <span class="text-gray-600">|</span>
+            <span>v2.1.0</span>
+          </div>
+        </div>
+      </div>
     </footer>
 
-    <!-- Scripts -->
+    <!-- ================= SCRIPTS ================= -->
     {% block scripts %}
-
     <script>
+      // ===== Mobile Menu Toggle with Accessibility =====
       const menuToggle = document.getElementById("menu-toggle");
       const mobileMenu = document.getElementById("mobile-menu");
-
-      menuToggle.addEventListener("click", () => {
-        mobileMenu.classList.toggle("hidden");
+      
+      if (menuToggle && mobileMenu) {
+        menuToggle.addEventListener("click", () => {
+          const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
+          menuToggle.setAttribute("aria-expanded", !isExpanded);
+          mobileMenu.classList.toggle("hidden");
+          
+          // Focus management: focus first link when opening
+          if (!isExpanded) {
+            setTimeout(() => {
+              mobileMenu.querySelector("a[href]")?.focus();
+            }, 100);
+          } else {
+            menuToggle.focus();
+          }
+        });
+        
+        // Close menu on Escape key
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !mobileMenu.classList.contains("hidden")) {
+            mobileMenu.classList.add("hidden");
+            menuToggle.setAttribute("aria-expanded", "false");
+            menuToggle.focus();
+          }
+        });
+      }
+      
+      // ===== Smooth anchor scroll for in-page links =====
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const href = this.getAttribute('href');
+          if (href !== '#') {
+            e.preventDefault();
+            const target = document.querySelector(href);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              // Focus the target for accessibility
+              if (target.tabIndex === -1) target.tabIndex = -1;
+              target.focus();
+            }
+          }
+        });
+      });
+      
+      // ===== Announce page load for screen readers =====
+      document.addEventListener('DOMContentLoaded', () => {
+        const liveRegion = document.createElement('div');
+        liveRegion.className = 'sr-only';
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'true');
+        liveRegion.id = 'page-announce';
+        document.body.appendChild(liveRegion);
+        
+        // Announce initial page load
+        setTimeout(() => {
+          liveRegion.textContent = `Page loaded: ${document.title}`;
+        }, 500);
       });
     </script>
-
     {% endblock %}
+    
+    <!-- ♿ Live region for dynamic announcements -->
+    <div id="aria-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

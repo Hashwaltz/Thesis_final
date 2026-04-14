@@ -118,11 +118,12 @@
             <div class="p-2 bg-blue-600/20 rounded-lg shrink-0">
               <i class="fa-solid fa-download text-blue-400"></i>
             </div>
-            <div class="flex-1">
+          <div class="flex-1">
               <h4 class="text-blue-400 font-semibold text-sm mb-1">Need a template?</h4>
               <p class="text-gray-400 text-xs mb-3">Download our pre-formatted Excel template with sample data and required columns.</p>
-              <a href="{{ url_for('hr_admin_bp.attendance_report') }}" 
-                 class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-300 hover:text-blue-200 transition-colors">
+              <a 
+                href="{{ url_for('hr_admin_bp.download_attendance_template') }}"
+                class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-300 hover:text-blue-200 transition-colors">
                 <i class="fa-solid fa-file-arrow-down"></i>
                 Download Attendance Template (.xlsx)
               </a>

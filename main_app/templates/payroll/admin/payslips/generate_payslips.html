@@ -7,140 +7,204 @@
 
 <!-- HEADER -->
 <section class="max-w-5xl mx-auto mb-10">
-
   <h1 class="text-3xl font-bold text-emerald-400 flex items-center gap-2">
     <i class="fa-solid fa-file-invoice-dollar"></i>
     Generate Payslips
   </h1>
-
   <p class="text-gray-400 mt-2 text-sm">
     Select a payroll period to generate payslips for all employees.
   </p>
-
 </section>
-
 
 <!-- CARD -->
 <section class="max-w-xl mx-auto">
+  <div class="bg-gray-800/70 backdrop-blur-xl border border-gray-700
+              rounded-2xl shadow-lg p-6 sm:p-8">
 
-<div class="bg-gray-800/70 backdrop-blur-xl border border-gray-700
-            rounded-2xl shadow-lg p-6 sm:p-8">
+    <!-- CARD HEADER -->
+    <div class="flex items-start gap-3 mb-6">
+      <div class="p-3 bg-emerald-500/10 rounded-xl">
+        <i class="fa-solid fa-receipt text-emerald-400 text-lg"></i>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-gray-100">Payslip Generator</h2>
+        <p class="text-sm text-gray-400">Choose a payroll period to continue</p>
+      </div>
+    </div>
 
-<!-- CARD HEADER -->
-<div class="flex items-start gap-3 mb-6">
+    <!-- FORM -->
+    <form method="POST" id="generateForm" class="space-y-6">
 
-  <div class="p-3 bg-emerald-500/10 rounded-xl">
-    <i class="fa-solid fa-receipt text-emerald-400 text-lg"></i>
+      <!-- PERIOD -->
+      <div>
+        <label class="flex items-center gap-2 text-sm text-gray-300 mb-2">
+          <i class="fa-solid fa-calendar-days text-emerald-400"></i>
+          Payroll Period
+        </label>
+        <select name="pay_period_id"
+                id="pay_period_id"
+                required
+                class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-600
+                       text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none transition
+                       hover:border-emerald-500/50">
+          <option value="">Select payroll period</option>
+          {% for p in payroll_periods %}
+          <option value="{{ p.id }}">
+            {{ p.start_date.strftime('%B %d, %Y') }} — {{ p.end_date.strftime('%B %d, %Y') }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- BUTTON -->
+      <button type="button"
+              id="generateBtn"
+              class="w-full flex items-center justify-center gap-2
+                     bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700
+                     text-white font-semibold py-3 rounded-xl
+                     shadow-lg shadow-emerald-900/30 hover:shadow-emerald-900/50
+                     transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span id="btnText">Generate Payslips</span>
+        <i class="fa-solid fa-circle-notch fa-spin hidden" id="btnLoader"></i>
+      </button>
+
+      <!-- BACK -->
+      <div class="text-center pt-2">
+        <a href="{{ url_for('payroll_admin_bp.view_payslips') }}"
+           class="text-sm text-gray-400 hover:text-emerald-400 transition flex items-center justify-center gap-1">
+          <i class="fa-solid fa-arrow-left"></i>
+          Back to Payslip List
+        </a>
+      </div>
+
+    </form>
   </div>
-
-  <div>
-    <h2 class="text-lg font-semibold text-gray-100">
-      Payslip Generator
-    </h2>
-    <p class="text-sm text-gray-400">
-      Choose a payroll period to continue
-    </p>
-  </div>
-
-</div>
-
-
-<!-- FORM -->
-<form method="POST" id="generateForm" class="space-y-6">
-
-  <!-- PERIOD -->
-  <div>
-    <label class="flex items-center gap-2 text-sm text-gray-300 mb-2">
-      <i class="fa-solid fa-calendar-days text-emerald-400"></i>
-      Payroll Period
-    </label>
-
-    <select name="pay_period_id"
-            id="pay_period_id"
-            required
-            class="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-600
-                   text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none transition">
-
-      <option value="">Select payroll period</option>
-
-      {% for p in payroll_periods %}
-      <option value="{{ p.id }}">
-        {{ p.start_date.strftime('%B %d, %Y') }}
-        —
-        {{ p.end_date.strftime('%B %d, %Y') }}
-      </option>
-      {% endfor %}
-
-    </select>
-  </div>
-
-
-  <!-- BUTTON -->
-  <button type="button"
-          id="generateBtn"
-          class="w-full flex items-center justify-center gap-2
-                 bg-emerald-600 hover:bg-emerald-500
-                 text-white font-semibold py-3 rounded-xl
-                 shadow-md transition">
-
-    <i class="fa-solid fa-wand-magic-sparkles"></i>
-    Generate Payslips
-
-  </button>
-
-
-  <!-- BACK -->
-  <div class="text-center pt-2">
-    <a href="{{ url_for('payroll_admin_bp.view_payslips') }}"
-       class="text-sm text-gray-400 hover:text-emerald-400 transition flex items-center justify-center gap-1">
-
-      <i class="fa-solid fa-arrow-left"></i>
-      Back to Payslip List
-
-    </a>
-  </div>
-
-</form>
-
-</div>
-
 </section>
 
 </main>
 
-
-<!-- SWEETALERT -->
+<!-- SWEETALERT + FLASH HANDLER -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<!-- CONFIRMATION -->
 <script>
-document.getElementById("generateBtn").addEventListener("click", function () {
+document.addEventListener('DOMContentLoaded', () => {
 
-  const period = document.getElementById("pay_period_id").value;
+  const form = document.getElementById('generateForm');
+  const generateBtn = document.getElementById('generateBtn');
+  const btnText = document.getElementById('btnText');
+  const btnLoader = document.getElementById('btnLoader');
+  const periodSelect = document.getElementById('pay_period_id');
 
-  if (!period) {
+  // 🔘 Generate Button Click Handler
+  generateBtn.addEventListener('click', function () {
+    const periodId = periodSelect.value;
+    const periodText = periodSelect.options[periodSelect.selectedIndex]?.text || 'Selected Period';
+
+    if (!periodId) {
+      Swal.fire({
+        icon: 'warning',
+        title: '⚠️ Selection Required',
+        text: 'Please select a payroll period to generate payslips.',
+        confirmButtonColor: '#10b981',
+        background: '#1f2937',
+        color: '#f3f4f6'
+      });
+      periodSelect.focus();
+      return;
+    }
+
     Swal.fire({
-      icon: 'warning',
-      title: 'Missing Selection',
-      text: 'Please select a payroll period first.',
-      confirmButtonColor: '#10b981'
+      title: '🔄 Generate Payslips?',
+      html: `
+        <div class="text-left text-sm text-gray-300">
+          <p class="mb-2"><strong>Period:</strong><br><span class="text-emerald-400">${periodText}</span></p>
+          <p>This will generate payslips for <strong>all employees</strong> in this period.</p>
+          <p class="mt-2 text-xs text-gray-400">• Duplicates will be skipped automatically<br>• Errors will be logged for review</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '<i class="fa-solid fa-check"></i> Yes, Generate',
+      cancelButtonText: '<i class="fa-solid fa-xmark"></i> Cancel',
+      background: '#1f2937',
+      color: '#f3f4f6',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Show loading state
+        setLoading(true);
+        
+        // Submit form
+        form.submit();
+      }
     });
-    return;
+  });
+
+  // ⚙️ Loading State Toggle
+  function setLoading(loading) {
+    if (loading) {
+      generateBtn.disabled = true;
+      btnText.textContent = 'Generating...';
+      btnLoader.classList.remove('hidden');
+    } else {
+      generateBtn.disabled = false;
+      btnText.textContent = 'Generate Payslips';
+      btnLoader.classList.add('hidden');
+    }
   }
 
-  Swal.fire({
-    title: 'Generate Payslips?',
-    text: 'This will generate payslips for all employees in this period.',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#10b981',
-    cancelButtonColor: '#ef4444',
-    confirmButtonText: 'Yes, generate'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      document.getElementById("generateForm").submit();
-    }
-  });
+  // 🎯 Flash Message → SweetAlert Converter
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        {% if category == 'success' %}
+          Swal.fire({
+            icon: 'success',
+            title: '✅ Payslips Generated',
+            html: `<div class="text-left text-sm">{{ message|safe }}</div>`,
+            confirmButtonColor: '#10b981',
+            background: '#1f2937',
+            color: '#f3f4f6',
+            timer: 4000,
+            timerProgressBar: true
+          });
+        {% elif category == 'warning' %}
+          Swal.fire({
+            icon: 'warning',
+            title: '⚠️ Partial Success',
+            html: `<div class="text-left text-sm">{{ message|safe }}</div>`,
+            confirmButtonColor: '#f59e0b',
+            background: '#1f2937',
+            color: '#f3f4f6',
+            timer: 5000,
+            timerProgressBar: true
+          });
+        {% elif category == 'danger' or category == 'error' %}
+          Swal.fire({
+            icon: 'error',
+            title: '❌ Generation Failed',
+            html: `<div class="text-left text-sm">{{ message|safe }}</div>`,
+            confirmButtonColor: '#ef4444',
+            background: '#1f2937',
+            color: '#f3f4f6'
+          });
+        {% elif category == 'info' %}
+          Swal.fire({
+            icon: 'info',
+            title: 'ℹ️ Notice',
+            text: '{{ message }}',
+            confirmButtonColor: '#3b82f6',
+            background: '#1f2937',
+            color: '#f3f4f6',
+            timer: 3000,
+            timerProgressBar: true
+          });
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
 });
 </script>

@@ -244,7 +244,7 @@
       
       <nav class="flex items-center gap-1" role="navigation" aria-label="Pagination">
         {% if employees.has_prev %}
-        <a href="{{ url_for('leave_officer_bp.employees',
+        <a href="{{ url_for('leave_officer_bp.list_employees',
                     page=employees.prev_num,
                     search=search|default(''),
                     department=selected_department|default('')) }}"
@@ -262,7 +262,7 @@
             <span class="px-3.5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg"
                   aria-current="page">{{ page_num }}</span>
             {% else %}
-            <a href="{{ url_for('leave_officer_bp.employees',
+            <a href="{{ url_for('leave_officer_bp.list_employees',
                         page=page_num,
                         search=search|default(''),
                         department=selected_department|default('')) }}"

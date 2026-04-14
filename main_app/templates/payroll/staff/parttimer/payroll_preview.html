@@ -212,8 +212,10 @@
                                 <p class="text-emerald-300 font-bold">{{ data.hours_worked }}</p>
                                 <p class="text-slate-500">Worked</p>
                             </div>
-                            <div class="text-center p-2 bg-slate-700/40 rounded">
-                                <p class="text-slate-300 font-bold">{{ data.total_hours_decimal }}h</p>
+                           <div class="text-center p-2 bg-slate-700/40 rounded">
+                                <p class="text-slate-300 font-bold">
+                                    {{ (data.total_hours_decimal * 100)|int / 100 }}h
+                                </p>
                                 <p class="text-slate-500">Decimal</p>
                             </div>
                         </div>
