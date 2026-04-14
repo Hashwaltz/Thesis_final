@@ -76,15 +76,17 @@
         <p id="email-hint" class="sr-only">Enter your government-issued email address</p>
       </div>
 
-      <!-- Password Field with Icon -->
+      <!-- Password Field with Icon - FIXED 🔑 -->
       <div>
         <label for="password" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-          <i class="fa-solid fa-lock icon-outline mr-1.5 text-employee-600 dark:text-employee-400"></i>
+          <!-- Removed icon-outline from fa-solid icon -->
+          <i class="fa-solid fa-lock mr-1.5 text-employee-600 dark:text-employee-400"></i>
           Password
         </label>
         <div class="relative">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-employee-600 dark:text-employee-400 pointer-events-none">
-            <i class="fa-solid fa-key icon-outline"></i>
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-employee-600 dark:text-employee-400 pointer-events-none z-10">
+            <!-- Removed icon-outline from fa-solid icon -->
+            <i class="fa-solid fa-key"></i>
           </span>
           <input 
             type="password" 
@@ -106,9 +108,10 @@
           <button 
             type="button"
             id="togglePassword"
-            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-employee-600 dark:hover:text-employee-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 rounded-r-lg"
+            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-employee-600 dark:hover:text-employee-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 rounded-r-lg z-10"
             aria-label="Toggle password visibility"
             aria-pressed="false">
+            <!-- fa-regular can keep icon-outline -->
             <i class="fa-regular fa-eye icon-outline" id="eyeIcon"></i>
           </button>
         </div>
@@ -148,7 +151,7 @@
                transition-all duration-200 
                focus:ring-4 focus:ring-employee-500/50 
                focus:outline-none focus-visible:ring-2 focus-visible:ring-employee-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900">
-        Sign In Securely
+        Sign In
       </button>
 
     </form>
