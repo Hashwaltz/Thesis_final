@@ -56,46 +56,6 @@
     </div>
   </header>
 
-  <!-- Active Filters Display -->
-  {% if selected_department or selected_employment_type or selected_barangay or search %}
-  <div class="flex flex-wrap items-center gap-2 pb-2">
-    <span class="text-sm text-gray-400">Active filters:</span>
-    {% if selected_department %}
-      {% set dept_name = 'selected' %}
-      {% for dept in departments if dept.id|string == selected_department %}
-        {% set dept_name = dept.name %}
-      {% endfor %}
-      <span class="inline-flex items-center gap-1 bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-sm">
-        Department: {{ dept_name }}
-        <a href="{{ url_for('hr_admin_bp.view_employees', search=search, employment_type_id=selected_employment_type, barangay=selected_barangay) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
-      </span>
-    {% endif %}
-    {% if selected_employment_type %}
-      {% set etype_name = 'Unknown' %}
-      {% for etype in employment_types if etype.id|string == selected_employment_type %}
-        {% set etype_name = etype.name %}
-      {% endfor %}
-      <span class="inline-flex items-center gap-1 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full text-sm">
-        Type: {{ etype_name }}
-        <a href="{{ url_for('hr_admin_bp.view_employees', search=search, department_id=selected_department, barangay=selected_barangay) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
-      </span>
-    {% endif %}
-    {% if selected_barangay %}
-      <span class="inline-flex items-center gap-1 bg-orange-500/20 text-orange-300 px-3 py-1 rounded-full text-sm">
-        Barangay: {{ selected_barangay }}
-        <a href="{{ url_for('hr_admin_bp.view_employees', search=search, department_id=selected_department, employment_type_id=selected_employment_type) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
-      </span>
-    {% endif %}
-    {% if search %}
-      <span class="inline-flex items-center gap-1 bg-cyan-500/20 text-cyan-300 px-3 py-1 rounded-full text-sm">
-        Search: "{{ search }}"
-        <a href="{{ url_for('hr_admin_bp.view_employees', department_id=selected_department, employment_type_id=selected_employment_type, barangay=selected_barangay) }}" class="hover:text-white"><i class="fa-solid fa-xmark text-xs"></i></a>
-      </span>
-    {% endif %}
-    <a href="{{ url_for('hr_admin_bp.view_employees') }}" class="text-xs text-gray-400 hover:text-red-400 underline ml-1">Clear all</a>
-  </div>
-  {% endif %}
-
   <!-- Search + Filters Card -->
   <section class="bg-gray-800/80 backdrop-blur-sm rounded-2xl p-4 md:p-5 shadow-lg border border-gray-700/50">
     <form method="get" action="{{ url_for('hr_admin_bp.view_employees') }}" id="employeeFilterForm" class="space-y-4">
