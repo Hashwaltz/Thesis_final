@@ -3,29 +3,38 @@
 {% block title %}Departments | Payroll Admin{% endblock %}
 
 {% block content %}
-<section class="p-4 sm:p-6 space-y-6 text-gray-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+<section class="p-4 sm:p-6 lg:p-8 space-y-6 text-gray-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
 
   <!-- HEADER -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div class="flex items-center gap-3">
-      <div class="p-3 bg-emerald-500/20 rounded-xl">
-        <i class="fa-solid fa-warehouse text-emerald-400 text-xl sm:text-2xl"></i>
-      </div>
-      <div>
-        <h2 class="text-xl sm:text-2xl font-bold text-white">Payroll Departments</h2>
-        <p class="text-gray-400 text-sm">Overview of payroll distribution per department</p>
-      </div>
+  <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+        <i class="fa-solid fa-warehouse text-emerald-400"></i>
+        Department Payrolls
+      </h1>
+      <p class="text-gray-400 text-sm mt-1.5">Overview of payroll distribution across municipal departments.</p>
     </div>
-  </div>
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+      {% if selected_period %}
+      <span class="text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+        {{ department_rows|length }} Department{{ 's' if department_rows|length != 1 else '' }}
+      </span>
+      {% endif %}
+      <a href="{{ url_for('payroll_admin_bp.payroll_dashboard') }}"
+         class="inline-flex items-center gap-2 bg-slate-700/80 hover:bg-slate-600 active:bg-slate-800 px-4 py-2.5 rounded-xl transition-all text-sm font-medium border border-slate-600 hover:border-slate-500 whitespace-nowrap">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span class="hidden sm:inline">Back to Dashboard</span>
+      </a>
+    </div>
+  </header>
 
   <!-- FILTER -->
-  <form method="get" class="mt-2 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
-
-    <div class="relative w-full sm:w-auto">
-      <i class="fa-solid fa-calendar-days absolute left-3 top-3 text-gray-400"></i>
-      <select name="period_id"
+  <form method="get" class="bg-slate-800/50 backdrop-blur-sm p-4 rounded-xl border border-slate-700/50 flex flex-col sm:flex-row items-center gap-4 shadow-lg">
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs text-gray-400 mb-1.5 font-medium" for="period_id">Select Pay Period</label>
+      <select name="period_id" id="period_id"
               onchange="this.form.submit()"
-              class="w-full pl-10 bg-slate-800 border border-slate-600 rounded-xl px-4 py-2 text-sm sm:text-base text-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+              class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer">
         {% for p in payroll_periods %}
         <option value="{{ p.id }}" {% if selected_period and p.id==selected_period.id %}selected{% endif %}>
           {{ p.period_name }} ({{ p.start_date }} - {{ p.end_date }})
@@ -33,72 +42,77 @@
         {% endfor %}
       </select>
     </div>
-
   </form>
 
   <!-- TOTAL MUNICIPAL PAYROLL -->
-  <div class="bg-emerald-500/10 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-5 sm:p-6 shadow-lg">
-    <p class="text-gray-400 text-sm">Total Municipal Payroll</p>
-    <p class="text-3xl sm:text-4xl font-bold text-emerald-400 mt-1">
-      ₱ {{ "{:,.2f}".format(municipality_total) }}
-    </p>
+  <div class="relative overflow-hidden bg-gradient-to-br from-emerald-900/30 to-slate-800/40 border border-emerald-700/30 rounded-2xl p-6">
+    <div class="absolute -top-6 -right-6 opacity-10 pointer-events-none">
+      <i class="fa-solid fa-coins text-9xl text-emerald-400"></i>
+    </div>
+    <div class="relative z-10">
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fa-solid fa-landmark text-emerald-400/80"></i>
+        <p class="text-gray-400 text-sm font-medium uppercase tracking-wider">Total Municipal Payroll</p>
+      </div>
+      <p class="text-3xl sm:text-4xl font-bold text-emerald-400 tracking-tight tabular-nums">
+        ₱ {{ "{:,.2f}".format(municipality_total) }}
+      </p>
+      {% if selected_period %}
+      <p class="text-xs text-gray-500 mt-2">For period: {{ selected_period.period_name }}</p>
+      {% endif %}
+    </div>
   </div>
 
-  <!-- DEPARTMENT CARDS -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6 mt-6">
-
+  <!-- DEPARTMENT CARDS GRID -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-2">
     {% for dept in department_rows %}
     <div onclick="goToDepartmentPayroll({{ dept.id }})"
-         class="group cursor-pointer bg-slate-800/70 backdrop-blur-md border border-slate-700 rounded-2xl p-5
-                flex flex-col justify-between
-                hover:-translate-y-1 hover:border-emerald-400
-                hover:shadow-emerald-500/10 hover:shadow-lg
-                transition-all duration-300 active:scale-95">
+         class="cursor-pointer group bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-5 flex flex-col gap-4
+                hover:bg-slate-700/40 hover:border-emerald-500/30 hover:-translate-y-1 hover:shadow-xl transition-all duration-200"
+         tabindex="0" role="button" aria-label="View payroll details for {{ dept.name }}"
+         onkeydown="if(event.key==='Enter'||event.key===' ')this.click()">
 
-      <!-- Top -->
-      <div class="flex items-center gap-4">
-
-        <div class="p-4 bg-emerald-500/10 rounded-xl group-hover:scale-110 transition">
-          <i class="fa-solid fa-warehouse text-emerald-400 text-2xl"></i>
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors shrink-0">
+          <i class="fa-solid fa-warehouse text-emerald-400 text-xl"></i>
         </div>
-
-        <div class="min-w-0">
-          <h4 class="text-lg font-semibold text-white truncate">
-            {{ dept.name }}
-          </h4>
-          <p class="text-sm text-gray-400">
-            {{ dept.employee_count }} Employees
-          </p>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-lg font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">{{ dept.name }}</h4>
+          <div class="flex items-center gap-1.5 mt-1 text-sm text-gray-400">
+            <i class="fa-solid fa-users text-xs opacity-60"></i>
+            <span>{{ dept.employee_count }} Employee{{ 's' if dept.employee_count != 1 else '' }}</span>
+          </div>
         </div>
-
       </div>
 
-      <!-- Bottom -->
-      <div class="mt-4 pt-3 border-t border-slate-700 flex items-center justify-between">
+      <div class="mt-auto pt-4 border-t border-slate-700/40 flex items-center justify-between">
         <div>
-          <p class="text-gray-400 text-xs">Total Payroll</p>
-          <p class="text-emerald-400 font-semibold text-lg">
-            ₱ {{ "{:,.2f}".format(dept.total) }}
-          </p>
+          <p class="text-xs text-gray-500 uppercase tracking-wider">Total Payroll</p>
+          <p class="text-emerald-400 font-bold text-xl mt-0.5 tabular-nums">₱ {{ "{:,.2f}".format(dept.total) }}</p>
         </div>
-
-        <div class="text-gray-500 group-hover:text-emerald-400 transition">
-          <i class="fa-solid fa-arrow-right"></i>
+        <div class="w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+          <i class="fa-solid fa-arrow-right text-gray-400 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all"></i>
         </div>
       </div>
 
     </div>
+    {% else %}
+    <div class="col-span-full px-6 py-12 text-center text-gray-500 bg-slate-800/30 rounded-2xl border border-slate-700/30">
+      <i class="fa-regular fa-folder-open text-3xl mb-3 block opacity-50"></i>
+      {% if selected_period %}
+        No departments with payroll records for this period.
+      {% else %}
+        No payroll periods available. Please create a period first.
+      {% endif %}
+    </div>
     {% endfor %}
-
   </div>
 
 </section>
 
 <script>
 function goToDepartmentPayroll(deptId) {
-  window.location.href =
-    "{{ url_for('payroll_admin_bp.department_employees', department_id=0) }}"
-    .replace('0', deptId);
+  window.location.href = "{{ url_for('payroll_admin_bp.department_employees', department_id=0) }}".replace('0', deptId);
 }
 </script>
 

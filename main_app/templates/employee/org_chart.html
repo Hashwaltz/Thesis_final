@@ -117,7 +117,7 @@
           </p>
           <p class="text-blue-400 text-sm font-bold uppercase tracking-wider">
             Department Head
-            {% if department and department.head and department.head.id == current_user.id %}
+            {% if department and department.head and department.head.id == employee.id %}
             <span class="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] ml-1 align-middle">YOU</span>
             {% endif %}
           </p>
@@ -136,7 +136,7 @@
         <!-- Grid Container -->
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-10 w-full max-w-7xl">
           {% if coworkers.items %}
-            {% for employee in coworkers.items %}
+            {% for emp in coworkers.items %}
             <div class="flex flex-col items-center group">
               <!-- Vertical Line -->
               <div class="w-1 h-6 bg-gray-700 mb-3 group-hover:bg-blue-400 transition-colors"></div>
@@ -145,27 +145,26 @@
                 
                 <!-- Status Indicator Dot -->
                 <div class="absolute top-2 right-2 w-2.5 h-2.5 rounded-full 
-                  {% if employee.status == 'Active' %}bg-emerald-500{% elif employee.status == 'On Leave' %}bg-amber-500{% elif employee.status == 'Suspended' %}bg-red-500{% else %}bg-gray-500{% endif %}
+                  {% if emp.status == 'Active' %}bg-emerald-500{% elif emp.status == 'On Leave' %}bg-amber-500{% elif emp.status == 'Suspended' %}bg-red-500{% else %}bg-gray-500{% endif %}
                   shadow-[0_0_5px_currentColor]"
-                  title="{{ employee.status }}"></div>
+                  title="{{ emp.status }}"></div>
 
                 <!-- Photo -->
-                <img src="{{ employee.photo or url_for('static', filename='images/user/user_logo.webp') }}" 
+                <img src="{{ emp.photo or url_for('static', filename='images/user/user_logo.webp') }}" 
                      class="w-14 h-14 rounded-full mx-auto mb-3 object-cover border-2 border-gray-600 group-hover:border-blue-400 transition"
                      onerror="this.src='{{ url_for('static', filename='images/user/user_logo.webp') }}'">
                 
                 <!-- Name & Position -->
-                <p class="text-sm font-semibold text-gray-100 truncate">{{ employee.get_full_name() }}</p>
+                <p class="text-sm font-semibold text-gray-100 truncate">{{ emp.get_full_name() }}</p>
                 <p class="text-xs text-gray-400 truncate mb-2">
-                  {{ employee.position.name if employee.position else 'Unassigned' }}
+                  {{ emp.position.name if emp.position else 'Unassigned' }}
                 </p>
                 
-                <!-- "You" Badge for current user -->
-                {% if employee.id == current_user.id %}
+                <!-- ✅ "You" Badge -->
+                {% if emp.id == employee.id %}
                 <span class="inline-block w-full py-1 rounded-lg bg-blue-600/20 text-blue-300 text-xs font-medium border border-blue-500/30">
                   <i class="fa-solid fa-user-check mr-1"></i> This is You
                 </span>
-                {% else %}
                 {% endif %}
               </div>
             </div>
@@ -179,7 +178,7 @@
         {% if coworkers.pages > 1 %}
         <div class="flex flex-wrap items-center justify-center gap-3 mt-8 pt-6 border-t border-gray-700/50">
           {% if coworkers.has_prev %}
-          <a href="{{ url_for('employee_bp.org_chart', page=coworkers.prev_num) }}"
+          <a href="{{ url_for('employee_bp.my_department', page=coworkers.prev_num) }}"
              class="flex items-center gap-2 px-4 py-2 bg-gray-800/60 border border-gray-700/50 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-all">
             <i class="fa-solid fa-chevron-left text-xs"></i> Previous
           </a>
@@ -190,7 +189,7 @@
           </span>
           
           {% if coworkers.has_next %}
-          <a href="{{ url_for('employee_bp.org_chart', page=coworkers.next_num) }}"
+          <a href="{{ url_for('employee_bp.my_department', page=coworkers.next_num) }}"
              class="flex items-center gap-2 px-4 py-2 bg-gray-800/60 border border-gray-700/50 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-all">
             Next <i class="fa-solid fa-chevron-right text-xs"></i>
           </a>

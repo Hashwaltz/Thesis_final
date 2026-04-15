@@ -382,27 +382,45 @@ def deduction_brackets():
 
 
 
+from flask import flash, render_template, request
+from datetime import date
+# ... your other imports ...
+
 @payroll_admin_bp.route("/payroll-departments")
 @login_required
 @payroll_admin_required
 def payroll_departments():
-
     today = date.today()
-
     period_id = request.args.get("period_id", type=int)
     payroll_periods = PayrollPeriod.query.order_by(PayrollPeriod.start_date.desc()).all()
 
-    # Default period = latest or closest to today
+    period = None
+
+    # 1. Try explicit period_id
     if period_id:
         period = PayrollPeriod.query.get(period_id)
-    else:
-        period = PayrollPeriod.query.filter(PayrollPeriod.start_date <= today)\
-                                     .order_by(PayrollPeriod.start_date.desc()).first()
 
+    # 2. Fallback to latest period starting on or before today
+    if not period:
+        period = PayrollPeriod.query.filter(PayrollPeriod.start_date <= today)\
+                                    .order_by(PayrollPeriod.start_date.desc()).first()
+
+    # 3. Fallback to absolute latest period regardless of date
     if not period and payroll_periods:
         period = payroll_periods[0]
 
-    # Get departments and compute total payroll
+    # 4. CRITICAL: Handle case where NO periods exist in the DB
+    if not period:
+        flash("No payroll periods have been created yet.", "warning")
+        return render_template(
+            "payroll/admin/views/department_payrolls.html",
+            payroll_periods=[],
+            selected_period=None,
+            department_rows=[],
+            municipality_total=0
+        )
+
+    # Proceed only when a valid period is guaranteed
     departments = Department.query.all()
     department_rows = []
     municipality_total = 0

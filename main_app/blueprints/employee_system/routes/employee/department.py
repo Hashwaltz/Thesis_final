@@ -2,17 +2,15 @@ from flask import render_template, request
 from flask_login import login_required, current_user
 
 from main_app.models.hr_models import Employee, Department
-from main_app.blueprints.employee_system.routes.employee import employee_bp
-
 from main_app.helpers.decorators import employee_required
 
-# ===========================
-# Employee: My Department / Coworkers
-# ===========================
+from main_app.blueprints.employee_system.routes.employee import employee_bp
+
 @employee_bp.route("/my-department")
 @login_required
 @employee_required
 def my_department():
+    # Get the logged-in user's employee record
     employee = Employee.query.filter_by(user_id=current_user.id).first_or_404()
     department = employee.department
 
@@ -37,13 +35,13 @@ def my_department():
         Employee.status == "Active"
     ).all()
 
-    # Coworkers in same department
+    # Pagination
     page = request.args.get("page", 1, type=int)
 
+    # ✅ FIXED: Removed `Employee.id != employee.id` so the current user appears in the grid
     coworkers = Employee.query.filter(
         Employee.department_id == employee.department_id,
-        Employee.status == "Active",
-        Employee.id != employee.id
+        Employee.status == "Active"
     ).order_by(Employee.last_name.asc()).paginate(
         page=page,
         per_page=8,
