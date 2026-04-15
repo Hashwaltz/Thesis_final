@@ -4,7 +4,7 @@ from datetime import datetime
 
 from main_app.extensions import db
 from main_app.models.hr_models import Employee, Attendance, Department
-from main_app.models.payroll_models import Payroll, PayrollPeriod, PayrollDeduction, EmployeeDeduction, Deduction, Loan
+from main_app.models.payroll_models import Payroll, PayrollPeriod, PayrollDeduction, EmployeeDeduction, Deduction, Loan, LoanPayment
 from main_app.helpers.decorators import staff_required
 from main_app.blueprints.payroll_system.routes.staff import payroll_staff_bp
 
@@ -295,16 +295,25 @@ def process_parttimer_payroll(period_id, department_id):
 
         # Loans
         for loan in Loan.query.filter_by(employee_id=emp.id, active=True).all():
-            val = request.form.get(f"loan_{loan.id}", "").strip()
-            if val:
-                amt = safe_float(val)
-                if amt > 0:
-                    total_deductions += amt
-                    db.session.add(PayrollDeduction(
-                        payroll=payroll, deduction_name=f"{loan.provider} - {loan.loan_type}",
-                        employee_share=round(amt, 2), employer_share=0
-                    ))
-
+            val = safe_float(request.form.get(f"loan_{loan.id}_{emp.id}", "").strip())
+            
+            if val > 0:
+                total_deductions += val  # Still affects net pay
+                
+                new_balance = max(0, (loan.remaining_balance or loan.total_amount) - val)
+                
+                loan_payment = LoanPayment(
+                    loan_id=loan.id,
+                    payroll_id=payroll.id,
+                    amount_paid=round(val, 2),
+                    remaining_balance=round(new_balance, 2),
+                    payment_date=period.pay_date or datetime.utcnow().date()
+                )
+                db.session.add(loan_payment)
+                loan.remaining_balance = new_balance
+                
+                if new_balance <= 0:
+                    loan.active = False
         # Other deductions
         for emp_ded in emp.employee_deductions:
             if not emp_ded.active or not emp_ded.deduction:

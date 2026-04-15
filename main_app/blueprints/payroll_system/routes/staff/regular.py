@@ -10,7 +10,7 @@ from main_app.models.hr_models import (
 )
 from main_app.models.payroll_models import (
     Payroll, PayrollPeriod, Loan, PayrollDeduction, 
-    EmployeeDeduction, Deduction
+    EmployeeDeduction, Deduction, LoanPayment
 )
 
 from main_app.helpers.decorators import staff_required
@@ -646,13 +646,30 @@ def process_regular_payroll(period_id, department_id):
         # Loans
         loans = Loan.query.filter_by(employee_id=emp.id, active=True).all()
         for loan in loans:
-            val = safe_float(request.form.get(f"loan_{loan.id}", 0))
-            total_deductions += val
-            db.session.add(PayrollDeduction(
-                payroll_id=payroll.id,
-                deduction_name=f"{loan.provider} Loan",
-                employee_share=round(val, 2)
-            ))
+            val = safe_float(request.form.get(f"loan_{loan.id}_{emp.id}", 0))
+            
+            if val > 0:
+                # ✅ Still deduct from net pay calculation
+                total_deductions += val
+                
+                # ✅ Create LoanPayment record (NOT PayrollDeduction)
+                new_balance = max(0, (loan.remaining_balance or loan.total_amount) - val)
+                
+                loan_payment = LoanPayment(
+                    loan_id=loan.id,
+                    payroll_id=payroll.id,
+                    amount_paid=round(val, 2),
+                    remaining_balance=round(new_balance, 2),
+                    payment_date=period.pay_date or datetime.utcnow().date()
+                )
+                db.session.add(loan_payment)
+                
+                # ✅ Update loan's remaining balance
+                loan.remaining_balance = new_balance
+                
+                # Optional: Deactivate loan if fully paid
+                if new_balance <= 0:
+                    loan.active = False
 
         # AWOP
         awop = safe_float(request.form.get(f"awop_{emp.id}", 0))
