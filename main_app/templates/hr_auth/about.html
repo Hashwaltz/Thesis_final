@@ -125,14 +125,75 @@
 
       <h2 class="text-3xl font-bold text-blue-400 mb-6">Developed By</h2>
 
-      <p class="text-gray-300 mb-10 max-w-3xl mx-auto">
-        GovHRPay is a capstone project developed to modernize Human Resource and Payroll systems
+      <p class="text-gray-300 mb-16 max-w-3xl mx-auto">
+        GovHRPay is a thesis project developed to modernize Human Resource and Payroll systems
         through a secure and efficient web-based platform.
       </p>
 
-      <img src="{{ url_for('static', filename='img/dev_team.jpg') }}"
-           class="rounded-2xl shadow-lg w-full max-w-lg mx-auto"
-           alt="Development Team">
+      <!-- Tree Structure Container -->
+      <div class="flex flex-col items-center">
+        
+        <!-- Lead Developer (Top) -->
+        <div class="relative z-10 bg-gray-800 p-6 rounded-xl border border-blue-500 shadow-xl w-72 mb-0">
+          <div class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden border-2 border-blue-400 bg-gray-700">
+            <!-- TODO: Replace 'lead_dev.jpg' with your actual photo filename -->
+            <img src="{{ url_for('static', filename='img/dev_team/ashley.JPG') }}" 
+                 class="w-full h-full object-cover" 
+                 alt="Nathaniel Ashley Rodelas">
+          </div>
+          <!-- TODO: Replace '[Your Name]' with your actual name -->
+          <h3 class="text-xl font-bold text-white mb-1">Nathaniel Ashley Rodeas</h3>
+          <p class="text-blue-400 font-semibold text-sm">Lead Developer</p>
+          <p class="text-gray-400 text-xs mt-2">Project Originator & Main Architect</p>
+        </div>
+
+        <!-- Vertical Line Down from Lead (Desktop) -->
+        <div class="w-0.5 h-12 bg-gray-600 hidden sm:block"></div>
+        <!-- Spacing fallback for Mobile -->
+        <div class="h-8 sm:hidden"></div>
+
+        <!-- Bottom Row: QA and Asst. Programmer -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-16 relative w-full max-w-3xl">
+          
+          <!-- Horizontal Connector Line (Desktop Only) -->
+          <div class="hidden sm:block absolute top-0 left-1/4 right-1/4 h-0.5 bg-gray-600"></div>
+          
+          <!-- Member 1: QA -->
+          <div class="relative flex flex-col items-center pt-0 sm:pt-12">
+            <!-- Vertical Line Down from Horizontal Connector -->
+            <div class="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-12 bg-gray-600"></div>
+            
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg w-72 flex-shrink-0">
+              <div class="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden border-2 border-gray-600 bg-gray-700">
+                <!-- TODO: Replace 'jhon_ray.jpg' with actual photo filename -->
+                <img src="{{ url_for('static', filename='img/dev_team/ray.jfif') }}" 
+                     class="w-full h-full object-cover" 
+                     alt="Jhon Ray Donor">
+              </div>
+              <h3 class="text-lg font-bold text-white mb-1">Jhon Ray Donor</h3>
+              <p class="text-blue-400 font-semibold text-sm">Quality Assurance (QA)</p>
+            </div>
+          </div>
+
+          <!-- Member 2: Asst. Programmer -->
+          <div class="relative flex flex-col items-center pt-0 sm:pt-12">
+            <!-- Vertical Line Down from Horizontal Connector -->
+            <div class="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-12 bg-gray-600"></div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg w-72 flex-shrink-0">
+              <div class="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden border-2 border-gray-600 bg-gray-700">
+                <!-- TODO: Replace 'jiovanni.jpg' with actual photo filename -->
+                <img src="{{ url_for('static', filename='img/dev_team/jiovanni.jpg') }}" 
+                     class="w-full h-full object-cover" 
+                     alt="Jiovanni Pareja">
+              </div>
+              <h3 class="text-lg font-bold text-white mb-1">Jiovanni Pareja</h3>
+              <p class="text-blue-400 font-semibold text-sm">Assistant Programmer</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
     </div>
   </section>
